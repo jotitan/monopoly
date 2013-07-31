@@ -254,7 +254,7 @@
 			return false;
 		}
 		
-		/* Se base sur les prochaines a risque qui arrive */
+		/* Se base sur les prochaines a risque qui arrive, renvoi un pourcentage */
 		this.calculRisque = function(joueur){
 			// On calcul le risque de tomber sur une case cher.
 			// On considere un risque quand on est au dessus de risque * montant d'amande)
@@ -270,6 +270,7 @@
 					stats+=this.probaDes[i-1];
 				}
 			}
+			return stats;
 		}
 		
 		// calcul le loyer le plus fort du joueur (et n'appartenant pas au joueur)
@@ -286,7 +287,6 @@
     }
     
     function CheapComportement(){
-
 		Comportement.call(this,0.2);
     }
     
@@ -300,6 +300,7 @@
     
     /* Objet qui gere la strategie. IL y a différentes implémentations */
     /* @colors : liste des groupes qui interessent le joueur */
+    /* @param agressif : plus il est eleve, plus le joueur fait de l'antijeu (achat des terrains recherches par les adversaires) */
     function Strategie(colors,agressif){
 		this.groups = colors;
 		this.agressif = agressif;
@@ -329,6 +330,7 @@
 		1 : s'il reste des libres apres celle ci
 		2 : si toutes appartiennent a une même personne sauf celle-ci
 		3 : autres */
+		// Prendre en compte si j'ai la famille, que c'est la derniere carte. Il faut passer les autres options de risques, prix. Il faut absolument acheter
 		this.statutGroup = function(propriete,joueur){
 			var nbTotal = 0;
 			var nbLibre = 0;

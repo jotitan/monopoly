@@ -27,7 +27,7 @@ var hauteur = 100;
 var total = (largeur*9)/2;
 var centre = 400;
 
-function CaseSpeciale(axe){
+function CaseSpeciale(axe,titre){
    Component.apply(this);
    this.data = {};
    if(axe%2 == 1){ // E et 0
@@ -55,6 +55,18 @@ function CaseSpeciale(axe){
    this.draw = function(){
       canvas.strokeStyle = '#000000';
       canvas.strokeRect(this.data.x,this.data.y,this.data.width,this.data.height);
+      canvas.font="12px Georgia";
+	  var lng = Math.max(0,(largeur - canvas.measureText(titre).width)) + 10;
+      canvas.save();
+	  canvas.translate(this.data.x + hauteur/2,this.data.y+lng);
+	  canvas.rotate(Math.PI/2);
+	  canvas.strokeText(titre,0,0);
+	  canvas.restore();
+
+      
+	  
+       
+      canvas.restore();
    }
 
 }
@@ -108,7 +120,7 @@ function Case(pos,axe,color){
 function build(){
    setFrequency(100);
     for(var axe = 0 ; axe< 4 ; axe++){
-         addComponent(new CaseSpeciale(axe));
+         addComponent(new CaseSpeciale(axe,["Parc gratuit","Prison","Depart","Simple visite"][axe]));
         for(var pos = 1 ; pos <= 9 ; pos++){
             addComponent(new Case(pos,axe,(pos%2==0)?'#FF0000':'#0000FF'))
         }
@@ -136,7 +148,6 @@ function setFrequency(time){
    if(interval!=null){
       clearInterval(interval);
    }
-   console.log(forms.length);
    interval = setInterval(refresh,time);
 }
 

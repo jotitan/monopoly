@@ -1,0 +1,162 @@
+<html>
+
+<head>
+
+</head>
+
+<body>
+
+
+<canvas id="canvas" width="800" height="800" style="border:solid 1px black"></canvas>
+
+
+<script language="Javascript">
+
+var canvas = document.getElementById("canvas").getContext("2d");
+var interval = null;
+canvas.strokeStyle='#AA0000';
+
+var forms = Array();
+
+function Component(){
+   this.draw = function(){console.log("Not implemented");}
+}
+
+var largeur = 60;
+var hauteur = 100;
+var total = (largeur*9)/2;
+var centre = 400;
+
+function CaseSpeciale(axe){
+   Component.apply(this);
+   this.data = {};
+   if(axe%2 == 1){ // E et 0
+      // height et width inverse
+      if(axe == 1){
+         this.data.x = centre+total;
+         this.data.y = centre + -4.5 * largeur - hauteur;
+      }
+      else{
+         this.data.x = centre - total - hauteur;
+         this.data.y = centre + 4.5 * largeur;
+      }
+   }
+   else{ // N et S
+      if(axe == 2){
+         this.data.y = centre+total;
+         this.data.x = centre + 4.5 * largeur;
+      }
+      else{
+         this.data.y = centre - total - hauteur;
+         this.data.x = centre - 4.5 * largeur - hauteur;
+      }
+   }
+   this.data.height = this.data.width = hauteur;
+   this.draw = function(){
+      canvas.strokeStyle = '#000000';
+      canvas.strokeRect(this.data.x,this.data.y,this.data.width,this.data.height);
+   }
+
+}
+
+function Case(pos,axe,color){
+   Component.apply(this);
+   this.data = {};
+   if(axe%2 == 1){ // E et 0
+      // height et width inverse
+      this.data.height = largeur;
+      this.data.width = hauteur;
+      if(axe == 1){
+         this.data.x = centre+total;
+         this.data.y = centre + (pos-5.5) * largeur;
+         if(pos == 0){this.data.y-=(hauteur-largeur);}
+      }
+      else{
+         this.data.x = centre - total - hauteur;
+         this.data.y = centre + (4.5 - pos) * largeur;
+      }
+   }
+   else{ // N et S
+      this.data.height = hauteur;
+      this.data.width = largeur;
+      if(axe == 2){
+         this.data.y = centre+total;
+         this.data.x = centre + (4.5 - pos) * largeur;
+      }
+      else{
+         this.data.y = centre - total - hauteur;
+         this.data.x = centre + (pos - 5.5) * largeur;
+         if(pos == 0){this.data.x-=(hauteur-largeur);}
+      }
+   }
+   if(pos == 0){this.data.height = this.data.width = hauteur;}
+   this.draw = function(){
+      canvas.strokeStyle = '#000000';
+      canvas.strokeRect(this.data.x,this.data.y,this.data.width,this.data.height);
+      if(pos == 0){return;}
+      canvas.fillStyle = color;
+      switch(axe){
+         case 0 : canvas.fillRect(this.data.x,this.data.y+hauteur-20,this.data.width,20);break
+         case 1 : canvas.fillRect(this.data.x,this.data.y,20,largeur);break
+         case 2 : canvas.fillRect(this.data.x,this.data.y,this.data.width,20);break;
+         case 3 : canvas.fillRect(this.data.x+hauteur-20,this.data.y,20,largeur);break
+      }
+   }
+
+}
+
+function build(){
+   setFrequency(100);
+    for(var axe = 0 ; axe< 4 ; axe++){
+         addComponent(new CaseSpeciale(axe));
+        for(var pos = 1 ; pos <= 9 ; pos++){
+            addComponent(new Case(pos,axe,(pos%2==0)?'#FF0000':'#0000FF'))
+        }
+    }
+    
+}
+
+function Rect(data){
+   this.data = data;
+   this.draw = function(){
+      canvas.strokeRect(this.data.x,this.data.y,this.data.width,this.data.height);
+   }
+}
+
+function addComponent(component){
+   forms.push(component);
+}
+
+function addRect(x,y,width,height){
+   forms.push(new Rect({x:x,y:y,width:width,height:height}));
+}
+
+// Rafraichit la fenetre
+function setFrequency(time){
+   if(interval!=null){
+      clearInterval(interval);
+   }
+   console.log(forms.length);
+   interval = setInterval(refresh,time);
+}
+
+function clear(){
+   canvas.clearRect(0,0,800,800);
+}
+
+function refresh(){
+   clear();
+   for(var i = 0 ; i < forms.length ; i++){
+      forms[i].draw();
+   }
+
+}
+
+build();
+
+</script>
+
+</body>
+
+
+</html>

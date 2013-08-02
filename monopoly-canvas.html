@@ -47,12 +47,12 @@
     $(document).ready(function(){
     parcGratuit = new ParcGratuit('montantParcGratuit');
     fiches["2-1"] = new Fiche(2,1,["#812B5C","#DFA4C6"],"Boulevard de Belleville",4000,200,1000,3000,9000,16000,25000,5000);
-    fiches["2-2"] = new CaisseDeCommunaute();
+    fiches["2-2"] = new CaisseDeCommunaute(2,2);
     fiches["2-3"] = new Fiche(2,3,["#812B5C","#DFA4C6"],"Rue Lecourbe",8000,400,2000,6000,18000,32000,45000,5000);
     fiches["2-4"] = new CarteSpeciale("Impots sur le revenue",20000);
     fiches["2-5"] = new FicheGare(2,5,["#000000","#ABABAB"],"Gare Montparnasse",20000,2500,5000,10000,20000);
     fiches["2-6"] = new Fiche(2,6,["#119AEB","#98CEEE"],"Rue de Vaugirard",10000,600,3000,9000,27000,40000,55000,5000);
-    fiches["2-7"] = new Chance();
+    fiches["2-7"] = new Chance(2,7);
     fiches["2-8"] = new Fiche(2,8,["#119AEB","#98CEEE"],"Rue de Courcelles",10000,600,3000,9000,27000,40000,55000,5000);
     fiches["2-9"] = new Fiche(2,9,["#119AEB","#98CEEE"],"Avenue de la République",12000,800,4000,10000,30000,45000,60000,5000);
     fiches["3-1"] = new Fiche(3,1,["#73316F","#DFB4DC"],"Boulevard de la Villette",14000,1000,5000,15000,45000,62500,75000,10000);
@@ -61,12 +61,12 @@
     fiches["3-4"] = new Fiche(3,4,["#73316F","#CA83C6"],"Rue de Paradis",16000,1200,6000,18000,50000,70000,90000,10000);
     fiches["3-5"] = new FicheGare(3,5,["#000000","#ABABAB"],"Gare de Lyon",20000,2500,5000,10000,20000);
     fiches["3-6"] = new Fiche(3,6,["#D16E2D","#FECC84"],"Avenue Mozart",18000,1400,7000,20000,55000,75000,95000,10000);
-    fiches["3-7"] = new CaisseDeCommunaute();
+    fiches["3-7"] = new CaisseDeCommunaute(3,7);
     fiches["3-8"] = new Fiche(3,8,["#D16E2D","#ECA271"],"Boulevard Saint-Michel",18000,1400,7000,20000,55000,75000,95000,10000);
     fiches["3-9"] = new Fiche(3,9,["#D16E2D","#ECA271"],"Place Pigalle",20000,1600,8000,22000,60000,80000,100000,10000);
     fiches["0-0"] = parcGratuit;
     fiches["0-1"] = new Fiche(0,1,["#D32C19","#F9AEA6"],"Avenue Matignon",22000,1800,9000,25000,70000,87500,105000,15000);
-    fiches["0-2"] = new Chance();
+    fiches["0-2"] = new Chance(0,2);
     fiches["0-3"] = new Fiche(0,3,["#D32C19","#EC877B"],"Boulevard Malsherbes",22000,1800,9000,25000,70000,87500,105000,15000);
     fiches["0-4"] = new Fiche(0,4,["#D32C19","#EC877B"],"Avenue Henri-Martin",22000,2000,10000,30000,75000,92500,110000,15000);
     fiches["0-5"] = new FicheGare(0,5,["#000000","#ABABAB"],"Gare du Nord",20000,20000,2500,5000,10000,20000);
@@ -77,10 +77,10 @@
     fiches["1-0"] = new CarteActionSpeciale("Carte prison",function(){joueurCourant.goPrison();});
     fiches["1-1"] = new Fiche(1,1,["#11862E","#93D1A2"],"Avenue de Breteuil",30000,2600,13000,39000,90000,110000,127500,20000);
     fiches["1-2"] = new Fiche(1,2,["#11862E","#93D1A2"],"Avenue Foch",30000,2600,13000,39000,90000,110000,127500,20000);
-    fiches["1-3"] = new CaisseDeCommunaute();
+    fiches["1-3"] = new CaisseDeCommunaute(1,3);
     fiches["1-4"] = new Fiche(1,4,["#11862E","#93D1A2"],"Boulevard des Capucines",32000,2800,15000,45000,100000,120000,140000,20000);
     fiches["1-5"] = new FicheGare(1,5,["#000000","#ABABAB"],"Gare Saint-Lazarre",20000,20000,2500,5000,10000,20000);
-    fiches["1-6"] = new Chance();
+    fiches["1-6"] = new Chance(1,6);
     fiches["1-7"] = new Fiche(1,7,["#132450","#808EB0"],"Avenue des Champs Elysées",35000,3500,17500,50000,110000,130000,150000,20000);
     fiches["1-8"] = new CarteSpeciale("Taxe de luxe",10000);
     fiches["1-9"] = new Fiche(1,9,["#132450","#808EB0"],"Rue de la Paix",40000,5000,20000,60000,140000,170000,200000,20000);
@@ -659,14 +659,18 @@
       }
     }
     
-    function Chance(){
+    function Chance(etat,pos){
+	  this.case = new Case(pos,etat,null,"Chance");
+	  Drawer.add(this.case);
       this.action = function(){
         var c = cartesChance[Math.round((Math.random()*1000))%(cartesChance.length)];
         return c.action();
       }
     }
     
-    function CaisseDeCommunaute(){
+    function CaisseDeCommunaute(etat,pos){
+    	this.case = new Case(pos,etat,null,"Caisse de communauté");
+    	Drawer.add(this.case);
        this.action = function(){
         var c = cartesCaisseCommunaute[Math.round((Math.random()*1000))%(cartesCaisseCommunaute.length)];
         return c.action();
@@ -717,6 +721,7 @@ function writeText(text,x,y,rotate,size){
     Drawer.canvas.rotate(rotate);
     Drawer.canvas.font=((size!=null)?size:"6") + "pt Times news roman";
 	Drawer.canvas.strokeText(text,0,0);
+    Drawer.canvas.font="6pt Times news roman";	
     Drawer.canvas.restore();
 }
 
@@ -817,7 +822,7 @@ function Case(pos,axe,color,title,prix){
          for(var i = 0 ; i < mots.length ; i++){
              // On centre le texte
              var lng = Math.max(0,(largeur - Drawer.canvas.measureText(mots[i]).width)) / 2;
-             var dec = 15 + ((color!=null)?bordure:0);// Uniquement si couleur
+             var dec = 10 + ((color!=null)?bordure:0);// Uniquement si couleur
              switch(axe){
                  case 0 : writeText(mots[i],this.data.x - lng+largeur,this.data.y+hauteur - dec - i*pas,Math.PI);break
                  case 1 : writeText(mots[i],this.data.x + dec + i*pas,this.data.y-lng+largeur,-Math.PI/2);break
@@ -829,7 +834,6 @@ function Case(pos,axe,color,title,prix){
       if(prix != null){
          var lng = Math.max(0,(largeur - Drawer.canvas.measureText(prix).width)) / 2;
          var dec = 5
-         if(axe == 0 && pos == 1)console.log((this.data.x - lng+largeur) + " " + (this.data.y) + " " + (-hauteur) + " " + dec)
          switch(axe){
              case 0 : writeText(prix,this.data.x - lng+largeur,this.data.y + dec,Math.PI);break
              case 1 : writeText(prix,this.data.x + hauteur - dec,this.data.y-lng+largeur,-Math.PI/2);break

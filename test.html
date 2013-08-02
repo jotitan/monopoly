@@ -26,6 +26,7 @@ var largeur = 60;
 var hauteur = 100;
 var total = (largeur*9)/2;
 var centre = 400;
+var bordure = 20;
 
 function CaseSpeciale(axe,titre){
    Component.apply(this);
@@ -55,23 +56,22 @@ function CaseSpeciale(axe,titre){
    this.draw = function(){
       canvas.strokeStyle = '#000000';
       canvas.strokeRect(this.data.x,this.data.y,this.data.width,this.data.height);
-      canvas.font="12px Georgia";
-	  var lng = Math.max(0,(largeur - canvas.measureText(titre).width)) + 10;
-      canvas.save();
-	  canvas.translate(this.data.x + hauteur/2,this.data.y+lng);
-	  canvas.rotate(Math.PI/2);
-	  canvas.strokeText(titre,0,0);
-	  canvas.restore();
-
-      
-	  
-       
-      canvas.restore();
+      var lng = Math.max(0,(largeur - canvas.measureText(titre).width)) + 10;
+      writeText(titre,this.data.x + lng,this.data.y +hauteur/2,0)
    }
 
 }
 
-function Case(pos,axe,color){
+function writeText(text,x,y,rotate){
+    canvas.save();
+    canvas.translate(x,y);
+    canvas.rotate(rotate);
+    canvas.font="9px Arial";
+	 canvas.strokeText(text,0,0);
+    canvas.restore();
+}
+
+function Case(pos,axe,color,title,prix){
    Component.apply(this);
    this.data = {};
    if(axe%2 == 1){ // E et 0
@@ -81,7 +81,6 @@ function Case(pos,axe,color){
       if(axe == 1){
          this.data.x = centre+total;
          this.data.y = centre + (pos-5.5) * largeur;
-         if(pos == 0){this.data.y-=(hauteur-largeur);}
       }
       else{
          this.data.x = centre - total - hauteur;
@@ -98,20 +97,50 @@ function Case(pos,axe,color){
       else{
          this.data.y = centre - total - hauteur;
          this.data.x = centre + (pos - 5.5) * largeur;
-         if(pos == 0){this.data.x-=(hauteur-largeur);}
       }
    }
-   if(pos == 0){this.data.height = this.data.width = hauteur;}
    this.draw = function(){
       canvas.strokeStyle = '#000000';
       canvas.strokeRect(this.data.x,this.data.y,this.data.width,this.data.height);
-      if(pos == 0){return;}
-      canvas.fillStyle = color;
-      switch(axe){
-         case 0 : canvas.fillRect(this.data.x,this.data.y+hauteur-20,this.data.width,20);break
-         case 1 : canvas.fillRect(this.data.x,this.data.y,20,largeur);break
-         case 2 : canvas.fillRect(this.data.x,this.data.y,this.data.width,20);break;
-         case 3 : canvas.fillRect(this.data.x+hauteur-20,this.data.y,20,largeur);break
+      if(color != null){
+          canvas.fillStyle = color;
+          switch(axe){
+             case 0 : canvas.fillRect(this.data.x,this.data.y+hauteur-bordure,this.data.width,bordure);break
+             case 1 : canvas.fillRect(this.data.x,this.data.y,bordure,largeur);break
+             case 2 : canvas.fillRect(this.data.x,this.data.y,this.data.width,bordure);break;
+             case 3 : canvas.fillRect(this.data.x+hauteur-bordure,this.data.y,bordure,largeur);break
+          }
+      }
+      if(title != null){
+         var mots = [title];
+         var width = canvas.measureText(title).width;
+         if(width>largeur-5){
+            mots = title.split(" ");
+         }
+         var pas = 15;
+         
+         for(var i = 0 ; i < mots.length ; i++){
+             // On centre le texte
+             var lng = Math.max(0,(largeur - canvas.measureText(mots[i]).width)) / 2;
+             var dec = 15 + ((color!=null)?bordure:0);// Uniquement si couleur
+             switch(axe){
+                 case 0 : writeText(mots[i],this.data.x - lng+largeur,this.data.y+hauteur - dec - i*pas,Math.PI);break
+                 case 1 : writeText(mots[i],this.data.x + dec + i*pas,this.data.y-lng+largeur,-Math.PI/2);break
+                 case 2 : writeText(mots[i],this.data.x + lng,this.data.y + dec + i*pas,0);break;
+                 case 3 : writeText(mots[i],this.data.x + hauteur - dec - i*pas,this.data.y + lng,Math.PI/2);;break
+              }
+         }
+      }
+      if(prix != null){
+         var lng = Math.max(0,(largeur - canvas.measureText(prix).width)) / 2;
+         var dec = 5
+         if(axe == 0 && pos == 1)console.log((this.data.x - lng+largeur) + " " + (this.data.y) + " " + (-hauteur) + " " + dec)
+         switch(axe){
+             case 0 : writeText(prix,this.data.x - lng+largeur,this.data.y + dec,Math.PI);break
+             case 1 : writeText(prix,this.data.x + hauteur - dec,this.data.y-lng+largeur,-Math.PI/2);break
+             case 2 : writeText(prix,this.data.x + lng,this.data.y + hauteur - dec,0);break;
+             case 3 : writeText(prix,this.data.x +dec,this.data.y + lng,Math.PI/2);;break
+          }
       }
    }
 
@@ -119,10 +148,11 @@ function Case(pos,axe,color){
 
 function build(){
    setFrequency(100);
+   addFillRect(0,0,800,800,'#A7E9DB');
     for(var axe = 0 ; axe< 4 ; axe++){
          addComponent(new CaseSpeciale(axe,["Parc gratuit","Prison","Depart","Simple visite"][axe]));
         for(var pos = 1 ; pos <= 9 ; pos++){
-            addComponent(new Case(pos,axe,(pos%2==0)?'#FF0000':'#0000FF'))
+            addComponent(new Case(pos,axe,(pos%5==0)?null:(pos%2==0)?'#FF0000':'#0000FF',(pos%1==0)?"BLABLA test"+axe+" long"+pos:null,"F " + pos + "000"));
         }
     }
     
@@ -135,12 +165,24 @@ function Rect(data){
    }
 }
 
+function FillRect(data){
+   this.data = data;
+   this.draw = function(){
+      canvas.fillStyle=data.color;
+      canvas.fillRect(this.data.x,this.data.y,this.data.width,this.data.height);
+   }
+}
+
 function addComponent(component){
    forms.push(component);
 }
 
 function addRect(x,y,width,height){
    forms.push(new Rect({x:x,y:y,width:width,height:height}));
+}
+
+function addFillRect(x,y,width,height,color){
+   forms.push(new FillRect({x:x,y:y,width:width,height:height,color:color}));
 }
 
 // Rafraichit la fenetre

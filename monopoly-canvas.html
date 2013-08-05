@@ -48,7 +48,7 @@ body{margin:0}
       
     $(document).ready(function(){
     parcGratuit = new ParcGratuit();
-    fiches["2-0"] = new CarteActionSpeciale("Départ",function(){},2,0);
+    fiches["2-0"] = new CarteActionSpeciale("Départ",function(){joueurCourant.gagner(40000)},2,0);
     fiches["2-1"] = new Fiche(2,1,["#812B5C","#DFA4C6"],"Boulevard de Belleville",4000,200,1000,3000,9000,16000,25000,5000);
     fiches["2-2"] = new CaisseDeCommunaute(2,2);
     fiches["2-3"] = new Fiche(2,3,["#812B5C","#DFA4C6"],"Rue Lecourbe",8000,400,2000,6000,18000,32000,45000,5000);
@@ -167,11 +167,7 @@ body{margin:0}
       fiche.nbMaison++;
       
     }
-      
-    function movePionNb(nb,duration){
-      movePionNbCall(nb,doActions,duration);
-    }
-    
+          
      function movePionNbCall(nb,call,duration){
       
       /* On se place dans le chemin */
@@ -192,10 +188,6 @@ body{margin:0}
       joueurCourant.pion.decaller(lignes[joueurCourant.pion.etat].decallage);
     }
 
-    function movePion(){
-      movePionNb($('#nb').val());
-    }
-    
     function getNextPos(etat,position){
 		position++;
 		if(position == 10){
@@ -421,7 +413,7 @@ body{margin:0}
 				return;
 			}
 			setTimeout(function(){
-				if(buttons.Acheter!=null){
+				if(buttons.Acheter!=null && propriete!=null){
 					var interet = current.strategie.interetPropriete(propriete);
 					var comp = current.comportement;
 					if(current.strategie.interetPropriete(propriete)){
@@ -452,7 +444,7 @@ body{margin:0}
       this.montant = 100000;
       this.maisons = new Array();
       this.enPrison = false;
-      
+      this.pion = null;	
       this.equals = function(joueur){
 		if(joueur == null){
 			return false;
@@ -467,6 +459,11 @@ body{margin:0}
             return this.maisons[i].input;
           }
         }
+      }
+      
+      this.joueDes = function(sommeDes){
+      		var nextCase = this.pion.deplaceValeursDes(sommeDes);
+      		this.pion.goto(nextCase.axe,nextCase.pos,doActions);
       }
       
       // Fonction a ne pas implementer avec un vrai joueur
@@ -513,6 +510,9 @@ body{margin:0}
       this.div.find('div:first').removeClass('jail');
       }
       
+      this.isEnPrison = function(){
+      	return this.enPrison;
+      }
       this.setDiv = function(div){
         this.div = div;
         this.setArgent(this.montant);
@@ -530,7 +530,7 @@ body{margin:0}
       }
       
       this.setPion = function(color){
-        this.pion = new Pion(color);
+        this.pion = new Pion(color,this);
       }
       
       this.payer = function(montant){
@@ -582,9 +582,10 @@ body{margin:0}
       }
     }
     
-    function Pion(color){
+    function Pion(color,joueur){
       this.etat = 2;
       this.position = 0;
+      this.joueur = joueur;
       this.pion = new PionJoueur(color,fiches["2-0"].case.getCenter().x,fiches["2-0"].case.getCenter().y);
       Drawer.addRealTime(this.pion);
 
@@ -606,32 +607,50 @@ body{margin:0}
         return (l+40)%40;
       }
       
-      this.goto = function(etat,pos,call){
-        if(call == null){
-			movePionNb(this.getNbDeplacement(etat,pos));
-        }
-        else{
-			movePionNbCall(this.getNbDeplacement(etat,pos),call);
-		}
-        this.etat = parseInt(etat);
-        this.position = parseInt(pos);
+      this.deplaceValeursDes = function(des){
+      	var pos = this.position +des;
+		var axe = this.etat;
+      	while(pos >= 10){
+      		pos-=10;
+      		axe=(axe+1)%4;
+      	}      	
+      	return {pos:pos,axe:axe}
       }
-
+       
+      this.goto = function(etat,pos,call){
+      	// decalage
+      	var center = fiches[this.etat + "-" + this.position].case.getCenter();
+      	this.pion.x = center.x;
+      	this.pion.y = center.y;
+      	console.log(joueurCourant.numero + " va a " + etat + "-" + pos);
+        this.gotoCell(etat,pos,call);
+      }
+      
+      // Si on passe par la case depart, on prend 20000 Francs
+      this.treatCaseDepart = function(etatCible,posCible){
+      	if(!this.joueur.isEnPrison() && this.position == 0 && this.etat == 2 && this.position!=posCible && this.etatCible != this.etat){
+      		this.joueur.gagner(20000);
+      	}
+      }
+	 
       // Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
-      this.gotoCell = function(etatCible,posCible){
+      this.gotoCell = function(etatCible,posCible,callback){
+      	 // Cas de la fin
          if(this.etat == etatCible && this.position == posCible){
+			// On decale le pion
+			var decalage = fiches[this.etat + "-" + this.position].case.decalagePion();
+			this.pion.x = decalage.x;
+			this.pion.y = decalage.y;			
+			if(callback){callback();}
             return;
          }
-         var caseFiche = this.getNextCase();
-         console.log(caseFiche);
-         console.log(this.position);
-         //console.log(caseFiche)
-         var pas = 10;
+         var caseFiche = this.toNextCase();
+         this.treatCaseDepart(etatCible,posCible);
+         var pas = 5;
          var field = "x";  // On varie sur l'axe x
          if(this.pion.x == caseFiche.x){
             field = "y";   // On varie sur l'axe y
          }
-         console.log(field);
         var _self = this;
         var distance = Math.abs(caseFiche[field] - this.pion[field]);
         var sens = (caseFiche[field] > this.pion[field])?1:-1;
@@ -645,12 +664,12 @@ body{margin:0}
               _self.pion.y = caseFiche.y;
               _self.pion.x = caseFiche.x;
               clearInterval(interval);
-              _self.gotoCell(etatCible,posCible);
+              _self.gotoCell(etatCible,posCible,callback);
            }
         },30);
       }
     
-      this.getNextCase = function(){
+      this.toNextCase = function(){
          this.position++;
          if(this.position >=10){
             this.etat = (this.etat + 1)%4;
@@ -852,7 +871,7 @@ var hauteur = 100;
 var total = (largeur*9)/2;
 var centre = 400;
 var bordure = 20;
-
+var largeurPion = (largeur-5)/3;
 
 // Represente un pion d'un joueur
 function PionJoueur(color,x,y){
@@ -860,41 +879,43 @@ function PionJoueur(color,x,y){
    this.x = x;
    this.y = y;
    this.color = color;
-   this.largeur = 16;   // Largeur du pion
+   this.largeur = largeurPion;   // Largeur du pion
    this.draw = function(canvas){
       canvas.fillStyle=this.color;
       canvas.beginPath();
-      canvas.arc(this.x,this.y,8,0,2*Math.PI);
+      canvas.arc(this.x,this.y,this.largeur/2,0,2*Math.PI);
       canvas.fill();
    }
 }
 
 function CaseSpeciale(axe,titre){
-   Component.apply(this);
+   Case.call(this,0,axe,null,titre);
    this.titre = titre;
    this.data = {};
-   if(axe%2 == 1){ // E et 0
-      // height et width inverse
-      if(axe == 1){
-         this.data.x = centre+total;
-         this.data.y = centre + -4.5 * largeur - hauteur;
-      }
-      else{
-         this.data.x = centre - total - hauteur;
-         this.data.y = centre + 4.5 * largeur;
-      }
-   }
-   else{ // N et S
-      if(axe == 2){
-         this.data.y = centre+total;
-         this.data.x = centre + 4.5 * largeur;
-      }
-      else{
-         this.data.y = centre - total - hauteur;
-         this.data.x = centre - 4.5 * largeur - hauteur;
-      }
-   }
-   this.data.height = this.data.width = hauteur;
+   this.init = function(){
+	   if(axe%2 == 1){ // E et 0
+		  // height et width inverse
+		  if(axe == 1){
+		     this.data.x = centre+total;
+		     this.data.y = centre + -4.5 * largeur - hauteur;
+		  }
+		  else{
+		     this.data.x = centre - total - hauteur;
+		     this.data.y = centre + 4.5 * largeur;
+		  }
+	   }
+	   else{ // N et S
+		  if(axe == 2){
+		     this.data.y = centre+total;
+		     this.data.x = centre + 4.5 * largeur;
+		  }
+		  else{
+		     this.data.y = centre - total - hauteur;
+		     this.data.x = centre - 4.5 * largeur - hauteur;
+		  }
+	   }
+	   this.data.height = this.data.width = hauteur;
+	}
    this.getCenter = function(){
       return {x:this.data.x + this.data.height / 2,y:this.data.y + this.data.height / 2};
    }
@@ -903,7 +924,9 @@ function CaseSpeciale(axe,titre){
       canvas.strokeRect(this.data.x,this.data.y,this.data.width,this.data.height);
       writeText(this.titre,this.data.x,this.data.y +hauteur/2,0,canvas,9,this.data.width);
    }
+   
 
+	this.init();
 }
 
     
@@ -911,31 +934,36 @@ function CaseSpeciale(axe,titre){
 function Case(pos,axe,color,title,prix){
    Component.apply(this);
    this.data = {};
-   if(axe%2 == 1){ // E et 0
-      // height et width inverse
-      this.data.height = largeur;
-      this.data.width = hauteur;
-      if(axe == 1){
-         this.data.x = centre+total;
-         this.data.y = centre + (pos-5.5) * largeur;
-      }
-      else{
-         this.data.x = centre - total - hauteur;
-         this.data.y = centre + (4.5 - pos) * largeur;
-      }
-   }
-   else{ // N et S
-      this.data.height = hauteur;
-      this.data.width = largeur;
-      if(axe == 2){
-         this.data.y = centre+total;
-         this.data.x = centre + (4.5 - pos) * largeur;
-      }
-      else{
-         this.data.y = centre - total - hauteur;
-         this.data.x = centre + (pos - 5.5) * largeur;
-      }
-   }
+   this.pos = pos;
+   this.axe = axe;
+   this.init = function(){
+	   if(axe%2 == 1){ // E et 0
+		  // height et width inverse
+		  this.data.height = largeur;
+		  this.data.width = hauteur;
+		  if(axe == 1){
+		     this.data.x = centre+total;
+		     this.data.y = centre + (pos-5.5) * largeur;
+		  }
+		  else{
+		     this.data.x = centre - total - hauteur;
+		     this.data.y = centre + (4.5 - pos) * largeur;
+		  }
+	   }
+	   else{ // N et S
+		  this.data.height = hauteur;
+		  this.data.width = largeur;
+		  if(axe == 2){
+		     this.data.y = centre+total;
+		     this.data.x = centre + (4.5 - pos) * largeur;
+		  }
+		  else{
+		     this.data.y = centre - total - hauteur;
+		     this.data.x = centre + (pos - 5.5) * largeur;
+		  }
+	   }
+	}
+	
    /* Recupere les coordonnees du centre de la case */
    this.getCenter = function(){
       return {x:this.data.x + this.data.width / 2,y:this.data.y + this.data.height / 2};
@@ -974,6 +1002,29 @@ function Case(pos,axe,color,title,prix){
           }
       }
    }
+   // Nombre de joueur sur la case
+   this.getNbJoueurs = function(){
+   	var count = 0;
+   	for(var i  = 0 ; i < joueurs.length ; i++){
+   		if(joueurs[i].pion.etat == this.axe && joueurs[i].pion.position == this.pos){
+   			count++;
+   		}
+   	}
+   	return count;	
+   }
+   // Retourne le decalage d'un pion sur la case
+   /* @param inverse : decalage inverse (remise en place) */
+	this.decalagePion = function(){
+		var dec = 20 + ((color!=null)?bordure:0) + largeurPion/2;
+		var center = this.getCenter();center.x+=5;
+		var pas = {x:largeurPion,y:(this.data.height - dec)/3}
+		var nb = this.getNbJoueurs()-1;
+		if(this.axe%2==0){
+			return {x:(center.x + ((nb%3)-1)*pas.y),y:((nb < 3)?center.y-pas.x:center.y+pas.x)};
+		}
+		return {x:((nb < 3)?center.x-pas.x:center.x+pas.x),y:(center.y + ((nb%3)-1)*pas.y)};
+   }
+   this.init();
 
 }
     
@@ -1028,7 +1079,7 @@ function Case(pos,axe,color,title,prix){
       }
       
       this.chezSoi = function(){
-        createMessage("Vous êtes " + this.nom,this.color,"Vous êtes chez vous",changeJoueur)
+        return createMessage("Vous êtes " + this.nom,this.color,"Vous êtes chez vous",changeJoueur)
       }
       
       this.getLoyer = function(){
@@ -1257,6 +1308,7 @@ function Case(pos,axe,color,title,prix){
        }
        VERROU = true;
        var fiche = fiches[id];
+       //TODO
        movePionNbCall(joueurCourant.pion.getNbDeplacement(fiche.etat,fiche.pos),function(){
           for(var i = 0 ; i < nb ; i++){buildMaison();}
           VERROU = false;
@@ -1270,6 +1322,7 @@ function Case(pos,axe,color,title,prix){
 		}
 		VERROU = true;
 		var fiche = fiches[id];
+		//TODO
 		movePionNbCall(joueurCourant.pion.getNbDeplacement(fiche.etat,fiche.pos),function(){
 			var length = fiche.maisons.length;
 			for(var i = length-1 ; i >= length - nb ; i--){
@@ -1326,17 +1379,19 @@ function Case(pos,axe,color,title,prix){
 			}
 			else{
 				if(joueurCourant.nbDouble == 2){
-					createMessage("Libéré de prison","lightblue","Vous êtes libérés de prison, mais vous devez payer Frs 5.000 !",function(){
+					var buttons = createMessage("Libéré de prison","lightblue","Vous êtes libérés de prison, mais vous devez payer Frs 5.000 !",function(){
                 	joueurCourant.payerParcGratuit(5000);
                   joueurCourant.exitPrison();
-                  movePionNb(des1+des2);
+                  joueurCourant.joueDes(des1+des2);
                },{});
+               joueurCourant.actionApresDes(buttons,null);               
                return;
 				}
 				else{
 					joueurCourant.nbDouble++;
-					createMessage("Tour " + joueurCourant.nbDouble,"red","Vous restez en prison, vous n'avez pas fait de double.",function(){
+					var buttons = createMessage("Tour " + joueurCourant.nbDouble,"red","Vous restez en prison, vous n'avez pas fait de double.",function(){
 						changeJoueur();},{});
+	               joueurCourant.actionApresDes(buttons,null);               
 					return;					
 				}				
 			}
@@ -1355,13 +1410,13 @@ function Case(pos,axe,color,title,prix){
 			}
 		}
         $('#des').text(des1 + " et " + des2 + ((des1 == des2)?" => Relancez":""));
-        movePionNb(des1+des2);
+        joueurCourant.joueDes(des1+des2);
         
         }
         
         var joueurs = new Array();
         var joueurCourant = null;
-        var colorsJoueurs = ["#ABCDEF","#098765","#BD9002"];
+        var colorsJoueurs = ["#383C89","#A6193E","#C58F01","#086B3D","#B9B29B"];
         function init(){
           var nb = prompt("Nombre de joueurs ?");
           for(var i = 0 ; i < nb ; i++){
@@ -1542,8 +1597,8 @@ function loadDetailFiche(fiche){
         <td style="vertical-align:top">
         Résultats des dés : <span id="des"></span><br/>
       <div id="idDebug">
-      case : <input type="text" size="3" id="nb"/><input type="button" onclick="movePion()" value="click"/><br/>
-      Goto : <input type="text" size="3" id="ide"/><input type="text" size="3" id="idp"/><input type="button" onclick="joueurCourant.pion.goto($('#ide').val(),$('#idp').val())" value="goto"/><br/>
+      case : <input type="text" size="3" id="nb"/><input type="button" onclick="joueurCourant.joueDes($('#nb').val())" value="click"/><br/>
+      Goto : <input type="text" size="3" id="ide"/><input type="text" size="3" id="idp"/><input type="button" onclick="joueurCourant.pion.goto($('#ide').val(),$('#idp').val(),doActions)" value="goto"/><br/>
       maison : <input type="button" value="Maison" onclick="buildMaison()"/><br/>
       maison constructible : <input type="button" value="Chercher" onclick="construireMaisons()"/><br/>
       </div>

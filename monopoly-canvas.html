@@ -730,7 +730,7 @@ body{margin:0}
     }
     
     function Chance(etat,pos){
-	  this.case = new Case(pos,etat,null,"Chance");
+	  this.case = new Case(pos,etat,null,"Chance",null,{src:"interrogation.png",width:50,height:60});
 	  Drawer.add(this.case);
       this.action = function(){
         var c = cartesChance[Math.round((Math.random()*1000))%(cartesChance.length)];
@@ -739,7 +739,7 @@ body{margin:0}
     }
     
     function CaisseDeCommunaute(etat,pos){
-    	this.case = new Case(pos,etat,null,"Caisse de communauté");
+    	this.case = new Case(pos,etat,null,"Caisse de communauté",null,{src:"banque.png",width:50,height:50});
     	Drawer.add(this.case);
        this.action = function(){
         var c = cartesCaisseCommunaute[Math.round((Math.random()*1000))%(cartesCaisseCommunaute.length)];
@@ -811,7 +811,7 @@ var Drawer = {
 		this.canvas.strokeStyle='#AA0000';
       this.canvasRT.strokeStyle='#AA0000';
 		this.setFrequency(2000,this.canvas);
-      this.setFrequency(20,this.canvasRT);
+      this.setFrequency(50,this.canvasRT);
 		return this;
 	}
 };
@@ -851,6 +851,14 @@ function writeText(text,x,y,rotate,canvas,size,specificWidth){
     canvas.restore();
 }
 
+function drawImage(canvas,img,x,y,width,height,rotate){
+   canvas.save();
+   canvas.translate(x,y);
+   canvas.rotate(rotate);
+   canvas.drawImage(img,0,0,width,height);
+   canvas.restore();
+}
+
 function Component(){
    this.draw = function(canvas){console.log("Not implemented");}
 }
@@ -863,7 +871,6 @@ function SimpleRect(x,y,height,width,color){
       canvas.fillStyle=color;
       canvas.fillRect(this.data.x,this.data.y,this.data.width,this.data.height);
    }
-
 }
 
 var largeur = 65;
@@ -931,7 +938,8 @@ function CaseSpeciale(axe,titre){
 
     
 /* Representation graphique d'une fiche */
-function Case(pos,axe,color,title,prix){
+/* Image contient src, height et width */
+function Case(pos,axe,color,title,prix,img){
    Component.apply(this);
    this.data = {};
    this.pos = pos;
@@ -962,6 +970,13 @@ function Case(pos,axe,color,title,prix){
 		     this.data.x = centre + (pos - 5.5) * largeur;
 		  }
 	   }
+      if(img!=null){
+         var image = new Image();
+         image.src=img.src;
+         image.height=img.height;
+         image.width = img.width;
+         this.data.image = image;
+      }
 	}
 	
    /* Recupere les coordonnees du centre de la case */
@@ -999,6 +1014,17 @@ function Case(pos,axe,color,title,prix){
              case 1 : writeText(prix,this.data.x + hauteur - dec,this.data.y+largeur,-Math.PI/2,canvas);break
              case 2 : writeText(prix,this.data.x,this.data.y + hauteur - dec,0,canvas);break;
              case 3 : writeText(prix,this.data.x +dec,this.data.y,Math.PI/2,canvas);break;
+          }
+      }
+      if(this.data.image != null){
+         var rotate = (Math.PI/2) * ((this.axe+2)%4);
+         var lng = (largeur - this.data.image.width)/2;
+         var dec = 10 + ((color!=null)?bordure:0) + ((title!=null)?20:0);
+          switch(axe){
+             case 0 : drawImage(canvas,this.data.image,this.data.x+largeur-lng,this.data.y+hauteur-dec,this.data.image.width,this.data.image.height,rotate);break
+             case 1 : drawImage(canvas,this.data.image,this.data.x+dec,this.data.y+largeur-lng,this.data.image.width,this.data.image.height,rotate);break
+             case 2 : drawImage(canvas,this.data.image,this.data.x+lng,this.data.y+dec,this.data.image.width,this.data.image.height,rotate);break;
+             case 3 : drawImage(canvas,this.data.image,this.data.x+hauteur-dec,this.data.y+lng,this.data.image.width,this.data.image.height,rotate);break;
           }
       }
    }

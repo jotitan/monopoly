@@ -1019,7 +1019,7 @@ function Case(pos,axe,color,title,prix,img){
       if(this.data.image != null){
          var rotate = (Math.PI/2) * ((this.axe+2)%4);
          var lng = (largeur - this.data.image.width)/2;
-         var dec = 10 + ((color!=null)?bordure:0) + ((title!=null)?20:0);
+         var dec = 10 + ((color!=null)?bordure:0) + ((title!=null)?10:0);
           switch(axe){
              case 0 : drawImage(canvas,this.data.image,this.data.x+largeur-lng,this.data.y+hauteur-dec,this.data.image.width,this.data.image.height,rotate);break
              case 1 : drawImage(canvas,this.data.image,this.data.x+dec,this.data.y+largeur-lng,this.data.image.width,this.data.image.height,rotate);break
@@ -1054,7 +1054,7 @@ function Case(pos,axe,color,title,prix,img){
 
 }
     
-    function Fiche(etat,pos,colors,nom,achat,loyer,loyer1,loyer2,loyer3,loyer4,loyerHotel,prixMaison){
+    function Fiche(etat,pos,colors,nom,achat,loyer,loyer1,loyer2,loyer3,loyer4,loyerHotel,prixMaison,img){
       this.statut = ETAT_LIBRE;
       this.joueurPossede = null;
       this.nom = nom;
@@ -1077,10 +1077,9 @@ function Case(pos,axe,color,title,prix,img){
       this.constructible = true;
       this.etat = etat;
       this.pos = pos;
-      
       var current = this;
       
-      this.case = new Case(pos,etat,this.color,this.nom,"F. " + achat);
+      this.case = new Case(pos,etat,this.color,this.nom,"F. " + achat,img);
       Drawer.add(this.case);
       
       this.vendu = function(joueur){
@@ -1174,7 +1173,7 @@ function Case(pos,axe,color,title,prix,img){
     }
     
     function FicheGare(etat,pos,color,nom,achat,loyer1,loyer2,loyer3,loyer4){
-      Fiche.call(this,etat,pos,color,nom,achat,loyer1,loyer2,loyer3,loyer4);
+      Fiche.call(this,etat,pos,color,nom,achat,loyer1,loyer2,loyer3,loyer4,null,null,null,{src:"train.png",width:40,height:50});
       //this.fiche = $('#ficheCompagnie');
       this.type = "gare";
       this.constructible = false;

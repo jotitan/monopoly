@@ -86,7 +86,7 @@ body{margin:0}
     fiches["1-5"] = new FicheGare(1,5,["#000000","#ABABAB"],"Gare Saint-Lazarre",20000,20000,2500,5000,10000,20000);
     fiches["1-6"] = new Chance(1,6);
     fiches["1-7"] = new Fiche(1,7,["#132450","#808EB0"],"Avenue des Champs Elysées",35000,3500,17500,50000,110000,130000,150000,20000);
-    fiches["1-8"] = new CarteSpeciale("Taxe de luxe",10000,1,8);
+    fiches["1-8"] = new CarteSpeciale("Taxe de luxe",10000,1,8,{src:"bijou.png",width:40,height:50});
     fiches["1-9"] = new Fiche(1,9,["#132450","#808EB0"],"Rue de la Paix",40000,5000,20000,60000,140000,170000,200000,20000);
     
     cartesChance = [new CarteChance("Payer pour frais de scolarité F 15.000",new PayerCarte(15000)),
@@ -692,8 +692,8 @@ body{margin:0}
       }
     }
     
-    function CarteSpeciale(titre,montant,etat,pos){
-      this.case = new Case(pos,etat,null,titre,"F. " + montant);
+    function CarteSpeciale(titre,montant,etat,pos,img){
+      this.case = new Case(pos,etat,null,titre,"F. " + montant,img);
 	   Drawer.add(this.case);
       this.action = function(){
         return createMessage(titre,"lightblue","Vous devez payer la somme de " + montant + " Frs",function(param){
@@ -895,6 +895,51 @@ function PionJoueur(color,x,y){
    }
 }
 
+function Des(x,y,width,value){
+   this.value = value;
+   this.coin = 15;
+   this.width = width-2*this.coin;
+   this.setValue = function(value){
+      this.value = value;
+   }
+   this.draw = function(canvas){
+      // Structure du des
+      canvas.strokeStyle="#000000";
+      canvas.moveTo(x + this.coin,y);
+      canvas.lineTo(x + this.coin + this.width,y);
+      canvas.bezierCurveTo(x+ this.coin*2 + this.width,y,x+ this.coin*2 + this.width,y+this.coin,x+ this.coin*2 + this.width,y+this.coin);
+      canvas.lineTo(x+ this.coin*2 + this.width,y+ this.coin + this.width);
+      canvas.bezierCurveTo(x+ this.coin*2 + this.width,y+ this.coin*2 + this.width,x+this.width+ this.coin,y+ this.coin*2 + this.width,x+this.width+ this.coin,y+ this.coin*2 + this.width);
+      canvas.lineTo(x+ this.coin,y+ this.coin*2 + this.width);
+      canvas.bezierCurveTo(x,y+ this.coin*2 + this.width,x,y+ this.coin + this.width,x,y+ this.coin + this.width);
+      canvas.lineTo(x,y+this.coin);
+      canvas.bezierCurveTo(x,y,x+this.coin,y,x+this.coin,y);
+      canvas.stroke();
+      if(this.value%2 == 1){
+         this.drawPoint(canvas,x+width/2,y+width/2,width/5 );
+      }
+      if(this.value !=1){
+         this.drawPoint(canvas,x+width*0.25,y+width*0.75,width/5 );
+         this.drawPoint(canvas,x+width*0.75,y+width*0.25,width/5 );
+      }
+      if(this.value >=4){
+         this.drawPoint(canvas,x+width*0.75,y+width*0.75,width/5 );
+         this.drawPoint(canvas,x+width*0.25,y+width*0.25,width/5 );
+      }
+      if(this.value == 6){
+         this.drawPoint(canvas,x+width*0.75,y+width*0.5,width/5 );
+         this.drawPoint(canvas,x+width*0.25,y+width*0.5,width/5 );
+      }
+
+   }
+   // Dessine un point
+   this.drawPoint = function(canvas,x,y,width){
+      canvas.beginPath();
+      canvas.arc(x,y,width/2,0,2*Math.PI);
+      canvas.fill();
+   }
+}
+
 function CaseSpeciale(axe,titre){
    Case.call(this,0,axe,null,titre);
    this.titre = titre;
@@ -1019,7 +1064,7 @@ function Case(pos,axe,color,title,prix,img){
       if(this.data.image != null){
          var rotate = (Math.PI/2) * ((this.axe+2)%4);
          var lng = (largeur - this.data.image.width)/2;
-         var dec = 10 + ((color!=null)?bordure:0) + ((title!=null)?10:0);
+         var dec = 10 + ((color!=null)?bordure:10) + ((title!=null)?10:0);
           switch(axe){
              case 0 : drawImage(canvas,this.data.image,this.data.x+largeur-lng,this.data.y+hauteur-dec,this.data.image.width,this.data.image.height,rotate);break
              case 1 : drawImage(canvas,this.data.image,this.data.x+dec,this.data.y+largeur-lng,this.data.image.width,this.data.image.height,rotate);break

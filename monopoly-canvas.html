@@ -18,6 +18,10 @@
           font-weight:bold;
         }
         
+        .joueurCourant > div{
+        	padding-left:0px;
+        }
+        
         .nbMaisons{
           text-decoration:underline;
           background-color:salmon;
@@ -905,6 +909,7 @@ function Des(x,y,width,value){
    this.draw = function(canvas){
       // Structure du des
       canvas.strokeStyle="#000000";
+      canvas.fillStyle="#000000";
       canvas.moveTo(x + this.coin,y);
       canvas.lineTo(x + this.coin + this.width,y);
       canvas.bezierCurveTo(x+ this.coin*2 + this.width,y,x+ this.coin*2 + this.width,y+this.coin,x+ this.coin*2 + this.width,y+this.coin);
@@ -915,6 +920,7 @@ function Des(x,y,width,value){
       canvas.lineTo(x,y+this.coin);
       canvas.bezierCurveTo(x,y,x+this.coin,y,x+this.coin,y);
       canvas.stroke();
+      if(this.value == null){return;}
       if(this.value%2 == 1){
          this.drawPoint(canvas,x+width/2,y+width/2,width/5 );
       }
@@ -1440,8 +1446,12 @@ function Case(pos,axe,color,title,prix,img){
       }
       
       function lancerDes(){
+		$('#informationsCentrale').html();
         des1 = rand();
         des2 = rand();
+        des1Cube.setValue(des1);
+		des2Cube.setValue(des2);
+										
 		if(joueurCourant.enPrison == true){
 			if(des1 == des2){
 				createMessage("Libéré de prison","lightblue","Vous êtes libérés de prison grâce à un double",function(){},{});
@@ -1470,7 +1480,7 @@ function Case(pos,axe,color,title,prix,img){
 			if(des1 == des2){
 				if(nbDouble >= 2){
 					// prison
-					$('#des').text(des1 + " et " + des2 + " => PRISON");
+					$('#informationsCentrale').text("3eme double, allez en PRISON");
 					joueurCourant.goPrison();
 					return;
 				}
@@ -1479,14 +1489,16 @@ function Case(pos,axe,color,title,prix,img){
 				}
 			}
 		}
-        $('#des').text(des1 + " et " + des2 + ((des1 == des2)?" => Relancez":""));
         joueurCourant.joueDes(des1+des2);
+if(des1 == des2){$('#informationsCentrale').html("Relancez");}        
         
         }
         
         var joueurs = new Array();
         var joueurCourant = null;
         var colorsJoueurs = ["#383C89","#A6193E","#C58F01","#086B3D","#B9B29B"];
+        var des1Cube;
+        var des2Cube;
         function init(){
           var nb = prompt("Nombre de joueurs ?");
           for(var i = 0 ; i < nb ; i++){
@@ -1519,6 +1531,15 @@ function Case(pos,axe,color,title,prix,img){
          initDetailFiche();
          initFiches();
          initPlateau();
+         initDes();
+        }
+        
+        // Initialise les des
+        function initDes(){
+        	des1Cube = new Des(200,200,50);
+        	des2Cube = new Des(260,200,50);       
+        	Drawer.addRealTime(des1Cube); 	
+        	Drawer.addRealTime(des2Cube);        	
         }
         
         // Initialise le plateau
@@ -1644,7 +1665,7 @@ function loadDetailFiche(fiche){
         
         function selectJoueur(joueur){
         $('#informations > div > div').removeClass('joueurCourant');
-        joueur.div.find('div').addClass('joueurCourant');
+        joueur.div.find('div:first').addClass('joueurCourant');
         if(!joueur.enPrison){
             joueur.nbDouble = 0;
         }
@@ -1659,8 +1680,8 @@ function loadDetailFiche(fiche){
         
         <table><tr><td>
         <div style="width:1000px;height:1000px" id="plateau">
-        <canvas id="canvas" width="870" height="870" style="border:solid 1px black"></canvas>
-        <canvas id="canvas_rt" width="870" height="870" style="border:solid 1px black;top:0px;left:0px;position:absolute"></canvas>
+        <canvas id="canvas" width="870" height="870"></canvas>
+        <canvas id="canvas_rt" width="870" height="870" style="top:0px;left:0px;position:absolute"></canvas>
         
         </div>
         </td>
@@ -1677,7 +1698,7 @@ function loadDetailFiche(fiche){
     
       </td></tr></table>
     
-      <div id="fiche" style="background-color:white">
+      <div id="fiche" style="background-color:white;font-size:12px">
         <table style="width:250px;">
           <tr><td></td><td>€</td></tr>
           <tr><td>ACHAT</td><td id="achat" name="achat"></td></tr>
@@ -1689,7 +1710,7 @@ function loadDetailFiche(fiche){
           <tr><td> - Hotel</td><td id="loyer5" name="loyer5"></td></tr>
         </table>
         <hr/>
-        <div style="font-size:12px;" class="infos-group">
+        <div class="infos-group">
       Si un joueur possède <span style="font-weight:bold">TOUS</span> les terrains d'un Groupe de Couleur quelconque,
       le loyer des terrains nus de ce groupe est doublé.
         </div>
@@ -1709,9 +1730,7 @@ function loadDetailFiche(fiche){
         Valeur hypotécaire : Frs 7.500
       </div>
       
-      <div style="position:absolute;top:370px;left:250px;padding:5px;background-color:lightgreen;width:200px;height:80px;" class="ui-corner-all" id="informationsCentrale">
-        
-      </div>
+      <div style="position:absolute;top:210px;left:320px;padding:5px;width:200px;height:80px;" class="ui-corner-all" id="informationsCentrale"></div>
       
       
       <div id="achatMaisons" style="background-color:white;"><div>

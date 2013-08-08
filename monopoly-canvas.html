@@ -1036,7 +1036,11 @@ function Case(pos,axe,color,title,prix,img){
    this.pos = pos;
    this.axe = axe;
    this.nbMaison = 0;   // Maisons a afficher sur la propriete
+   this.imgMaison = new Image();
+   this.imgHotel = new Image();   
    this.init = function(){
+   		this.imgMaison.src="maison.png";
+   		this.imgHotel.src="hotel.png";   		
 	   if(axe%2 == 1){ // E et 0
 		  // height et width inverse
 		  this.data.height = largeur;
@@ -1120,17 +1124,27 @@ function Case(pos,axe,color,title,prix,img){
           }
       }
       // Cas des maisons
-      if(this.nbMaison > 0){
+      if(this.nbMaison <=4){
          // On ecrit de droite a gauche dans le cartouche
          canvas.fillStyle='#00FF00';
          for(var i = 0 ; i < this.nbMaison ; i++){
             switch(axe){
-             case 0 : canvas.fillRect(this.data.x+largeur-15*(i+1),this.data.y+hauteur-15,10,10);break;
-             case 1 : canvas.fillRect(this.data.x+5,this.data.y+largeur-15-15*i,10,10);break
-             case 2 : canvas.fillRect(this.data.x+5+15*i,this.data.y+5,10,10);break;
-             case 3 : canvas.fillRect(this.data.x+hauteur-15,this.data.y+5+15*i,10,10);break
+             case 0 : drawImage(canvas,this.imgMaison,this.data.x+largeur-15*(i)-3,this.data.y+hauteur-2,15,15,-Math.PI);break
+             case 1 : drawImage(canvas,this.imgMaison,this.data.x+3,this.data.y+largeur-2-15*i,15,15,-Math.PI/2);break
+             case 2 : drawImage(canvas,this.imgMaison,this.data.x+3+15*i,this.data.y+2,15,15,0);break;
+             case 3 : drawImage(canvas,this.imgMaison,this.data.x+hauteur-3,this.data.y+2+15*i,15,15,Math.PI/2);break;
           }
          }
+      }
+      else{
+      	// Cas de l'hotel, 5 maisons
+      	var pad = (largeur-18)/2;
+        switch(axe){
+         case 0 : drawImage(canvas,this.imgHotel,this.data.x+largeur-pad,this.data.y+hauteur,18,18,-Math.PI);break
+         case 1 : drawImage(canvas,this.imgHotel,this.data.x,this.data.y+largeur-pad,18,18,-Math.PI/2);break
+         case 2 : drawImage(canvas,this.imgHotel,this.data.x+pad,this.data.y,18,18,0);break;
+         case 3 : drawImage(canvas,this.imgHotel,this.data.x+hauteur,this.data.y+pad,18,18,Math.PI/2);break;
+          }
       }
    }
    // Nombre de joueur sur la case
@@ -1415,59 +1429,12 @@ function Case(pos,axe,color,title,prix,img){
           $('#achatMaisons').find('select[id^=id_input_]').each(function(){
 			var id = this.id.replace("id_input_","");
 			// Au dessus du nombre, achat, en dessous, on vend la moitié
-			if($(this).val() > fiches[id].nbMaison){
-				achat($(this).val() - fiches[id].nbMaison,id);
-			}
-			if($(this).val() < fiches[id].nbMaison){
-				vente(fiches[id].nbMaison - $(this).val(),id);
-			}
-          });
-          setEtatMonnaie(currentEtat,currentPosition,currentArgent);
+			fiches[id].setNbMaison($(this).val());
+		  });
+		  joueurCourant.setArgent(currentArgent);
         }
       });
       $('#achatMaisons').dialog('open');
-    }
-    
-    function setEtatMonnaie(etat,position,argent){
-      if(VERROU == true){
-        setTimeout(function(){setEtatMonnaie(etat,position,argent);},1000);
-        return;
-      }
-      joueurCourant.pion.goto(etat,position,function(){});
-      joueurCourant.setArgent(argent);
-    }
-    
-    // Ajoute des maisons sur une propriété. Il suffit d'augmenter le nombre de maison, le canvas les redessine tout seul dans le header
-    function achat(nb,id){
-       if(VERROU == true){
-        setTimeout(function(){achat(nb,id);},1000);
-        return;
-       }
-       VERROU = true;
-       var fiche = fiches[id];
-       //TODO
-       movePionNbCall(joueurCourant.pion.getNbDeplacement(fiche.etat,fiche.pos),function(){
-          for(var i = 0 ; i < nb ; i++){buildMaison();}
-          VERROU = false;
-       },100);
-    }
-    
-    function vente(nb,id){
-		if(VERROU == true){
-			setTimeout(function(){vente(nb,id);},1000);
-			return;
-		}
-		VERROU = true;
-		var fiche = fiches[id];
-		//TODO
-		movePionNbCall(joueurCourant.pion.getNbDeplacement(fiche.etat,fiche.pos),function(){
-			var length = fiche.maisons.length;
-			for(var i = length-1 ; i >= length - nb ; i--){
-				fiche.maisons[i].remove();
-				fiche.maisons.pop();
-			}
-          VERROU = false;
-       },100);
     }
     
     // Cree le comportement lorsque le joueur arrive sur la carte
@@ -1497,11 +1464,7 @@ function Case(pos,axe,color,title,prix,img){
        changeJoueur();
    }
     
-    $(document).ready(function(){
-      
-      
-     });
-    
+     
      function rand(){
         return Math.round((Math.random()*1000))%6+1;
       }

@@ -467,7 +467,7 @@ body{margin:0}
       
       this.joueDes = function(sommeDes){
       		var nextCase = this.pion.deplaceValeursDes(sommeDes);
-      		this.pion.goto(nextCase.axe,nextCase.pos,doActions);
+            this.pion.goto(nextCase.axe,nextCase.pos,doActions);
       }
       
       // Fonction a ne pas implementer avec un vrai joueur
@@ -854,6 +854,46 @@ function writeText(text,x,y,rotate,canvas,size,specificWidth){
     canvas.font="6pt Times news roman";
     canvas.restore();
 }
+/* Fournit des methodes de dessins */
+var DrawerHelper = {
+   drawImage:function(canvas,img,x,y,width,height,rotate){
+      canvas.save();
+      canvas.translate(x,y);
+      canvas.rotate(rotate);
+      canvas.drawImage(img,0,0,width,height);
+      canvas.restore();
+   },
+   writeText:function(text,x,y,rotate,canvas,size,specificWidth){
+      var width = specificWidth ||largeur;
+      canvas.font=((size!=null)?size:"7") + "pt Times news roman";
+      // Mesure la longueur du mot
+      var mots = [text];
+      if(canvas.measureText(text).width > width-5){
+         // On split les mots intelligement (on regroupe)
+         var splitMots = text.split(" ");
+         var pos = 0;
+         for(var i = 0 ; i < splitMots.length ; i++){
+            if(pos > 0 && (canvas.measureText(mots[pos-1]).width + canvas.measureText(splitMots[i]).width) < width - 5){
+               // on concatene
+               mots[pos-1] = mots[pos-1] + " " + splitMots[i];
+            }
+            else{
+               mots[pos++] = splitMots[i];
+            }
+         }
+      }
+    canvas.save();
+    canvas.translate(x,y);
+    canvas.rotate(rotate);
+    var pas = 12;
+    for(var i = 0 ; i < mots.length ; i++){
+      var lng = (width - canvas.measureText(mots[i]).width)/2;
+      canvas.strokeText(mots[i],lng,i*pas);
+    }
+    canvas.font="6pt Times news roman";
+    canvas.restore();
+   }
+}
 
 function drawImage(canvas,img,x,y,width,height,rotate){
    canvas.save();
@@ -995,6 +1035,7 @@ function Case(pos,axe,color,title,prix,img){
    this.data = {};
    this.pos = pos;
    this.axe = axe;
+   this.nbMaison = 0;   // Maisons a afficher sur la propriete
    this.init = function(){
 	   if(axe%2 == 1){ // E et 0
 		  // height et width inverse
@@ -1078,6 +1119,19 @@ function Case(pos,axe,color,title,prix,img){
              case 3 : drawImage(canvas,this.data.image,this.data.x+hauteur-dec,this.data.y+lng,this.data.image.width,this.data.image.height,rotate);break;
           }
       }
+      // Cas des maisons
+      if(this.nbMaison > 0){
+         // On ecrit de droite a gauche dans le cartouche
+         canvas.fillStyle='#00FF00';
+         for(var i = 0 ; i < this.nbMaison ; i++){
+            switch(axe){
+             case 0 : canvas.fillRect(this.data.x+largeur-15*(i+1),this.data.y+hauteur-15,10,10);break;
+             case 1 : canvas.fillRect(this.data.x+5,this.data.y+largeur-15-15*i,10,10);break
+             case 2 : canvas.fillRect(this.data.x+5+15*i,this.data.y+5,10,10);break;
+             case 3 : canvas.fillRect(this.data.x+hauteur-15,this.data.y+5+15*i,10,10);break
+          }
+         }
+      }
    }
    // Nombre de joueur sur la case
    this.getNbJoueurs = function(){
@@ -1122,8 +1176,8 @@ function Case(pos,axe,color,title,prix,img){
       this.loyerHotel = loyerHotel;
       this.prixMaison = prixMaison;
       this.fiche = $('#fiche');
-      this.nbMaison = 0;
-      this.hotel = false;
+      this.nbMaison = 0;   // Nombre de maison construite sur le terrain par le proprietaire
+      this.hotel = false;  // Si un hotel est present
       this.maisons = new Array();
       this.constructible = true;
       this.etat = etat;
@@ -1141,6 +1195,12 @@ function Case(pos,axe,color,title,prix,img){
         return this.statut == ETAT_LIBRE;
       }
       
+      /* Modifie le nombre de maison sur le terrain */
+      this.setNbMaison = function(nb){
+         this.nbMaison = nb;
+         this.case.nbMaison = nb;
+      }
+
       this.action = function(){
         this.fiche.dialog('option','title',nom);
         // si on est chez soit, on affiche pas
@@ -1377,6 +1437,7 @@ function Case(pos,axe,color,title,prix,img){
       joueurCourant.setArgent(argent);
     }
     
+    // Ajoute des maisons sur une propriété. Il suffit d'augmenter le nombre de maison, le canvas les redessine tout seul dans le header
     function achat(nb,id){
        if(VERROU == true){
         setTimeout(function(){achat(nb,id);},1000);
@@ -1688,7 +1749,7 @@ function loadDetailFiche(fiche){
         <td style="vertical-align:top">
         Résultats des dés : <span id="des"></span><br/>
       <div id="idDebug">
-      case : <input type="text" size="3" id="nb"/><input type="button" onclick="joueurCourant.joueDes($('#nb').val())" value="click"/><br/>
+      case : <input type="text" size="3" id="nb"/><input type="button" onclick="joueurCourant.joueDes(parseInt($('#nb').val()))" value="click"/><br/>
       Goto : <input type="text" size="3" id="ide"/><input type="text" size="3" id="idp"/><input type="button" onclick="joueurCourant.pion.goto($('#ide').val(),$('#idp').val(),doActions)" value="goto"/><br/>
       maison : <input type="button" value="Maison" onclick="buildMaison()"/><br/>
       maison constructible : <input type="button" value="Chercher" onclick="construireMaisons()"/><br/>

@@ -593,7 +593,29 @@ body{margin:0}
       }
 	 
       this.goDirectToCell = function(etat,pos){
-
+		// On calcule la fonction affine
+		var p1 = fiches[this.etat + "-" + this.position].case.getCenter()
+		var p2 = fiches[etat + "-" + pos].case.getCenter()
+		var pente = (p1.x == p2.x)?0:(p1.y - p2.y)/(p1.x - p2.x);
+		var coef = p2.y - pente*p2.x;
+		var x = p1.x;
+		var sens = (p1.x > p2.x)?-1:1;
+		console.log(x + " " + pente + " " + coef);
+		// On fait varier x et on calcule y. Le pas est 30
+		var _self = this;
+		var interval = setInterval(function(){
+		
+			if((sens < 0 && x<=p2.x) || (sens > 0 && x >=p2.x)){
+				_self.etat = etat;
+				_self.position = pos;
+				clearInterval(interval);
+				return;
+			}
+			_self.pion.x = x;
+			_self.pion.y = pente * x + coef;
+			x+=30*((sens < 0)?-1:1);
+		},30);
+		
       }
 
       // Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo

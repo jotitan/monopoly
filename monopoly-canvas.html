@@ -171,27 +171,7 @@ body{margin:0}
       fiche.nbMaison++;
       
     }
-          
-     function movePionNbCall(nb,call,duration){
-      
-      /* On se place dans le chemin */
-       joueurCourant.pion.decaller(lignes[(joueurCourant.pion.etat + 2)%4].decallage);
-      
-      if(nb == 0){
-        call();
-      }
-      else{
-        for(var i = 0 ; i < nb ; i++){
-          move(joueurCourant.pion,(i == (nb-1))?call:function(){},duration);
-        }
-        if(joueurCourant.pion.position == 0 && joueurCourant.pion.etat == 2){
-          joueurCourant.gagner(20000);
-        }
-       }
-      /* On se remet sur le côté */
-      joueurCourant.pion.decaller(lignes[joueurCourant.pion.etat].decallage);
-    }
-
+     
     function getNextPos(etat,position){
 		position++;
 		if(position == 10){
@@ -199,18 +179,6 @@ body{margin:0}
 			position = 0;
 		}
 		return {"position":position,"etat":etat};
-    }
-    
-    function move(pion,call,duration){
-      pion.decallerCall(lignes[joueurCourant.pion.etat].move,call,duration);
-      
-      var pos = getNextPos(pion.etat,pion.position);
-      pion.position = pos.position;
-      pion.etat = pos.etat;
-      
-      if(pion.position == 0 && pion.etat == 2){
-        joueurCourant.gagner(20000);
-      }
     }
     
     var ETAT_LIBRE = 0;
@@ -407,7 +375,7 @@ body{margin:0}
 		// Fonction appelee lorsque le joueur a la main
 		this.joue = function(){
 			// on lance les dés
-			lancerDes();
+			lancerAnimerDes();
 		}
 		var current = this;
 		
@@ -593,27 +561,14 @@ body{margin:0}
       this.pion = new PionJoueur(color,fiches["2-0"].case.getCenter().x,fiches["2-0"].case.getCenter().y);
       Drawer.addRealTime(this.pion);
 
-      this.decaller = function(decaller){
-        pion.animate(decaller);
-      }
-      
-      this.decallerCall = function(move,call,duration){
-        pion.animate(move,(duration!=null)?duration:400,call);
-      }
-      
+      // Ca directement en prison, sans passer par la case depart, en coupant
       this.goPrison = function(){
         this.goto(3,0,function(){});
       }
       
-      this.getNbDeplacement = function(etat,pos){
-        var l = parseInt(((etat - this.etat + 4)%4)*10);
-        l+=parseInt(pos - this.position);
-        return (l+40)%40;
-      }
-      
       this.deplaceValeursDes = function(des){
       	var pos = this.position +des;
-		var axe = this.etat;
+		    var axe = this.etat;
       	while(pos >= 10){
       		pos-=10;
       		axe=(axe+1)%4;
@@ -637,6 +592,10 @@ body{margin:0}
       	}
       }
 	 
+      this.goDirectToCell = function(etat,pos){
+
+      }
+
       // Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
       this.gotoCell = function(etatCible,posCible,callback){
       	 // Cas de la fin
@@ -1187,6 +1146,7 @@ function Case(pos,axe,color,title,prix,img){
       this.loyer[2] = loyer2;
       this.loyer[3] = loyer3;
       this.loyer[4] = loyer4;
+      this.loyer[5] = loyerHotel;
       this.loyerHotel = loyerHotel;
       this.prixMaison = prixMaison;
       this.fiche = $('#fiche');
@@ -1448,6 +1408,7 @@ function Case(pos,axe,color,title,prix,img){
     
     
     function changeJoueur(){
+    $('#idLancerDes').removeAttr('disabled');
       if(des1!=des2){
         joueurCourant = joueurs[(joueurCourant.numero+1)%(joueurs.length)];
         selectJoueurCourant();
@@ -1469,13 +1430,29 @@ function Case(pos,axe,color,title,prix,img){
         return Math.round((Math.random()*1000))%6+1;
       }
       
+      /* Lance et anime les des */
+      function lancerAnimerDes(){
+         // Fait tourner les des 8 fois
+         // On desactive le bouton pour eviter double click
+         $('#idLancerDes').attr('disabled','disabled');
+         var nb = 8;
+         var interval = setInterval(function(){
+            if(nb--<0){clearInterval(interval);return lancerDes();}
+            des1Cube.setValue(rand());
+		      des2Cube.setValue(rand());
+         },100);
+      }
+
       function lancerDes(){
-		$('#informationsCentrale').html();
+		$('#informationsCentrale').html("");
         des1 = rand();
         des2 = rand();
+        console.log(des1 + " & " + des2);
         des1Cube.setValue(des1);
-		des2Cube.setValue(des2);
-										
+		 des2Cube.setValue(des2);
+
+
+         							
 		if(joueurCourant.enPrison == true){
 			if(des1 == des2){
 				createMessage("Libéré de prison","lightblue","Vous êtes libérés de prison grâce à un double",function(){},{});
@@ -1506,6 +1483,7 @@ function Case(pos,axe,color,title,prix,img){
 					// prison
 					$('#informationsCentrale').text("3eme double, allez en PRISON");
 					joueurCourant.goPrison();
+               changeJoueur();
 					return;
 				}
 				else{
@@ -1514,7 +1492,9 @@ function Case(pos,axe,color,title,prix,img){
 			}
 		}
         joueurCourant.joueDes(des1+des2);
-if(des1 == des2){$('#informationsCentrale').html("Relancez");}        
+         if(des1 == des2){
+            $('#informationsCentrale').html("Relancez");
+         }
         
         }
         
@@ -1710,14 +1690,13 @@ function loadDetailFiche(fiche){
         </div>
         </td>
         <td style="vertical-align:top">
-        Résultats des dés : <span id="des"></span><br/>
+       
       <div id="idDebug">
       case : <input type="text" size="3" id="nb"/><input type="button" onclick="joueurCourant.joueDes(parseInt($('#nb').val()))" value="click"/><br/>
       Goto : <input type="text" size="3" id="ide"/><input type="text" size="3" id="idp"/><input type="button" onclick="joueurCourant.pion.goto($('#ide').val(),$('#idp').val(),doActions)" value="goto"/><br/>
       maison : <input type="button" value="Maison" onclick="buildMaison()"/><br/>
       maison constructible : <input type="button" value="Chercher" onclick="construireMaisons()"/><br/>
       </div>
-      <input type="button" onclick="lancerDes()" value="Lancer les dés"/>
       <div id="informations"></div>
     
       </td></tr></table>
@@ -1755,7 +1734,7 @@ function loadDetailFiche(fiche){
       </div>
       
       <div style="position:absolute;top:210px;left:320px;padding:5px;width:200px;height:80px;" class="ui-corner-all" id="informationsCentrale"></div>
-      
+      <button style="position:absolute;top:260px;left:220px;" onclick="lancerAnimerDes()" id="idLancerDes">Lancez</button>
       
       <div id="achatMaisons" style="background-color:white;"><div>
       <div id="message" style="display:none;background-color:white"></div>

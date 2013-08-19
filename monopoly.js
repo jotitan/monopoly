@@ -155,11 +155,24 @@
       this.risque = risque;
       this.probaDes = [0, 2.77, 5.55, 8.33, 11.1, 13.8, 16.7, 13.8, 11.1, 8.33, 5.55, 2.77];
 
+	  /* Indique le risque global a depenser cette somme pour le joueur */
+	  /* Se base sur 3 informations : 
+	  1 : le montant a depenser par rapport a l'argent disponible.
+	  2 : le risque de tomber prochainement sur un loyer eleve 
+	  3 : le cout du plus fort loyer du plateau 
+		  Plus le risque est grand, plus il est important
+	  */	  
+	  this.getRisqueTotal = function(joueur,cout){
+	  	var risque1 = this.calculMargeMontant(joueur,cout);
+	  	var risque2 = this.calculMargeMontant(joueur,cout);	// = 0 si aucun risque par la suite
+	  	
+	  	return risque1 * (risque2/100);
+	  }
+
+	  /* Calcule la marge d'achat par rapport au montant et le pondere par rapport a la prise de risque */
       this.calculMargeMontant = function (joueur, cout) {
-          if (cout / joueur.montant < this.risque) {
-              return 1;
-          }
-          return false;
+      	  var marge = cout / joueur.montant;	// inferieur a 1
+		  return marge / this.risque;
       }
 
       /* Se base sur les prochaines a risque qui arrive, renvoi un pourcentage */
@@ -181,10 +194,11 @@
           return stats;
       }
 
-      // calcul le loyer le plus fort du joueur (et n'appartenant pas au joueur)
+      // calcul le loyer le plus fort du joueur (et n'appartenant pas au joueur). Permet de connaitre la treso max que le joueur peut posseder sur lui
       this.plusFortLoyer = function (joueur) {
           var max = 0;
-          for (var f in fiches) {
+          for (var id in fiches) {
+          	var f = fiches[id];
               if (f.getLoyer != null && f.joueurPossede != null && !joueur.equals(f.joueurPossede) && f.getLoyer() > max) {
                   max = f.getLoyer();
               }
@@ -194,7 +208,7 @@
   }
 
   function CheapComportement() {
-      Comportement.call(this, 0.2);
+      Comportement.call(this, 0.25);
   }
 
   function MediumComportement() {
@@ -260,7 +274,7 @@
           }
           if (i1 == false && i2 == 2) {
               return this.agressif;
-          } // agressif
+          }
           if (i1 == true && i2 == 3) {
               return 4;
           }
@@ -282,7 +296,8 @@
 		  0 : toutes les proprietes sont libres
 		  1 : s'il reste des libres apres celle ci
 		  2 : si toutes appartiennent a une même personne sauf celle-ci
-		  3 : autres */
+		  3 : si toutes appartiennent sauf celle-ci
+		  4 : autres */
       // Prendre en compte si j'ai la famille, que c'est la derniere carte. Il faut passer les autres options de risques, prix. Il faut absolument acheter
       this.statutGroup = function (propriete, joueur) {
           var nbTotal = 0;
@@ -290,33 +305,37 @@
           var dernierJoueur = null;
           var nbEquals = 0;
           var nbPossede = 0;
-          $(fiches).each(function () {
-              if (this.color == propriete.color) {
+		  for(var id in fiches){
+		  	var fiche = fiches[id];
+		  	if (fiche.color!=null && fiche.color == propriete.color) {
                   nbTotal++;
-                  if (this.etat == ETAT_LIBRE) {
+                  if (fiche.statut == ETAT_LIBRE) {
                       nbLibre++;
                   } else {
-                      if (this.joueurPossede.equals(dernierJoueur)) {
-                          nbEquals++;
-                      }
-                      if (this.joueurPossede.equals(joueur)) {
+                      if (fiche.joueurPossede.equals(joueur)) {
                           nbPossede++;
                       }
-                      dernierJoueur = this.joueurPossede;
+                      else{
+		                  if (dernierJoueur == null || fiche.joueurPossede.equals(dernierJoueur)) {
+		                      nbEquals++;
+		                  }
+		              }                      
+                      dernierJoueur = fiche.joueurPossede;
                   }
               }
-          });
+		  }          
           if (nbLibre == nbTotal) {
               return 0;
           }
-          if (nbLibre > 0) {
-              return 1;
-          }
+         
           if (nbLibre == 1 && nbEquals == nbTotal - 1) {
               return 2;
           }
           if (nbLibre == 1 && nbPossede == nbTotal - 1) {
               return 3;
+          }
+      	  if (nbLibre > 0) {
+              return 1;
           }
           return 4;
       }
@@ -354,6 +373,7 @@
 
   function JoueurOrdinateur(numero, nom) {
       Joueur.call(this, numero, nom);
+      this.initialName = nom;
       /* Agressivite */
       this.agressivite = new MediumComportement();
       /* Stratégie : définit le comportement pour l'achat des maisons */
@@ -369,6 +389,14 @@
 		case 1 : this.strategie = new MediumStrategie();break;
 		case 2 : this.strategie = new HardStrategie();break;
 	   }
+	   this.updateName(true);
+	 }
+	 
+	 this.updateName = function(noUpdate){
+	   this.nom= this.initialName + " " + this.strategie.name;
+	   if(noUpdate!=true){
+	   	$('.joueur_name','#joueur' + this.numero).text(this.nom);
+	   }
 	 }
 	 
       // Fonction appelee lorsque le joueur a la main
@@ -379,18 +407,27 @@
           lancerAnimerDes();
       }
 	 /* Reevalue la strategie. Se base sur plusieurs parametres :
-	 * Si peu de propriete ont ete achetees (<3) alors que 60% des terrains qui l'interessent ont ete vendu, on reevalue
+	 * Si peu de propriete ont ete achetees (<3) alors que 60% des terrains qui l'interessent ont ete vendu et qu'aucune famille n'est completable, on reevalue.
 	 * 
 	 *
 	 *
 	 */
 	 this.changeStrategie = function(){
 	   var stats = this.strategie.getStatsProprietes();
-	   if (stats.color.pourcent<40 && this.countInterestProperties()<=2) {
-		// On change de strategie. Une nouvelle strategie doit posseder au moins 50% de ces terrains
-		for (var idStrategie in strategies) {
-		  console.log(idStrategie);
+	   if (stats.color.pourcent<40 && this.countInterestProperties()<=2 && this.isFamilyFree()) {
+		// On change de strategie. Une nouvelle strategie doit posseder au moins 60% de ces terrains de libre
+		for (var i in strategies) {
+			var s = new strategies[i]();
+			if(s.name!=this.strategie.name){
+				var strategieStats = s.getStatsProprietes();
+				if(strategieStats.color.pourcent > 60){
+					// Nouvelle strategie
+					this.strategie = s;
+					return;
+				}
+			}
 		}
+		// On garde la même si aucune n'est interessante
 	   }
 	 }
       var current = this;
@@ -406,6 +443,33 @@
 	   return count;
 	 }
 	 
+	 /* Analyse si une famille est en partie possedee et peut etre achetee (autre terrain libre) */
+	 this.isFamilyFree = function(){
+		// On compte par couleur
+		var family = array();
+	 	for (var i = 0 ; i < this.maisons.length ; i++) {
+			if(family[this.maisons[i].color] == null){
+				family[this.maisons[i].color] = 1;
+			}
+			else{
+				family[this.maisons[i].color]++;
+			}
+	 	}
+	 	// On verifie pour chaque couleur si les autres terrains sont libres
+	 	for(var color in family){
+	 		var fiches = getFichesOfFamily(color);
+	 		var isFree = true;
+	 		// On boucle sur les fiches et on verifie qu'elles sont soit libre, soit à nous
+	 		for(var index in fiches){
+	 			if(fiches[index].statut != ETAT_LIBRE && !fiches[index].joueurPossede.equals(this)){
+	 				isFree = false;
+	 			}
+	 		}
+	 		if(isFree){return true;}	 
+	 	}
+	 	return false;
+	  }
+	 
       // Fonction appelee lorsque les des sont lances et que le pion est place
       this.actionApresDes = function (buttons, propriete) {
           if (buttons == null) {
@@ -414,6 +478,7 @@
           setTimeout(function () {
               if (buttons.Acheter != null && propriete != null) {
                   var interet = current.strategie.interetPropriete(propriete);
+					console.log("interet : " + current.strategie.interetGlobal(propriete,current));
                   var comp = current.comportement;
                   if (current.strategie.interetPropriete(propriete)) {
                       buttons.Acheter();
@@ -1308,6 +1373,16 @@
 
   }
 
+	function getFichesOfFamily(color){
+		var family = array();
+		for(var fiche in fiches){
+			if(fiches[fiche].statut!=null && fiches[fiche].color == color){
+				family.push(fiches[fiche]);
+			}
+		}
+		return family;
+	}
+
   function Fiche(etat, pos, colors, nom, achat, loyer, loyer1, loyer2, loyer3, loyer4, loyerHotel, prixMaison, img) {
       this.statut = ETAT_LIBRE;
       this.joueurPossede = null;
@@ -1456,7 +1531,6 @@
           width: 40,
           height: 50
       });
-      //this.fiche = $('#ficheCompagnie');
       this.type = "gare";
       this.constructible = false;
       this.getLoyer = function () {
@@ -1731,7 +1805,7 @@
               joueur = new JoueurOrdinateur(i, "Joueur " + (i + 1));
           }
           joueurs[i] = joueur;
-          $('#informations').append('<div id=\"' + id + '\"><div><img src="pion' + i + '.gif" style="width:15px;"/> ' + joueur.nom + ' : <span class="compte-banque"></span> Frs</div></div><hr/>');
+          $('#informations').append('<div id=\"' + id + '\"><div><span class="joueur_name">' + joueur.nom + '</span> : <span class="compte-banque"></span> Frs</div></div><hr/>');
           joueur.setDiv($('#' + id));
           joueur.setPion(colorsJoueurs[i]);
       }
@@ -1857,6 +1931,12 @@
       $('#loyer' + fiche.nbMaison, div).parent().addClass("nbMaisons");
       if (fiche.nbMaison == 0 && fiche.isGroupee() == true) { // possede la serie
           $('.infos-group', div).addClass("nbMaisons");
+      }
+      if(fiche.type == 'gare'){
+      	$('.maison',div).hide();
+      }
+      else{
+      	$('.maison',div).show();      
       }
   }
 

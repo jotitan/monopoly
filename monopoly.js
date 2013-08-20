@@ -1,11 +1,25 @@
   var DEBUG = true;
+  /* Jets des dés */
   var des1;
   var des2;
   var nbDouble = 0;
+  
+  /* Liste des cases et des cartes */
   var fiches = new Array();
   var cartesChance = null;
   var cartesCaisseCommunaute = null;
   var parcGratuit = null;
+  var currentFiche = null;
+
+  /* Liste des joueurs */
+  var joueurs = new Array();
+  var joueurCourant = null;
+  var colorsJoueurs = ["#383C89", "#A6193E", "#C58F01", "#086B3D", "#B9B29B"];
+  
+  var des1Cube;
+  var des2Cube;
+  
+  var CURRENCY = "F.";
 
   $(document).ready(function () {
       parcGratuit = new ParcGratuit();
@@ -118,15 +132,12 @@
   function ParcGratuit(id) {
       this.montant = null;
 
-      this.
-  case = new CaseSpeciale(0, "Parc Gratuit");
-  Drawer.add(this.
-  case);
+      this.case = new CaseSpeciale(0, "Parc Gratuit");
+  Drawer.add(this.case);
 
   this.setMontant = function (montant) {
       this.montant = montant;
-      this.
-  case .titre = "Parc Gratuit " + this.montant + " F";
+      $('#idMontantParc > span').text(this.montant);
   }
 
   this.payer = function (montant) {
@@ -166,7 +177,7 @@
 	  	var risque1 = this.calculMargeMontant(joueur,cout);
 	  	var risque2 = this.calculMargeMontant(joueur,cout);	// = 0 si aucun risque par la suite
 	  	
-	  	return risque1 * (risque2/100);
+	  	return risque1 * (risque2/100 + 1);
 	  }
 
 	  /* Calcule la marge d'achat par rapport au montant et le pondere par rapport a la prise de risque */
@@ -285,7 +296,7 @@
       /* Calcul l'interet pour la maison (a partir des groupes interessant) */
       this.interetPropriete = function (propriete) {
           for (var color in this.groups) {
-              if (this.groups[color] == propriete.color) {
+              if (this.groups[color] == propriete.color || (propriete.type == 'gare' && this.interetGare)) {
                   return true;
               }
           }
@@ -374,8 +385,6 @@
   function JoueurOrdinateur(numero, nom) {
       Joueur.call(this, numero, nom);
       this.initialName = nom;
-      /* Agressivite */
-      this.agressivite = new MediumComportement();
       /* Stratégie : définit le comportement pour l'achat des maisons */
       this.strategie = null;
       /* Comportement : définit le rapport à l'argent. Inclu la prise de risque */
@@ -388,6 +397,11 @@
 		case 0 : this.strategie = new CheapStrategie();break;
 		case 1 : this.strategie = new MediumStrategie();break;
 		case 2 : this.strategie = new HardStrategie();break;
+	   }
+	   switch (Math.round(Math.random()*1000)%3) {
+		case 0 : this.comportement = new CheapComportement();break;
+		case 1 : this.comportement = new MediumComportement();break;
+		case 2 : this.comportement = new HardComportement();break;
 	   }
 	   this.updateName(true);
 	 }
@@ -477,10 +491,11 @@
           }
           setTimeout(function () {
               if (buttons.Acheter != null && propriete != null) {
-                  var interet = current.strategie.interetPropriete(propriete);
-					console.log("interet : " + current.strategie.interetGlobal(propriete,current));
-                  var comp = current.comportement;
-                  if (current.strategie.interetPropriete(propriete)) {
+                  var interet = current.strategie.interetGlobal(propriete);
+			   var comportement = current.comportement.getRisqueTotal(current,propriete.achat);
+                  console.log("Strategie : " + interet + " " + comportement);
+			   if (interet > comportement) {
+				console.log("achete");
                       buttons.Acheter();
                       return;
                   }
@@ -797,8 +812,7 @@
   }
 
   function CarteSpeciale(titre, montant, etat, pos, img) {
-      this.
-  case = new Case(pos, etat, null, titre, "F. " + montant, img);
+      this.case = new Case(pos, etat, null, titre, CURRENCY + " " + montant, img);
   Drawer.add(this.
   case);
   this.action = function () {
@@ -944,7 +958,9 @@
           this.canvasRT = document.getElementById("canvas_rt").getContext("2d");
           this.canvas.strokeStyle = '#AA0000';
           this.canvasRT.strokeStyle = '#AA0000';
-          this.setFrequency(2000, this.canvas);
+		 // On ne recharge pas le plateau, il n'est chargee qu'une seule fois (ou rechargement a la main)
+          this.refresh(this.canvas);
+		//this.setFrequency(2000, this.canvas);
           this.setFrequency(50, this.canvasRT);
           return this;
       }
@@ -1569,11 +1585,7 @@
   }
 
 
-
-  var VERROU = false;
-
    // Pour la recuperation d'argent, on passe par une version allégée du construireMaisons
-
 
   function construireMaisons(modeBanqueroute) {
       var maisons = joueurCourant.findMaisonsConstructibles();
@@ -1691,7 +1703,7 @@
           changeJoueur();
           return;
       }
-      var buttons = fiche.action();
+      var buttons = fiche.action();	// Recupere les actions jouables en tombant sur cette case 
       // une fois l'action cree, le joueur doit faire une action
       joueurCourant.actionApresDes(buttons, fiche);
   }
@@ -1707,7 +1719,6 @@
           joueurCourant.joue(); // double, rejoue
       }
   }
-
 
 
   function closeFiche() {
@@ -1740,16 +1751,15 @@
       $('#informationsCentrale').html("");
       des1 = rand();
       des2 = rand();
-      console.log(des1 + " & " + des2);
       des1Cube.setValue(des1);
       des2Cube.setValue(des2);
 
-
-
       if (joueurCourant.enPrison == true) {
           if (des1 == des2) {
-              createMessage("Libéré de prison", "lightblue", "Vous êtes libérés de prison grâce à un double", function () {}, {});
-              joueurCourant.exitPrison();
+              var buttons = createMessage("Libéré de prison", "lightblue", "Vous êtes libérés de prison grâce à un double", function () {
+			 joueurCourant.exitPrison();	 
+		    }, {});
+              joueurCourant.actionApresDes(buttons, null);
           } else {
               if (joueurCourant.nbDouble == 2) {
                   var buttons = createMessage("Libéré de prison", "lightblue", "Vous êtes libérés de prison, mais vous devez payer Frs 5.000 !", function () {
@@ -1788,11 +1798,7 @@
 
   }
 
-  var joueurs = new Array();
-  var joueurCourant = null;
-  var colorsJoueurs = ["#383C89", "#A6193E", "#C58F01", "#086B3D", "#B9B29B"];
-  var des1Cube;
-  var des2Cube;
+  
 
   function init() {
       var nb = prompt("Nombre de joueurs ?");
@@ -1843,8 +1849,8 @@
 
    // Initialise le plateau
   function initPlateau() {
-      Drawer.init(800, 800);
       Drawer.add(new SimpleRect(0, 0, 800, 800, '#A7E9DB'), true);
+	 Drawer.init(800, 800);
   }
 
   function initDetailFiche() {
@@ -1853,7 +1859,7 @@
       $('body').append(div);
   }
 
-  var currentFiche = null;
+  
 
   function openDetailFiche(fiche, input) {
       if (currentFiche != null && currentFiche.etat == fiche.etat && currentFiche.pos == fiche.pos) {
@@ -1885,31 +1891,7 @@
 
   function loadFiche(fiche) {
       loadGenericFiche(fiche, $('#fiche'), 'FFFFFF');
-      fiche.fiche.prev().css("background-color", fiche.color);
-
-      return;
-      fiche.fiche.prev().css("background-color", fiche.color);
-      $('#achat', '#fiche').text(fiche.achat);
-      $('#loyer0', '#fiche').text((fiche.isGroupee() == true) ? parseInt(fiche.loyer[0]) * 2 : fiche.loyer[0]);
-      $('#loyer1', '#fiche').text(fiche.loyer[1]);
-      $('#loyer2', '#fiche').text(fiche.loyer[2]);
-      $('#loyer3', '#fiche').text(fiche.loyer[3]);
-      $('#loyer4', '#fiche').text(fiche.loyer[4]);
-      $('#loyer5', '#fiche').text(fiche.loyerHotel);
-      $('#hypotheque', '#fiche').text(fiche.achat / 2);
-      $('#fiche').find("tr").removeClass("nbMaisons");
-      $('#fiche').find("div:first").removeClass("nbMaisons");
-      if (fiche.joueurPossede == null) {
-          return;
-      }
-      if (fiche.nbMaison > 0) {
-          $('#loyer0' + fiche.nbMaison, '#fiche').parent().addClass("nbMaisons");
-      } else {
-          if (fiche.isGroupee() == true) { // possede la serie
-              $('#fiche').find("div:first").addClass("nbMaisons");
-          }
-          $('#loyer0', '#fiche').parent().addClass("nbMaisons");
-      }
+      fiche.fiche.prev().css("background-color", fiche.color);      
   }
 
   function loadDetailFiche(fiche) {

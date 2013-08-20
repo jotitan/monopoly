@@ -23,55 +23,7 @@
 
   $(document).ready(function () {
       parcGratuit = new ParcGratuit();
-      fiches["2-0"] = new CarteActionSpeciale("Départ", function () {
-          joueurCourant.gagner(40000)
-      }, 2, 0);
-      fiches["2-1"] = new Fiche(2, 1, ["#812B5C", "#DFA4C6"], "Boulevard de Belleville", 4000, 200, 1000, 3000, 9000, 16000, 25000, 5000);
-      fiches["2-2"] = new CaisseDeCommunaute(2, 2);
-      fiches["2-3"] = new Fiche(2, 3, ["#812B5C", "#DFA4C6"], "Rue Lecourbe", 8000, 400, 2000, 6000, 18000, 32000, 45000, 5000);
-      fiches["2-4"] = new CarteSpeciale("Impots sur le revenue", 20000, 2, 4);
-      fiches["2-5"] = new FicheGare(2, 5, ["#000000", "#ABABAB"], "Gare Montparnasse", 20000, 2500, 5000, 10000, 20000);
-      fiches["2-6"] = new Fiche(2, 6, ["#119AEB", "#98CEEE"], "Rue de Vaugirard", 10000, 600, 3000, 9000, 27000, 40000, 55000, 5000);
-      fiches["2-7"] = new Chance(2, 7);
-      fiches["2-8"] = new Fiche(2, 8, ["#119AEB", "#98CEEE"], "Rue de Courcelles", 10000, 600, 3000, 9000, 27000, 40000, 55000, 5000);
-      fiches["2-9"] = new Fiche(2, 9, ["#119AEB", "#98CEEE"], "Avenue de la République", 12000, 800, 4000, 10000, 30000, 45000, 60000, 5000);
-      fiches["3-0"] = new CarteActionSpeciale("Simple visite", function () {}, 3, 0);
-      fiches["3-1"] = new Fiche(3, 1, ["#73316F", "#DFB4DC"], "Boulevard de la Villette", 14000, 1000, 5000, 15000, 45000, 62500, 75000, 10000);
-      fiches["3-2"] = new FicheCompagnie(3, 2, ["lightgreen"], "Compagnie de distribution d'électricité", 15000, 400, 1000);
-      fiches["3-3"] = new Fiche(3, 3, ["#73316F", "#CA83C6"], "Avenue de Neuilly", 14000, 1000, 5000, 15000, 45000, 62500, 75000, 10000);
-      fiches["3-4"] = new Fiche(3, 4, ["#73316F", "#CA83C6"], "Rue de Paradis", 16000, 1200, 6000, 18000, 50000, 70000, 90000, 10000);
-      fiches["3-5"] = new FicheGare(3, 5, ["#000000", "#ABABAB"], "Gare de Lyon", 20000, 2500, 5000, 10000, 20000);
-      fiches["3-6"] = new Fiche(3, 6, ["#D16E2D", "#FECC84"], "Avenue Mozart", 18000, 1400, 7000, 20000, 55000, 75000, 95000, 10000);
-      fiches["3-7"] = new CaisseDeCommunaute(3, 7);
-      fiches["3-8"] = new Fiche(3, 8, ["#D16E2D", "#ECA271"], "Boulevard Saint-Michel", 18000, 1400, 7000, 20000, 55000, 75000, 95000, 10000);
-      fiches["3-9"] = new Fiche(3, 9, ["#D16E2D", "#ECA271"], "Place Pigalle", 20000, 1600, 8000, 22000, 60000, 80000, 100000, 10000);
-      fiches["0-0"] = parcGratuit;
-      fiches["0-1"] = new Fiche(0, 1, ["#D32C19", "#F9AEA6"], "Avenue Matignon", 22000, 1800, 9000, 25000, 70000, 87500, 105000, 15000);
-      fiches["0-2"] = new Chance(0, 2);
-      fiches["0-3"] = new Fiche(0, 3, ["#D32C19", "#EC877B"], "Boulevard Malsherbes", 22000, 1800, 9000, 25000, 70000, 87500, 105000, 15000);
-      fiches["0-4"] = new Fiche(0, 4, ["#D32C19", "#EC877B"], "Avenue Henri-Martin", 22000, 2000, 10000, 30000, 75000, 92500, 110000, 15000);
-      fiches["0-5"] = new FicheGare(0, 5, ["#000000", "#ABABAB"], "Gare du Nord", 20000, 20000, 2500, 5000, 10000, 20000);
-      fiches["0-6"] = new Fiche(0, 6, ["#E6E018", "#F8F587"], "Boulevard Saint-Honoré", 26000, 2200, 11000, 33000, 80000, 97500, 115000, 15000);
-      fiches["0-7"] = new Fiche(0, 7, ["#E6E018", "#F8F587"], "Place de la bourse", 26000, 2200, 11000, 33000, 80000, 97500, 115000, 15000);
-      fiches["0-8"] = new FicheCompagnie(0, 8, ["lightgreen"], "Compagnie de distribution des eaux", 15000, 400, 1000);
-      fiches["0-9"] = new Fiche(0, 9, ["#E6E018", "#F8F587"], "Rue Lafayette", 28000, 2400, 12000, 36000, 85000, 102500, 120000, 15000);
-      fiches["1-0"] = new CarteActionSpeciale("Allez en prison", function () {
-          joueurCourant.goPrison();
-      }, 1, 0);
-      fiches["1-1"] = new Fiche(1, 1, ["#11862E", "#93D1A2"], "Avenue de Breteuil", 30000, 2600, 13000, 39000, 90000, 110000, 127500, 20000);
-      fiches["1-2"] = new Fiche(1, 2, ["#11862E", "#93D1A2"], "Avenue Foch", 30000, 2600, 13000, 39000, 90000, 110000, 127500, 20000);
-      fiches["1-3"] = new CaisseDeCommunaute(1, 3);
-      fiches["1-4"] = new Fiche(1, 4, ["#11862E", "#93D1A2"], "Boulevard des Capucines", 32000, 2800, 15000, 45000, 100000, 120000, 140000, 20000);
-      fiches["1-5"] = new FicheGare(1, 5, ["#000000", "#ABABAB"], "Gare Saint-Lazarre", 20000, 20000, 2500, 5000, 10000, 20000);
-      fiches["1-6"] = new Chance(1, 6);
-      fiches["1-7"] = new Fiche(1, 7, ["#132450", "#808EB0"], "Avenue des Champs Elysées", 35000, 3500, 17500, 50000, 110000, 130000, 150000, 20000);
-      fiches["1-8"] = new CarteSpeciale("Taxe de luxe", 10000, 1, 8, {
-          src: "bijou.png",
-          width: 40,
-          height: 50
-      });
-      fiches["1-9"] = new Fiche(1, 9, ["#132450", "#808EB0"], "Rue de la Paix", 40000, 5000, 20000, 60000, 140000, 170000, 200000, 20000);
-
+      
       cartesChance = [new CarteChance("Payer pour frais de scolarité F 15.000", new PayerCarte(15000)),
           new CarteChance("Amande pour excès de vitesse : F 1.500", new PayerCarte(1500)),
           new CarteChance("Vous avez gagné le prix de mots croisés. Recevez F 10.000", new GagnerCarte(10000)),
@@ -663,9 +615,7 @@
       this.etat = 2;
       this.position = 0;
       this.joueur = joueur;
-      this.pion = new PionJoueur(color, fiches["2-0"].
-      case .getCenter().x, fiches["2-0"].
-      case .getCenter().y);
+      this.pion = new PionJoueur(color, fiches["2-0"].case.getCenter().x, fiches["2-0"].case .getCenter().y);
       Drawer.addRealTime(this.pion);
 
       // Ca directement en prison, sans passer par la case depart, en coupant
@@ -1399,7 +1349,7 @@
 		return family;
 	}
 
-  function Fiche(etat, pos, colors, nom, achat, loyer, loyer1, loyer2, loyer3, loyer4, loyerHotel, prixMaison, img) {
+  function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
       this.statut = ETAT_LIBRE;
       this.joueurPossede = null;
       this.nom = nom;
@@ -1407,14 +1357,8 @@
       this.secondColor = (colors.length == 2) ? colors[1] : colors[0];
       this.achat = achat;
       this.hypotheque = achat / 2;
-      this.loyer = new Array();
-      this.loyer[0] = loyer;
-      this.loyer[1] = loyer1;
-      this.loyer[2] = loyer2;
-      this.loyer[3] = loyer3;
-      this.loyer[4] = loyer4;
-      this.loyer[5] = loyerHotel;
-      this.loyerHotel = loyerHotel;
+      this.loyer = loyers;
+      this.loyerHotel = (loyers!=null && loyers.length == 6)?loyers[5]:0;
       this.prixMaison = prixMaison;
       this.fiche = $('#fiche');
       this.nbMaison = 0; // Nombre de maison construite sur le terrain par le proprietaire
@@ -1541,8 +1485,8 @@
   }
   }
 
-  function FicheGare(etat, pos, color, nom, achat, loyer1, loyer2, loyer3, loyer4) {
-      Fiche.call(this, etat, pos, color, nom, achat, loyer1, loyer2, loyer3, loyer4, null, null, null, {
+  function FicheGare(etat, pos, color, nom, achat, loyers) {
+      Fiche.call(this, etat, pos, color, nom, achat, loyers, null, {
           src: "train.png",
           width: 40,
           height: 50
@@ -1563,8 +1507,8 @@
       }
   }
 
-  function FicheCompagnie(etat, pos, color, nom, achat, loyer1, loyer2) {
-      Fiche.call(this, etat, pos, color, nom, achat, loyer1, loyer2);
+  function FicheCompagnie(etat, pos, color, nom, achat, loyers) {
+      Fiche.call(this, etat, pos, color, nom, achat, loyers);
       this.fiche = $('#ficheCompagnie');
       this.type = "compagnie";
       this.constructible = false;
@@ -1801,7 +1745,16 @@
   
 
   function init() {
-      var nb = prompt("Nombre de joueurs ?");
+  		initDetailFiche();
+      initFiches();
+      initPlateau(initJoueurs);
+      initDes();
+      
+     
+  }
+
+	function initJoueurs(){
+	 var nb = prompt("Nombre de joueurs ?");
       for (var i = 0; i < nb; i++) {
           var id = 'joueur' + i;
           var joueur = null;
@@ -1831,12 +1784,7 @@
           height: 300
       });
 
-      // Detail fiche
-      initDetailFiche();
-      initFiches();
-      initPlateau();
-      initDes();
-  }
+	}
 
    // Initialise les des
 
@@ -1848,9 +1796,58 @@
   }
 
    // Initialise le plateau
-  function initPlateau() {
+  function initPlateau(callback) {
       Drawer.add(new SimpleRect(0, 0, 800, 800, '#A7E9DB'), true);
-	 Drawer.init(800, 800);
+      // On charge le plateau
+      $.ajax({
+      	url:'data-monopoly.json',
+      	dataType:'json',
+      	success:function(data){
+			$(data.fiches).each(function(){
+				var fiche = null;
+				switch(this.type){
+					case "propriete":
+						fiche = new Fiche(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers, this.prixMaison);
+						break;
+					case "compagnie":
+						fiche = new FicheCompagnie(this.axe, this.pos, this.colors,this.nom, this.prix, this.loyers);
+						break;
+					case "gare":
+						fiche = new FicheGare(this.axe, this.pos, this.colors, this.nom,this.prix, this.loyers);
+						break;
+					case "chance":
+						fiche = new Chance(this.axe, this.pos);
+						break;
+					case "communaute":
+						fiche = new CaisseDeCommunaute(this.axe, this.pos);
+						break;
+					case "taxe" : 
+						fiche = new CarteSpeciale(this.nom, this.prix, this.axe, this.pos);
+						break;
+					case "prison" : 
+						fiche = new CarteActionSpeciale(this.nom, function () {
+				          joueurCourant.goPrison();
+				        }, this.axe, this.pos);
+				        break;
+				    case "special" : 
+				    	fiche = new CarteActionSpeciale(this.nom, function () {}, this.axe, this.pos);
+				    	break;
+				    case "parc" : 
+				    	fiche = parcGratuit;
+				    	break;
+					case "special-depart" : 
+						fiche = new CarteActionSpeciale(this.nom, function () {
+							joueurCourant.gagner(40000)
+				  		}, this.axe, this.pos);
+				  		break;				  						
+				}
+				fiches[this.axe + "-" + this.pos] = fiche;
+			});
+     		Drawer.init(800, 800); 	
+     		callback();
+      	}
+      });
+	 
   }
 
   function initDetailFiche() {

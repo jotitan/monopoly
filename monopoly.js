@@ -32,6 +32,9 @@
   var largeurPion = (largeur - 5) / 3;
 
 
+	// Parametrage des titres
+	var titles = {};
+
   function createMessage(titre, background, message, call, param) {
       $('#message').prev().css("background-color", background);
       $('#message').dialog('option', 'title', titre);
@@ -82,7 +85,7 @@
   }
 
   this.action = function () {
-      return createMessage("Parc gratuit", "lightblue", "Vous gagnez " + this.montant + " Frs", function (param) {
+      return createMessage("Parc gratuit", "lightblue", "Vous gagnez " + this.montant + " " + CURRENCY, function (param) {
           param.joueur.gagner(param.montant);
           parcGratuit.setMontant(0);
           changeJoueur();
@@ -563,6 +566,26 @@
           return fiches[this.pion.etat + "-" + this.pion.position];
       }
 
+	/* Renvoie la liste des terrains hypothecables : sans construction sur le terrain et ceux de la famille, pas deja hypotheques */
+	/* @return : la liste des terrains */
+	this.findMaisonsHypothecables = function(){
+		var proprietes = [];
+		for (var i = 0; i < this.maisons.length; i++) {
+			var propriete = this.maisons[i];
+			if(propriete.statutHypoteque == false && propriete.nbMaison == 0){
+				// Aucune propriete possedee de la couleur ne doit avoir de maison
+				var flag = true;
+				for (var j = 0; j < this.maisons.length; j++) {
+					if(this.maisons[i].color == propriete.nbMaison > 0){flag = false;}
+				}
+				if(flag){
+					proprietes.push(propriete);
+				}
+			}
+		}
+		return proprietes;
+	}
+
       this.findMaisonsConstructibles = function () {
           var mc = new Array();
           var colorsOK = new Array();
@@ -751,7 +774,7 @@
   Drawer.add(this.
   case);
   this.action = function () {
-      return createMessage(titre, "lightblue", "Vous devez payer la somme de " + montant + " Frs", function (param) {
+      return createMessage(titre, "lightblue", "Vous devez payer la somme de " + montant + " " + CURRENCY, function (param) {
           param.joueur.payerParcGratuit(param.montant);
           changeJoueur();
       }, {
@@ -777,7 +800,7 @@
 
   function CarteChance(libelle, actionCC) {
       this.action = function () {
-          return createMessage("Carte chance", "lightblue", libelle, function (param) {
+          return createMessage(titles.chance, "lightblue", libelle, function (param) {
               actionCC.action();
               changeJoueur();
           }, {});
@@ -786,7 +809,7 @@
 
   function CarteCaisseDeCommunaute(libelle, actionCC) {
       this.action = function () {
-          return createMessage("Caisse de communauté", "pink", libelle, function (param) {
+          return createMessage(titles.communaute, "pink", libelle, function (param) {
               actionCC.action();
               changeJoueur();
           }, {});
@@ -795,7 +818,7 @@
 
   function Chance(etat, pos) {
       this.
-  case = new Case(pos, etat, null, "Chance", null, {
+  case = new Case(pos, etat, null, titles.chance, null, {
       src: "interrogation.png",
       width: 50,
       height: 60
@@ -810,7 +833,7 @@
 
   function CaisseDeCommunaute(etat, pos) {
       this.
-  case = new Case(pos, etat, null, "Caisse de communauté", null, {
+  case = new Case(pos, etat, null, titles.communaute, null, {
       src: "banque.png",
       width: 50,
       height: 50
@@ -1336,6 +1359,7 @@
       this.secondColor = (colors.length == 2) ? colors[1] : colors[0];
       this.achat = achat;
       this.hypotheque = achat / 2;
+      this.statutHypoteque=false;
       this.loyer = loyers;
       this.loyerHotel = (loyers!=null && loyers.length == 6)?loyers[5]:0;
       this.prixMaison = prixMaison;
@@ -1347,11 +1371,10 @@
       this.etat = etat;
       this.pos = pos;
       var current = this;
+      this.id = etat+"-"+pos;
 
-      this.
-  case = new Case(pos, etat, this.color, this.nom, "F. " + achat, img);
-  Drawer.add(this.
-  case);
+      this.case = new Case(pos, etat, this.color, this.nom, CURRENCY + " " + achat, img);
+  Drawer.add(this. case);
 
   this.vendu = function (joueur) {
       this.statut = ETAT_ACHETE;
@@ -1396,7 +1419,7 @@
   }
 
   this.payerLoyer = function () {
-      return createMessage("Vous êtes " + this.nom, this.color, "Vous êtes chez " + this.joueurPossede.nom + " vous devez payez la somme de " + this.getLoyer() + " Frs", function (param) {
+      return createMessage("Vous êtes " + this.nom, this.color, "Vous êtes chez " + this.joueurPossede.nom + " vous devez payez la somme de " + this.getLoyer() + " " + CURRENCY, function (param) {
           param.joueurPaye.payer(param.loyer);
           param.joueurLoyer.gagner(param.loyer);
           changeJoueur();
@@ -1530,11 +1553,11 @@
               for (var j = 0; j <= ((modeBanqueroute != null) ? maisons[i].nbMaison : 5); j++) {
                   m += "<option value=\"" + j + "\" " + ((maisons[i].nbMaison == j) ? "selected" : "") + ">" + j + "</option>"
               };
-              m += " </select> maison(s) (<span id=\"montant_" + id + "\"></span> Frs)</td>";
+              m += " </select> maison(s) (<span id=\"montant_" + id + "\"></span> " + CURRENCY +")</td>";
           }
           m += '</tr>';
       }
-      m += "<tr><td>TOTAL</td><td><span id=\"idTotalDepenses\"></span> Frs</td></tr>";
+      m += "<tr><td>TOTAL</td><td><span id=\"idTotalDepenses\"></span> " + CURRENCY + "</td></tr>";
       m += "</table>";
       $('#achatMaisons').append(m);
       $('#achatMaisons').find('select[id^=id_input_]').change(function () {
@@ -1684,7 +1707,7 @@
               joueurCourant.actionApresDes(buttons, null);
           } else {
               if (joueurCourant.nbDouble == 2) {
-                  var buttons = createMessage("Libéré de prison", "lightblue", "Vous êtes libérés de prison, mais vous devez payer Frs 5.000 !", function () {
+                  var buttons = createMessage("Libéré de prison", "lightblue", "Vous êtes libérés de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
                       joueurCourant.payerParcGratuit(5000);
                       joueurCourant.exitPrison();
                       joueurCourant.joueDes(des1 + des2);
@@ -1723,8 +1746,8 @@
   function init(plateau) {
 	 initDetailFiche();
       initFiches();
-      //initPlateau(plateau,initJoueurs);
-      //initDes();
+      initPlateau(plateau,initJoueurs);
+      initDes();
       
      
   }
@@ -1740,7 +1763,7 @@
               joueur = new JoueurOrdinateur(i, "Joueur " + (i + 1));
           }
           joueurs[i] = joueur;
-          $('#informations').append('<div id=\"' + id + '\"><div><span class="joueur_name">' + joueur.nom + '</span> : <span class="compte-banque"></span> Frs</div></div><hr/>');
+          $('#informations').append('<div id=\"' + id + '\"><div><span class="joueur_name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY + '</div></div><hr/>');
           joueur.setDiv($('#' + id));
           joueur.setPion(colorsJoueurs[i]);
       }
@@ -1780,6 +1803,8 @@
       	dataType:'json',
       	success:function(data){
 		     parcGratuit = new ParcGratuit();
+		     CURRENCY = data.currency;
+		     titles = data.titles;
 			$(data.fiches).each(function(){
 				var fiche = null;
 				switch(this.type){
@@ -1821,14 +1846,18 @@
 				fiches[this.axe + "-" + this.pos] = fiche;
 			});
 			// On charge les cartes chances et caisse de communaute
-			$(data.cartes.chance).each(function(){
+			$(data.chance.cartes).each(function(){
 			 cartesChance.push(new CarteChance(this.nom, (this.montant>0)?new GagnerCarte(this.montant):new PayerCarte(this.montant)));
 			})
-			$(data.cartes.communaute).each(function(){
+			$(data.communaute.cartes).each(function(){
 			 cartesCaisseCommunaute.push(new CarteCaisseDeCommunaute(this.nom, (this.montant>0)?new GagnerCarte(this.montant):new PayerCarte(this.montant)));
 			});
      		Drawer.init(800, 800);
      		callback();
+      	},
+      	error:function(){
+      		alert("Le plateau " + plateau + " n'existe pas");
+      		return;
       	}
       });
 	 

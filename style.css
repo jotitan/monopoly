@@ -1,0 +1,33 @@
+.joueurCourant{
+		  background-color:lightslategray;
+		  padding-left:15px;
+		  padding-top:3px;
+		  padding-bottom:3px;
+		  padding-right:15px;
+		  color:white;
+		  font-weight:bold;
+		}
+		
+		.joueurCourant > div{
+		  padding-left:0px;
+		}
+		
+		.nbMaisons{
+		  text-decoration:underline;
+		  background-color:salmon;
+		}
+  
+	.jail {
+		background-image: url("jail.jpg");
+		background-repeat: no-repeat;
+		background-size: contain;
+		padding-left: 30px;
+	}
+  
+  body{margin:0}
+  
+  .title-dialog {
+  	font-weight:bold;
+  	margin:auto;
+  	width:100%;
+  }

@@ -1,3 +1,5 @@
+// TODO : outil pour regler les dettes, moteur pour achat maison pour ordinateur, limites maison 32 hotel 12, strategie smart sur stats maisons les plus visites
+
   var DEBUG = true;
   /* Jets des dés */
   var des1;
@@ -6,8 +8,8 @@
   
   /* Liste des cases et des cartes */
   var fiches = new Array();
-  var cartesChance = null;
-  var cartesCaisseCommunaute = null;
+  var cartesChance = new Array();
+  var cartesCaisseCommunaute = new Array();
   var parcGratuit = null;
   var currentFiche = null;
 
@@ -21,31 +23,14 @@
   
   var CURRENCY = "F.";
 
-  $(document).ready(function () {
-      parcGratuit = new ParcGratuit();
-      
-      cartesChance = [new CarteChance("Payer pour frais de scolarité F 15.000", new PayerCarte(15000)),
-          new CarteChance("Amande pour excès de vitesse : F 1.500", new PayerCarte(1500)),
-          new CarteChance("Vous avez gagné le prix de mots croisés. Recevez F 10.000", new GagnerCarte(10000)),
-          new CarteChance("La banque vous verse un dividende de F 5.000", new GagnerCarte(5000)),
-          new CarteChance("Votre immeuble et votre prêt rapportent. Vous devez toucher F 15.000", new GagnerCarte(15000)),
-          new CarteChance("Amande pour ivresse : F 2.000", new PayerCarte(2000))
-      ];
-      cartesCaisseCommunaute = [new CarteCaisseDeCommunaute("La vente de votre stock pour rapport F 5.000", new GagnerCarte(5000)),
-          new CarteCaisseDeCommunaute("Payez votre Police d'Assurance s'élevant à F 5.000", new PayerCarte(5000)),
-          new CarteCaisseDeCommunaute("Recevez votre revenu annuel F 10.000", new GagnerCarte(10000)),
-          new CarteCaisseDeCommunaute("Vous avez gagné le deuxième Prix de Beauté. Recevez F 1.000", new GagnerCarte(1000)),
-          new CarteCaisseDeCommunaute("Payez la note du Médecin F 5.000", new PayerCarte(5000)),
-          new CarteCaisseDeCommunaute("Les Contributions vous remboursent la somme de F 2.000", new GagnerCarte(2000)),
-          new CarteCaisseDeCommunaute("Erreur de la Banque en votre faveur Recevez F 20.000", new GagnerCarte(20000)),
-          new CarteCaisseDeCommunaute("Recevez votre intérêt sur l'emprunt à 7 % F 2.500", new GagnerCarte(2500)),
-          new CarteCaisseDeCommunaute("Payez à l'Hôpital F 10.000", new PayerCarte(10000)),
-          new CarteCaisseDeCommunaute("Vous héritez F 10.000", new GagnerCarte(10000))
-      ];
+  /* Dimensions */
+  var largeur = 65;
+  var hauteur = 100;
+  var total = (largeur * 9) / 2;
+  var centre = 400;
+  var bordure = 20;
+  var largeurPion = (largeur - 5) / 3;
 
-      init();
-
-  });
 
   function createMessage(titre, background, message, call, param) {
       $('#message').prev().css("background-color", background);
@@ -1019,15 +1004,9 @@
           }
       }
 
-  var largeur = 65;
-  var hauteur = 100;
-  var total = (largeur * 9) / 2;
-  var centre = 400;
-  var bordure = 20;
-  var largeurPion = (largeur - 5) / 3;
+  
 
    // Represente un pion d'un joueur
-
   function PionJoueur(color, x, y) {
       Component.apply(this);
       this.x = x;
@@ -1669,7 +1648,6 @@
       changeJoueur();
   }
 
-
   function rand() {
       return Math.round((Math.random() * 1000)) % 6 + 1;
   }
@@ -1739,16 +1717,14 @@
       if (des1 == des2) {
           $('#informationsCentrale').html("Relancez");
       }
-
   }
 
-  
 
-  function init() {
-  		initDetailFiche();
+  function init(plateau) {
+	 initDetailFiche();
       initFiches();
-      initPlateau(initJoueurs);
-      initDes();
+      //initPlateau(plateau,initJoueurs);
+      //initDes();
       
      
   }
@@ -1796,13 +1772,14 @@
   }
 
    // Initialise le plateau
-  function initPlateau(callback) {
+  function initPlateau(plateau,callback) {
       Drawer.add(new SimpleRect(0, 0, 800, 800, '#A7E9DB'), true);
       // On charge le plateau
       $.ajax({
-      	url:'data-monopoly.json',
+      	url:plateau,
       	dataType:'json',
       	success:function(data){
+		     parcGratuit = new ParcGratuit();
 			$(data.fiches).each(function(){
 				var fiche = null;
 				switch(this.type){
@@ -1830,12 +1807,12 @@
 				        }, this.axe, this.pos);
 				        break;
 				    case "special" : 
-				    	fiche = new CarteActionSpeciale(this.nom, function () {}, this.axe, this.pos);
-				    	break;
+						fiche = new CarteActionSpeciale(this.nom, function () {}, this.axe, this.pos);
+						break;
 				    case "parc" : 
-				    	fiche = parcGratuit;
-				    	break;
-					case "special-depart" : 
+						fiche = parcGratuit;
+						break;
+				    case "special-depart" : 
 						fiche = new CarteActionSpeciale(this.nom, function () {
 							joueurCourant.gagner(40000)
 				  		}, this.axe, this.pos);
@@ -1843,7 +1820,14 @@
 				}
 				fiches[this.axe + "-" + this.pos] = fiche;
 			});
-     		Drawer.init(800, 800); 	
+			// On charge les cartes chances et caisse de communaute
+			$(data.cartes.chance).each(function(){
+			 cartesChance.push(new CarteChance(this.nom, (this.montant>0)?new GagnerCarte(this.montant):new PayerCarte(this.montant)));
+			})
+			$(data.cartes.communaute).each(function(){
+			 cartesCaisseCommunaute.push(new CarteCaisseDeCommunaute(this.nom, (this.montant>0)?new GagnerCarte(this.montant):new PayerCarte(this.montant)));
+			});
+     		Drawer.init(800, 800);
      		callback();
       	}
       });

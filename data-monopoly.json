@@ -1,5 +1,6 @@
 {
-	"color": "#",
+	"background-color": "#",
+	"background-image":"",
 	"currency": "Fr.",
 	"fiches": [
 		{"type": "special-depart","axe": 2,"pos": 0,"nom": "Départ"},
@@ -62,8 +63,7 @@
 			{"nom":"Erreur de la Banque en votre faveur Recevez F 20.000","montant":2000},
 			{"nom":"Recevez votre intérêt sur l'emprunt à 7 % F 2.500","montant":2500},
 			{"nom":"Payez à l'Hôpital F 10.000","montant":-10000},
-			{"nom":"Vous héritez F 10.000","montant":10000},
-			
+			{"nom":"Vous héritez F 10.000","montant":10000}			
 		]
 	}
 }

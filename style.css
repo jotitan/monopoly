@@ -24,10 +24,13 @@
 		padding-left: 30px;
 	}
   
+		  
+  
   body{margin:0}
   
   .title-dialog {
-  	font-weight:bold;
-  	margin:auto;
-  	width:100%;
+	font-weight:bold;
+	text-align: center;
+	width:100%;
+	border-bottom: solid 1px black;
   }

@@ -1,4 +1,5 @@
 // TODO : outil pour regler les dettes, moteur pour achat maison pour ordinateur, limites maison 32 hotel 12, strategie smart sur stats maisons les plus visites
+// Bilan joueurs : nombres propriétés, nombres maisons / hotels, argent, argent dispo (apres hypotheque / vente)
 
   var DEBUG = true;
   /* Jets des dés */
@@ -498,7 +499,7 @@
       this.acheteMaison = function (maison, id) {
           if (maison.isLibre()) {
               var m = this.cherchePlacement(maison);
-              var input = '<input type=\"button\" id=\"idInputFiche' + id + '\" class=\"ui-corner-all\" style=\"display:block;height:27px;width:280px;color:white;background-color:' + maison.color + ';font-weight:bold\" value=\"' + maison.nom + '\" id=\"fiche_' + id + '\"/>';
+              var input = '<input type=\"button\" id=\"idInputFiche' + id + '\" class=\"ui-corner-all color_' + maison.color.substring(1) + '\" style=\"display:block;height:27px;width:280px;\" value=\"' + maison.nom + '\" id=\"fiche_' + id + '\"/>';
               if (m != null) {
                   m.after(input);
               } else {
@@ -572,7 +573,7 @@
 		var proprietes = [];
 		for (var i = 0; i < this.maisons.length; i++) {
 			var propriete = this.maisons[i];
-			if(propriete.statutHypoteque == false && propriete.nbMaison == 0){
+			if(propriete.statutHypotheque == false && propriete.nbMaison == 0){
 				// Aucune propriete possedee de la couleur ne doit avoir de maison
 				var flag = true;
 				for (var j = 0; j < this.maisons.length; j++) {
@@ -586,6 +587,17 @@
 		return proprietes;
 	}
 
+	/* Renvoie la liste des maisons hypothequees */
+	this.findMaisonsHypothequees = function(){
+	   var proprietes = [];
+	   for (var i = 0; i < this.maisons.length; i++) {
+		if (this.maisons[i].statutHypotheque == true) {
+		  proprietes.push(this.maisons[i]);
+		}
+	   }
+	   return proprietes;
+	}
+	
       this.findMaisonsConstructibles = function () {
           var mc = new Array();
           var colorsOK = new Array();
@@ -1358,8 +1370,8 @@
       this.color = colors[0];
       this.secondColor = (colors.length == 2) ? colors[1] : colors[0];
       this.achat = achat;
-      this.hypotheque = achat / 2;
-      this.statutHypoteque=false;
+      this.montantHypotheque = achat / 2;
+      this.statutHypotheque=false;
       this.loyer = loyers;
       this.loyerHotel = (loyers!=null && loyers.length == 6)?loyers[5]:0;
       this.prixMaison = prixMaison;
@@ -1372,6 +1384,7 @@
       this.pos = pos;
       var current = this;
       this.id = etat+"-"+pos;
+	 this.input = null;	// Bouton 
 
       this.case = new Case(pos, etat, this.color, this.nom, CURRENCY + " " + achat, img);
   Drawer.add(this. case);
@@ -1380,6 +1393,30 @@
       this.statut = ETAT_ACHETE;
       this.joueurPossede = joueur;
   }
+  
+  /* Hypotheque le terrain */
+  this.hypotheque = function(){
+    if (this.input == null || this.statut != ETAT_ACHETE) {
+	 return;
+    }
+    this.statutHypotheque=true;
+    this.input.addClass('hypotheque');
+    this.joueurPossede.gagner(this.montantHypotheque);
+  }
+  
+  this.leveHypotheque = function(){
+    if (this.input == null || this.statut != ETAT_ACHETE || this.statutHypotheque == false) {
+	 return;
+    }
+    var cout = this.montantHypotheque*1.1;
+    if (this.joueurPossede.montant < cout) {
+	 throw "Impossible de lever l'hypotheque";
+    }
+    this.statutHypotheque=false;
+    this.joueurPossede.payer(cout);
+    this.input.removeClass('hypotheque');
+  }
+  
   this.isLibre = function () {
       return this.statut == ETAT_LIBRE;
   }
@@ -1409,6 +1446,9 @@
   }
 
   this.getLoyer = function () {
+	 if (this.statutHypotheque) {
+	   return 0;
+	 }
       if (this.hotel == true) {
           return this.loyerHotel;
       }
@@ -1805,6 +1845,7 @@
 		     parcGratuit = new ParcGratuit();
 		     CURRENCY = data.currency;
 		     titles = data.titles;
+			var colors = [];
 			$(data.fiches).each(function(){
 				var fiche = null;
 				switch(this.type){
@@ -1844,6 +1885,13 @@
 				  		break;				  						
 				}
 				fiches[this.axe + "-" + this.pos] = fiche;
+				if (fiche.color!=null) {
+				  if (colors[fiche.color]==null) {
+				    // On genere un style
+				    $('style','head').prepend('.color_' + fiche.color.substring(1) + '{color:white;font-weight:bold;background-color:' + fiche.color + ';}\n');
+				    colors[fiche.color] = 1;
+				  }
+				}
 			});
 			// On charge les cartes chances et caisse de communaute
 			$(data.chance.cartes).each(function(){

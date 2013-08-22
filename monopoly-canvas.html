@@ -7,6 +7,12 @@
 	   <script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
 	   <script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script>
 	   <script type="text/javascript" src="monopoly.js"></script>
+	   <style>
+		.hypotheque {
+            background-color: lightgrey;
+            color:black;
+		}		
+	   </style>
 		<link rel="stylesheet" type="text/css" href="style.css"/>
 	  
 		<body>
@@ -73,28 +79,35 @@
 	   <div id="message" style="display:none;background-color:white"></div>
 	 
 	 	<div style="display:none" id="housesPanel">
-	 	<div style="width:50%;height:100%;background-color:lightblue;float:left">
+	 	<div style="width:50%;height:calc(100% - 30px);background-color:lightblue;float:left">
 	 		<div class="title-dialog">Hypotheque</div>
-			On liste l'ensemble des maisons en hypotheque (statutHypoteque=true) et on propose de la lever (avec le cout : achat /2 + 10%)
-			On affiche une liste avec les maisons hypothecables (pas de constructions dessus et non hytpotequer) avec le gain estimé
 			<div id="idTerrainsHypotheques">
-				Terrains hypoteques<br/>
+				Terrains hypothéqués<br/>
 				<div>
 				
 				</div>
 			</div>
 			<hr/>
 			<div id="idTerrains">
-				Hypothequer (option dans la fiche egalement)<br/>
+				Terrains hypothécables<br/>
 				<select></select>
 				<button id="idHypothequeAction">Hypothéquer</button>
 				<div id="toHypotheque"></div>
-			</div>
-			<div id="idCout">Cout : <span></span></div>
+			</div>			
 	 	</div>
-	 	<div style="width:50%;height:100%;background-color:lightgreen;float:right">
-	 		Constructions
+	 	<div style="width:50%;height:calc(100% - 30px);background-color:lightgreen;float:right">
+	 		<div class="title-dialog">Constructions</div>
 	 	</div>
+		<div id="idTest" style="clear:both;width:100%;height:30px">
+		  <table style="height:100%;width:100%;border:0;border-collapse: collapse"><tr>
+		  <td style="width:40%;height:100%;background-color: lightblue;border-top:solid 1px lightblue;"></td>
+		  <td style="width:20%;border:solid 1px black;padding:5px">
+		    Total : <span id="idCoutTotal"></span>
+		  </td>
+		  <td style="width:40%;background-color: lightgreen;border-top:solid 1px lightgreen;"></td>
+		  </tr></table>
+		</div>
+		
 	 	</div>
 	 
 	 
@@ -114,23 +127,36 @@
 		$('#idHypothequeAction').click(function(){
 			var terrain =  $('select > option:selected','#idTerrains');
 			var fiche = terrain.data("fiche");
-			toHypo.push(fiche);
+			toHypo[fiche.id] = fiche;
 			var div = $('<div>' + fiche.nom + '</div>');
-			var boutonAnnuler = $('<button>Annuler</button>');
+			var boutonAnnuler = $('<button style="margin-right:5px">Annuler</button>');
 			boutonAnnuler.click(function(){
 				addOption(fiche);
 				$(this).parent().remove();
 				cout-=fiche.hypotheque;
+				delete toHypo[fiche.id];
 			});
-			div.append(boutonAnnuler);
+			div.prepend(boutonAnnuler);
 			$('#toHypotheque').append(div)
 			$('select > option:selected','#idTerrains').remove();
-			cout+=fiche.hypotheque;
-			$('#idCout').text(cout);
+			cout+=fiche.montantHypotheque;
+			updateCout();
 		});
 		
+		/* Valide le formulaire */
+		function validerActions() {
+		  // On recupere les fiches et on hypotheque les biens
+		  for(var id in toHypo){
+		    toHypo[id].hypotheque();
+		  };
+		}
+		
+		function updateCout() {
+		  $('#idCoutTotal').text(cout + " " + CURRENCY);
+		}
+		
 		function addOption(fiche){
-			var option = $("<option value='" + fiche.id + "'>" + fiche.nom + " (gain : " + fiche.hypotheque + " " + CURRENCY + ")</option>");
+			var option = $("<option value='" + fiche.id + "'>" + fiche.nom + " (+" + fiche.montantHypotheque + " " + CURRENCY + ")</option>");
 			option.data("fiche",fiche);			
 			$('select','#idTerrains').append(option);
 		}
@@ -140,16 +166,22 @@
 			height:600,
 			title:'Gestion des maisons',
 			modal:true,
-			buttons:{'Fermer':function(){$('#housesPanel').dialog('close');}},
+			buttons:{'Fermer':function(){$('#housesPanel').dialog('close');},"Valider":validerActions},
 			autoOpen:false,
 			open:function(){
 				toHypo=[];
 				cout=0;
-				// On charge les elements
+				updateCout();
+				// On charge les proprietes a hypothequer
 				var proprietes = joueurCourant.findMaisonsHypothecables();
 				$('select','#idTerrains').empty();
 				$(proprietes).each(function(){
 					addOption(this);
+				});
+				// On charge les proprietes hypothequees
+				proprietes = joueurCourant.findMaisonsHypothequees();
+				$(proprietes).each(function(){
+				  $('#idTerrainsHypotheques > div').append(this.nom + " Lever");
 				});
 			}
 			

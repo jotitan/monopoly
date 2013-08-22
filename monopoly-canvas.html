@@ -32,6 +32,7 @@
 	   
 	   
 	   maison constructible : <input type="button" value="Chercher" onclick="construireMaisons()"/><br/>
+	   Tableau de bord : <input type="button" value="Ouvrir" onclick="$('#housesPanel').dialog('open')"/><br/>
 	   </div>
 	   <div id="informations"></div>
 	 
@@ -79,7 +80,7 @@
 	   <div id="message" style="display:none;background-color:white"></div>
 	 
 	 	<div style="display:none" id="housesPanel">
-	 	<div style="width:50%;height:calc(100% - 30px);background-color:lightblue;float:left">
+	 	<div style="width:50%;height:calc(100% - 40px);background-color:lightblue;float:left">
 	 		<div class="title-dialog">Hypotheque</div>
 			<div id="idTerrainsHypotheques">
 				Terrains hypothéqués<br/>
@@ -95,16 +96,17 @@
 				<div id="toHypotheque"></div>
 			</div>			
 	 	</div>
-	 	<div style="width:50%;height:calc(100% - 30px);background-color:lightgreen;float:right">
+	 	<div style="width:50%;height:calc(100% - 40px);background-color:lightgreen;float:right">
 	 		<div class="title-dialog">Constructions</div>
 	 	</div>
-		<div id="idTest" style="clear:both;width:100%;height:30px">
+		<div id="idTest" style="clear:both;width:100%;height:40px">
 		  <table style="height:100%;width:100%;border:0;border-collapse: collapse"><tr>
-		  <td style="width:40%;height:100%;background-color: lightblue;border-top:solid 1px lightblue;"></td>
-		  <td style="width:20%;border:solid 1px black;padding:5px">
-		    Total : <span id="idCoutTotal"></span>
+		  <td style="width:37%;height:100%;background-color: lightblue;border-top:solid 1px lightblue;"></td>
+		  <td style="width:26%;border:solid 1px black;padding:5px">
+		    Resultat : <span id="idCoutTotal"></span><br/>
+		    Porte-monnaie : <span id="idArgentRestant"></span>
 		  </td>
-		  <td style="width:40%;background-color: lightgreen;border-top:solid 1px lightgreen;"></td>
+		  <td style="width:37%;background-color: lightgreen;border-top:solid 1px lightgreen;"></td>
 		  </tr></table>
 		</div>
 		
@@ -122,19 +124,21 @@
 		  init(plateau);
 		});
 		
-		var toHypo = [];
+		var maisonsToHypo = [];
+		var maisonsToLever = [];
 		var cout = 0;
 		$('#idHypothequeAction').click(function(){
 			var terrain =  $('select > option:selected','#idTerrains');
 			var fiche = terrain.data("fiche");
-			toHypo[fiche.id] = fiche;
+			maisonsToHypo[fiche.id] = fiche;
 			var div = $('<div>' + fiche.nom + '</div>');
 			var boutonAnnuler = $('<button style="margin-right:5px">Annuler</button>');
 			boutonAnnuler.click(function(){
 				addOption(fiche);
 				$(this).parent().remove();
 				cout-=fiche.hypotheque;
-				delete toHypo[fiche.id];
+				updateCout();
+				delete maisonsToHypo[fiche.id];
 			});
 			div.prepend(boutonAnnuler);
 			$('#toHypotheque').append(div)
@@ -145,14 +149,26 @@
 		
 		/* Valide le formulaire */
 		function validerActions() {
+			if(joueurCourant.montant+cout < 0){
+				alert("Opération impossible : pas assez d'argent");
+				return;
+			}
+		
 		  // On recupere les fiches et on hypotheque les biens
-		  for(var id in toHypo){
-		    toHypo[id].hypotheque();
-		  };
+		  for(var id in maisonsToHypo){
+		    maisonsToHypo[id].hypotheque();
+		  }
+		  
+		  // On recupere les fiches dont on leve l'hypotheque
+		  for(var id in maisonsToLever){
+		  	maisonsToLever[id].leveHypotheque();
+		  }
+		  $('#housesPanel').dialog('close');
 		}
 		
 		function updateCout() {
 		  $('#idCoutTotal').text(cout + " " + CURRENCY);
+		  $('#idArgentRestant').text((joueurCourant.montant+cout) + " " + CURRENCY);
 		}
 		
 		function addOption(fiche){
@@ -169,19 +185,33 @@
 			buttons:{'Fermer':function(){$('#housesPanel').dialog('close');},"Valider":validerActions},
 			autoOpen:false,
 			open:function(){
-				toHypo=[];
+				maisonsToHypo=[];
+				maisonsToLever=[];
 				cout=0;
+				$('select','#idTerrains').empty();
+				$('#idTerrainsHypotheques > div').empty();
+				$('#toHypotheque').empty();
 				updateCout();
 				// On charge les proprietes a hypothequer
 				var proprietes = joueurCourant.findMaisonsHypothecables();
-				$('select','#idTerrains').empty();
+				
 				$(proprietes).each(function(){
 					addOption(this);
 				});
 				// On charge les proprietes hypothequees
 				proprietes = joueurCourant.findMaisonsHypothequees();
 				$(proprietes).each(function(){
-				  $('#idTerrainsHypotheques > div').append(this.nom + " Lever");
+					var fiche = this;
+					var div = $("<div>" + this.nom + "</div>");
+				  var boutonLever = $('<button style="margin-right:5px">Lever</button>');
+					boutonLever.click(function(){
+						$(this).attr('disabled','disabled');
+						cout-=Math.round(fiche.montantHypotheque*1.1);
+						maisonsToLever.push(fiche);
+						updateCout();
+					});
+					div.prepend(boutonLever);
+					 $('#idTerrainsHypotheques > div').append(div);
 				});
 			}
 			

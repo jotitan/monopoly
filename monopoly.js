@@ -629,6 +629,39 @@
           }
           return mc;
       }
+      
+      /* Renvoie les groupes constructibles avec les proprietes de chaque*/
+      this.findMaisonsConstructibles2 = function () {
+          var mc = new Array();
+          var colorsOK = new Array();
+          var colorsKO = new Array();
+
+          for (var i = 0; i < this.maisons.length; i++) {
+              var m = this.maisons[i];
+              if (m.constructible == true) {
+                  if (colorsOK[m.color] == true) {
+                      mc[mc.length] = m; // on a la couleur, on ajoute
+                  } else {
+                      if (colorsKO[m.color] == null) {
+                          // On recherche si on a toutes les couleurs
+                          var ok = true;
+                          for (var f in fiches) {
+                              if (fiches[f].constructible == true && fiches[f].color == m.color && (fiches[f].joueurPossede == null || fiches[f].joueurPossede.numero != this.numero)) {
+                                  ok = false;
+                              }
+                          }
+                          if (!ok) {
+                              colorsKO[m.color] = true;
+                          } else {
+                              colorsOK[m.color] = true;
+                              mc[mc.length] = m;
+                          }
+                      }
+                  }
+              }
+          }
+          return mc;
+      }
   }
 
   function Pion(color, joueur) {
@@ -1408,7 +1441,7 @@
     if (this.input == null || this.statut != ETAT_ACHETE || this.statutHypotheque == false) {
 	 return;
     }
-    var cout = this.montantHypotheque*1.1;
+    var cout = Math.round(this.montantHypotheque*1.1);
     if (this.joueurPossede.montant < cout) {
 	 throw "Impossible de lever l'hypotheque";
     }
@@ -2019,4 +2052,15 @@
           joueur.nbDouble = 0;
       }
       joueur.joue();
+  }
+  
+  
+  
+  /* Fonction utilitaire pour le debug */
+  
+  /* Achete des maisons pour le joueur courant, on passe les ids de fiche */
+  function buy(maisons){
+  	for(var i in maisons){
+  		joueurCourant.acheteMaison(fiches[maisons[i]],maisons[i]);
+  	}
   }

@@ -98,6 +98,9 @@
 	 	</div>
 	 	<div style="width:50%;height:calc(100% - 40px);background-color:lightgreen;float:right">
 	 		<div class="title-dialog">Constructions</div>
+			<div id="idTerrainsConstructibles">			 
+			 
+			</div>
 	 	</div>
 		<div id="idTest" style="clear:both;width:100%;height:40px">
 		  <table style="height:100%;width:100%;border:0;border-collapse: collapse"><tr>
@@ -127,6 +130,18 @@
 		var maisonsToHypo = [];
 		var maisonsToLever = [];
 		var cout = 0;
+		
+		
+		function reset() {
+		  maisonsToHypo=[];
+		  maisonsToLever=[];
+		  cout=0;
+		  $('select','#idTerrains').empty();
+		  $('#idTerrainsHypotheques > div').empty();
+		  $('#toHypotheque').empty();
+		  updateCout();		  
+		}
+		
 		$('#idHypothequeAction').click(function(){
 			var terrain =  $('select > option:selected','#idTerrains');
 			var fiche = terrain.data("fiche");
@@ -177,6 +192,13 @@
 			$('select','#idTerrains').append(option);
 		}
 		
+		function addLeverHypotheque(button,fiche) {
+		  button.attr('disabled','disabled');
+		  cout-=Math.round(fiche.montantHypotheque*1.1);
+		  maisonsToLever.push(fiche);
+		  updateCout();
+		}
+		
 		$('#housesPanel').dialog({
 			width:800,
 			height:600,
@@ -185,13 +207,7 @@
 			buttons:{'Fermer':function(){$('#housesPanel').dialog('close');},"Valider":validerActions},
 			autoOpen:false,
 			open:function(){
-				maisonsToHypo=[];
-				maisonsToLever=[];
-				cout=0;
-				$('select','#idTerrains').empty();
-				$('#idTerrainsHypotheques > div').empty();
-				$('#toHypotheque').empty();
-				updateCout();
+				reset();
 				// On charge les proprietes a hypothequer
 				var proprietes = joueurCourant.findMaisonsHypothecables();
 				
@@ -203,16 +219,23 @@
 				$(proprietes).each(function(){
 					var fiche = this;
 					var div = $("<div>" + this.nom + "</div>");
-				  var boutonLever = $('<button style="margin-right:5px">Lever</button>');
+				    var boutonLever = $('<button style="margin-right:5px">Lever</button>');
 					boutonLever.click(function(){
-						$(this).attr('disabled','disabled');
-						cout-=Math.round(fiche.montantHypotheque*1.1);
-						maisonsToLever.push(fiche);
-						updateCout();
+						addLeverHypotheque($(this),fiche);
 					});
 					div.prepend(boutonLever);
 					 $('#idTerrainsHypotheques > div').append(div);
 				});
+				
+				// Groupes constructibles
+				var groups = joueurCourant.findGroupes();
+				for (var color in groups) {
+				  var div = $('<div><span>Groupe ' + color + '</span><br/></div>');
+				  $(groups[color].proprietes).each(function() {
+				    div.append('<span>' + this.nom + '</span><br/>');
+				  });
+				  $('#idTerrainsConstructibles').append(div);
+				}
 			}
 			
 		});

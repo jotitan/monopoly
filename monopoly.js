@@ -598,6 +598,43 @@
 	   return proprietes;
 	}
 	
+      this.findGroupes = function () {
+          var colorsOK = new Array();
+          var colorsKO = new Array();
+		var groups = [];
+
+          for (var i = 0; i < this.maisons.length; i++) {
+              var m = this.maisons[i];
+              if (m.constructible == true) {
+			   // Deja traite, on possede la famille, on ajoute la maison
+                  if (colorsOK[m.color] == true) {
+                      groups[m.color].proprietes.push(m)
+                  } else {
+                      if (colorsKO[m.color] == null) {
+                          // On recherche si on a toutes les proprietes du groupe
+                          var ok = true;
+                          for (var f in fiches) {
+                              if (fiches[f].constructible == true && fiches[f].color == m.color && (fiches[f].joueurPossede == null || fiches[f].joueurPossede.numero != this.numero)) {
+                                  ok = false;
+                              }
+                          }
+                          if (!ok) {
+						// on ne possede pas le groupe
+                              colorsKO[m.color] = true;
+                          } else {
+						// on possede le groupe
+                              colorsOK[m.color] = true;
+                              groups[m.color] = {color:m.color,proprietes:[]};
+						groups[m.color].proprietes.push(m);
+                          }
+                      }
+                  }
+              }
+          }
+          return groups;
+      }
+      
+      /* Renvoie les groupes constructibles avec les proprietes de chaque */
       this.findMaisonsConstructibles = function () {
           var mc = new Array();
           var colorsOK = new Array();
@@ -612,41 +649,9 @@
                       if (colorsKO[m.color] == null) {
                           // On recherche si on a toutes les couleurs
                           var ok = true;
+					 // On cherche une propriete qui n'appartient pas au joueur
                           for (var f in fiches) {
-                              if (fiches[f].constructible == true && fiches[f].color == m.color && (fiches[f].joueurPossede == null || fiches[f].joueurPossede.numero != this.numero)) {
-                                  ok = false;
-                              }
-                          }
-                          if (!ok) {
-                              colorsKO[m.color] = true;
-                          } else {
-                              colorsOK[m.color] = true;
-                              mc[mc.length] = m;
-                          }
-                      }
-                  }
-              }
-          }
-          return mc;
-      }
-      
-      /* Renvoie les groupes constructibles avec les proprietes de chaque*/
-      this.findMaisonsConstructibles2 = function () {
-          var mc = new Array();
-          var colorsOK = new Array();
-          var colorsKO = new Array();
-
-          for (var i = 0; i < this.maisons.length; i++) {
-              var m = this.maisons[i];
-              if (m.constructible == true) {
-                  if (colorsOK[m.color] == true) {
-                      mc[mc.length] = m; // on a la couleur, on ajoute
-                  } else {
-                      if (colorsKO[m.color] == null) {
-                          // On recherche si on a toutes les couleurs
-                          var ok = true;
-                          for (var f in fiches) {
-                              if (fiches[f].constructible == true && fiches[f].color == m.color && (fiches[f].joueurPossede == null || fiches[f].joueurPossede.numero != this.numero)) {
+                              if (fiches[f].constructible == true && fiches[f].color == m.color && (fiches[f].joueurPossede == null || !fiches[f].joueurPossede.equals(this))) {
                                   ok = false;
                               }
                           }

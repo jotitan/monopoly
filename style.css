@@ -34,3 +34,18 @@
 	width:100%;
 	border-bottom: solid 1px black;
   }
+  
+  .constructions select>option, .constructions select.hotel, .constructions select.maison{
+   	background-repeat:no-repeat;
+  	background-position:left;
+  	background-size:13px 13px;  
+  	padding-left:20px;
+  }
+  
+  .constructions select>option.maison, .constructions select.maison {
+  	background-image:url(maison.png);
+  }
+  
+  .constructions select>option.hotel, .constructions select.hotel {
+  	background-image:url(hotel.png);
+  }  

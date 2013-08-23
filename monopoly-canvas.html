@@ -99,7 +99,7 @@
 	 	<div style="width:50%;height:calc(100% - 40px);background-color:lightgreen;float:right">
 	 		<div class="title-dialog">Constructions</div>
 			<div id="idTerrainsConstructibles">			 
-			 
+			 	<table class="constructions"></table>
 			</div>
 	 	</div>
 		<div id="idTest" style="clear:both;width:100%;height:40px">
@@ -138,6 +138,7 @@
 		  cout=0;
 		  $('select','#idTerrains').empty();
 		  $('#idTerrainsHypotheques > div').empty();
+		  $('#idTerrainsConstructibles > table').empty();
 		  $('#toHypotheque').empty();
 		  updateCout();		  
 		}
@@ -229,12 +230,36 @@
 				
 				// Groupes constructibles
 				var groups = joueurCourant.findGroupes();
+				var table = $('#idTerrainsConstructibles>table');
 				for (var color in groups) {
-				  var div = $('<div><span>Groupe ' + color + '</span><br/></div>');
+					var trTitre = $('<tr><td colspan="3">Groupe ' + color + '</td></tr>');
+					trTitre.data("color",color.substring(1));
+					trTitre.click(function(){
+						var c = $(this).data('color');
+						if($('tr.propriete-' + c + ':visible',table).length == 0){
+							// On ouvre
+							$('tr.propriete-' + c,table).slideDown();
+						}
+						else{
+							$('tr.propriete-' + c,table).slideUp();
+						}
+					});
+				  $(table).append(trTitre);
 				  $(groups[color].proprietes).each(function() {
-				    div.append('<span>' + this.nom + '</span><br/>');
+					var tr = '<tr class="propriete-' + this.color.substring(1) + '"><td style="font-weight:bold;color:' + this.color + '">' + this.nom;
+					  if (this.hotel == true) {
+						  tr += " : 1 hotel" + '</td><td></td>';
+					  } else {
+						  var id = this.etat + "-" + this.pos;
+						  tr += " : </td><td><select class=\"" + ((this.nbMaison==5)?"hotel":"maison") + "\" id=\"id_input_" + id + "\">";
+						  for (var j = 0; j <= ((false) ? this.nbMaison : 5); j++) {
+						      tr += "<option class=\"" + ((j==5)?"hotel":"maison") + "\" value=\"" + j + "\" " + ((this.nbMaison == j) ? "selected" : "") + ">x " + ((j==5)?1:j) + "</option>"
+						  };
+						  tr += " </select> maison(s) (<span id=\"montant_" + id + "\"></span> " + CURRENCY +")</td>";
+					  }
+					  tr += '</tr>';
+				    $(table).append(tr);
 				  });
-				  $('#idTerrainsConstructibles').append(div);
 				}
 			}
 			

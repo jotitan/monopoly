@@ -401,7 +401,7 @@
 	 /* Analyse si une famille est en partie possedee et peut etre achetee (autre terrain libre) */
 	 this.isFamilyFree = function(){
 		// On compte par couleur
-		var family = array();
+		var family = new Array();
 	 	for (var i = 0 ; i < this.maisons.length ; i++) {
 			if(family[this.maisons[i].color] == null){
 				family[this.maisons[i].color] = 1;
@@ -555,7 +555,7 @@
       }
 
       this.payer = function (montant) {
-          this.montant -= montant;
+	     this.montant -= montant;
           this.setArgent(this.montant);
       }
       this.gagner = function (montant) {
@@ -614,7 +614,8 @@
                           // On recherche si on a toutes les proprietes du groupe
                           var ok = true;
                           for (var f in fiches) {
-                              if (fiches[f].constructible == true && fiches[f].color == m.color && (fiches[f].joueurPossede == null || fiches[f].joueurPossede.numero != this.numero)) {
+                              if (fiches[f].constructible == true && fiches[f].color == m.color
+						    && (fiches[f].joueurPossede == null || fiches[f].joueurPossede.numero != this.numero || fiches[f].statutHypotheque == true)) {
                                   ok = false;
                               }
                           }
@@ -640,6 +641,8 @@
           var colorsOK = new Array();
           var colorsKO = new Array();
 
+		// Si une maison est hypotequee, on ne peut plus construire sur le groupe
+		
           for (var i = 0; i < this.maisons.length; i++) {
               var m = this.maisons[i];
               if (m.constructible == true) {
@@ -651,7 +654,8 @@
                           var ok = true;
 					 // On cherche une propriete qui n'appartient pas au joueur
                           for (var f in fiches) {
-                              if (fiches[f].constructible == true && fiches[f].color == m.color && (fiches[f].joueurPossede == null || !fiches[f].joueurPossede.equals(this))) {
+                              if (fiches[f].constructible == true && fiches[f].color == m.color &&
+						    (fiches[f].joueurPossede == null || !fiches[f].joueurPossede.equals(this)) || fiches[f].statutHypotheque == true) {
                                   ok = false;
                               }
                           }
@@ -673,11 +677,13 @@
       this.etat = 2;
       this.position = 0;
       this.joueur = joueur;
+	 this.stats = {tour:0,prison:0};	// stat du joueur
       this.pion = new PionJoueur(color, fiches["2-0"].case.getCenter().x, fiches["2-0"].case .getCenter().y);
       Drawer.addRealTime(this.pion);
 
       // Ca directement en prison, sans passer par la case depart, en coupant
       this.goPrison = function () {
+	   this.stats.prison++;
           this.goDirectToCell(3, 0);
       }
 
@@ -697,17 +703,20 @@
       this.goto = function (etat, pos, call) {
           // decalage
           var center = fiches[this.etat + "-" + this.position].
-      case .getCenter();
-      this.pion.x = center.x;
-      this.pion.y = center.y;
-      console.log(joueurCourant.numero + " va a " + etat + "-" + pos);
-      this.gotoCell(etat, pos, call);
+		case .getCenter();
+		this.pion.x = center.x;
+		this.pion.y = center.y;
+		if (DEBUG) {
+		  console.log(joueurCourant.numero + " va a " + etat + "-" + pos);
+		}	 
+		this.gotoCell(etat, pos, call);
       }
 
       // Si on passe par la case depart, on prend 20000 Francs
       this.treatCaseDepart = function (etatCible, posCible) {
           if (!this.joueur.isEnPrison() && this.position == 0 && this.etat == 2 && this.position != posCible && this.etatCible != this.etat) {
-              this.joueur.gagner(20000);
+              this.stats.depart++;
+		    this.joueur.gagner(20000);
           }
       }
 
@@ -905,6 +914,7 @@
       interval: null,
       intervalRT: null,
       canvas: null,
+	 intervals:[],	// Stocke les flags d'arret du refresh
       canvasRT: null, //Canvas de temps reel
       // ajoute un composant. On indique le canvas sur lequel il s'affiche
       add: function (component, first) {
@@ -928,7 +938,7 @@
       },
       /* Rafraichit un seul canvas */
       refresh: function (canvas) {
-          Drawer.clear(canvas);
+	     Drawer.clear(canvas);
           for (var i = 0; i < Drawer.firstComponents.length; i++) {
               if (Drawer.firstComponents[i].getId() === canvas.canvas.id) {
                   Drawer.firstComponents[i].draw(canvas);
@@ -940,24 +950,14 @@
               }
           }
       },
-      // Refraichissement du graphique, time en ms
+	 // Refraichissement du graphique, time en ms
       setFrequency: function (time, canvas) {
-          if (canvas.canvas.id == "canvas") {
-              if (Drawer.interval != null) {
-                  clearInterval(Drawer.interval);
-              }
-              Drawer.interval = setInterval(function () {
-                  Drawer.refresh(canvas);
-              }, time);
-          }
-          if (canvas.canvas.id == "canvas_rt") {
-              if (Drawer.intervalRT != null) {
-                  clearInterval(Drawer.intervalRT);
-              }
-              Drawer.intervalRT = setInterval(function () {
-                  Drawer.refresh(canvas);
-              }, time);
-          }
+		if (Drawer.intervals[canvas.canvas.id] != null) {
+		    clearInterval(Drawer.intervals[canvas.canvas.id]);
+		}
+		Drawer.intervals[canvas.canvas.id] = setInterval(function () {
+		    Drawer.refresh(canvas);
+		}, time);          
       },
       init: function (width, height) {
           this.width = width;
@@ -970,6 +970,10 @@
           this.refresh(this.canvas);
 		//this.setFrequency(2000, this.canvas);
           this.setFrequency(50, this.canvasRT);
+		
+		$('body').bind('refreshPlateau',function(){
+		  Drawer.refresh(Drawer.canvas);    
+		});
           return this;
       }
   };
@@ -1087,10 +1091,12 @@
       this.color = color;
       this.largeur = largeurPion; // Largeur du pion
       this.draw = function (canvas) {
-          canvas.fillStyle = this.color;
+		canvas.fillStyle = this.color;		
+		canvas.strokeStyle = "#FF0000";//"rgba(255, 255, 255, 0)"
           canvas.beginPath();
-          canvas.arc(this.x, this.y, this.largeur / 2, 0, 2 * Math.PI);
-          canvas.fill();
+          canvas.arc(this.x, this.y, this.largeur / 2, 0, 2 * Math.PI);          
+		canvas.fill();
+		canvas.closePath();
       }
   }
 
@@ -1103,9 +1109,10 @@
           this.color = color || '#000000';
       }
       this.draw = function (canvas) {
-          // Structure du des
+		// Structure du des
           canvas.strokeStyle = '#000000';
           canvas.fillStyle = '#000000';
+		canvas.beginPath();
           canvas.moveTo(x + this.coin, y);
           canvas.lineTo(x + this.coin + this.width, y);
           canvas.bezierCurveTo(x + this.coin * 2 + this.width, y, x + this.coin * 2 + this.width, y + this.coin, x + this.coin * 2 + this.width, y + this.coin);
@@ -1116,7 +1123,8 @@
           canvas.lineTo(x, y + this.coin);
           canvas.bezierCurveTo(x, y, x + this.coin, y, x + this.coin, y);
           canvas.stroke();
-          if (this.value == null) {
+   		canvas.closePath();
+		if (this.value == null) {
               return;
           }
           if (this.value % 2 == 1) {
@@ -1143,6 +1151,7 @@
           canvas.beginPath();
           canvas.arc(x, y, width / 2, 0, 2 * Math.PI);
           canvas.fill();
+		canvas.closePath();
       }
   }
 
@@ -1392,7 +1401,7 @@
   }
 
 	function getFichesOfFamily(color){
-		var family = array();
+		var family = new Array();
 		for(var fiche in fiches){
 			if(fiches[fiche].statut!=null && fiches[fiche].color == color){
 				family.push(fiches[fiche]);
@@ -1401,10 +1410,11 @@
 		return family;
 	}
 
-  function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
+  function Fiche(etat, pos, colors, nom, groupe, achat, loyers, prixMaison, img) {
       this.statut = ETAT_LIBRE;
       this.joueurPossede = null;
       this.nom = nom;
+	 this.groupe = groupe;
       this.color = colors[0];
       this.secondColor = (colors.length == 2) ? colors[1] : colors[0];
       this.achat = achat;
@@ -1462,8 +1472,9 @@
   /* Modifie le nombre de maison sur le terrain */
   this.setNbMaison = function (nb) {
       this.nbMaison = nb;
-      this.
-  case .nbMaison = nb;
+      this.case.nbMaison = nb;
+	 // Lancer un evenement pour rafraichir le plateau
+	 $('body').trigger('refreshPlateau');
   }
 
   this.action = function () {
@@ -1566,7 +1577,7 @@
   }
 
   function FicheGare(etat, pos, color, nom, achat, loyers) {
-      Fiche.call(this, etat, pos, color, nom, achat, loyers, null, {
+      Fiche.call(this, etat, pos, color, nom, null,achat, loyers, null, {
           src: "train.png",
           width: 40,
           height: 50
@@ -1588,7 +1599,7 @@
   }
 
   function FicheCompagnie(etat, pos, color, nom, achat, loyers) {
-      Fiche.call(this, etat, pos, color, nom, achat, loyers);
+      Fiche.call(this, etat, pos, color, nom, null, achat, loyers);
       this.fiche = $('#ficheCompagnie');
       this.type = "compagnie";
       this.constructible = false;
@@ -1888,7 +1899,7 @@
 				var fiche = null;
 				switch(this.type){
 					case "propriete":
-						fiche = new Fiche(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers, this.prixMaison);
+						fiche = new Fiche(this.axe, this.pos, this.colors, this.nom, this.groupe, this.prix, this.loyers, this.prixMaison);
 						break;
 					case "compagnie":
 						fiche = new FicheCompagnie(this.axe, this.pos, this.colors,this.nom, this.prix, this.loyers);
@@ -2005,7 +2016,7 @@
       $('#loyer0', div).text((fiche.isGroupee() == true) ? parseInt(fiche.loyer[0]) * 2 : fiche.loyer[0]);
 
       $('tr', div).removeClass("nbMaisons");
-      $('infos-group', div).removeClass("nbMaisons");
+      $('.infos-group', div).removeClass("nbMaisons");
       $('#loyer' + fiche.nbMaison, div).parent().addClass("nbMaisons");
       if (fiche.nbMaison == 0 && fiche.isGroupee() == true) { // possede la serie
           $('.infos-group', div).addClass("nbMaisons");

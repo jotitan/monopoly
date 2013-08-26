@@ -98,8 +98,13 @@
 	 	</div>
 	 	<div style="width:50%;height:calc(100% - 40px);background-color:lightgreen;float:right">
 	 		<div class="title-dialog">Constructions</div>
-			<div id="idTerrainsConstructibles">			 
-			 	<table class="constructions"></table>
+			<div id="idTerrainsConstructibles" class="constructions" style="padding-left: 10px"></div>
+			<hr style="margin-right:10px;width:150px;float:right;"/>
+			<div style="clear:both"></div>
+			<div style="margin-right:50px;float:right" id="coutAchats">
+			 <img src="maison.png" style="width:15px;"/> x <span name="nbMaison">0</span>
+			 <img src="hotel.png" style="width:15px;"/> x <span name="nbHotel">0</span>
+			 <span name="cout" style="margin-left: 20px"></span> Frs
 			</div>
 	 	</div>
 		<div id="idTest" style="clear:both;width:100%;height:40px">
@@ -130,16 +135,18 @@
 		var maisonsToHypo = [];
 		var maisonsToLever = [];
 		var cout = 0;
-		
+		var totalRestant = 0;
 		
 		function reset() {
 		  maisonsToHypo=[];
 		  maisonsToLever=[];
+		  changesConstructions=[];
 		  cout=0;
 		  $('select','#idTerrains').empty();
 		  $('#idTerrainsHypotheques > div').empty();
-		  $('#idTerrainsConstructibles > table').empty();
+		  $('#idTerrainsConstructibles').empty();
 		  $('#toHypotheque').empty();
+		  $('#coutAchats > span[name]').text(0);
 		  updateCout();		  
 		}
 		
@@ -165,11 +172,27 @@
 		
 		/* Valide le formulaire */
 		function validerActions() {
-			if(joueurCourant.montant+cout < 0){
-				alert("Opération impossible : pas assez d'argent");
-				return;
-			}
-		
+		  if(totalRestant < 0){
+			  alert("Opération impossible : pas assez d'argent");
+			  return;
+		  }
+		  
+		  // On verifie l'equilibre des maisons
+		  var testGroups = [];
+		  $('select[data-color]','#idTerrainsConstructibles').each(function(){
+		    var color = $(this).get(0).dataset.color;
+    		    if (testGroups[color]==null) {
+			 testGroups[color] = {min:5,max:0};
+		    }
+		    testGroups[color].min = Math.min(testGroups[color].min,$(this).val());
+		    testGroups[color].max = Math.max(testGroups[color].max,$(this).val());
+		  })
+		  for (var color in testGroups) {
+		    if(testGroups[color].max - testGroups[color].min > 1){
+			 alert("Il faut équilibrer les maisons");  
+			 return;
+		    }
+		  }
 		  // On recupere les fiches et on hypotheque les biens
 		  for(var id in maisonsToHypo){
 		    maisonsToHypo[id].hypotheque();
@@ -179,16 +202,39 @@
 		  for(var id in maisonsToLever){
 		  	maisonsToLever[id].leveHypotheque();
 		  }
+		  
+		  // Gestion des constructions
+		  for (var achat in changesConstructions) {
+		    var data = changesConstructions[achat];
+		    data.propriete.setNbMaison(data.nbMaison);
+		    joueurCourant.payer(data.cout);
+		  }
+		  
 		  $('#housesPanel').dialog('close');
 		}
 		
 		function updateCout() {
-		  $('#idCoutTotal').text(cout + " " + CURRENCY);
-		  $('#idArgentRestant').text((joueurCourant.montant+cout) + " " + CURRENCY);
+		  
+		  // On mets a jour les maisons, si on ajoute, on ne peut pas hypothequer
+		  
+		  // Gestion des constructions
+		  var totals = {nbMaison:0,nbHotel:0,cout:0}
+		  for (var achat in changesConstructions) {
+		    var data = changesConstructions[achat];
+		    totals.cout+=data.cout;
+		    totals.nbMaison+=data.maison || 0;
+		    totals.nbHotel+=data.hotel || 0;
+		  }
+		  $('#coutAchats > span[name]').each(function(){
+		    $(this).text(totals[$(this).attr('name')]);
+		  })
+		  $('#idCoutTotal').text((cout-totals.cout) + " " + CURRENCY);
+		  totalRestant = joueurCourant.montant+cout-totals.cout;
+		  $('#idArgentRestant').text((joueurCourant.montant+cout-totals.cout) + " " + CURRENCY);		  
 		}
 		
 		function addOption(fiche){
-			var option = $("<option value='" + fiche.id + "'>" + fiche.nom + " (+" + fiche.montantHypotheque + " " + CURRENCY + ")</option>");
+			var option = $("<option data-color='" + fiche.color + "' value='" + fiche.id + "'>" + fiche.nom + " (+" + fiche.montantHypotheque + " " + CURRENCY + ")</option>");
 			option.data("fiche",fiche);			
 			$('select','#idTerrains').append(option);
 		}
@@ -200,6 +246,88 @@
 		  updateCout();
 		}
 		
+		// Changement sur les constructions
+		var changesConstructions = {};
+		
+		function loadConstructibles() {		  
+		  var groups = joueurCourant.findGroupes();
+		  var table = $('#idTerrainsConstructibles');
+		  for (var color in groups) {
+			  var divTitre = $('<div style="cursor:pointer">Groupe <span style="color:' + color + ';font-weight:bold">' + groups[color].proprietes[0].groupe + '</span></div>');
+			  divTitre.data("color",color.substring(1));
+			  divTitre.click(function(){
+				  var c = $(this).data('color');
+				  if($('div.propriete-' + c + ':visible',table).length == 0){
+					  // On ouvre
+					  $('div.propriete-' + c,table).slideDown();
+				  }
+				  else{
+					  $('div.propriete-' + c,table).slideUp();
+				  }
+			  });			  
+		    $(table).append(divTitre);
+		    $(groups[color].proprietes).each(function() {
+			 var propriete = this;
+			  var divTerrain = $('<div class="propriete propriete-' + this.color.substring(1) + '"></div>');
+			  divTerrain.append('<span style="color:' + this.color + '" class="title-propriete">' + this.nom + '</span>');
+			  var select = $('<select data-color="' + this.color + '" class="' + ((this.nbMaison==5)?'hotel':'maison') + '"></select>');
+			 for (var j = 0; j <= ((false) ? this.nbMaison : 5); j++) {
+				select.append("<option class=\"" + ((j==5)?"hotel":"maison") + "\" value=\"" + j + "\" " + ((this.nbMaison == j) ? "selected" : "") + ">x " + ((j==5)?1:j) + "</option>");
+			 }
+			 select.change(function(){
+				// On verifie changement par rapport a l'origine
+				if (propriete.nbMaison == $(this).val()) {
+				  delete changesConstructions[propriete.id];
+				  $('~span',this).text("");
+				  updateCout();
+				  return;
+				}
+				var data = ($(this).val() == 5)?{hotel:1}:{maison:$(this).val() - propriete.nbMaison};
+				data.propriete = propriete;
+				data.nbMaison = $(this).val();
+				data.cout = ($(this).val() > propriete.nbMaison)
+				  ?($(this).val()-propriete.nbMaison)*propriete.prixMaison
+				  :($(this).val()-propriete.nbMaison )*propriete.prixMaison/2;
+				  $(this).removeClass().addClass(($(this).val()==5)?'hotel':'maison');
+				$('~span',this).text(data.cout);
+				changesConstructions[propriete.id] = data;
+				updateCout();
+			 });
+			 divTerrain.append(select).append('<span></span> ' + CURRENCY);
+			 
+			 $(table).append(divTerrain);
+		    });
+		  }
+		}
+		
+		function loadHypothecables() {
+		  var proprietes = joueurCourant.findMaisonsHypothecables();
+		  $(proprietes).each(function(){
+			  addOption(this);
+		  });
+		}
+		
+		function loadHypotheques() {
+		  var proprietes = joueurCourant.findMaisonsHypothequees();
+		  $(proprietes).each(function(){
+			  var fiche = this;
+			  var div = $("<div>" + this.nom + "</div>");
+			 var boutonLever = $('<button style="margin-right:5px">Lever</button>');
+			  boutonLever.click(function(){
+				  addLeverHypotheque($(this),fiche);
+			  });
+			  div.prepend(boutonLever);
+			   $('#idTerrainsHypotheques > div').append(div);
+		  });
+		}
+		
+		function loadPanel(args) {
+		  reset();
+		  loadHypothecables();
+		  loadHypotheques();
+		  loadConstructibles();										  
+		}
+		
 		$('#housesPanel').dialog({
 			width:800,
 			height:600,
@@ -208,61 +336,9 @@
 			buttons:{'Fermer':function(){$('#housesPanel').dialog('close');},"Valider":validerActions},
 			autoOpen:false,
 			open:function(){
-				reset();
 				// On charge les proprietes a hypothequer
-				var proprietes = joueurCourant.findMaisonsHypothecables();
-				
-				$(proprietes).each(function(){
-					addOption(this);
-				});
-				// On charge les proprietes hypothequees
-				proprietes = joueurCourant.findMaisonsHypothequees();
-				$(proprietes).each(function(){
-					var fiche = this;
-					var div = $("<div>" + this.nom + "</div>");
-				    var boutonLever = $('<button style="margin-right:5px">Lever</button>');
-					boutonLever.click(function(){
-						addLeverHypotheque($(this),fiche);
-					});
-					div.prepend(boutonLever);
-					 $('#idTerrainsHypotheques > div').append(div);
-				});
-				
-				// Groupes constructibles
-				var groups = joueurCourant.findGroupes();
-				var table = $('#idTerrainsConstructibles>table');
-				for (var color in groups) {
-					var trTitre = $('<tr><td colspan="3">Groupe ' + color + '</td></tr>');
-					trTitre.data("color",color.substring(1));
-					trTitre.click(function(){
-						var c = $(this).data('color');
-						if($('tr.propriete-' + c + ':visible',table).length == 0){
-							// On ouvre
-							$('tr.propriete-' + c,table).slideDown();
-						}
-						else{
-							$('tr.propriete-' + c,table).slideUp();
-						}
-					});
-				  $(table).append(trTitre);
-				  $(groups[color].proprietes).each(function() {
-					var tr = '<tr class="propriete-' + this.color.substring(1) + '"><td style="font-weight:bold;color:' + this.color + '">' + this.nom;
-					  if (this.hotel == true) {
-						  tr += " : 1 hotel" + '</td><td></td>';
-					  } else {
-						  var id = this.etat + "-" + this.pos;
-						  tr += " : </td><td><select class=\"" + ((this.nbMaison==5)?"hotel":"maison") + "\" id=\"id_input_" + id + "\">";
-						  for (var j = 0; j <= ((false) ? this.nbMaison : 5); j++) {
-						      tr += "<option class=\"" + ((j==5)?"hotel":"maison") + "\" value=\"" + j + "\" " + ((this.nbMaison == j) ? "selected" : "") + ">x " + ((j==5)?1:j) + "</option>"
-						  };
-						  tr += " </select> maison(s) (<span id=\"montant_" + id + "\"></span> " + CURRENCY +")</td>";
-					  }
-					  tr += '</tr>';
-				    $(table).append(tr);
-				  });
-				}
-			}
-			
+				loadPanel();
+			}			
 		});
 		
 	   </script>

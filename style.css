@@ -35,11 +35,19 @@
 	border-bottom: solid 1px black;
   }
   
+  .constructions select {
+            width:65px;
+  }
+  
   .constructions select>option, .constructions select.hotel, .constructions select.maison{
    	background-repeat:no-repeat;
-  	background-position:left;
+  	background-position:2px;
   	background-size:13px 13px;  
-  	padding-left:20px;
+  	padding-left:15px;
+  }
+  
+  .constructions select>option.maison, .constructions select>option.hotel {
+            padding-left: 20px;            
   }
   
   .constructions select>option.maison, .constructions select.maison {
@@ -49,3 +57,13 @@
   .constructions select>option.hotel, .constructions select.hotel {
   	background-image:url(hotel.png);
   }  
+
+
+.constructions div.propriete  {
+            padding-left:20px;            
+}
+.constructions div.propriete>span.title-propriete  {
+            display:inline-block;
+            width:200px;
+            font-weight:bold;
+}

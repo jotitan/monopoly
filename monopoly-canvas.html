@@ -101,10 +101,10 @@
 			<div id="idTerrainsConstructibles" class="constructions" style="padding-left: 10px"></div>
 			<hr style="margin-right:10px;width:150px;float:right;"/>
 			<div style="clear:both"></div>
-			<div style="margin-right:50px;float:right" id="coutAchats">
+			<div style="margin-right:40px;float:right" id="coutAchats">
 			 <img src="maison.png" style="width:15px;"/> x <span name="nbMaison">0</span>
 			 <img src="hotel.png" style="width:15px;"/> x <span name="nbHotel">0</span>
-			 <span name="cout" style="margin-left: 20px"></span> Frs
+			 <span name="cout" style="margin-left: 10px"></span> <span class="currency-value"></span>
 			</div>
 	 	</div>
 		<div id="idTest" style="clear:both;width:100%;height:40px">
@@ -138,6 +138,7 @@
 		var totalRestant = 0;
 		
 		function reset() {
+			$('.currency-value').text(CURRENCY);
 		  maisonsToHypo=[];
 		  maisonsToLever=[];
 		  changesConstructions=[];
@@ -216,6 +217,11 @@
 		function updateCout() {
 		  
 		  // On mets a jour les maisons, si on ajoute, on ne peut pas hypothequer
+			$('select > option[data-color]','#idTerrains').removeAttr('disabled');
+		  $('select[data-color][value!=0]','#idTerrainsConstructibles').each(function(){
+			var groupColor = $(this).attr('data-color');
+			$('select > option[data-color="' + groupColor +'"]','#idTerrains').attr('disabled','disabled');
+		  });
 		  
 		  // Gestion des constructions
 		  var totals = {nbMaison:0,nbHotel:0,cout:0}

@@ -73,8 +73,8 @@
   function ParcGratuit(id) {
       this.montant = null;
 
-      this.case = new CaseSpeciale(0, "Parc Gratuit");
-  Drawer.add(this.case);
+      this.drawing = new CaseSpeciale(0, "Parc Gratuit");
+  Drawer.add(this.drawing);
 
   this.setMontant = function (montant) {
       this.montant = montant;
@@ -120,6 +120,12 @@
 	  	
 	  	return risque1 * (risque2/100 + 1);
 	  }
+
+
+		/* Calcul le budget depensable */
+		this.getBudget = function(argent){
+		
+		}
 
 	  /* Calcule la marge d'achat par rapport au montant et le pondere par rapport a la prise de risque */
       this.calculMargeMontant = function (joueur, cout) {
@@ -357,10 +363,22 @@
       // Fonction appelee lorsque le joueur a la main
       this.joue = function () {
 		// On reevalue a intervalle regulier la strategie
-		this.changeStrategie();
-          // on lance les dés
-          lancerAnimerDes();
+		this.changeStrategie();		
+		// Construit des maisons / hotels
+		
+        // on lance les dés
+        lancerAnimerDes();
       }
+      
+      /* Construit des maisons / hotels 
+      * Calcul les groupes constructibles, verifie l'argent disponible. Construit sur les proprietes ou peuvent tomber les adversaires (base sur leur position et les stats au des)
+      * Possibilité d'enregistrer tous les deplacements des joueurs pour affiner les cases les plus visitees
+      */
+     this.buildConstructions = function(){
+     
+     } 
+      
+      
 	 /* Reevalue la strategie. Se base sur plusieurs parametres :
 	 * Si peu de propriete ont ete achetees (<3) alors que 60% des terrains qui l'interessent ont ete vendu et qu'aucune famille n'est completable, on reevalue.
 	 * 
@@ -577,7 +595,7 @@
 				// Aucune propriete possedee de la couleur ne doit avoir de maison
 				var flag = true;
 				for (var j = 0; j < this.maisons.length; j++) {
-					if(this.maisons[i].color == propriete.nbMaison > 0){flag = false;}
+					if(this.maisons[j].color == propriete.color && this.maisons[j].nbMaison > 0){flag = false;}
 				}
 				if(flag){
 					proprietes.push(propriete);
@@ -678,7 +696,7 @@
       this.position = 0;
       this.joueur = joueur;
 	 this.stats = {tour:0,prison:0};	// stat du joueur
-      this.pion = new PionJoueur(color, fiches["2-0"].case.getCenter().x, fiches["2-0"].case .getCenter().y);
+      this.pion = new PionJoueur(color, fiches["2-0"].drawing.getCenter().x, fiches["2-0"].drawing.getCenter().y);
       Drawer.addRealTime(this.pion);
 
       // Ca directement en prison, sans passer par la case depart, en coupant
@@ -703,7 +721,7 @@
       this.goto = function (etat, pos, call) {
           // decalage
           var center = fiches[this.etat + "-" + this.position].
-		case .getCenter();
+		drawing.getCenter();
 		this.pion.x = center.x;
 		this.pion.y = center.y;
 		if (DEBUG) {
@@ -723,9 +741,9 @@
       this.goDirectToCell = function (etat, pos) {
           // On calcule la fonction affine
           var p1 = fiches[this.etat + "-" + this.position].
-      case .getCenter()
+      drawing.getCenter()
       var p2 = fiches[etat + "-" + pos].
-      case .getCenter()
+      drawing.getCenter()
       // Si meme colonne, (x constant), on ne fait varier que y
       if (p1.x == p2.x) {
           var y = p1.y;
@@ -770,7 +788,7 @@
           if (this.etat == etatCible && this.position == posCible) {
               // On decale le pion
               var decalage = fiches[this.etat + "-" + this.position].
-          case .decalagePion();
+          drawing.decalagePion();
           this.pion.x = decalage.x;
           this.pion.y = decalage.y;
           if (callback) {
@@ -809,7 +827,7 @@
               this.position = 0;
           }
           return fiches[this.etat + "-" + this.position].
-      case .getCenter();
+      drawing.getCenter();
       }
   }
 
@@ -817,10 +835,8 @@
       this.titre = titre;
       this.actionSpeciale = actionSpeciale;
 
-      this.
-  case = new CaseSpeciale(etat, titre);
-  Drawer.add(this.
-  case);
+      this.drawing = new CaseSpeciale(etat, titre);
+  Drawer.add(this.drawing);
 
   this.action = function () {
       this.actionSpeciale();
@@ -829,9 +845,8 @@
   }
 
   function CarteSpeciale(titre, montant, etat, pos, img) {
-      this.case = new Case(pos, etat, null, titre, CURRENCY + " " + montant, img);
-  Drawer.add(this.
-  case);
+      this.drawing = new Case(pos, etat, null, titre, CURRENCY + " " + montant, img);
+  Drawer.add(this.drawing);
   this.action = function () {
       return createMessage(titre, "lightblue", "Vous devez payer la somme de " + montant + " " + CURRENCY, function (param) {
           param.joueur.payerParcGratuit(param.montant);
@@ -876,14 +891,12 @@
   }
 
   function Chance(etat, pos) {
-      this.
-  case = new Case(pos, etat, null, titles.chance, null, {
+      this.drawing = new Case(pos, etat, null, titles.chance, null, {
       src: "interrogation.png",
       width: 50,
       height: 60
   });
-  Drawer.add(this.
-  case);
+  Drawer.add(this.drawing);
   this.action = function () {
       var c = cartesChance[Math.round((Math.random() * 1000)) % (cartesChance.length)];
       return c.action();
@@ -891,14 +904,12 @@
   }
 
   function CaisseDeCommunaute(etat, pos) {
-      this.
-  case = new Case(pos, etat, null, titles.communaute, null, {
+      this.drawing = new Case(pos, etat, null, titles.communaute, null, {
       src: "banque.png",
       width: 50,
       height: 50
   });
-  Drawer.add(this.
-  case);
+  Drawer.add(this.drawing);
   this.action = function () {
       var c = cartesCaisseCommunaute[Math.round((Math.random() * 1000)) % (cartesCaisseCommunaute.length)];
       return c.action();
@@ -1434,8 +1445,8 @@
       this.id = etat+"-"+pos;
 	 this.input = null;	// Bouton 
 
-      this.case = new Case(pos, etat, this.color, this.nom, CURRENCY + " " + achat, img);
-  Drawer.add(this. case);
+      this.drawing = new Case(pos, etat, this.color, this.nom, CURRENCY + " " + achat, img);
+  Drawer.add(this.drawing);
 
   this.vendu = function (joueur) {
       this.statut = ETAT_ACHETE;
@@ -1472,7 +1483,7 @@
   /* Modifie le nombre de maison sur le terrain */
   this.setNbMaison = function (nb) {
       this.nbMaison = nb;
-      this.case.nbMaison = nb;
+      this.drawing.nbMaison = nb;
 	 // Lancer un evenement pour rafraichir le plateau
 	 $('body').trigger('refreshPlateau');
   }
@@ -1888,7 +1899,7 @@
       Drawer.add(new SimpleRect(0, 0, 800, 800, '#A7E9DB'), true);
       // On charge le plateau
       $.ajax({
-      	url:plateau,
+      	url:'data/' + plateau,
       	dataType:'json',
       	success:function(data){
 		     parcGratuit = new ParcGratuit();

@@ -137,6 +137,73 @@
 		var cout = 0;
 		var totalRestant = 0;
 		
+		
+		var GestionTerrains = {
+			maisonsToLever:[],
+			changesConstructions:[],
+			cout:0,
+			totalRestant:0,
+			/* Remet a 0 le panneau */
+			reset:function() {
+			  $('.currency-value').text(CURRENCY);
+			  this.Hypotheque.reset();
+			  this.maisonsToLever=[];
+			  this.changesConstructions=[];
+			  this.cout=0;
+			  $('select','#idTerrains').empty();
+			  $('#idTerrainsConstructibles').empty();
+			  $('#toHypotheque').empty();
+			  $('#coutAchats > span[name]').text(0);
+			  this.update();		  
+			},
+			/* Charge les informations */
+			load:function(){
+				this.Hypotheque.load();
+			},
+			/* Mets a jour le panneau */
+			update:function(){
+			
+			},
+			/* Gere l'hypotheque de terrain */
+			Hypotheque:{
+				table:[],				
+				reset:function(){
+					this.table=[];					
+				},
+				/* Charge les terrains hypothequables */
+				load:function(){
+					var proprietes = joueurCourant.findMaisonsHypothecables();
+					  $(proprietes).each(function(){
+						  addOption(this);
+					  });
+				}
+			},
+			LeverHypotheque:{
+				div:$('#idTerrainsHypotheques > div'),
+				reset:function(){
+					this.div.empty();
+				},
+				lever:function(input,fiche){
+					var proprietes = joueurCourant.findMaisonsHypothequees();
+				  $(proprietes).each(function(){
+					 var fiche = this;
+					 var div = $("<div>" + this.nom + "</div>");
+					 var boutonLever = $('<button style="margin-right:5px">Lever</button>');
+					 boutonLever.click(function(){
+					 	GestionTerrains.LeverHypotheque.lever($(this),fiche);
+					 });
+					 div.prepend(boutonLever);
+					 GestionTerrains.Hypotheque.append(div);
+				  });
+				},
+				load:function(){
+				
+				},
+				
+			}
+		}
+		
+		
 		function reset() {
 			$('.currency-value').text(CURRENCY);
 		  maisonsToHypo=[];

@@ -1,6 +1,12 @@
 // TODO : outil pour regler les dettes, moteur pour achat maison pour ordinateur, limites maison 32 hotel 12, strategie smart sur stats maisons les plus visites
 // Bilan joueurs : nombres propriétés, nombres maisons / hotels, argent, argent dispo (apres hypotheque / vente)
 
+Array.prototype.size = function(){
+  var count = 0;
+  for(var i in this){count++;}
+  return count;
+}
+
   var DEBUG = true;
   /* Jets des dés */
   var des1;
@@ -116,24 +122,41 @@
 	  */	  
 	  this.getRisqueTotal = function(joueur,cout){
 	  	var risque1 = this.calculMargeMontant(joueur,cout);
-	  	var risque2 = this.calculMargeMontant(joueur,cout);	// = 0 si aucun risque par la suite
+	  	var risque2 = this.calculRisque(joueur);
 	  	
 	  	return risque1 * (risque2/100 + 1);
 	  }
 
 
-		/* Calcul le budget depensable */
-		this.getBudget = function(argent){
-		
+		/* Calcul le budget depensable pour la construction de maison / hotel */
+		this.getBudget = function(joueur){
+		  // On prend l'argent pondéré par le risque
+		  var risque = this.calculRisque(joueur);
+		  return joueur.montant * (1 - risque/100);
 		}
 
+		/* Calcul le terrain du joueur sur lesquels les adversaires peuvent tomber */
+		this.getNextProprietesVisitees = function(joueur){
+		  for (var idJoueur in joueurs) {
+		    var j = joueurs[idJoueur];
+		    if (!j.equals(joueurs) {
+			 // On parcours toutes les statistiques et on mesure le risque de tomber sur une propriete du joueur
+			 for (var i = 0 ; i < ) {
+			   //code
+			 }
+		    }
+		  }
+		  
+		}
+		
+		
 	  /* Calcule la marge d'achat par rapport au montant et le pondere par rapport a la prise de risque */
       this.calculMargeMontant = function (joueur, cout) {
       	  var marge = cout / joueur.montant;	// inferieur a 1
 		  return marge / this.risque;
       }
 
-      /* Se base sur les prochaines a risque qui arrive, renvoi un pourcentage */
+      /* Se base sur les prochaines cases a risque qui arrive, renvoi un pourcentage */
       this.calculRisque = function (joueur) {
           // On calcul le risque de tomber sur une case cher.
           // On considere un risque quand on est au dessus de risque * montant d'amande)
@@ -365,7 +388,7 @@
 		// On reevalue a intervalle regulier la strategie
 		this.changeStrategie();		
 		// Construit des maisons / hotels
-		
+		this.buildConstructions();
         // on lance les dés
         lancerAnimerDes();
       }
@@ -375,7 +398,12 @@
       * Possibilité d'enregistrer tous les deplacements des joueurs pour affiner les cases les plus visitees
       */
      this.buildConstructions = function(){
-     
+	 var groups = this.findGroupes();  ;
+	 if (groups.size() == 0) {
+	   return;
+	 }
+	 var budget = this.comportement.getBudget(this);
+	 // On determine les terrains les plus rentables a court terme (selon la position des joueurs)
      } 
       
       

@@ -1,11 +1,18 @@
 // TODO : outil pour regler les dettes, moteur pour achat maison pour ordinateur, limites maison 32 hotel 12, strategie smart sur stats maisons les plus visites
 // Bilan joueurs : nombres propriétés, nombres maisons / hotels, argent, argent dispo (apres hypotheque / vente)
 
-Array.prototype.size = function(){
-  var count = 0;
-  for(var i in this){count++;}
-  return count;
-}
+// Defini la methode size. Cette methode evite d'etre enumere dans les boucles
+Object.defineProperty(Array.prototype, "size", {
+    value: function() {
+        var count = 0;
+        for(var i in this){count++;}
+        return count;
+    },
+    writable: false,
+    enumerable: false,
+    configurable: false
+});
+ 
 
   var DEBUG = true;
   /* Jets des dés */
@@ -139,10 +146,10 @@ Array.prototype.size = function(){
 		this.getNextProprietesVisitees = function(joueur){
 		  for (var idJoueur in joueurs) {
 		    var j = joueurs[idJoueur];
-		    if (!j.equals(joueurs) {
+		    if (!j.equals(joueurs)) {
 			 // On parcours toutes les statistiques et on mesure le risque de tomber sur une propriete du joueur
-			 for (var i = 0 ; i < ) {
-			   //code
+			 for (var i = 0 ; i <0; ) {
+			   //TODO
 			 }
 		    }
 		  }

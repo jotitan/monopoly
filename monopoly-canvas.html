@@ -159,31 +159,61 @@
 			/* Charge les informations */
 			load:function(){
 				this.Hypotheque.load();
+				this.LeverHypotheque.load();
 			},
 			/* Mets a jour le panneau */
 			update:function(){
-			
+			 // On mets a jour les maisons, si on ajoute, on ne peut pas hypothequer
+			  $('select > option[data-color]','#idTerrains').removeAttr('disabled');
+			  $('select[data-color][value!=0]','#idTerrainsConstructibles').each(function(){
+				var groupColor = $(this).attr('data-color');
+				$('select > option[data-color="' + groupColor +'"]','#idTerrains').attr('disabled','disabled');
+			  });
+			  
+			  // Gestion des constructions
+			  var totals = {nbMaison:0,nbHotel:0,cout:0}
+			  for (var achat in changesConstructions) {
+			    var data = changesConstructions[achat];
+			    totals.cout+=data.cout;
+			    totals.nbMaison+=data.maison || 0;
+			    totals.nbHotel+=data.hotel || 0;
+			  }
+			  $('#coutAchats > span[name]').each(function(){
+			    $(this).text(totals[$(this).attr('name')]);
+			  })
+			  $('#idCoutTotal').text((cout-totals.cout) + " " + CURRENCY);
+			  totalRestant = joueurCourant.montant+cout-totals.cout;
+			  $('#idArgentRestant').text((joueurCourant.montant+cout-totals.cout) + " " + CURRENCY);		  
 			},
 			/* Gere l'hypotheque de terrain */
 			Hypotheque:{
-				table:[],				
+				table:[],
+				select:$('select','#idTerrains'),
 				reset:function(){
-					this.table=[];					
+					this.table=[];
+					this.select.empty();
 				},
 				/* Charge les terrains hypothequables */
 				load:function(){
 					var proprietes = joueurCourant.findMaisonsHypothecables();
 					  $(proprietes).each(function(){
-						  addOption(this);
+						  GestionTerrains.Hypotheque.addOption(this);
 					  });
+				},
+				addOption:function(fiche){
+				   var option = $("<option data-color='" + fiche.color + "' value='" + fiche.id + "'>" + fiche.nom + " (+" + fiche.montantHypotheque + " " + CURRENCY + ")</option>");
+				   option.data("fiche",fiche);			
+				   this.select.append(option);
 				}
 			},
 			LeverHypotheque:{
 				div:$('#idTerrainsHypotheques > div'),
+				table:[],
 				reset:function(){
 					this.div.empty();
+					this.table=[];
 				},
-				lever:function(input,fiche){
+				load:function(){
 					var proprietes = joueurCourant.findMaisonsHypothequees();
 				  $(proprietes).each(function(){
 					 var fiche = this;
@@ -196,8 +226,11 @@
 					 GestionTerrains.Hypotheque.append(div);
 				  });
 				},
-				load:function(){
-				
+				lever:function(input,fiche){
+				 input.attr('disabled','disabled');
+				  cout-=Math.round(fiche.montantHypotheque*1.1);
+				  this.table.push(fiche);
+				  updateCout();
 				},
 				
 			}

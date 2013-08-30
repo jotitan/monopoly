@@ -3,15 +3,18 @@
 	 <head>
 	   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 	   <title>Monopoly</title>
-	   <link type="text/css" href="css/sunny/jquery-ui-1.7.2.custom.css" rel="stylesheet" />	
-	   <script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
-	   <script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script>
+	   <link type="text/css" href="css/sunny/jquery-ui-1.10.3.custom.min.css" rel="stylesheet" />	
+	   <script type="text/javascript" src="js/jquery-1.9.1.js"></script>
+	   <script type="text/javascript" src="js/jquery-ui-1.10.3.custom.min.js"></script>
 	   <script type="text/javascript" src="monopoly.js"></script>
 	   <style>
 		.hypotheque {
             background-color: lightgrey;
             color:black;
 		}		
+		.ui-widget {
+			font-size:0.9em;
+		}
 	   </style>
 		<link rel="stylesheet" type="text/css" href="style.css"/>
 	  
@@ -29,9 +32,6 @@
 	   <div id="idDebug">
 	   case : <input type="text" size="3" id="nb"/><input type="button" onclick="joueurCourant.joueDes(parseInt($('#nb').val()))" value="click"/><br/>
 	   Goto : <input type="text" size="3" id="ide"/><input type="text" size="3" id="idp"/><input type="button" onclick="joueurCourant.pion.goto($('#ide').val(),$('#idp').val(),doActions)" value="goto"/><br/>
-	   
-	   
-	   maison constructible : <input type="button" value="Chercher" onclick="construireMaisons()"/><br/>
 	   Tableau de bord : <input type="button" value="Ouvrir" onclick="$('#housesPanel').dialog('open')"/><br/>
 	   </div>
 	   <div id="informations"></div>
@@ -118,6 +118,17 @@
 		  </tr></table>
 		</div>
 		
+	 	</div>
+	 	
+	 	<div style="display:none" id="infoJoueur">
+	 		<div style="font-size:12px">
+				<span class="info-label"><img src="img/money2.png" style="width:18px;"/></span> : <span name="argent"></span><br/>
+				<span class="info-label"><img src="img/money2.png" style="width:18px;"/><img src="img/money2.png" style="width:18px;"/></span> : <span name="argentDispo"></span><br/>
+				<span class="info-label"><img src="maison.png" style="width:15px;"/></span> : <span name="maison"></span><br/>
+				<span class="info-label"><img src="hotel.png" style="width:15px;"/></span> : <span name="hotel"></span><br/>
+				<span class="info-label"><img src="jail.jpg" style="width:18px;"/></span> : <span name="prison"></span> fois<br/>
+				<span class="info-label"><img src="img/tour.png" style="width:18px;"/></span> : <span name="tour"></span> tour(s)		
+			</div>
 	 	</div>
 	 
 	 

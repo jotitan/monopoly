@@ -24,7 +24,16 @@
 		padding-left: 30px;
 	}
   
+  #informations > div {
+  	font-size:14px;
+  }
 		  
+  span.info-label {
+  	display:inline-block;
+  	width:40px;
+  	text-align:right;
+  }
+  
   
   body{margin:0}
   

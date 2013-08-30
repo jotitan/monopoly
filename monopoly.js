@@ -386,7 +386,7 @@ Object.defineProperty(Array.prototype, "size", {
 	 this.updateName = function(noUpdate){
 	   this.nom= this.initialName + " " + this.strategie.name;
 	   if(noUpdate!=true){
-	   	$('.joueur_name','#joueur' + this.numero).text(this.nom);
+	   	$('.joueur-name','#joueur' + this.numero).text(this.nom);
 	   }
 	 }
 	 
@@ -526,6 +526,22 @@ Object.defineProperty(Array.prototype, "size", {
               return false;
           }
           return this.numero == joueur.numero;
+      }
+      
+      /* Renvoie les stats et infos du jour : 
+      * Nombre de tour, nombre de fois en prison
+      * Nombre de terrains, nombre de maison et hotel
+      * Argent disponible, argent apres vente maison / hypotheque
+      */
+      this.getStats = function(){
+		var stats = {prison:this.pion.stats.prison,tour:this.pion.stats.tour,argent:this.montant,argentDispo:this.montant,hotel:0,maison:0};
+		for(var index in this.maisons){		
+			var maison = this.maisons[index];
+			stats.hotel+= parseInt(maison.hotel==true ? 1 : 0);
+			stats.maison+= parseInt(maison.hotel==false ? maison.nbMaison : 0);
+			stats.argentDispo+=maison.nbMaison*(maison.prixMaison/2) + maison.achat/2; // Revente des maisons + hypotheque
+		}
+		return stats;
       }
 
       // Cherche la position ou placer la nouvelle fiche (tri par couleur)
@@ -730,7 +746,7 @@ Object.defineProperty(Array.prototype, "size", {
       this.etat = 2;
       this.position = 0;
       this.joueur = joueur;
-	 this.stats = {tour:0,prison:0};	// stat du joueur
+	  this.stats = {tour:0,prison:0};	// stat du joueur
       this.pion = new PionJoueur(color, fiches["2-0"].drawing.getCenter().x, fiches["2-0"].drawing.getCenter().y);
       Drawer.addRealTime(this.pion);
 
@@ -768,7 +784,7 @@ Object.defineProperty(Array.prototype, "size", {
       // Si on passe par la case depart, on prend 20000 Francs
       this.treatCaseDepart = function (etatCible, posCible) {
           if (!this.joueur.isEnPrison() && this.position == 0 && this.etat == 2 && this.position != posCible && this.etatCible != this.etat) {
-              this.stats.depart++;
+              this.stats.tour++;
 		    this.joueur.gagner(20000);
           }
       }
@@ -1565,10 +1581,6 @@ Object.defineProperty(Array.prototype, "size", {
       });
   }
 
-  this.noArgent = function () {
-      construireMaisons(true);
-  }
-
    // Ouvre la fiche d'une propriété
   this.openFiche = function () {
       var buttons = this.getButtons();
@@ -1663,117 +1675,6 @@ Object.defineProperty(Array.prototype, "size", {
           }
           return this.loyer[0] * loyer;
       }
-  }
-
-
-   // Pour la recuperation d'argent, on passe par une version allégée du construireMaisons
-
-  function construireMaisons(modeBanqueroute) {
-      var maisons = joueurCourant.findMaisonsConstructibles();
-      maisons.sort(function (a, b) {
-          if (a.color == b.color) return 0;
-          if (a.color > b.color) return 1;
-          if (a.color < b.color) return -1;
-      });
-      $('#achatMaisons').empty();
-      var m = "<table>";
-      for (var i = 0; i < maisons.length; i++) {
-
-          m += '<tr id=\"idAchatMaison-' + maisons[i].color + i + '\"><td style="font-weight:bold;color:' + maisons[i].color + '">' + maisons[i].nom;
-          if (maisons[i].hotel == true) {
-              m += " : 1 hotel" + '</td><td></td>';
-          } else {
-              var id = maisons[i].etat + "-" + maisons[i].pos;
-              m += " : </td><td><select id=\"id_input_" + id + "\">";
-              for (var j = 0; j <= ((modeBanqueroute != null) ? maisons[i].nbMaison : 5); j++) {
-                  m += "<option value=\"" + j + "\" " + ((maisons[i].nbMaison == j) ? "selected" : "") + ">" + j + "</option>"
-              };
-              m += " </select> maison(s) (<span id=\"montant_" + id + "\"></span> " + CURRENCY +")</td>";
-          }
-          m += '</tr>';
-      }
-      m += "<tr><td>TOTAL</td><td><span id=\"idTotalDepenses\"></span> " + CURRENCY + "</td></tr>";
-      m += "</table>";
-      $('#achatMaisons').append(m);
-      $('#achatMaisons').find('select[id^=id_input_]').change(function () {
-          var id = this.id.replace("id_input_", "");
-          // Au dessus du nombre, achat, en dessous, on vend la moitié
-          var montant = 0;
-          if ($(this).val() > fiches[id].nbMaison) {
-              // on achete
-              montant = ($(this).val() - fiches[id].nbMaison) * fiches[id].prixMaison;
-          }
-          if ($(this).val() < fiches[id].nbMaison) {
-              // on vend
-              montant = ($(this).val() - fiches[id].nbMaison) * fiches[id].prixMaison / 2;
-          }
-          $('#montant_' + id).text(montant);
-          var total = 0;
-          $('#achatMaisons').find('span[id^=montant_]').each(function () {
-              if ($(this).text() != "") total += parseInt($(this).text());
-          });
-          $('#idTotalDepenses').text(total);
-      });
-
-      $('#achatMaisons').dialog('option', 'buttons', {
-          "Annuler": function () {
-              $('#achatMaisons').dialog('close');
-          },
-          "Effectuer": function () {
-              var equilibre = true;
-              // on verifie que c'est equilibre (pas plus de une maison d'ecart
-              var colors = new Array();
-              $('#achatMaisons').find('select[id^=id_input_]').each(function () {
-                  var id = this.id.replace("id_input_", "");
-                  var c = fiches[id].color;
-                  if (colors[c] == null) { // pas encore traitee
-                      colors[c] = 1;
-                      var max = -1;
-                      var min = -1;
-                      $('#achatMaisons').find('tr[id*=' + c + ']').each(function () {
-                          var val = $(this).find('select[id^=id_input_]').val();
-                          if (max == -1 && min == -1) {
-                              max = val;
-                              min = val;
-                          } else {
-                              if (val > max) {
-                                  max = val;
-                              }
-                              if (val < min) {
-                                  min = val;
-                              }
-                          }
-                      });
-
-                      if (max - min > 1) {
-                          equilibre = false;
-                      }
-                  }
-              });
-
-              if (equilibre == false) {
-                  alert("Il faut équilibrer la répartition des maisons sur les couleurs");
-                  return;
-              }
-
-              $('#achatMaisons').dialog('close');
-              if (parseInt($('#idTotalDepenses').text()) > joueurCourant.montant) {
-                  alert("Pas possible, plus assez d'argent");
-                  return;
-              }
-
-              var currentEtat = joueurCourant.pion.etat;
-              var currentPosition = joueurCourant.pion.position;
-              var currentArgent = joueurCourant.montant - parseInt($('#idTotalDepenses').text());
-              $('#achatMaisons').find('select[id^=id_input_]').each(function () {
-                  var id = this.id.replace("id_input_", "");
-                  // Au dessus du nombre, achat, en dessous, on vend la moitié
-                  fiches[id].setNbMaison($(this).val());
-              });
-              joueurCourant.setArgent(currentArgent);
-          }
-      });
-      $('#achatMaisons').dialog('open');
   }
 
    // Cree le comportement lorsque le joueur arrive sur la carte
@@ -1889,7 +1790,7 @@ Object.defineProperty(Array.prototype, "size", {
   }
 
 	function initJoueurs(){
-	 var nb = prompt("Nombre de joueurs ?");
+	 var nb = 2;//prompt("Nombre de joueurs ?");
       for (var i = 0; i < nb; i++) {
           var id = 'joueur' + i;
           var joueur = null;
@@ -1899,7 +1800,8 @@ Object.defineProperty(Array.prototype, "size", {
               joueur = new JoueurOrdinateur(i, "Joueur " + (i + 1));
           }
           joueurs[i] = joueur;
-          $('#informations').append('<div id=\"' + id + '\"><div><span class="joueur_name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY + '</div></div><hr/>');
+          $('#informations').append('<div id=\"' + id + '\"><div><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY 
+          	+ '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user.png" style="cursor:pointer;width:16px;"</span></div></div><hr/>');
           joueur.setDiv($('#' + id));
           joueur.setPion(colorsJoueurs[i]);
       }
@@ -1918,7 +1820,15 @@ Object.defineProperty(Array.prototype, "size", {
           width: 500,
           height: 300
       });
-
+		$('.info-joueur').tooltip({
+			content:function(){
+				var stats = getJoueurById($(this).data('idjoueur')).getStats();
+				$('span[name]','#infoJoueur').each(function(){
+					$(this).text(stats[$(this).attr('name')]);
+				});
+				return $('#infoJoueur').html();
+			}
+		});
 	}
 
    // Initialise les des
@@ -1999,7 +1909,8 @@ Object.defineProperty(Array.prototype, "size", {
      		Drawer.init(800, 800);
      		callback();
       	},
-      	error:function(){
+      	error:function(a,b,c){
+	      	console.log(a,b,c);
       		alert("Le plateau " + plateau + " n'existe pas");
       		return;
       	}
@@ -2392,6 +2303,15 @@ Object.defineProperty(Array.prototype, "size", {
           }
       });
       $('#ficheCompagnie').prev().css("background", "url()");
+  }
+  
+  function getJoueurById(numero){
+  	for(var joueur in joueurs){
+  		if(joueurs[joueur].numero == numero){
+  			return joueurs[joueur];
+  		}
+  	}
+  	return null;
   }
 
   function selectJoueurCourant() {

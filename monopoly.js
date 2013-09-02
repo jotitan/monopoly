@@ -1,11 +1,13 @@
 // TODO : outil pour regler les dettes, moteur pour achat maison pour ordinateur, limites maison 32 hotel 12, strategie smart sur stats maisons les plus visites
-// Bilan joueurs : nombres propriétés, nombres maisons / hotels, argent, argent dispo (apres hypotheque / vente)
+// Bilan joueurs : nombres proprietes, nombres maisons / hotels, argent, argent dispo (apres hypotheque / vente)
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
-    value: function() {
+    value: function () {
         var count = 0;
-        for(var i in this){count++;}
+        for (var i in this){
+            count++;
+        }
         return count;
     },
     writable: false,
@@ -15,7 +17,7 @@ Object.defineProperty(Array.prototype, "size", {
  
 
   var DEBUG = true;
-  /* Jets des dés */
+  /* Jets des dï¿½s */
   var des1;
   var des2;
   var nbDouble = 0;
@@ -45,6 +47,10 @@ Object.defineProperty(Array.prototype, "size", {
   var bordure = 20;
   var largeurPion = (largeur - 5) / 3;
 
+/* Cherche une fiche a partir de l'etat et la position. Info contient pos et etat */
+  function getFiche(info) {
+    return fiches[info.etat + "-" + info.pos];
+  }
 
 	// Parametrage des titres
 	var titles = {};
@@ -137,23 +143,35 @@ Object.defineProperty(Array.prototype, "size", {
 
 		/* Calcul le budget depensable pour la construction de maison / hotel */
 		this.getBudget = function(joueur){
-		  // On prend l'argent pondéré par le risque
+		  // On prend l'argent pondï¿½rï¿½ par le risque
 		  var risque = this.calculRisque(joueur);
 		  return joueur.montant * (1 - risque/100);
 		}
 
 		/* Calcul le terrain du joueur sur lesquels les adversaires peuvent tomber */
+		// TODO
 		this.getNextProprietesVisitees = function(joueur){
+		  var maisons = [];
 		  for (var idJoueur in joueurs) {
 		    var j = joueurs[idJoueur];
 		    if (!j.equals(joueurs)) {
 			 // On parcours toutes les statistiques et on mesure le risque de tomber sur une propriete du joueur
-			 for (var i = 0 ; i <0; ) {
-			   //TODO
+			 var posActuel = j.getPosition();
+			 for (var i = 1 ; i <12; i++) {
+			   var fiche = getFiche(j.pion.deplaceValeursDes(i));
+			   if (fiche.constructible && fiche.joueurPossede!=null && fiche.joueurPossede.equals(joueur)) {
+				//maison visitable, on ajoute la maison avec la proba
+				if (maisons[fiche.id]!=null) {
+				  maisons[fiche.id].proba+=this.probaDes[i];
+				}
+				else{
+				  maisons[fiche.id] = ({proba:this.probaDes[i],maison:fiche});
+				}
+			   }
 			 }
 		    }
 		  }
-		  
+		  return maisons;
 		}
 		
 		
@@ -207,7 +225,7 @@ Object.defineProperty(Array.prototype, "size", {
       Comportement.call(this, 0.8);
   }
 
-  /* Objet qui gere la strategie. IL y a différentes implémentations */
+  /* Objet qui gere la strategie. IL y a diffï¿½rentes implï¿½mentations */
   /* @colors : liste des groupes qui interessent le joueur */
   /* @param agressif : plus il est eleve, plus le joueur fait de l'antijeu (achat des terrains recherches par les adversaires) */
 
@@ -283,7 +301,7 @@ Object.defineProperty(Array.prototype, "size", {
       /* Renvoie le statut de la famille : 
 		  0 : toutes les proprietes sont libres
 		  1 : s'il reste des libres apres celle ci
-		  2 : si toutes appartiennent a une même personne sauf celle-ci
+		  2 : si toutes appartiennent a une mï¿½me personne sauf celle-ci
 		  3 : si toutes appartiennent sauf celle-ci
 		  4 : autres */
       // Prendre en compte si j'ai la famille, que c'est la derniere carte. Il faut passer les autres options de risques, prix. Il faut absolument acheter
@@ -343,7 +361,7 @@ Object.defineProperty(Array.prototype, "size", {
       Strategie.call(this, ["#73316F", "#D16E2D", "#D32C19", "#E6E018"], 1, "medium");
   }
 
-  /* Achete en prioriete les terrains les moins chers : rouge-D32C19, jaune-E6E018, vert-11862E et bleu foncé-132450 */
+  /* Achete en prioriete les terrains les moins chers : rouge-D32C19, jaune-E6E018, vert-11862E et bleu foncï¿½-132450 */
 
   function HardStrategie() {
       Strategie.call(this, ["#D32C19", "#E6E018", "#11862E", "#132450"], 2, "hard");
@@ -356,15 +374,15 @@ Object.defineProperty(Array.prototype, "size", {
   }
 
   /* Joueur ordinateur */
-  /* Il faut, a la creation, definir le style de jeu : prudent (achat des deux première lignes), agressif (achète tout)
-	 mode fric (achète les plus chers).*/
+  /* Il faut, a la creation, definir le style de jeu : prudent (achat des deux premiï¿½re lignes), agressif (achï¿½te tout)
+	 mode fric (achï¿½te les plus chers).*/
 
   function JoueurOrdinateur(numero, nom) {
       Joueur.call(this, numero, nom);
       this.initialName = nom;
-      /* Stratégie : définit le comportement pour l'achat des maisons */
+      /* Stratï¿½gie : dï¿½finit le comportement pour l'achat des maisons */
       this.strategie = null;
-      /* Comportement : définit le rapport à l'argent. Inclu la prise de risque */
+      /* Comportement : dï¿½finit le rapport ï¿½ l'argent. Inclu la prise de risque */
       this.comportement = null;
 
 	 /* Determine les caracteristiques d'un ordinateur*/
@@ -386,7 +404,7 @@ Object.defineProperty(Array.prototype, "size", {
 	 this.updateName = function(noUpdate){
 	   this.nom= this.initialName + " " + this.strategie.name;
 	   if(noUpdate!=true){
-	   	$('.joueur-name','#joueur' + this.numero).text(this.nom);
+	   	$('.joueur_name','#joueur' + this.numero).text(this.nom);
 	   }
 	 }
 	 
@@ -396,13 +414,13 @@ Object.defineProperty(Array.prototype, "size", {
 		this.changeStrategie();		
 		// Construit des maisons / hotels
 		this.buildConstructions();
-        // on lance les dés
+        // on lance les dï¿½s
         lancerAnimerDes();
       }
       
       /* Construit des maisons / hotels 
       * Calcul les groupes constructibles, verifie l'argent disponible. Construit sur les proprietes ou peuvent tomber les adversaires (base sur leur position et les stats au des)
-      * Possibilité d'enregistrer tous les deplacements des joueurs pour affiner les cases les plus visitees
+      * Possibilitï¿½ d'enregistrer tous les deplacements des joueurs pour affiner les cases les plus visitees
       */
      this.buildConstructions = function(){
 	 var groups = this.findGroupes();  ;
@@ -435,7 +453,7 @@ Object.defineProperty(Array.prototype, "size", {
 				}
 			}
 		}
-		// On garde la même si aucune n'est interessante
+		// On garde la mï¿½me si aucune n'est interessante
 	   }
 	 }
       var current = this;
@@ -467,7 +485,7 @@ Object.defineProperty(Array.prototype, "size", {
 	 	for(var color in family){
 	 		var fiches = getFichesOfFamily(color);
 	 		var isFree = true;
-	 		// On boucle sur les fiches et on verifie qu'elles sont soit libre, soit à nous
+	 		// On boucle sur les fiches et on verifie qu'elles sont soit libre, soit ï¿½ nous
 	 		for(var index in fiches){
 	 			if(fiches[index].statut != ETAT_LIBRE && !fiches[index].joueurPossede.equals(this)){
 	 				isFree = false;
@@ -527,23 +545,11 @@ Object.defineProperty(Array.prototype, "size", {
           }
           return this.numero == joueur.numero;
       }
-      
-      /* Renvoie les stats et infos du jour : 
-      * Nombre de tour, nombre de fois en prison
-      * Nombre de terrains, nombre de maison et hotel
-      * Argent disponible, argent apres vente maison / hypotheque
-      */
-      this.getStats = function(){
-		var stats = {prison:this.pion.stats.prison,tour:this.pion.stats.tour,argent:this.montant,argentDispo:this.montant,hotel:0,maison:0};
-		for(var index in this.maisons){		
-			var maison = this.maisons[index];
-			stats.hotel+= parseInt(maison.hotel==true ? 1 : 0);
-			stats.maison+= parseInt(maison.hotel==false ? maison.nbMaison : 0);
-			stats.argentDispo+=maison.nbMaison*(maison.prixMaison/2) + maison.achat/2; // Revente des maisons + hypotheque
-		}
-		return stats;
-      }
 
+	 this.getPosition = function(){
+	   return {pos:this.case.pos,etat:this.case.etat};
+	 }
+	 
       // Cherche la position ou placer la nouvelle fiche (tri par couleur)
       this.cherchePlacement = function (maison) {
           for (var i = 0; i < this.maisons.length; i++) {
@@ -746,7 +752,7 @@ Object.defineProperty(Array.prototype, "size", {
       this.etat = 2;
       this.position = 0;
       this.joueur = joueur;
-	  this.stats = {tour:0,prison:0};	// stat du joueur
+	 this.stats = {tour:0,prison:0};	// stat du joueur
       this.pion = new PionJoueur(color, fiches["2-0"].drawing.getCenter().x, fiches["2-0"].drawing.getCenter().y);
       Drawer.addRealTime(this.pion);
 
@@ -784,7 +790,7 @@ Object.defineProperty(Array.prototype, "size", {
       // Si on passe par la case depart, on prend 20000 Francs
       this.treatCaseDepart = function (etatCible, posCible) {
           if (!this.joueur.isEnPrison() && this.position == 0 && this.etat == 2 && this.position != posCible && this.etatCible != this.etat) {
-              this.stats.tour++;
+              this.stats.depart++;
 		    this.joueur.gagner(20000);
           }
       }
@@ -1042,7 +1048,7 @@ Object.defineProperty(Array.prototype, "size", {
 
 
   /* @param size : font-size */
-  /* @param specificWidth : largeur specifique (plutôt que la largeur habituelle, largeur */
+  /* @param specificWidth : largeur specifique (plutï¿½t que la largeur habituelle, largeur */
 
   function writeText(text, x, y, rotate, canvas, size, specificWidth) {
       var width = specificWidth || largeur;
@@ -1553,7 +1559,7 @@ Object.defineProperty(Array.prototype, "size", {
   }
 
   this.chezSoi = function () {
-      return createMessage("Vous êtes " + this.nom, this.color, "Vous êtes chez vous", changeJoueur)
+      return createMessage("Vous ï¿½tes " + this.nom, this.color, "Vous ï¿½tes chez vous", changeJoueur)
   }
 
   this.getLoyer = function () {
@@ -1570,7 +1576,7 @@ Object.defineProperty(Array.prototype, "size", {
   }
 
   this.payerLoyer = function () {
-      return createMessage("Vous êtes " + this.nom, this.color, "Vous êtes chez " + this.joueurPossede.nom + " vous devez payez la somme de " + this.getLoyer() + " " + CURRENCY, function (param) {
+      return createMessage("Vous ï¿½tes " + this.nom, this.color, "Vous ï¿½tes chez " + this.joueurPossede.nom + " vous devez payez la somme de " + this.getLoyer() + " " + CURRENCY, function (param) {
           param.joueurPaye.payer(param.loyer);
           param.joueurLoyer.gagner(param.loyer);
           changeJoueur();
@@ -1581,7 +1587,11 @@ Object.defineProperty(Array.prototype, "size", {
       });
   }
 
-   // Ouvre la fiche d'une propriété
+  this.noArgent = function () {
+      construireMaisons(true);
+  }
+
+   // Ouvre la fiche d'une propriï¿½tï¿½
   this.openFiche = function () {
       var buttons = this.getButtons();
       this.fiche.dialog('option', 'buttons', buttons);
@@ -1677,6 +1687,117 @@ Object.defineProperty(Array.prototype, "size", {
       }
   }
 
+
+   // Pour la recuperation d'argent, on passe par une version allï¿½gï¿½e du construireMaisons
+
+  function construireMaisons(modeBanqueroute) {
+      var maisons = joueurCourant.findMaisonsConstructibles();
+      maisons.sort(function (a, b) {
+          if (a.color == b.color) return 0;
+          if (a.color > b.color) return 1;
+          if (a.color < b.color) return -1;
+      });
+      $('#achatMaisons').empty();
+      var m = "<table>";
+      for (var i = 0; i < maisons.length; i++) {
+
+          m += '<tr id=\"idAchatMaison-' + maisons[i].color + i + '\"><td style="font-weight:bold;color:' + maisons[i].color + '">' + maisons[i].nom;
+          if (maisons[i].hotel == true) {
+              m += " : 1 hotel" + '</td><td></td>';
+          } else {
+              var id = maisons[i].etat + "-" + maisons[i].pos;
+              m += " : </td><td><select id=\"id_input_" + id + "\">";
+              for (var j = 0; j <= ((modeBanqueroute != null) ? maisons[i].nbMaison : 5); j++) {
+                  m += "<option value=\"" + j + "\" " + ((maisons[i].nbMaison == j) ? "selected" : "") + ">" + j + "</option>"
+              };
+              m += " </select> maison(s) (<span id=\"montant_" + id + "\"></span> " + CURRENCY +")</td>";
+          }
+          m += '</tr>';
+      }
+      m += "<tr><td>TOTAL</td><td><span id=\"idTotalDepenses\"></span> " + CURRENCY + "</td></tr>";
+      m += "</table>";
+      $('#achatMaisons').append(m);
+      $('#achatMaisons').find('select[id^=id_input_]').change(function () {
+          var id = this.id.replace("id_input_", "");
+          // Au dessus du nombre, achat, en dessous, on vend la moitiï¿½
+          var montant = 0;
+          if ($(this).val() > fiches[id].nbMaison) {
+              // on achete
+              montant = ($(this).val() - fiches[id].nbMaison) * fiches[id].prixMaison;
+          }
+          if ($(this).val() < fiches[id].nbMaison) {
+              // on vend
+              montant = ($(this).val() - fiches[id].nbMaison) * fiches[id].prixMaison / 2;
+          }
+          $('#montant_' + id).text(montant);
+          var total = 0;
+          $('#achatMaisons').find('span[id^=montant_]').each(function () {
+              if ($(this).text() != "") total += parseInt($(this).text());
+          });
+          $('#idTotalDepenses').text(total);
+      });
+
+      $('#achatMaisons').dialog('option', 'buttons', {
+          "Annuler": function () {
+              $('#achatMaisons').dialog('close');
+          },
+          "Effectuer": function () {
+              var equilibre = true;
+              // on verifie que c'est equilibre (pas plus de une maison d'ecart
+              var colors = new Array();
+              $('#achatMaisons').find('select[id^=id_input_]').each(function () {
+                  var id = this.id.replace("id_input_", "");
+                  var c = fiches[id].color;
+                  if (colors[c] == null) { // pas encore traitee
+                      colors[c] = 1;
+                      var max = -1;
+                      var min = -1;
+                      $('#achatMaisons').find('tr[id*=' + c + ']').each(function () {
+                          var val = $(this).find('select[id^=id_input_]').val();
+                          if (max == -1 && min == -1) {
+                              max = val;
+                              min = val;
+                          } else {
+                              if (val > max) {
+                                  max = val;
+                              }
+                              if (val < min) {
+                                  min = val;
+                              }
+                          }
+                      });
+
+                      if (max - min > 1) {
+                          equilibre = false;
+                      }
+                  }
+              });
+
+              if (equilibre == false) {
+                  alert("Il faut ï¿½quilibrer la rï¿½partition des maisons sur les couleurs");
+                  return;
+              }
+
+              $('#achatMaisons').dialog('close');
+              if (parseInt($('#idTotalDepenses').text()) > joueurCourant.montant) {
+                  alert("Pas possible, plus assez d'argent");
+                  return;
+              }
+
+              var currentEtat = joueurCourant.pion.etat;
+              var currentPosition = joueurCourant.pion.position;
+              var currentArgent = joueurCourant.montant - parseInt($('#idTotalDepenses').text());
+              $('#achatMaisons').find('select[id^=id_input_]').each(function () {
+                  var id = this.id.replace("id_input_", "");
+                  // Au dessus du nombre, achat, en dessous, on vend la moitiï¿½
+                  fiches[id].setNbMaison($(this).val());
+              });
+              joueurCourant.setArgent(currentArgent);
+          }
+      });
+      $('#achatMaisons').dialog('open');
+  }
+
    // Cree le comportement lorsque le joueur arrive sur la carte
 
   function doActions() {
@@ -1737,13 +1858,13 @@ Object.defineProperty(Array.prototype, "size", {
 
       if (joueurCourant.enPrison == true) {
           if (des1 == des2) {
-              var buttons = createMessage("Libéré de prison", "lightblue", "Vous êtes libérés de prison grâce à un double", function () {
+              var buttons = createMessage("Libï¿½rï¿½ de prison", "lightblue", "Vous ï¿½tes libï¿½rï¿½s de prison grï¿½ce ï¿½ un double", function () {
 			 joueurCourant.exitPrison();	 
 		    }, {});
               joueurCourant.actionApresDes(buttons, null);
           } else {
               if (joueurCourant.nbDouble == 2) {
-                  var buttons = createMessage("Libéré de prison", "lightblue", "Vous êtes libérés de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
+                  var buttons = createMessage("Libï¿½rï¿½ de prison", "lightblue", "Vous ï¿½tes libï¿½rï¿½s de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
                       joueurCourant.payerParcGratuit(5000);
                       joueurCourant.exitPrison();
                       joueurCourant.joueDes(des1 + des2);
@@ -1790,7 +1911,7 @@ Object.defineProperty(Array.prototype, "size", {
   }
 
 	function initJoueurs(){
-	 var nb = 2;//prompt("Nombre de joueurs ?");
+	 var nb = prompt("Nombre de joueurs ?");
       for (var i = 0; i < nb; i++) {
           var id = 'joueur' + i;
           var joueur = null;
@@ -1800,8 +1921,7 @@ Object.defineProperty(Array.prototype, "size", {
               joueur = new JoueurOrdinateur(i, "Joueur " + (i + 1));
           }
           joueurs[i] = joueur;
-          $('#informations').append('<div id=\"' + id + '\"><div><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY 
-          	+ '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user.png" style="cursor:pointer;width:16px;"</span></div></div><hr/>');
+          $('#informations').append('<div id=\"' + id + '\"><div><span class="joueur_name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY + '</div></div><hr/>');
           joueur.setDiv($('#' + id));
           joueur.setPion(colorsJoueurs[i]);
       }
@@ -1813,22 +1933,14 @@ Object.defineProperty(Array.prototype, "size", {
       });
       $('#message').prev().css("background", "url()");
 
-      // panneau de création
+      // panneau de crï¿½ation
       $('#achatMaisons').dialog({
           autoOpen: false,
-          title: "Achat de maisons / hôtels",
+          title: "Achat de maisons / hï¿½tels",
           width: 500,
           height: 300
       });
-		$('.info-joueur').tooltip({
-			content:function(){
-				var stats = getJoueurById($(this).data('idjoueur')).getStats();
-				$('span[name]','#infoJoueur').each(function(){
-					$(this).text(stats[$(this).attr('name')]);
-				});
-				return $('#infoJoueur').html();
-			}
-		});
+
 	}
 
    // Initialise les des
@@ -1909,8 +2021,7 @@ Object.defineProperty(Array.prototype, "size", {
      		Drawer.init(800, 800);
      		callback();
       	},
-      	error:function(a,b,c){
-	      	console.log(a,b,c);
+      	error:function(){
       		alert("Le plateau " + plateau + " n'existe pas");
       		return;
       	}
@@ -2016,7 +2127,7 @@ Object.defineProperty(Array.prototype, "size", {
 	  verify:function(){
 		  try{
 			 if(GestionTerrains.totalRestant < 0){
-			   throw "Opération impossible : pas assez d'argent";
+			   throw "Opï¿½ration impossible : pas assez d'argent";
 			 }
 			  GestionTerrains.Constructions.verify();
 		  }catch(e){
@@ -2154,7 +2265,7 @@ Object.defineProperty(Array.prototype, "size", {
 			  });
 			  for (var color in testGroups) {
 				  if(testGroups[color].max - testGroups[color].min > 1){
-				    throw "Il faut équilibrer les maisons";  
+				    throw "Il faut ï¿½quilibrer les maisons";  
 				  }
 			 }
 		  },
@@ -2303,15 +2414,6 @@ Object.defineProperty(Array.prototype, "size", {
           }
       });
       $('#ficheCompagnie').prev().css("background", "url()");
-  }
-  
-  function getJoueurById(numero){
-  	for(var joueur in joueurs){
-  		if(joueurs[joueur].numero == numero){
-  			return joueurs[joueur];
-  		}
-  	}
-  	return null;
   }
 
   function selectJoueurCourant() {

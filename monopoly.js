@@ -1548,7 +1548,7 @@ Object.defineProperty(Array.prototype, "size", {
       this.statut = ETAT_LIBRE;
       this.joueurPossede = null;
       this.nom = nom;
-	 this.groupe = groupe;
+	  this.groupe = groupe;
       this.color = colors[0];
       this.secondColor = (colors.length == 2) ? colors[1] : colors[0];
       this.achat = achat;
@@ -1574,6 +1574,22 @@ Object.defineProperty(Array.prototype, "size", {
   this.vendu = function (joueur) {
       this.statut = ETAT_ACHETE;
       this.joueurPossede = joueur;
+  }
+  
+  /* Renvoie la rentabilite de la propriete. Se base sur le rapport entre le loyer de trois maisons et le prix d'achat d'une maison */
+  this.getRentabilite = function(){
+  	if(!this.constructible){
+  		return 0;
+  	}
+  	else{
+  		return this.loyer[3] / ((this.prixMaison*(Math.min(0,3-this.nbMaison))));
+  	}
+  }
+  
+  this.getNbByGroupe = function(){
+  	var count = 0;
+  	for(var id in fiches){if(fiches[id].color == this.color){count++;}}
+  	return count;
   }
   
   /* Hypotheque le terrain */

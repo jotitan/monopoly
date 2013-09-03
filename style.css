@@ -18,7 +18,7 @@
 		}
   
 	.jail {
-		background-image: url("jail.jpg");
+		background-image: url("img/jail.jpg");
 		background-repeat: no-repeat;
 		background-size: contain;
 		padding-left: 30px;
@@ -61,11 +61,11 @@
   }
   
   .constructions select>option.maison, .constructions select.maison {
-  	background-image:url(maison.png);
+  	background-image:url(img/maison.png);
   }
   
   .constructions select>option.hotel, .constructions select.hotel {
-  	background-image:url(hotel.png);
+  	background-image:url(img/hotel.png);
   }  
 
 

@@ -18,7 +18,7 @@
 		{"type": "compagnie","axe": 3,"pos": 2,"nom": "Compagnie de distribution d'électricité","colors": ["lightgreen"],"prix": 15000,"loyers": [400,1000]},
 		{"type": "propriete","groupe": "Violet clair","axe": 3,"pos": 3,"nom": "Les Diamants sont Eternels","colors": ["#73316F", "#DFB4DC"],"prix": 14000,"loyers": [1000, 5000, 15000, 45000, 62500, 75000],"prixMaison": 10000},				
 		{"type": "propriete","groupe": "Violet clair","axe": 3,"pos": 4,"nom": "Vivre et Laisser Mourir","colors": ["#73316F", "#DFB4DC"],"prix": 16000,"loyers": [1200, 6000, 18000, 50000, 70000, 90000],"prixMaison": 10000},
-		{"type": "gare","axe": 3,"pos": 5,"nom": "Lotus Esprit","colors": ["#000000", "#ABABAB"],"prix": 20000,"loyers": [2500, 5000, 10000, 20000]},
+		{"type": "gare","axe": 3,"pos": 5,"nom": "Aston Martin AMV8","colors": ["#000000", "#ABABAB"],"prix": 20000,"loyers": [2500, 5000, 10000, 20000]},
 		{"type": "propriete","groupe": "Orange","axe": 3,"pos": 6,"nom": "L'homme au Pistolet d'Or","colors": ["#D16E2D", "#FECC84"],"prix": 18000,"loyers": [1400, 7000, 20000, 55000, 75000, 95000],"prixMaison": 10000},
 		{"type": "communaute","axe": 3,"pos": 7},
 		{"type": "propriete","groupe": "Orange","axe": 3,"pos": 8,"nom": "L'espion qui m'aimait","colors": ["#D16E2D", "#FECC84"],"prix": 18000,"loyers": [1400, 7000, 20000, 55000, 75000, 95000],"prixMaison": 10000},
@@ -28,7 +28,7 @@
 		{"type": "chance","axe": 0,"pos": 2},
 		{"type": "propriete","groupe": "Rouge","axe": 0,"pos": 3,"nom": "Octopussy","colors": ["#D32C19", "#F9AEA6"],"prix": 22000,"loyers": [1800, 9000, 25000, 70000, 87500, 105000],"prixMaison": 15000},		
 		{"type": "propriete","groupe": "Rouge","axe": 0,"pos": 4,"nom": "Dangereu- sement vôtre","colors": ["#D32C19", "#F9AEA6"],"prix": 24000,"loyers": [2000, 10000, 30000, 75000, 92500, 110000],"prixMaison": 15000},						
-		{"type": "gare","axe": 0,"pos": 5,"nom": "BMW 750i","colors": ["#000000", "#ABABAB"],"prix": 20000,"loyers": [2500, 5000, 10000, 20000]},		
+		{"type": "gare","axe": 0,"pos": 5,"nom": "Aston Martin Vanquish","colors": ["#000000", "#ABABAB"],"prix": 20000,"loyers": [2500, 5000, 10000, 20000]},		
 		{"type": "propriete","groupe": "Jaune","axe": 0,"pos": 6,"nom": "Tuer n'est pas jouer","colors": ["#E6E018", "#F8F587"],"prix": 26000,"loyers": [2200, 11000, 33000, 80000, 97500, 115000],"prixMaison": 15000},
 		{"type": "propriete","groupe": "Jaune","axe": 0,"pos": 7,"nom": "Permis de Tuer","colors": ["#E6E018", "#F8F587"],"prix": 26000,"loyers": [2200, 11000, 33000, 80000, 97500, 115000],"prixMaison": 15000},								
 		{"type": "compagnie","axe": 0,"pos": 8,"nom": "Compagnie de distribution des eaux","colors": ["lightgreen"],"prix": 15000,"loyers": [400,1000]},
@@ -38,18 +38,23 @@
 		{"type": "propriete","groupe": "Vert","axe": 1,"pos": 2,"nom": "Le Monde ne Suffit pas","colors": ["#11862E", "#93D1A2"],"prix": 30000,"loyers": [2600, 13000, 39000, 90000, 110000, 127500],"prixMaison": 20000},
 		{"type": "communaute","axe": 1,"pos": 3},		
 		{"type": "propriete","groupe": "Vert","axe": 1,"pos": 4,"nom": "Meurs un Autre Jour","colors": ["#11862E", "#93D1A2"],"prix": 32000,"loyers": [2800, 15000, 45000, 100000, 120000, 140000],"prixMaison": 20000},		
-		{"type": "gare","axe": 1,"pos": 5,"nom": "Aston Martin Vanquish","colors": ["#000000", "#ABABAB"],"prix": 20000,"loyers": [2500, 5000, 10000, 20000]},
+		{"type": "gare","axe": 1,"pos": 5,"nom": "Aston Martin DBS","colors": ["#000000", "#ABABAB"],"prix": 20000,"loyers": [2500, 5000, 10000, 20000]},
 		{"type": "chance","axe": 1,"pos": 6},				
 		{"type": "propriete","groupe": "Bleu","axe": 1,"pos": 7,"nom": "Casino Royale","colors": ["#132450", "#808EB0"],"prix": 35000,"loyers": [3500, 17500, 50000, 110000, 130000, 150000],"prixMaison": 20000},
 		{"type": "taxe","axe": 1,"pos": 8,"nom": "Taxe de luxe","prix": 10000},		
 		{"type": "propriete","groupe": "Bleu","axe": 1,"pos": 9,"nom": "Quantum of Solace","colors": ["#132450", "#808EB0"],"prix": 40000,"loyers": [5000, 20000, 60000, 140000, 170000, 200000],"prixMaison": 20000}						
 	],
 	"images":{
-		"gare":{}
+		"gare":{
+			"src" : "img/jamesbond/aston_martin.png",
+			"width":60,
+			"height":20,
+			"margin":15
+		}
 	},
 	"titles":{
 		"chance":"Walter PPK",
-		"communaute":"James Bond Girl",
+		"communaute":"James Bond Girl"
 	},
 	"chance":{
 		"cartes":[

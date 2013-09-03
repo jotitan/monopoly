@@ -464,8 +464,18 @@ Object.defineProperty(Array.prototype, "size", {
 		 * On construit jusqu'a obtenir 3 maisons partout (seuil de rentabilité). On construit ensuite sur l'autre groupe
 		 * On construit toujours plus sur la maison la plus chere
 		 * S'il reste du budget, on recupere les terrains sans interet et on construit dessus
+		 * On calcule la somme des taux par groupe
 		 */
-
+		 if (maison.length>0) {
+		  var colors = [];
+		  for (var i = 0 ; i < maisons.length ; i++) {
+		   if(colors[maisons[i].maison.color] == null){
+		    colors[maisons[i].maison.color] = 0;
+		   }
+		   colors[maisons[i].maison.color]+=maisons[i].proba;
+		  }
+		  
+		 }
 		 
      } 
       
@@ -1004,7 +1014,7 @@ Object.defineProperty(Array.prototype, "size", {
 
   function Chance(etat, pos) {
       this.drawing = new Case(pos, etat, null, titles.chance, null, {
-      src: "interrogation.png",
+      src: "img/interrogation.png",
       width: 50,
       height: 60
   });
@@ -1017,7 +1027,7 @@ Object.defineProperty(Array.prototype, "size", {
 
   function CaisseDeCommunaute(etat, pos) {
       this.drawing = new Case(pos, etat, null, titles.communaute, null, {
-      src: "banque.png",
+      src: "img/banque.png",
       width: 50,
       height: 50
   });
@@ -1332,8 +1342,8 @@ Object.defineProperty(Array.prototype, "size", {
       this.imgMaison = new Image();
       this.imgHotel = new Image();
       this.init = function () {
-          this.imgMaison.src = "maison.png";
-          this.imgHotel.src = "hotel.png";
+          this.imgMaison.src = "img/maison.png";
+          this.imgHotel.src = "img/hotel.png";
           if (axe % 2 == 1) { // E et 0
               // height et width inverse
               this.data.height = largeur;
@@ -1361,6 +1371,7 @@ Object.defineProperty(Array.prototype, "size", {
               image.src = img.src;
               image.height = img.height;
               image.width = img.width;
+		    image.margin = img.margin;
               this.data.image = image;
           }
       }
@@ -1432,7 +1443,7 @@ Object.defineProperty(Array.prototype, "size", {
           if (this.data.image != null) {
               var rotate = (Math.PI / 2) * ((this.axe + 2) % 4);
               var lng = (largeur - this.data.image.width) / 2;
-              var dec = 10 + ((color != null) ? bordure : 10) + ((title != null) ? 10 : 0);
+              var dec = 10 + ((color != null) ? bordure : 10) + ((title != null) ? 10 : 0) + (this.data.image.margin ||0);
               switch (axe) {
               case 0:
                   drawImage(canvas, this.data.image, this.data.x + largeur - lng, this.data.y + hauteur - dec, this.data.image.width, this.data.image.height, rotate);
@@ -1699,9 +1710,9 @@ Object.defineProperty(Array.prototype, "size", {
   }
   }
 
-  function FicheGare(etat, pos, color, nom, achat, loyers) {
-      Fiche.call(this, etat, pos, color, nom, null,achat, loyers, null, {
-          src: "train.png",
+  function FicheGare(etat, pos, color, nom, achat, loyers,img) {
+      Fiche.call(this, etat, pos, color, nom, null,achat, loyers, null, img || {
+          src: "img/train.png",
           width: 40,
           height: 50
       });
@@ -1929,7 +1940,7 @@ Object.defineProperty(Array.prototype, "size", {
 						fiche = new FicheCompagnie(this.axe, this.pos, this.colors,this.nom, this.prix, this.loyers);
 						break;
 					case "gare":
-						fiche = new FicheGare(this.axe, this.pos, this.colors, this.nom,this.prix, this.loyers);
+						fiche = new FicheGare(this.axe, this.pos, this.colors, this.nom,this.prix, this.loyers,data.images.gare);
 						break;
 					case "chance":
 						fiche = new Chance(this.axe, this.pos);
@@ -1938,7 +1949,11 @@ Object.defineProperty(Array.prototype, "size", {
 						fiche = new CaisseDeCommunaute(this.axe, this.pos);
 						break;
 					case "taxe" : 
-						fiche = new CarteSpeciale(this.nom, this.prix, this.axe, this.pos);
+						fiche = new CarteSpeciale(this.nom, this.prix, this.axe, this.pos,{
+						    src: "img/bijou.png",
+						    width: 40,
+						    height: 50
+						});
 						break;
 					case "prison" : 
 						fiche = new CarteActionSpeciale(this.nom, function () {
@@ -1976,7 +1991,7 @@ Object.defineProperty(Array.prototype, "size", {
      		Drawer.init(800, 800);
      		callback();
       	},
-      	error:function(){
+      	error:function(a,b,c){
       		alert("Le plateau " + plateau + " n'existe pas");
       		return;
       	}

@@ -44,6 +44,7 @@
 		{"type": "taxe","axe": 1,"pos": 8,"nom": "Taxe de luxe","prix": 10000},		
 		{"type": "propriete","groupe": "Bleu","axe": 1,"pos": 9,"nom": "Rue de la Paie","colors": ["#132450", "#808EB0"],"prix": 40000,"loyers": [5000, 20000, 60000, 140000, 170000, 200000],"prixMaison": 20000}						
 	],
+	"images":{},
 	"titles":{
 		"chance":"Chance",
 		"communaute":"Caisse de Communauté"

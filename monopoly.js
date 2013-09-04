@@ -452,11 +452,19 @@ Object.defineProperty(Array.prototype, "size", {
       * Possibilite d'enregistrer tous les deplacements des joueurs pour affiner les cases les plus visitees
       */
      this.buildConstructions = function(){
-		 var groups = this.findGroupes();	// structure : [color:{color,proprietes:[]}]
-		 if (groups.size() == 0) {
-		   return;	// Pas de terrains constructibles
-		 }
 		 var budget = this.comportement.getBudget(this);
+		 // Pas d'argent
+		 if(budget < 5000){
+		 	return;
+		 }
+		 
+		 var groups = this.findGroupes();	// structure : [color:{color,proprietes:[]}]
+		 // Pas de terrains constructibles
+		 if (groups.size() == 0) {
+		   return;	
+		 }
+		 
+		 
 		 // On determine les terrains les plus rentables a court terme (selon la position des joueurs)
 		 var maisons = this.comportement.getNextProprietesVisitees(this,0.1);
 		 /* Plusieurs regles pour gerer les constructions : 
@@ -468,6 +476,7 @@ Object.defineProperty(Array.prototype, "size", {
 		 * On calcule la somme des taux par groupe
 		 */
 		 // On Calcule pour chaque maison des groupes (meme ceux sans interet) plusieurs indicateurs : proba (pondere a 3), la rentabilite (pondere a 1)
+ 		 var totalMaisons = 0;	// Nombre total de proprietes constructibles
 		 for (var color in groups) {
 		  var group = groups[color];
 		  group.proba = 0;
@@ -476,10 +485,11 @@ Object.defineProperty(Array.prototype, "size", {
 		  group.interetGlobal=0;
 		  for (var index in group.proprietes) {
 		    var propriete = group.proprietes[index];
+		    totalMaisons++;
 		    // On cherche si proba
 		    if (maisons[propriete.id]!=null) {
 			 group.proba+=maisons[propriete.id].proba*3;
-		    }b
+		    }
 		    group.rentabilite+=propriete.getRentabilite();
 		    group.lessThree+= (propriete.nbMaison <=3) ? 0.5 : 0;
 		  }
@@ -487,11 +497,52 @@ Object.defineProperty(Array.prototype, "size", {
 		 // On trie les groupes
 		 var sortedGroups = [];
 		 for (var color in groups) {
-		  groups[color].interetGlobal = 0;
-		  sortedGroups.push(groups[color]);
+			var group = groups[color];
+			group.interetGlobal = group.proba + group.rentabilite + ((group.lessThree > 0)?0.5:0);
+		  	sortedGroups.push(group);
 		 }
+		 sortedGroups.sort(function(a,b){
+		 	if(a.interetGlobal == b.interetGlobal){return 0;}
+		 	if(a.interetGlobal > b.interetGlobal){return -1;}
+		 	return 1;
+		 });
 		 
-		 
+		 // On construit des maisons. On s'arrete quand plus de budget ou qu'on ne peut plus construire (hotel partout ou 4 maisons (blocage de constructions))
+		 var stopConstruct = false;
+		 var currentMaison = 0;
+		 var currentGroup = 0;
+		 var treatMaisons = [];	// Maisons traites (a 4 ou 5)
+		 console.log(budget);
+		 while(budget >= 5000 && ! stopConstruct){
+		 	// On choisit une maison
+		 	var group = sortedGroups[currentGroup];
+			// Changement de group
+			if(currentMaison >= group.proprietes.length){
+				currentGroup = (currentGroup+1)%sortedGroups.length;
+				currentMaison = 0;
+			}
+			else{
+				var maison = group.proprietes[currentMaison];
+				// Si un hotel est deja place (ou 4 maisons) ou si le budget d'une maison est trop elevee, on bloque la construction sur la maison
+				if(maison.nbMaison == 5 || budget<maison.prixMaison){	// A variabiliser
+					treatMaisons[maison.id] = true;
+				}
+				else{
+					// On achete	
+					budget-=maison.prixMaison;
+					this.payer(maison.prixMaison);
+					maison.buyMaison(this);	
+					console.log("Buy one house for " + maison.prixMaison  + " on " + maison.id);
+				}								
+				if(maison.nbMaison>=3){
+					currentMaison++;
+				}
+			}
+			if(treatMaisons.size() == totalMaisons){
+				stopConstruct = true;
+			}
+		 }
+		 return sortedGroups;
      } 
       
       
@@ -1665,6 +1716,16 @@ Object.defineProperty(Array.prototype, "size", {
   this.chezSoi = function () {
       return createMessage("Vous etes " + this.nom, this.color, "Vous etes chez vous", changeJoueur)
   }
+
+	this.buyMaison = function(joueur){
+		if(joueur == null || !this.joueurPossede.equals(joueur) || this.nbMaison >=5){
+			return;
+		}
+		this.setNbMaison(this.nbMaison+1);
+		if(this.nbMaison == 5){
+			this.hotel = true;
+		}
+	}
 
   this.getLoyer = function () {
 	 if (this.statutHypotheque) {

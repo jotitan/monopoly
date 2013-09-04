@@ -159,7 +159,7 @@ Object.defineProperty(Array.prototype, "size", {
 
 		/* Calcul le terrain du joueur sur lesquels les adversaires peuvent tomber */
 		/* @param seuil : seuil a partir duquel on renvoie les maisons */
-		this.getNextProprietesVisitees = function(joueur,seuil){
+		this.getNextProprietesVisitees = function(joueur){//,seuil){
 		  var maisons = [];
 		  for (var idJoueur in joueurs) {
 		    var j = joueurs[idJoueur];
@@ -180,7 +180,8 @@ Object.defineProperty(Array.prototype, "size", {
 			 }
 		    }
 		  }
-		  var sortMaisons = [];
+		  return maisons;
+		  /*var sortMaisons = [];
 		  for(var id in maisons){
 		 	if(seuil == null|| maisons[id].proba >= seuil){
 		 		sortMaisons.push(maisons[id]);
@@ -192,7 +193,7 @@ Object.defineProperty(Array.prototype, "size", {
 		 	return -1;
 		 });
 		  
-		  return sortMaisons;
+		  return sortMaisons;*/
 		}
 		
 		
@@ -451,13 +452,13 @@ Object.defineProperty(Array.prototype, "size", {
       * Possibilite d'enregistrer tous les deplacements des joueurs pour affiner les cases les plus visitees
       */
      this.buildConstructions = function(){
-		 var groups = this.findGroupes();  ;
+		 var groups = this.findGroupes();	// structure : [color:{color,proprietes:[]}]
 		 if (groups.size() == 0) {
-		   return;
+		   return;	// Pas de terrains constructibles
 		 }
 		 var budget = this.comportement.getBudget(this);
 		 // On determine les terrains les plus rentables a court terme (selon la position des joueurs)
-		 var maisons = this.comportement.getNextProprietesVisitees(this,0.1);	// Renvoie un tableau associatif de maison, on prend un seuil de 20%
+		 var maisons = this.comportement.getNextProprietesVisitees(this,0.1);
 		 /* Plusieurs regles pour gerer les constructions : 
 		 * Si un seul groupe, on construit notre budget dessus
 		 * Si plusieurs groupes avec des taux equivalent, on construit sur le groupe le plus rentable (basé sur stats et sur cout)
@@ -466,16 +467,30 @@ Object.defineProperty(Array.prototype, "size", {
 		 * S'il reste du budget, on recupere les terrains sans interet et on construit dessus
 		 * On calcule la somme des taux par groupe
 		 */
-		 if (maison.length>0) {
-		  var colors = [];
-		  for (var i = 0 ; i < maisons.length ; i++) {
-		   if(colors[maisons[i].maison.color] == null){
-		    colors[maisons[i].maison.color] = 0;
-		   }
-		   colors[maisons[i].maison.color]+=maisons[i].proba;
+		 // On Calcule pour chaque maison des groupes (meme ceux sans interet) plusieurs indicateurs : proba (pondere a 3), la rentabilite (pondere a 1)
+		 for (var color in groups) {
+		  var group = groups[color];
+		  group.proba = 0;
+		  group.rentabilite = 0;
+		  group.lessThree=0;
+		  group.interetGlobal=0;
+		  for (var index in group.proprietes) {
+		    var propriete = group.proprietes[index];
+		    // On cherche si proba
+		    if (maisons[propriete.id]!=null) {
+			 group.proba+=maisons[propriete.id].proba*3;
+		    }b
+		    group.rentabilite+=propriete.getRentabilite();
+		    group.lessThree+= (propriete.nbMaison <=3) ? 0.5 : 0;
 		  }
-		  
 		 }
+		 // On trie les groupes
+		 var sortedGroups = [];
+		 for (var color in groups) {
+		  groups[color].interetGlobal = 0;
+		  sortedGroups.push(groups[color]);
+		 }
+		 
 		 
      } 
       
@@ -1578,11 +1593,18 @@ Object.defineProperty(Array.prototype, "size", {
   
   /* Renvoie la rentabilite de la propriete. Se base sur le rapport entre le loyer de trois maisons et le prix d'achat d'une maison */
   this.getRentabilite = function(){
-  	if(!this.constructible){
+	 var ponderation = 10;	// Facteur pour nivelle le taux
+  	if(!this.constructible || this.nbMaison >=3){
   		return 0;
   	}
   	else{
-  		return this.loyer[3] / ((this.prixMaison*(Math.min(0,3-this.nbMaison))));
+	   // Maison du groupe
+	   var proprietes = getFichesOfFamily(this.color);
+	   var nbMaisonsConstruites = 0;
+	   for (var i = 0 ; i < proprietes.length ; i++) {
+		nbMaisonsConstruites+=proprietes[i].nbMaison;
+	   }
+	   return (this.loyer[3] / ((proprietes.length*3 - nbMaisonsConstruites)*this.prixMaison)) / ponderation;
   	}
   }
   

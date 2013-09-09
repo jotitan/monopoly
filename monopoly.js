@@ -11,7 +11,7 @@ Object.defineProperty(Array.prototype, "size", {
         return count;
     },
     writable: false,
-    enumerable: false,
+    enumerable: false,  
     configurable: false
 });
  
@@ -63,8 +63,8 @@ Object.defineProperty(Array.prototype, "size", {
       $('#message').append(message);
       var button = {
           "Ok": function () {
-              call(param);
               $('#message').dialog('close');
+              call(param);              
           }
       };
       if (call != null) {
@@ -697,6 +697,7 @@ Object.defineProperty(Array.prototype, "size", {
       this.enPrison = false;
       this.pion = null;
 	 this.bloque = false;	// Indique que le joueur est bloque. Il doit se debloquer pour que le jeu continue
+	 this.defaite = false;
 	 
       this.equals = function (joueur) {
           if (joueur == null) {
@@ -797,9 +798,10 @@ Object.defineProperty(Array.prototype, "size", {
       }
 
       this.payerParcGratuit = function (montant) {
-          this.montant -= montant;
-          parcGratuit.payer(montant);
-          this.setArgent(this.montant);
+		var paiement = this.payer(montant);
+		  if(paiement==true){
+		      parcGratuit.payer(montant);
+	      }
       }
 
       this.setPion = function (color) {
@@ -808,13 +810,54 @@ Object.defineProperty(Array.prototype, "size", {
 	 
 	 /* Paye la somme demandee. Si les fonds ne sont pas disponibles, l'utilisateur doit d'abord réunir la somme, on le bloque */
       this.payer = function (montant) {
+      	/* Verifie si le joueur peut payer */
+      	if(montant > this.montant){
+      		this.bloque = true;
+      		this.resolveProblemeArgent(montant);
+      		return false;
+      	}
 	     this.montant -= montant;
           this.setArgent(this.montant);
+          return true;
       }
       this.gagner = function (montant) {
           this.montant += montant;
           this.setArgent(this.montant);
       }
+
+	/* Gestion de la defaite */
+	
+	this.defaite = function(dette){
+		// On paye notre dette avec tout nos actifs (stats.argentDispo)
+		// On affiche un style sur la liste
+		this.defaite = true;
+	}
+	
+		/* Resourd les problemes d'argent du joueur */
+		/* @param montant : argent a recouvrer */
+		this.resolveProblemeArgent = function(montant){
+			// On verifie si c'est possible de recuperer les sommes
+			if(this.getStats().argentDispo < this.montant - montant){
+				// Banqueroute, le joueur perd
+				this.defaite(montant);
+			}
+			// On ouvre le panneau de resolution en empechant la fermeture
+			this.montant-=montant;
+			var button = createMessage("Attention","red","Vous n'avez pas les fonds necessaires, il faut trouver de l'argent",function(){
+				// On attache un evenement a la fermeture
+				var onclose = function(){
+					if(joueurCourant.montant < 0){
+						joueurCourant.resolveProblemeArgent(montant);
+					}
+					else{
+						joueurCourant.bloque = false;
+						changeJoueur();
+					}
+				}
+				GestionTerrains.open(true,onclose);				
+			});
+			
+		}
 
       this.getFichePosition = function () {
           return fiches[this.pion.etat + "-" + this.pion.position];
@@ -1920,8 +1963,25 @@ Object.defineProperty(Array.prototype, "size", {
   function changeJoueur() {
 	 // Joueur bloque, on le debloque avant de continuer
 	 if (joueurCourant.bloque) {
-	   //code
+	   return;
 	 }
+	 
+	 // On verifie s'il y a encore de joueurs "vivants"
+	 var defaites = 0;
+	 var gagnantProbable;
+	 for(var index in joueurs){
+	 	if(joueurs[index].defaite == true){
+	 		defaites++;
+	 	}
+	 	else{
+	 		gagnantProbable = joueurs[i];
+	 	}
+	 }
+	 if(defaites == joueurs.length -1){
+	 	// On a un vainqueur
+	 	alert(joueurs[i].nom + " a gagné");
+	 }
+	 
       $('#idLancerDes').removeAttr('disabled');
       if (des1 != des2) {
           joueurCourant = joueurs[(joueurCourant.numero + 1) % (joueurs.length)];
@@ -2040,7 +2100,7 @@ Object.defineProperty(Array.prototype, "size", {
 
       $('#message').dialog({
           autoOpen: false
-      });
+       });
       $('#message').prev().css("background", "url()");
 
       // panneau de creation
@@ -2210,7 +2270,24 @@ Object.defineProperty(Array.prototype, "size", {
 	  totalRestant:0,
 	  divCout:null,
 	  divArgentRestant:null,
+	  banqueroute:false,
+	  panel:null,
 	  /* Remet a 0 le panneau */
+	  open:function(banqueroute,onclose){
+	  	if(banqueroute){
+	  		this.banqueroute = true;
+	  	}
+	  	else{
+	  		this.banqueroute = false;
+	  	}
+	  	if(onclose){
+	  		this.panel.unbind('dialogclose').bind('dialogclose',onclose);
+	  	}
+	  	else{
+		  	this.panel.unbind('dialogclose');
+	  	}
+	  	this.panel.dialog('open');
+	  },
 	  reset:function() {
 	    this.Hypotheque.reset();
 	    this.LeverHypotheque.reset();
@@ -2226,7 +2303,8 @@ Object.defineProperty(Array.prototype, "size", {
 		this.Hypotheque.init();
 		this.LeverHypotheque.init();
 		this.Constructions.init();
-		$('#housesPanel').dialog({
+		this.panel = $('#housesPanel');
+		this.panel.dialog({
 		  width:800,
 		  height:600,
 		  title:'Gestion des maisons',
@@ -2458,7 +2536,7 @@ Object.defineProperty(Array.prototype, "size", {
 					  divTerrain.append('<span style="color:' + propriete.color + '" class="title-propriete">' + propriete.nom + '</span>');
 					  var select = $('<select data-color="' + propriete.color + '" class="' + ((propriete.nbMaison==5)?'hotel':'maison') + '"></select>');
 					  select.data("propriete",propriete);
-					  for (var j = 0; j <= ((false) ? propriete.nbMaison : 5); j++) {
+					  for (var j = 0; j <= ((GestionTerrains.banqueroute) ? propriete.nbMaison : 5); j++) {
 						  select.append("<option class=\"" + ((j==5)?"hotel":"maison") + "\" value=\"" + j + "\" " + ((propriete.nbMaison == j) ? "selected" : "") + ">x " + ((j==5)?1:j) + "</option>");
 					  }
 					  var _self = this;

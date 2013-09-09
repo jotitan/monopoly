@@ -29,7 +29,7 @@
 	   <div id="idDebug">
 	   case : <input type="text" size="3" id="nb"/><input type="button" onclick="joueurCourant.joueDes(parseInt($('#nb').val()))" value="click"/><br/>
 	   Goto : <input type="text" size="3" id="ide"/><input type="text" size="3" id="idp"/><input type="button" onclick="joueurCourant.pion.goto($('#ide').val(),$('#idp').val(),doActions)" value="goto"/><br/>
-	   Tableau de bord : <input type="button" value="Ouvrir" onclick="$('#housesPanel').dialog('open')"/><br/>
+	   Tableau de bord : <input type="button" value="Ouvrir" onclick="GestionTerrains.open()"/><br/>
 	   </div>
 	   <div id="informations"></div>
 	 

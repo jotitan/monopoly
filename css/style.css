@@ -1,21 +1,16 @@
 .joueurCourant{
-		  background-color:lightslategray;
-		  padding-left:15px;
-		  padding-top:3px;
-		  padding-bottom:3px;
-		  padding-right:15px;
-		  color:white;
-		  font-weight:bold;
-		}
-		
-		.joueurCourant > div{
-		  padding-left:0px;
-		}
-		
-		.nbMaisons{
-		  text-decoration:underline;
-		  background-color:salmon;
-		}
+            background-color:lightslategray; padding-left:15px; padding-top:3px;
+            padding-bottom:3px; padding-right:15px; color:white;
+            font-weight:bold;
+          }
+          
+          .joueurCourant > div{
+            padding-left:0px;
+          }
+          
+          .nbMaisons{
+            text-decoration:underline; background-color:salmon;
+          }
   
 	.jail {
 		background-image: url("img/jail.jpg");
@@ -77,3 +72,7 @@
             width:200px;
             font-weight:bold;
 }
+
+.ui-widget {
+			font-size:0.9em;
+		}

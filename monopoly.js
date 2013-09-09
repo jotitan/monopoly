@@ -33,6 +33,7 @@ Object.defineProperty(Array.prototype, "size", {
   var joueurs = new Array();
   var joueurCourant = null;
   var colorsJoueurs = ["#383C89", "#A6193E", "#C58F01", "#086B3D", "#B9B29B"];
+  var constructions = {maison:32,hotel:12};
   
   var des1Cube;
   var des2Cube;
@@ -142,6 +143,7 @@ Object.defineProperty(Array.prototype, "size", {
 
 
 		/* Calcul le budget depensable pour la construction de maison / hotel */
+		/* Prendre en compte l'achat potentiel de nouveau terrain. Pour la strategie, on calcule les terrains qui interessent */
 		this.getBudget = function(joueur){
 		  var assiette = joueur.montant;	// Utilise pour calculer les risques
 		  // Si le joueur est une charogne, on utilise l'argent dispo avec les possibles hypotheques (tous les terrains sauf les groupes). 
@@ -440,23 +442,45 @@ Object.defineProperty(Array.prototype, "size", {
         lancerAnimerDes();
       }
       
-      /* Fonction TODO a developpe permettant de faire du blocage de construction : vente d'un hotel pour limiter l'achat de maison, decision d'acheter un hotel pour bloquer.
+      /* Fonction doBlocage a developpe permettant de faire du blocage de construction : vente d'un hotel pour limiter l'achat de maison, decision d'acheter un hotel pour bloquer.
       * Se base sur les terrains constructibles des adversaires ainsi que de leur tresorie.
+      * Retourne vrai s'il faut bloquer le jeu de constructions
       */
-      this.TODO = function(){
-      
-      }
+	 this.doBlocage = function(){
+	   // On compte le nombre joueurs qui peuvent construire
+	   for (var index in joueurs) {
+		var joueur = joueurs[index]; if (!this.equals(this)) { var groups =
+		joueur.findGroupes();
+		  if (groups.size() > 0) {
+		   // On verifie si le budget est important ()
+		    // On compte le potentiel de maison achetables
+		    var nbMaisons = 0;
+		    var coutMaisons = 0;
+		    for (var color in groups) {
+			 var group = groups[color];
+		      count+=group.proprietes.length;
+			 for (var index in group.proprietes) {
+			  var maison = group.proprietes[index];
+			  nbMaisons+= 5 - maison.nbMaison;
+			  coutMaisons+= (5 - maison.nbMaison) * maison.prixMaison;
+			 }			 
+		    }
+		    var budgetMin = (coutMaisons/nbMaisons)*3;
+		    if (nbMaisons > 3 && budgetMin < joueur.montant) {
+			// On doit bloquer la construction
+			return true;
+		    }
+		  }
+		}
+	   }
+	   return false;
+	 }
       
       /* Construit des maisons / hotels 
       * Calcul les groupes constructibles, verifie l'argent disponible. Construit sur les proprietes ou peuvent tomber les adversaires (base sur leur position et les stats au des)
       * Possibilite d'enregistrer tous les deplacements des joueurs pour affiner les cases les plus visitees
       */
      this.buildConstructions = function(){
-		 var budget = this.comportement.getBudget(this);
-		 // Pas d'argent
-		 if(budget < 5000){
-		 	return;
-		 }
 		 
 		 var groups = this.findGroupes();	// structure : [color:{color,proprietes:[]}]
 		 // Pas de terrains constructibles
@@ -464,7 +488,11 @@ Object.defineProperty(Array.prototype, "size", {
 		   return;	
 		 }
 		 
-		 
+		 var budget = this.comportement.getBudget(this);
+		 // Pas d'argent
+		 if(budget < 5000){
+		 	return;
+		 }
 		 // On determine les terrains les plus rentables a court terme (selon la position des joueurs)
 		 var maisons = this.comportement.getNextProprietesVisitees(this,0.1);
 		 /* Plusieurs regles pour gerer les constructions : 
@@ -476,7 +504,7 @@ Object.defineProperty(Array.prototype, "size", {
 		 * On calcule la somme des taux par groupe
 		 */
 		 // On Calcule pour chaque maison des groupes (meme ceux sans interet) plusieurs indicateurs : proba (pondere a 3), la rentabilite (pondere a 1)
- 		 var totalMaisons = 0;	// Nombre total de proprietes constructibles
+		 var totalMaisons = 0;	// Nombre total de proprietes constructibles
 		 for (var color in groups) {
 		  var group = groups[color];
 		  group.proba = 0;
@@ -506,43 +534,58 @@ Object.defineProperty(Array.prototype, "size", {
 		 	if(a.interetGlobal > b.interetGlobal){return -1;}
 		 	return 1;
 		 });
-		 
+
 		 // On construit des maisons. On s'arrete quand plus de budget ou qu'on ne peut plus construire (hotel partout ou 4 maisons (blocage de constructions))
 		 var stopConstruct = false;
 		 var currentMaison = 0;
-		 var currentGroup = 0;
-		 var treatMaisons = [];	// Maisons traites (a 4 ou 5)
-		 console.log(budget);
+		 var currentGroup = 0;		 
+		 var seuil = 3;	// Premier passage, ensuite passe a 4 ou 5
 		 while(budget >= 5000 && ! stopConstruct){
-		 	// On choisit une maison
+		   // On choisit une maison
 		 	var group = sortedGroups[currentGroup];
 			// Changement de group
-			if(currentMaison >= group.proprietes.length){
-				currentGroup = (currentGroup+1)%sortedGroups.length;
+		    var maison = group.proprietes[currentMaison];
+		    // On invalide la maison et on passe a la suivante, ou au groupe suivant ou au seuil suivant
+		    if(maison.nbMaison>=seuil){
+			    if(group.treat == null){
+				group.treat = 1;
+			    }
+			    else{
+				group.treat++;
+			    }
+			    // Le goupe est traite, on passe au suivant
+			    if (group.treat == group.proprietes.length) {
+				currentGroup++;
 				currentMaison = 0;
-			}
-			else{
-				var maison = group.proprietes[currentMaison];
-				// Si un hotel est deja place (ou 4 maisons) ou si le budget d'une maison est trop elevee, on bloque la construction sur la maison
-				if(maison.nbMaison == 5 || budget<maison.prixMaison){	// A variabiliser
-					treatMaisons[maison.id] = true;
+				// Soit on a fait le tour, on recommence en changeant le seuil
+				if (currentGroup >= sortedGroups.length) {
+				  if (seuil == 3) {
+				    seuil = 5;
+				    for (var color in sortedGroups) {
+				      sortedGroups[color].treat = 0;
+				    }
+				    currentGroup = 0;
+				  }
+				  else{
+				    // Fin du traitement
+				    stopConstruct = true;
+				  }
 				}
-				else{
-					// On achete	
-					budget-=maison.prixMaison;
-					this.payer(maison.prixMaison);
-					maison.buyMaison(this);	
-					console.log("Buy one house for " + maison.prixMaison  + " on " + maison.id);
-				}								
-				if(maison.nbMaison>=3){
-					currentMaison++;
-				}
-			}
-			if(treatMaisons.size() == totalMaisons){
-				stopConstruct = true;
-			}
+			    }
+			    else{
+				currentMaison = (currentMaison+1)%group.proprietes.length;	
+			    }			
+		    }
+		    else{
+			    // On achete	
+			    budget-=maison.prixMaison;
+			    this.payer(maison.prixMaison);
+			    maison.buyMaison(this,true);	
+			    console.log("Buy one house for " + maison.prixMaison  + " on " + maison.id);
+			    currentMaison = (currentMaison+1)%group.proprietes.length;	
+		    }		    		  
 		 }
-		 return sortedGroups;
+		 $('body').trigger('refreshPlateau');
      } 
       
       
@@ -653,6 +696,8 @@ Object.defineProperty(Array.prototype, "size", {
       this.maisons = new Array();
       this.enPrison = false;
       this.pion = null;
+	 this.bloque = false;	// Indique que le joueur est bloque. Il doit se debloquer pour que le jeu continue
+	 
       this.equals = function (joueur) {
           if (joueur == null) {
               return false;
@@ -688,6 +733,7 @@ Object.defineProperty(Array.prototype, "size", {
                   return this.maisons[i].input;
               }
           }
+		return null;
       }
 
       this.joueDes = function (sommeDes) {
@@ -759,7 +805,8 @@ Object.defineProperty(Array.prototype, "size", {
       this.setPion = function (color) {
           this.pion = new Pion(color, this);
       }
-
+	 
+	 /* Paye la somme demandee. Si les fonds ne sont pas disponibles, l'utilisateur doit d'abord réunir la somme, on le bloque */
       this.payer = function (montant) {
 	     this.montant -= montant;
           this.setArgent(this.montant);
@@ -804,6 +851,7 @@ Object.defineProperty(Array.prototype, "size", {
 	   return proprietes;
 	}
 	
+	/* Renvoie la liste des groupes constructibles du joueur */
       this.findGroupes = function () {
           var colorsOK = new Array();
           var colorsKO = new Array();
@@ -1693,17 +1741,19 @@ Object.defineProperty(Array.prototype, "size", {
   }
 
   /* Modifie le nombre de maison sur le terrain */
-  this.setNbMaison = function (nb) {
+  this.setNbMaison = function (nb,noRefresh) {
       this.nbMaison = nb;
       this.drawing.nbMaison = nb;
 	 // Lancer un evenement pour rafraichir le plateau
-	 $('body').trigger('refreshPlateau');
+	 if(!noRefresh){
+	   $('body').trigger('refreshPlateau');
+	 }
   }
 
   this.action = function () {
       this.fiche.dialog('option', 'title', nom);
       // si on est chez soit, on affiche pas
-      if (this.joueurPossede != null && this.joueurPossede.numero == joueurCourant.numero) {
+      if (this.joueurPossede != null && this.joueurPossede.equals(joueurCourant)) {
           return this.chezSoi();
       }
       if (this.joueurPossede != null) { // on doit payer un loyer
@@ -1717,11 +1767,11 @@ Object.defineProperty(Array.prototype, "size", {
       return createMessage("Vous etes " + this.nom, this.color, "Vous etes chez vous", changeJoueur)
   }
 
-	this.buyMaison = function(joueur){
+	this.buyMaison = function(joueur,noRefresh){
 		if(joueur == null || !this.joueurPossede.equals(joueur) || this.nbMaison >=5){
 			return;
 		}
-		this.setNbMaison(this.nbMaison+1);
+		this.setNbMaison(this.nbMaison+1,noRefresh);
 		if(this.nbMaison == 5){
 			this.hotel = true;
 		}
@@ -1868,6 +1918,10 @@ Object.defineProperty(Array.prototype, "size", {
 
 
   function changeJoueur() {
+	 // Joueur bloque, on le debloque avant de continuer
+	 if (joueurCourant.bloque) {
+	   //code
+	 }
       $('#idLancerDes').removeAttr('disabled');
       if (des1 != des2) {
           joueurCourant = joueurs[(joueurCourant.numero + 1) % (joueurs.length)];
@@ -2025,70 +2079,11 @@ Object.defineProperty(Array.prototype, "size", {
       	url:'data/' + plateau,
       	dataType:'json',
       	success:function(data){
-		     parcGratuit = new ParcGratuit();
-		     CURRENCY = data.currency;
-		     titles = data.titles;
-			var colors = [];
-			$(data.fiches).each(function(){
-				var fiche = null;
-				switch(this.type){
-					case "propriete":
-						fiche = new Fiche(this.axe, this.pos, this.colors, this.nom, this.groupe, this.prix, this.loyers, this.prixMaison);
-						break;
-					case "compagnie":
-						fiche = new FicheCompagnie(this.axe, this.pos, this.colors,this.nom, this.prix, this.loyers);
-						break;
-					case "gare":
-						fiche = new FicheGare(this.axe, this.pos, this.colors, this.nom,this.prix, this.loyers,data.images.gare);
-						break;
-					case "chance":
-						fiche = new Chance(this.axe, this.pos);
-						break;
-					case "communaute":
-						fiche = new CaisseDeCommunaute(this.axe, this.pos);
-						break;
-					case "taxe" : 
-						fiche = new CarteSpeciale(this.nom, this.prix, this.axe, this.pos,{
-						    src: "img/bijou.png",
-						    width: 40,
-						    height: 50
-						});
-						break;
-					case "prison" : 
-						fiche = new CarteActionSpeciale(this.nom, function () {
-				          joueurCourant.goPrison();
-				        }, this.axe, this.pos);
-				        break;
-				    case "special" : 
-						fiche = new CarteActionSpeciale(this.nom, function () {}, this.axe, this.pos);
-						break;
-				    case "parc" : 
-						fiche = parcGratuit;
-						break;
-				    case "special-depart" : 
-						fiche = new CarteActionSpeciale(this.nom, function () {
-							joueurCourant.gagner(40000)
-				  		}, this.axe, this.pos);
-				  		break;				  						
-				}
-				fiches[this.axe + "-" + this.pos] = fiche;
-				if (fiche.color!=null) {
-				  if (colors[fiche.color]==null) {
-				    // On genere un style
-				    $('style','head').prepend('.color_' + fiche.color.substring(1) + '{color:white;font-weight:bold;background-color:' + fiche.color + ';}\n');
-				    colors[fiche.color] = 1;
-				  }
-				}
-			});
-			// On charge les cartes chances et caisse de communaute
-			$(data.chance.cartes).each(function(){
-			 cartesChance.push(new CarteChance(this.nom, (this.montant>0)?new GagnerCarte(this.montant):new PayerCarte(this.montant)));
-			})
-			$(data.communaute.cartes).each(function(){
-			 cartesCaisseCommunaute.push(new CarteCaisseDeCommunaute(this.nom, (this.montant>0)?new GagnerCarte(this.montant):new PayerCarte(this.montant)));
-			});
-     		Drawer.init(800, 800);
-     		callback();
+		  loadPlateau(data);
+		  Drawer.init(800, 800);
+		  if(callback){
+		    callback();
+		  }			
       	},
       	error:function(a,b,c){
       		alert("Le plateau " + plateau + " n'existe pas");
@@ -2096,6 +2091,78 @@ Object.defineProperty(Array.prototype, "size", {
       	}
       });
 	 
+  }
+
+
+  /* Charge les donnees du plateau */
+  function loadPlateau(data) {
+    parcGratuit = new ParcGratuit();
+    CURRENCY = data.currency;
+    titles = data.titles;
+    var colors = [];
+    $(data.fiches).each(function(){
+	    var fiche = null;
+	    switch(this.type){
+		    case "propriete":
+			    fiche = new Fiche(this.axe, this.pos, this.colors, this.nom, this.groupe, this.prix, this.loyers, this.prixMaison);
+			    break;
+		    case "compagnie":
+			    fiche = new FicheCompagnie(this.axe, this.pos, this.colors,this.nom, this.prix, this.loyers);
+			    break;
+		    case "gare":
+			    fiche = new FicheGare(this.axe, this.pos, this.colors, this.nom,this.prix, this.loyers,data.images.gare);
+			    break;
+		    case "chance":
+			    fiche = new Chance(this.axe, this.pos);
+			    break;
+		    case "communaute":
+			    fiche = new CaisseDeCommunaute(this.axe, this.pos);
+			    break;
+		    case "taxe" : 
+			    fiche = new CarteSpeciale(this.nom, this.prix, this.axe, this.pos,{
+				   src: "img/bijou.png",
+				   width: 40,
+				   height: 50
+			    });
+			    break;
+		    case "prison" : 
+			    fiche = new CarteActionSpeciale(this.nom, function () {
+			    joueurCourant.goPrison();
+			  }, this.axe, this.pos);
+			  break;
+		   case "special" : 
+			    fiche = new CarteActionSpeciale(this.nom, function () {}, this.axe, this.pos);
+			    break;
+		   case "parc" : 
+			    fiche = parcGratuit;
+			    break;
+		   case "special-depart" : 
+			    fiche = new CarteActionSpeciale(this.nom, function () {
+				    joueurCourant.gagner(40000)
+			    }, this.axe, this.pos);
+			    break;				  						
+	    }
+	    fiches[this.axe + "-" + this.pos] = fiche;
+	    if (fiche.color!=null) {
+		 if (colors[fiche.color]==null) {
+		   // On genere un style
+		   $('style','head').prepend('.color_' + fiche.color.substring(1) + '{color:white;font-weight:bold;background-color:' + fiche.color + ';}\n');
+		   colors[fiche.color] = 1;
+		 }
+	    }
+    });
+    // On charge les cartes chances et caisse de communaute
+    if (data.chance) {
+      $(data.chance.cartes).each(function(){
+	   cartesChance.push(new CarteChance(this.nom, (this.montant>0)?new GagnerCarte(this.montant):new PayerCarte(this.montant)));
+	 });
+    }
+    if (data.communaute) {      
+	 $(data.communaute.cartes).each(function(){
+	  cartesCaisseCommunaute.push(new CarteCaisseDeCommunaute(this.nom, (this.montant>0)?new GagnerCarte(this.montant):new PayerCarte(this.montant)));
+	 });
+    }
+    
   }
 
   function initDetailFiche() {

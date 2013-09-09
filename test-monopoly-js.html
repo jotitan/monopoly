@@ -1,0 +1,28 @@
+<html>
+   <head>
+      <title>Test QUnit</title>
+      <script language="javascript" src="js/jquery-1.9.1.js">;</script>   
+      <script language="Javascript" src="js/qunit-1.12.0.js">;</script>
+      <script language="Javascript" src="monopoly.js">;</script>
+      <link rel="stylesheet" type="text/css" href="css/qunit-1.12.0.css"/>
+            
+            <script>
+               
+               test("Chargement plateau",function(){
+                  loadPlateau({
+                  
+                  });
+                  equal(fiches.size(),0);
+                  equal(cartesChance.size(),0);
+                  equal(cartesCaisseCommunaute.size(),0);
+                  
+               });
+               
+            </script>
+   </head>
+   <body>
+      
+      <div id="qunit"></div>
+   </body>
+   
+</html>

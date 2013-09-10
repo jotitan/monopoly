@@ -1,6 +1,6 @@
 <html>
    <head>
-      <title>Test QUnit</title>
+      <title>Test Monopoly</title>
       <script language="javascript" src="js/jquery-1.9.1.js">;</script>   
       <script language="Javascript" src="js/qunit-1.12.0.js">;</script>
       <script language="Javascript" src="monopoly.js">;</script>
@@ -8,14 +8,63 @@
             
             <script>
                
-               test("Chargement plateau",function(){
+               test("Chargement plateau a vide",function(){
+                  loadPlateau({});
+                  equal(fiches.size(),0, "Fiches vide");
+                  equal(cartesChance.size(),0, "Cartes chances vide");
+                  equal(cartesCaisseCommunaute.size(),0,"Cartes caisse de communaute vide");                  
+               });
+               
+               test("Chargement plateau avec des donnees",function(){
                   loadPlateau({
-                  
+                     chance:{
+                        cartes:[
+                           {nom:"Carte 1",montant:10000},
+                           {nom:"Carte 2",montant:-5000},
+                           {nom:"Carte 3",montant:2000}
+                        ]
+                     },
+                     communaute:{
+                        cartes:[
+                           {nom:"communaute 1",montant:1000},
+                           {nom:"communaute 2",montant:-1000},
+                           {nom:"communaute 3",montant:1000}
+                        ]
+                     }
                   });
-                  equal(fiches.size(),0);
-                  equal(cartesChance.size(),0);
-                  equal(cartesCaisseCommunaute.size(),0);
+                  equal(fiches.size(),0, "Fiches non chargees");
+                  equal(cartesChance.size(),3, "Cartes chances chargees");
+                  equal(cartesCaisseCommunaute.size(),3,"Cartes caisse de communaute chargees");                  
+               });
+               
+               test("Changement de joueur",function(){
+                  des1=1;des2=2;
+                  joueurs = [];
+                  for (var i = 0 ; i < 5 ; i++) {
+                     joueurs[i] =  new JoueurOrdinateur(i, "Joueur " + (i + 1));
+                  }
+                  joueurCourant = joueurs[0];
+                  equal(joueurCourant.numero,0,"Joueur 1 selectionné");
+                  equal(getNextJoueur().numero,1,"Joueur 2 selectionné");
+                  joueurCourant = joueurs[1];
+                  joueurs[2].defaite = true;
+                  equal(getNextJoueur().numero,3,"Joueur 4 selectionné");
+                  joueurCourant = joueurs[0];
+                  joueurCourant.bloque = true;
+                  equal(getNextJoueur(),null,"Joueur 1 bloque, ne change pas ");
                   
+               })
+               
+               test("Vainqueur du jeu",function(){
+                  joueurs = [];
+                  for (var i = 0 ; i < 3 ; i++) {
+                     joueurs[i] =  new JoueurOrdinateur(i, "Joueur " + (i + 1));
+                  }
+                  joueurs[0].defaite = true;
+                  joueurs[1].defaite = true;
+                  joueurCourant = joueurs[0];
+                  
+                  notEqual(changeJoueur(),null,"Un joueur a gagné");
                });
                
             </script>

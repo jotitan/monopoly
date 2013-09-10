@@ -7,6 +7,10 @@
           .joueurCourant > div{
             padding-left:0px;
           }
+
+.joueurCourant.defaite {
+            background-color: grey;                        
+}
           
           .nbMaisons{
             text-decoration:underline; background-color:salmon;
@@ -26,7 +30,7 @@
 		  
   span.info-label {
   	display:inline-block;
-  	width:40px;
+  	width:55px;
   	text-align:right;
   }
   

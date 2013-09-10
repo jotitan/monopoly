@@ -723,6 +723,17 @@ Object.defineProperty(Array.prototype, "size", {
 		return stats;
       } 
 
+	 /* Selectionne le joueur */
+	 this.select = function(){
+	   if (this.div) {
+		this.div.find('div:first').addClass('joueurCourant');
+	   }	   
+	   if (!this.enPrison) {
+		  this.nbDouble = 0;
+	   }
+	   this.joue();
+	 }
+	 
 	 this.getPosition = function(){
 	   return {pos:this.pion.pos,etat:this.pion.etat};
 	 }
@@ -756,7 +767,7 @@ Object.defineProperty(Array.prototype, "size", {
               if (m != null) {
                   m.after(input);
               } else {
-                  joueurCourant.div.append(input);
+                  this.div.append(input);
               }
 
               maison.input = $('#idInputFiche' + id);
@@ -829,6 +840,8 @@ Object.defineProperty(Array.prototype, "size", {
 	
 	this.defaite = function(dette){
 		// On paye notre dette avec tout nos actifs (stats.argentDispo)
+		this.div.empty();
+		$('.joueurCourant',this.div).addClass('defaite');
 		// On affiche un style sur la liste
 		this.defaite = true;
 	}
@@ -1959,37 +1972,65 @@ Object.defineProperty(Array.prototype, "size", {
       joueurCourant.actionApresDes(buttons, fiche);
   }
 
+  function getWinner() {
+    var defaites = 0;
+    var gagnantProbable;
+    for(var index in joueurs){
+	   if(joueurs[index].defaite == true){
+		   defaites++;
+	   }
+	   else{
+		   gagnantProbable = joueurs[index];
+	   }
+    }
+    if (defaites == joueurs.length -1) {
+	 return gagnantProbable;
+    }
+    return null;
+  }
+
+  function getNextJoueur() {
+     // On verifie s'il y a encore de joueurs "vivants"
+	if (joueurCourant.bloque) {
+	   return null;
+	 }
+	 var gagnant = getWinner();
+	 if(gagnant != null){
+	 	// On a un vainqueur
+		throw {gagnant:gagnant};		
+	 }
+	 var joueur = joueurCourant;
+      if (des1 != des2) {
+		var pos = 0;
+          joueur = joueurs[(joueur.numero + 1) % (joueurs.length)];
+		while (joueur.defaite == true & pos++<joueurs.length) {
+		  joueur = joueurs[(joueur.numero + 1) % (joueurs.length)];
+		}
+      }
+	 return joueur;
+  }
 
   function changeJoueur() {
 	 // Joueur bloque, on le debloque avant de continuer
-	 if (joueurCourant.bloque) {
-	   return;
+	 var joueur = null;
+	 try{
+	   joueur = getNextJoueur();
+	 }catch(gagnant){
+	   try{
+		  createMessage("Fin de partie","green","Le joueur " + gagnant.nom + " a gagné");
+		}catch(e){}
+		return gagnant;
 	 }
-	 
-	 // On verifie s'il y a encore de joueurs "vivants"
-	 var defaites = 0;
-	 var gagnantProbable;
-	 for(var index in joueurs){
-	 	if(joueurs[index].defaite == true){
-	 		defaites++;
-	 	}
-	 	else{
-	 		gagnantProbable = joueurs[i];
-	 	}
+	 if (joueur == null) {
+	   return null;
 	 }
-	 if(defaites == joueurs.length -1){
-	 	// On a un vainqueur
-	 	alert(joueurs[i].nom + " a gagné");
-	 }
-	 
+		 
       $('#idLancerDes').removeAttr('disabled');
-      if (des1 != des2) {
-          joueurCourant = joueurs[(joueurCourant.numero + 1) % (joueurs.length)];
-          selectJoueurCourant();
+	 if (des1 != des2) {
           nbDouble = 0;
-      } else {
-          joueurCourant.joue(); // double, rejoue
-      }
+	 }
+	 selectJoueur(joueur);
+	 return null;
   }
 
 
@@ -2635,12 +2676,11 @@ Object.defineProperty(Array.prototype, "size", {
   }
 
   function selectJoueur(joueur) {
-      $('#informations > div > div').removeClass('joueurCourant');
-      joueur.div.find('div:first').addClass('joueurCourant');
-      if (!joueur.enPrison) {
-          joueur.nbDouble = 0;
-      }
-      joueur.joue();
+    if (!joueur.equals(joueurCourant)) {
+	 $('#informations > div > div').removeClass('joueurCourant');
+    }
+    joueurCourant = joueur;    
+    joueur.select();	 
   }
   function getJoueurById(numero){
     for(var joueur in joueurs){

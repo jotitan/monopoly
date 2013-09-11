@@ -1997,7 +1997,7 @@ Object.defineProperty(Array.prototype, "size", {
 	 var gagnant = getWinner();
 	 if(gagnant != null){
 	 	// On a un vainqueur
-		throw {gagnant:gagnant};		
+		throw gagnant;		
 	 }
 	 var joueur = joueurCourant;
       if (des1 != des2) {
@@ -2016,9 +2016,7 @@ Object.defineProperty(Array.prototype, "size", {
 	 try{
 	   joueur = getNextJoueur();
 	 }catch(gagnant){
-	   try{
-		  createMessage("Fin de partie","green","Le joueur " + gagnant.nom + " a gagné");
-		}catch(e){}
+	     createMessage("Fin de partie","green","Le joueur " + gagnant.nom + " a gagné");
 		return gagnant;
 	 }
 	 if (joueur == null) {

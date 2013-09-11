@@ -55,16 +55,16 @@
                   
                })
                
+               
                test("Vainqueur du jeu",function(){
                   joueurs = [];
                   for (var i = 0 ; i < 3 ; i++) {
                      joueurs[i] =  new JoueurOrdinateur(i, "Joueur " + (i + 1));
-                  }
+                  }                  
                   joueurs[0].defaite = true;
                   joueurs[1].defaite = true;
                   joueurCourant = joueurs[0];
-                  
-                  notEqual(changeJoueur(),null,"Un joueur a gagné");
+                  throws(getNextJoueur(),"Un joueur a gagné");
                });
                
             </script>

@@ -47,14 +47,13 @@
                   equal(joueurCourant.numero,0,"Joueur 1 selectionné");
                   equal(getNextJoueur().numero,1,"Joueur 2 selectionné");
                   joueurCourant = joueurs[1];
+                  joueurCourant.bloque=true;
+                  equal(getNextJoueur(),null,"Joueur 2 selectionné");
+                  joueurCourant.bloque=false;
                   joueurs[2].defaite = true;
                   equal(getNextJoueur().numero,3,"Joueur 4 selectionné");
-                  joueurCourant = joueurs[0];
-                  joueurCourant.bloque = true;
-                  equal(getNextJoueur(),null,"Joueur 1 bloque, ne change pas ");
                   
-               })
-               
+               });
                
                test("Vainqueur du jeu",function(){
                   joueurs = [];
@@ -64,7 +63,13 @@
                   joueurs[0].defaite = true;
                   joueurs[1].defaite = true;
                   joueurCourant = joueurs[0];
-                  throws(getNextJoueur(),"Un joueur a gagné");
+                  try{
+                     getNextJoueur()
+                     equal(1,2);
+                  }catch(e){
+                     equal(2,e.numero,"Vainqueur trouve");
+                  }
+                  //throws(getNextJoueur(),"Un joueur a gagné");
                });
                
             </script>

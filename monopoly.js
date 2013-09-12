@@ -858,9 +858,12 @@ Object.defineProperty(Array.prototype, "size", {
 			this.montant-=montant;
 			var button = createMessage("Attention","red","Vous n'avez pas les fonds necessaires, il faut trouver de l'argent",function(){
 				// On attache un evenement a la fermeture
-				var onclose = function(){
+				var onclose = function(e){
+					
 					if(joueurCourant.montant < 0){
-						joueurCourant.resolveProblemeArgent(montant);
+						// Message d'erreur pas possible
+						createMessage("Attention","red","Impossible, il faut trouver les fonds avant de fermer");
+						e.preventDefault();
 					}
 					else{
 						joueurCourant.bloque = false;
@@ -1812,7 +1815,7 @@ Object.defineProperty(Array.prototype, "size", {
       if (this.joueurPossede != null && this.joueurPossede.equals(joueurCourant)) {
           return this.chezSoi();
       }
-      if (this.joueurPossede != null) { // on doit payer un loyer
+      if (this.joueurPossede != null && this.statutHypotheque == false) { // on doit payer un loyer
           return this.payerLoyer();
       }
 
@@ -2320,7 +2323,7 @@ Object.defineProperty(Array.prototype, "size", {
 	  		this.banqueroute = false;
 	  	}
 	  	if(onclose){
-	  		this.panel.unbind('dialogclose').bind('dialogclose',onclose);
+	  		this.panel.unbind('dialogbeforeclose').bind('dialogbeforeclose',onclose);
 	  	}
 	  	else{
 		  	this.panel.unbind('dialogclose');
@@ -2384,7 +2387,7 @@ Object.defineProperty(Array.prototype, "size", {
 			 }
 			  GestionTerrains.Constructions.verify();
 		  }catch(e){
-			  alert(e);
+			  createMessage("Attention","red",e);
 			  return false;
 		  }
 		  return true;
@@ -2487,7 +2490,7 @@ Object.defineProperty(Array.prototype, "size", {
 				  GestionTerrains.LeverHypotheque.lever($(this),fiche);
 			   });
 			   div.prepend(boutonLever);
-			   GestionTerrains.Hypotheque.append(div);
+			   GestionTerrains.LeverHypotheque.div.append(div);
 		    });
 		  },
 		  lever:function(input,fiche){
@@ -2598,6 +2601,8 @@ Object.defineProperty(Array.prototype, "size", {
 						  $('~span',this).text(data.cout);
 						  _self.table[prop.id] = data;
 						  GestionTerrains.update();
+						  
+						  // Si le groupe est vide, on permet l'hypotheque des terrains
 				   });
 				   divTerrain.append(select).append('<span></span> ' + CURRENCY);						 
 				   $(this.div).append(divTerrain);

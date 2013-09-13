@@ -2440,7 +2440,16 @@ Object.defineProperty(Array.prototype, "size", {
 				    GestionTerrains.Hypotheque.addOption(this);
 			    });
 		  },
+		  addGroup:function(group){
+			 for (var index in group.proprietes) {
+			   this.addOption(group.proprietes[index]);
+			 }
+		  },
 		  addOption:function(fiche){
+		    // On verifie si l'option n'existe pas
+		    if (this.select.find('option[value="' + fiche.id + '"]').length > 0) {
+			 return;
+		    }
 			var option = $("<option data-color='" + fiche.color + "' value='" + fiche.id + "'>" + fiche.nom + " (+" + fiche.montantHypotheque + " " + CURRENCY + ")</option>");
 			option.data("fiche",fiche);			
 			this.select.append(option);
@@ -2572,12 +2581,14 @@ Object.defineProperty(Array.prototype, "size", {
 					  }
 				  });			  
 				  this.div.append(divTitre);
-				  for(var index in groups[color].proprietes){
+				  var group = groups[color];
+				  for(var index in group.proprietes){
 					  var propriete = groups[color].proprietes[index];
 					  var divTerrain = $('<div class="propriete propriete-' + propriete.color.substring(1) + '"></div>');
 					  divTerrain.append('<span style="color:' + propriete.color + '" class="title-propriete">' + propriete.nom + '</span>');
 					  var select = $('<select data-color="' + propriete.color + '" class="' + ((propriete.nbMaison==5)?'hotel':'maison') + '"></select>');
 					  select.data("propriete",propriete);
+					  select.data("group",group);
 					  for (var j = 0; j <= ((GestionTerrains.banqueroute) ? propriete.nbMaison : 5); j++) {
 						  select.append("<option class=\"" + ((j==5)?"hotel":"maison") + "\" value=\"" + j + "\" " + ((propriete.nbMaison == j) ? "selected" : "") + ">x " + ((j==5)?1:j) + "</option>");
 					  }
@@ -2603,6 +2614,15 @@ Object.defineProperty(Array.prototype, "size", {
 						  GestionTerrains.update();
 						  
 						  // Si le groupe est vide, on permet l'hypotheque des terrains
+						  var nbMaisons = 0;
+						  var gr = $(this).data("group");
+						  GestionTerrains.Constructions.div.find('select[data-color="' + prop.color + '"]').each(function(){
+						    nbMaisons+=parseInt($(this).val());
+						  });
+						  if (nbMaisons == 0) {						    
+						    // Le groupe est hypothecable
+						    GestionTerrains.Hypotheque.addGroup(gr);
+						  }
 				   });
 				   divTerrain.append(select).append('<span></span> ' + CURRENCY);						 
 				   $(this.div).append(divTerrain);

@@ -2133,7 +2133,7 @@ Object.defineProperty(Array.prototype, "size", {
           }
           joueurs[i] = joueur;
           $('#informations').append('<div id=\"' + id + '\"><div><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY 
-            + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user.png" style="cursor:pointer;width:16px;"</span></div></div><hr/>');
+            + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user.png" style="cursor:pointer;width:16px;float:right"/></span></div></div><hr/>');
           joueur.setDiv($('#' + id));
           joueur.setPion(colorsJoueurs[i]);
       }

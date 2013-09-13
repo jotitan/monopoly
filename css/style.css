@@ -1,6 +1,10 @@
+.info-joueur > img {
+	padding-right:10px;
+	}
+
 .joueurCourant{
             background-color:lightslategray; padding-left:15px; padding-top:3px;
-            padding-bottom:3px; padding-right:15px; color:white;
+            padding-bottom:3px; color:white;
             font-weight:bold;
           }
           

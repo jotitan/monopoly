@@ -1,4 +1,4 @@
-// TODO : outil pour regler les dettes, moteur pour achat maison pour ordinateur, limites maison 32 hotel 12, strategie smart sur stats maisons les plus visites
+// TODO : moteur pour achat maison pour ordinateur, limites maison 32 hotel 12, strategie smart sur stats maisons les plus visites
 // Bilan joueurs : nombres proprietes, nombres maisons / hotels, argent, argent dispo (apres hypotheque / vente)
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
@@ -762,6 +762,10 @@ Object.defineProperty(Array.prototype, "size", {
 
       // Achete une propriete
       this.acheteMaison = function (maison, id) {
+      	// On verifie l'argent
+      	if(maison == null || maison.achat>this.montant){
+      		throw "Achat de la maison impossible";
+      	}
           if (maison.isLibre()) {
               var m = this.cherchePlacement(maison);
               var input = '<input type=\"button\" id=\"idInputFiche' + id + '\" class=\"ui-corner-all color_' + maison.color.substring(1) + '\" style=\"display:block;height:27px;width:280px;\" value=\"' + maison.nom + '\" id=\"fiche_' + id + '\"/>';
@@ -825,8 +829,7 @@ Object.defineProperty(Array.prototype, "size", {
       	/* Verifie si le joueur peut payer */
       	if(montant > this.montant){
       		this.bloque = true;
-      		this.resolveProblemeArgent(montant);
-      		return false;
+      		return this.resolveProblemeArgent(montant);
       	}
 	     this.montant -= montant;
           this.setArgent(this.montant);
@@ -834,7 +837,13 @@ Object.defineProperty(Array.prototype, "size", {
       }
 	 /* Paye une somme a un joueur */
 	 this.payerTo = function(montant,joueur){
-	   
+	   if(this.payer(montant) == true){
+	   	joueur.gagner(montant);
+	   }
+	   else{
+	   	// Banqueroute, on paye le joueur avec le peu qui est recuperable
+	   	joueur.gagner(this.getStats().argentDispo);
+	   }
 	 }
 	 
       this.gagner = function (montant) {
@@ -859,6 +868,7 @@ Object.defineProperty(Array.prototype, "size", {
 		 if(this.getStats().argentDispo < this.montant - montant){
 			 // Banqueroute, le joueur perd
 			 this.defaite(montant);
+			 return false;
 		 }
 		 // On ouvre le panneau de resolution en empechant la fermeture
 		 this.montant-=montant;
@@ -878,7 +888,7 @@ Object.defineProperty(Array.prototype, "size", {
 			 }
 			 GestionTerrains.open(true,onclose);				
 		 });
-		 
+		 return true;
 	 }
 
       this.getFichePosition = function () {
@@ -996,7 +1006,7 @@ Object.defineProperty(Array.prototype, "size", {
       this.etat = 2;
       this.position = 0;
       this.joueur = joueur;
-	 this.stats = {tour:0,prison:0};	// stat du joueur
+	  this.stats = {tour:0,prison:0};	// stat du joueur
       this.pion = new PionJoueur(color, fiches["2-0"].drawing.getCenter().x, fiches["2-0"].drawing.getCenter().y);
       Drawer.addRealTime(this.pion);
 

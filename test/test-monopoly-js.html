@@ -1,10 +1,10 @@
 <html>
    <head>
       <title>Test Monopoly</title>
-      <script language="javascript" src="js/jquery-1.9.1.js">;</script>   
-      <script language="Javascript" src="js/qunit-1.12.0.js">;</script>
-      <script language="Javascript" src="monopoly.js">;</script>
-      <link rel="stylesheet" type="text/css" href="css/qunit-1.12.0.css"/>
+      <script language="javascript" src="../js/jquery-1.9.1.js">;</script>   
+      <script language="Javascript" src="../js/qunit-1.12.0.js">;</script>
+      <script language="Javascript" src="../monopoly.js">;</script>
+      <link rel="stylesheet" type="text/css" href="../css/qunit-1.12.0.css"/>
             
             <script>
                
@@ -70,6 +70,25 @@
                      equal(2,e.numero,"Vainqueur trouve");
                   }
                   //throws(getNextJoueur(),"Un joueur a gagné");
+               });
+               
+               test("Paiement loyer",function(){
+                  joueurs = [];
+                  joueurs[0] = new Joueur(0,"Joueur 1");
+                  joueurs[0].pion = {stats:{tour:0,prison:0}};
+                  joueurs[1] = new Joueur(0,"Joueur 2");
+                  joueurs[1].pion = {stats:{tour:0,prison:0}};
+                  
+                  equal(joueurs[0].montant,100000,"Somme de départ J1");
+                  equal(joueurs[1].montant,100000,"Somme de départ J2");
+                  
+                  equal(joueurs[0].getStats().argentDispo,100000,"Argent dispo J1");
+                  // Achat maison
+                  var maison = new Fiche(null, null, ["",""], "", "", 10000, [1000,2000,4000], 5000);
+                  maison.vendu(joueurs[0]);
+	              joueurs[0].payer(maison.achat);
+                  equal(joueurs[0].montant,90000,"Argent total J1 achat maison");
+                  equal(joueurs[0].getStats().argentDispo,95000,"Argent dispo J1");
                });
                
             </script>

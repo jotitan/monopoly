@@ -573,6 +573,7 @@ Object.defineProperty(Array.prototype, "size", {
 				}
 			    }
 			    else{
+				// Maison suivante dans le groupe
 				currentMaison = (currentMaison+1)%group.proprietes.length;	
 			    }			
 		    }
@@ -831,6 +832,11 @@ Object.defineProperty(Array.prototype, "size", {
           this.setArgent(this.montant);
           return true;
       }
+	 /* Paye une somme a un joueur */
+	 this.payerTo = function(montant,joueur){
+	   
+	 }
+	 
       this.gagner = function (montant) {
           this.montant += montant;
           this.setArgent(this.montant);
@@ -846,34 +852,34 @@ Object.defineProperty(Array.prototype, "size", {
 		this.defaite = true;
 	}
 	
-		/* Resourd les problemes d'argent du joueur */
-		/* @param montant : argent a recouvrer */
-		this.resolveProblemeArgent = function(montant){
-			// On verifie si c'est possible de recuperer les sommes
-			if(this.getStats().argentDispo < this.montant - montant){
-				// Banqueroute, le joueur perd
-				this.defaite(montant);
-			}
-			// On ouvre le panneau de resolution en empechant la fermeture
-			this.montant-=montant;
-			var button = createMessage("Attention","red","Vous n'avez pas les fonds necessaires, il faut trouver de l'argent",function(){
-				// On attache un evenement a la fermeture
-				var onclose = function(e){
-					
-					if(joueurCourant.montant < 0){
-						// Message d'erreur pas possible
-						createMessage("Attention","red","Impossible, il faut trouver les fonds avant de fermer");
-						e.preventDefault();
-					}
-					else{
-						joueurCourant.bloque = false;
-						changeJoueur();
-					}
-				}
-				GestionTerrains.open(true,onclose);				
-			});
-			
-		}
+	 /* Resourd les problemes d'argent du joueur */
+	 /* @param montant : argent a recouvrer */
+	 this.resolveProblemeArgent = function(montant){
+		 // On verifie si c'est possible de recuperer les sommes
+		 if(this.getStats().argentDispo < this.montant - montant){
+			 // Banqueroute, le joueur perd
+			 this.defaite(montant);
+		 }
+		 // On ouvre le panneau de resolution en empechant la fermeture
+		 this.montant-=montant;
+		 var button = createMessage("Attention","red","Vous n'avez pas les fonds necessaires, il faut trouver de l'argent",function(){
+			 // On attache un evenement a la fermeture
+			 var onclose = function(e){
+				 
+				 if(joueurCourant.montant < 0){
+					 // Message d'erreur pas possible
+					 createMessage("Attention","red","Impossible, il faut trouver les fonds avant de fermer");
+					 e.preventDefault();
+				 }
+				 else{
+					 joueurCourant.bloque = false;
+					 changeJoueur();
+				 }
+			 }
+			 GestionTerrains.open(true,onclose);				
+		 });
+		 
+	 }
 
       this.getFichePosition = function () {
           return fiches[this.pion.etat + "-" + this.pion.position];
@@ -1851,8 +1857,8 @@ Object.defineProperty(Array.prototype, "size", {
 
   this.payerLoyer = function () {
       return createMessage("Vous etes " + this.nom, this.color, "Vous etes chez " + this.joueurPossede.nom + " vous devez payez la somme de " + this.getLoyer() + " " + CURRENCY, function (param) {
-          param.joueurPaye.payer(param.loyer);
-          param.joueurLoyer.gagner(param.loyer);
+          param.joueurPaye.payerTo(param.loyer,param.joueurLoyer);
+          //param.joueurLoyer.gagner(param.loyer);
           changeJoueur();
       }, {
           loyer: this.getLoyer(),
@@ -2026,7 +2032,7 @@ Object.defineProperty(Array.prototype, "size", {
 	   return null;
 	 }
 		 
-      $('#idLancerDes').removeAttr('disabled');
+      $('#idLancerDes,.action-joueur').removeAttr('disabled');
 	 if (des1 != des2) {
           nbDouble = 0;
 	 }
@@ -2048,7 +2054,7 @@ Object.defineProperty(Array.prototype, "size", {
   function lancerAnimerDes() {
       // Fait tourner les des 8 fois
       // On desactive le bouton pour eviter double click
-      $('#idLancerDes').attr('disabled', 'disabled');
+      $('#idLancerDes,.action-joueur').attr('disabled', 'disabled');
       var nb = 8;
       var interval = setInterval(function () {
           if (nb-- < 0) {
@@ -2428,6 +2434,7 @@ Object.defineProperty(Array.prototype, "size", {
 		  },				
 		  update:function(){
 			  $('option[data-color]',this.select).removeAttr('disabled');
+			  // On desactive les propriete qui ont des terrains construits
 			  var colors = GestionTerrains.Constructions.getGroupesConstruits();
 			  for (var i in colors){
 				  $('option[data-color="' + colors[i] +'"]',this.select).attr('disabled','disabled');
@@ -2467,11 +2474,20 @@ Object.defineProperty(Array.prototype, "size", {
 				  $(this).parent().remove();
 				  GestionTerrains.addCout(-fiche.hypotheque);
 				  delete _self.table[fiche.id];
+				  // On permet l'achat de maison sur les terrains si aucune maison hypotheque
+				  // On prend toutes les couleurs et on les elimine
+				  var colors = [];
+				  for (var id in _self.table) {
+				     colors.push(_self.table[id].color.substring(1));
+				  }
+				  GestionTerrains.Constructions.showByColors(colors);
 			  });
 			  div.prepend(boutonAnnuler);
 			  this.div.append(div)
 			  $('option:selected',this.select).remove();
 			  GestionTerrains.addCout(fiche.montantHypotheque);
+			  // On empeche l'achat de maisons sur les terrains de ce groupe
+			  GestionTerrains.Constructions.removeByColor(fiche.color);
 		  }
 	  },
 	  LeverHypotheque:{
@@ -2547,7 +2563,7 @@ Object.defineProperty(Array.prototype, "size", {
 		  },
 		  getGroupesConstruits:function(){
 			  var colors = [];
-			  $('select[data-color][value!=0]',this.div).each(function(){
+			  $('select[data-color]:has(option:selected[value!=0])',this.div).each(function(){
 				  colors.push($(this).attr('data-color'));
 			  });
 			  return colors;
@@ -2565,11 +2581,23 @@ Object.defineProperty(Array.prototype, "size", {
 			  });
 			  return totals;
 		  },
+		  /* Supprime la possibilite d'acheter des maisons sur les terrains de cette couleur */
+		  removeByColor:function(color){
+		    this.div.find('div[class*="-' + color.substring(1) + '"]').hide();
+		  },
+		  showByColors:function(exludeColors){
+		    var selectors = "div";
+		    for (var index in exludeColors) {
+			 selectors+=':not([class*="-' + exludeColors[index] + '"])';
+		    }
+		    console.log(selectors);
+		    this.div.find(selectors).show();
+		  },
 		  load:function(){
 			  var groups = joueurCourant.findGroupes();
 			  var table = $('#idTerrainsConstructibles');
 			  for(var color in groups) {
-				  var divTitre = $('<div style="cursor:pointer">Groupe <span style="color:' + color + ';font-weight:bold">' + groups[color].proprietes[0].groupe + '</span></div>');
+				  var divTitre = $('<div style="cursor:pointer" class="group-' + color.substring(1) + '">Groupe <span style="color:' + color + ';font-weight:bold">' + groups[color].proprietes[0].groupe + '</span></div>');
 				  divTitre.data("color",color.substring(1));
 				  divTitre.click(function(){
 					  var id = 'div.propriete-' + $(this).data('color');

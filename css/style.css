@@ -1,86 +1,62 @@
-.info-joueur > img {
-	padding-right:10px;
-	}
-
-.joueurCourant{
-            background-color:lightslategray; padding-left:15px; padding-top:3px;
-            padding-bottom:3px; color:white;
-            font-weight:bold;
-          }
-          
-          .joueurCourant > div{
-            padding-left:0px;
-          }
-
-.joueurCourant.defaite {
-            background-color: grey;                        
+.info-joueur > img { padding-right: 10px }
+.joueurCourant {
+    padding-left: 35px;
+    background-image: url("../img/dice.png");
+    background-repeat: no-repeat;
+    background-size:25px;
+    background-position:5px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    font-weight: bold;
 }
-          
-          .nbMaisons{
-            text-decoration:underline; background-color:salmon;
-          }
-  
-	.jail {
-		background-image: url("../img/jail.jpg");
-		background-repeat: no-repeat;
-		background-size: contain;
-		padding-left: 30px;
-	}
-  
-  #informations > div {
-  	font-size:14px;
-     width:280px;
-  }
-		  
-  span.info-label {
-  	display:inline-block;
-  	width:55px;
-  	text-align:right;
-  }
-  
-  
-  body{margin:0}
-  
-  .title-dialog {
-	font-weight:bold;
-	text-align: center;
-	width:100%;
-	border-bottom: solid 1px black;
-  }
-  
-  .constructions select {
-            width:65px;
-  }
-  
-  .constructions select>option, .constructions select.hotel, .constructions select.maison{
-   	background-repeat:no-repeat;
-  	background-position:2px;
-  	background-size:13px 13px;  
-  	padding-left:15px;
-  }
-  
-  .constructions select>option.maison, .constructions select>option.hotel {
-            padding-left: 20px;            
-  }
-  
-  .constructions select>option.maison, .constructions select.maison {
-  	background-image:url(../img/maison.png);
-  }
-  
-  .constructions select>option.hotel, .constructions select.hotel {
-  	background-image:url(../img/hotel.png);
-  }  
-
-
-.constructions div.propriete  {
-            padding-left:20px;            
+.joueurCourant > div { padding-left: 0px }
+.joueurCourant.defaite { background-color: grey }
+.nbMaisons {
+    text-decoration: underline;
+    background-color: salmon;
 }
-.constructions div.propriete>span.title-propriete  {
-            display:inline-block;
-            width:200px;
-            font-weight:bold;
+.jail {
+    background-image: url("../img/jail.jpg");
+    background-repeat: no-repeat;
+    background-size: contain;
+    padding-left: 30px;
 }
+#informations > div {
+    font-size: 14px;
+    width: 280px;
+}
+span.info-label {
+    display: inline-block;
+    width: 55px;
+    text-align: right;
+}
+body { margin: 0 }
+.title-dialog {
+    font-weight: bold;
+    text-align: center;
+    width: 100%;
+    border-bottom: solid 1px black;
+}
+.constructions select { width: 65px }
+.constructions select>option,
+.constructions select.hotel,
+.constructions select.maison {
+    background-repeat: no-repeat;
+    background-position: 2px;
+    background-size: 13px 13px;
+    padding-left: 15px;
+}
+.constructions select>option.maison,
+.constructions select>option.hotel { padding-left: 20px }
+.constructions select>option.maison,
+.constructions select.maison { background-image: url(../img/maison.png) }
+.constructions select>option.hotel,
+.constructions select.hotel { background-image: url(../img/hotel.png) }
+.constructions div.propriete { padding-left: 20px }
+.constructions div.propriete>span.title-propriete {
+    display: inline-block;
+    width: 200px;
+    font-weight: bold;
+}
+.ui-widget { font-size: 0.9em }
 
-.ui-widget {
-			font-size:0.9em;
-		}

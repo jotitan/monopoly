@@ -476,6 +476,39 @@ Object.defineProperty(Array.prototype, "size", {
 	   return false;
 	 }
       
+	 /* Override de la methode pere */
+	 this.resolveProblemeArgent = function(montant){
+		 // On verifie si c'est possible de recuperer les sommes
+		 if(this.getStats().argentDispo < montant){
+			 // Banqueroute, le joueur perd
+			 this.defaite(montant);
+			 return false;
+		 }
+		 /* Ordre de liquidations :
+		 * 1) Hypotheque des terrains seuls
+		 * 2) Hypotheque des terrains en groupe non construit
+		 * 3) Vente des maisons les maisons / hotels les mains rentables prochainement (base sur les stats des prochains passages)
+		 * 4) Cession des proprietes ?
+		 **/
+		 // 1 hypotheque terrains seuls
+		 for (var index = 0 ; index < this.maisons.length && this.montant < montant; index++) {
+		  var maison = this.maisons[index];
+		  if (!maison.isGroupee()) {
+		    maison.hypotheque();
+		  }
+		 }
+		 if ( this.montant >= montant) {
+		  return true;
+		 }
+		 for (var index = 0 ; index < this.maisons.length && this.montant < montant; index++) {
+		  var maison = this.maisons[index];
+		  if (maison.isGroupee()) {
+		    maison.hypotheque();
+		  }
+		 }
+		 return true;
+	 }
+	 
       /* Construit des maisons / hotels 
       * Calcul les groupes constructibles, verifie l'argent disponible. Construit sur les proprietes ou peuvent tomber les adversaires (base sur leur position et les stats au des)
       * Possibilite d'enregistrer tous les deplacements des joueurs pour affiner les cases les plus visitees
@@ -780,7 +813,6 @@ Object.defineProperty(Array.prototype, "size", {
                   //fiches[id].openFiche();
                   openDetailFiche(fiches[id], $(this));
               });
-              this.maisons[this.maisons.length] = maison;
               maison.vendu(this);
               this.payer(maison.achat);
           }
@@ -810,7 +842,7 @@ Object.defineProperty(Array.prototype, "size", {
 
       this.setArgent = function (montant) {
           this.montant = montant;
-          this.div.find('.compte-banque').text(montant);
+          $('.compte-banque',this.div).text(montant);
       }
 
       this.payerParcGratuit = function (montant) {
@@ -865,7 +897,7 @@ Object.defineProperty(Array.prototype, "size", {
 	 /* @param montant : argent a recouvrer */
 	 this.resolveProblemeArgent = function(montant){
 		 // On verifie si c'est possible de recuperer les sommes
-		 if(this.getStats().argentDispo < this.montant - montant){
+		 if(this.getStats().argentDispo < montant){
 			 // Banqueroute, le joueur perd
 			 this.defaite(montant);
 			 return false;
@@ -1763,6 +1795,7 @@ Object.defineProperty(Array.prototype, "size", {
   this.vendu = function (joueur) {
       this.statut = ETAT_ACHETE;
       this.joueurPossede = joueur;
+	 this.joueurPossede.maisons.push(this);
   }
   
   /* Renvoie la rentabilite de la propriete. Se base sur le rapport entre le loyer de trois maisons et le prix d'achat d'une maison */
@@ -1919,19 +1952,23 @@ Object.defineProperty(Array.prototype, "size", {
       }
   }
 
-
-  this.isGroupee = function () {
-      if (this.joueurPossede == null) {
-          return false;
-      }
-      var l = this.joueurPossede.findMaisonsConstructibles();
-      for (var i = 0; i < l.length; i++) {
-          if (l[i].color == this.color) {
-              return true;
-          }
-      }
-      return false;
-  }
+    /* Renvoie vrai si le reste du groupe appartient au meme joueur.*/
+    this.isGroupee = function () {
+	   if (this.joueurPossede == null) {
+		  return false;
+	   }
+	   // Renvoie les maisons constructibles (lorsque le groupe est complet)
+	   var l = this.joueurPossede.findMaisonsConstructibles();
+	   for (var i = 0; i < l.length; i++) {
+		  // Si la couleur apparait dans une propriete, le groupe est complet
+		  if (l[i].color == this.color) {
+			 return true;
+		  }
+	   }
+	   return false;
+    }
+    
+    /* Renvoie vrai si le groupe est complet et construit */
   }
 
   function FicheGare(etat, pos, color, nom, achat, loyers,img) {

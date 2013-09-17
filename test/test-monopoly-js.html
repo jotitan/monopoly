@@ -74,11 +74,12 @@
                
                test("Paiement loyer",function(){
                   joueurs = [];
-                  joueurs[0] = new Joueur(0,"Joueur 1");
+                  joueurs[0] = new JoueurOrdinateur(0,"Joueur 1");
                   joueurs[0].pion = {stats:{tour:0,prison:0}};
-                  joueurs[1] = new Joueur(0,"Joueur 2");
+			   joueurs[0].div = $('');
+                  joueurs[1] = new JoueurOrdinateur(0,"Joueur 2");
                   joueurs[1].pion = {stats:{tour:0,prison:0}};
-                  
+                  joueurs[1].div = $('');
                   equal(joueurs[0].montant,100000,"Somme de départ J1");
                   equal(joueurs[1].montant,100000,"Somme de départ J2");
                   
@@ -86,15 +87,23 @@
                   // Achat maison
                   var maison = new Fiche(null, null, ["",""], "", "", 10000, [1000,2000,4000], 5000);
                   maison.vendu(joueurs[0]);
-	              joueurs[0].payer(maison.achat);
-                  equal(joueurs[0].montant,90000,"Argent total J1 achat maison");
-                  equal(joueurs[0].getStats().argentDispo,95000,"Argent dispo J1");
+			   joueurs[0].payer(maison.achat);
+                  equal(joueurs[0].montant,90000,"Achat propriete");
+                  equal(joueurs[0].getStats().argentDispo,95000,"Achat propriete (argent dispo)");
+			   
+			   maison.nbMaison=2;
+			   equal(joueurs[0].getStats().argentDispo,100000,"Achat 2 maisons");
+			   joueurs[0].montant=2500;
+			   equal(joueurs[0].getStats().argentDispo,12500,"Achat 2 maisons et argent a 2500");
+			   joueurs[0].payerTo(15000,joueurs[1]);
+			   equal(joueurs[0].defaite,true,"Defaite du joueur");
+			   equal(joueurs[1].montant,112500,"Argent du joueur 2");
                });
                
             </script>
    </head>
    <body>
-      
+	 <a target="_blank" href="../monopoly-canvas.html">Lien jeu</a>      
       <div id="qunit"></div>
    </body>
    

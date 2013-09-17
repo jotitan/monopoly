@@ -493,20 +493,70 @@ Object.defineProperty(Array.prototype, "size", {
 		 // 1 hypotheque terrains seuls
 		 for (var index = 0 ; index < this.maisons.length && this.montant < montant; index++) {
 		  var maison = this.maisons[index];
-		  if (!maison.isGroupee()) {
+		  if (maison.statutHypotheque == false && !maison.isGroupee()) {
 		    maison.hypotheque();
 		  }
 		 }
 		 if ( this.montant >= montant) {
-		  return true;
+		  return true;	// Somme recouvree, on arrete
 		 }
+		 // 2 terrains en groupe mais non construits
 		 for (var index = 0 ; index < this.maisons.length && this.montant < montant; index++) {
 		  var maison = this.maisons[index];
-		  if (maison.isGroupee()) {
+		  if (maison.statutHypotheque == false && !maison.isGroupeeAndBuild()) {
 		    maison.hypotheque();
 		  }
 		 }
+ 		 if ( this.montant >= montant) {
+		  return true;	// Somme recouvree, on arrete
+		 }
+		 
+		 // 3 Terrains construits, on vend les maisons dessus
+		 // On recupere les groupes construits classes par ordre inverse d'importance. On applique la meme regle que la construction tant que les sommes ne sont pas recupereres
 		 return true;
+	 }
+	 
+	 /* Renvoie la liste des groupes a construire trie. 
+	 * @param sortType : Tri des groupes en fonction de l'importance. ASC ou DESC
+	 */
+	 this.getGroupsToConstruct = function(sortType, level){
+	 	// On determine les terrains les plus rentables a court terme (selon la position des joueurs)
+		 var maisons = this.comportement.getNextProprietesVisitees(this,level);
+		 // On Calcule pour chaque maison des groupes (meme ceux sans interet) plusieurs indicateurs : proba (pondere a 3), la rentabilite (pondere a 1)
+		 var totalMaisons = 0;	// Nombre total de proprietes constructibles
+		 for (var color in groups) {
+		  var group = groups[color];
+		  group.proba = 0;
+		  group.rentabilite = 0;
+		  group.lessThree=0;
+		  group.interetGlobal=0;
+		  for (var index in group.proprietes) {
+		    var propriete = group.proprietes[index];
+		    totalMaisons++;
+		    // On cherche si proba
+		    if (maisons[propriete.id]!=null) {
+			 group.proba+=maisons[propriete.id].proba*3;
+		    }
+		    group.rentabilite+=propriete.getRentabilite();
+		    group.lessThree+= (propriete.nbMaison <=3) ? 0.5 : 0;
+		  }
+		 }
+		 // On trie les groupes
+		 var sortedGroups = [];
+		 for (var color in groups) {
+			var group = groups[color];
+			group.interetGlobal = group.proba + group.rentabilite + ((group.lessThree > 0)?0.5:0);
+		  	sortedGroups.push(group);
+		 }
+		 var GREATER_VALUE = (sortType == "ASC")?1:-1;
+		 var LESSER_VALUE = (sortType == "ASC")?-1:1;		 	
+		 	
+		 sortedGroups.sort(function(a,b){
+		 	if(a.interetGlobal == b.interetGlobal){return 0;}
+		 	if(a.interetGlobal > b.interetGlobal){return GREATER_VALUE;}
+		 	return LESSER_VALUE;
+		 });
+		 return sortedGroups;
 	 }
 	 
       /* Construit des maisons / hotels 
@@ -527,16 +577,8 @@ Object.defineProperty(Array.prototype, "size", {
 		 	return;
 		 }
 		 // On determine les terrains les plus rentables a court terme (selon la position des joueurs)
-		 var maisons = this.comportement.getNextProprietesVisitees(this,0.1);
-		 /* Plusieurs regles pour gerer les constructions : 
-		 * Si un seul groupe, on construit notre budget dessus
-		 * Si plusieurs groupes avec des taux equivalent, on construit sur le groupe le plus rentable (basé sur stats et sur cout)
-		 * On construit jusqu'a obtenir 3 maisons partout (seuil de rentabilité). On construit ensuite sur l'autre groupe
-		 * On construit toujours plus sur la maison la plus chere
-		 * S'il reste du budget, on recupere les terrains sans interet et on construit dessus
-		 * On calcule la somme des taux par groupe
-		 */
-		 // On Calcule pour chaque maison des groupes (meme ceux sans interet) plusieurs indicateurs : proba (pondere a 3), la rentabilite (pondere a 1)
+		 /*var maisons = this.comportement.getNextProprietesVisitees(this,0.1);
+		// On Calcule pour chaque maison des groupes (meme ceux sans interet) plusieurs indicateurs : proba (pondere a 3), la rentabilite (pondere a 1)
 		 var totalMaisons = 0;	// Nombre total de proprietes constructibles
 		 for (var color in groups) {
 		  var group = groups[color];
@@ -566,7 +608,18 @@ Object.defineProperty(Array.prototype, "size", {
 		 	if(a.interetGlobal == b.interetGlobal){return 0;}
 		 	if(a.interetGlobal > b.interetGlobal){return -1;}
 		 	return 1;
-		 });
+		 });*/
+		 var sortedGroups = this.getGroupsToConstruct("DESC",0.1);
+
+		 /* Plusieurs regles pour gerer les constructions : 
+		 * Si un seul groupe, on construit notre budget dessus
+		 * Si plusieurs groupes avec des taux equivalent, on construit sur le groupe le plus rentable (basé sur stats et sur cout)
+		 * On construit jusqu'a obtenir 3 maisons partout (seuil de rentabilité). On construit ensuite sur l'autre groupe
+		 * On construit toujours plus sur la maison la plus chere
+		 * S'il reste du budget, on recupere les terrains sans interet et on construit dessus
+		 * On calcule la somme des taux par groupe
+		 */
+		 
 
 		 // On construit des maisons. On s'arrete quand plus de budget ou qu'on ne peut plus construire (hotel partout ou 4 maisons (blocage de constructions))
 		 var stopConstruct = false;
@@ -1969,6 +2022,21 @@ Object.defineProperty(Array.prototype, "size", {
     }
     
     /* Renvoie vrai si le groupe est complet et construit */
+    /* Renvoie vrai si le reste du groupe appartient au meme joueur.*/
+    this.isGroupeeAndBuild = function () {
+	   if (this.joueurPossede == null) {
+		  return false;
+	   }
+	   // Renvoie les maisons constructibles (lorsque le groupe est complet)
+	   var l = this.joueurPossede.findMaisonsConstructibles();
+	   for (var i = 0; i < l.length; i++) {
+		  // Si la couleur apparait dans une propriete, le groupe est complet
+		  if (l[i].color == this.color && l[i].nbMaison > 0) {
+			 return true;
+		  }
+	   }
+	   return false;
+    }
   }
 
   function FicheGare(etat, pos, color, nom, achat, loyers,img) {

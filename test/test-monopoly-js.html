@@ -100,6 +100,18 @@
 			   equal(joueurs[1].montant,112500,"Argent du joueur 2");
                });
                
+			test("Constructions maison",function(){
+			   joueurs = [];
+                  joueurs[0] = new JoueurOrdinateur(0,"Joueur 1");
+                  joueurs[0].pion = {stats:{tour:0,prison:0}};
+			   joueurs[0].div = $('');
+                  joueurs[1] = new JoueurOrdinateur(0,"Joueur 2");
+                  joueurs[1].pion = {stats:{tour:0,prison:0}};
+                  joueurs[1].div = $('');
+                  
+			   // On cree 2 groupes sur lesquels construire
+			});
+			
             </script>
    </head>
    <body>

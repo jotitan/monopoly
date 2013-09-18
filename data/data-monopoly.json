@@ -51,12 +51,13 @@
 	},
 	"chance":{
 		"cartes":[
-			{"nom":"Payer pour frais de scolarité F 15.000","montant":-15000},
-			{"nom":"Amande pour excès de vitesse : F 1.500","montant":-1500},
-			{"nom":"Vous avez gagné le prix de mots croisés. Recevez F 10.000","montant":10000},
-			{"nom":"La banque vous verse un dividende de F 5.000","montant":5000},
-			{"nom":"Votre immeuble et votre prêt rapportent. Vous devez toucher F 15.000","montant":15000},
-			{"nom":"Amande pour ivresse : F 2.000","montant":-2000}															
+			{"nom":"Payer pour frais de scolarité F 15.000","type":"taxe","montant":15000},
+			{"nom":"Amande pour excès de vitesse : F 1.500","type":"taxe","montant":1500},
+			{"nom":"Vous avez gagné le prix de mots croisés. Recevez F 10.000","type":"prime","montant":10000},
+			{"nom":"La banque vous verse un dividende de F 5.000","type":"prime","montant":5000},
+			{"nom":"Votre immeuble et votre prêt rapportent. Vous devez toucher F 15.000","type":"prime","montant":15000},
+			{"nom":"Amande pour ivresse : F 2.000","type":"taxe","montant":2000},
+			{"nom":"Rendez vous Henri-Martin","type":"goto","axe":0,"pos":4}
 		]
 	},
 	"communaute":{

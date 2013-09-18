@@ -1,4 +1,5 @@
 // TODO : moteur pour achat maison pour ordinateur, limites maison 32 hotel 12, strategie smart sur stats maisons les plus visites
+// TODO : strategie prison : permettre la sortie anticiper. Decider quand un ordinateur peut sortir 
 // Bilan joueurs : nombres proprietes, nombres maisons / hotels, argent, argent dispo (apres hypotheque / vente)
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
@@ -182,20 +183,7 @@ Object.defineProperty(Array.prototype, "size", {
 			 }
 		    }
 		  }
-		  return maisons;
-		  /*var sortMaisons = [];
-		  for(var id in maisons){
-		 	if(seuil == null|| maisons[id].proba >= seuil){
-		 		sortMaisons.push(maisons[id]);
-		 	}
-		 }
-		 sortMaisons.sort(function(a,b){
-		 	if(a.proba == b.proba)return 0;
-		 	if(a.proba > b.proba)return 1;
-		 	return -1;
-		 });
-		  
-		  return sortMaisons;*/
+		  return maisons;		  
 		}
 		
 		
@@ -520,6 +508,11 @@ Object.defineProperty(Array.prototype, "size", {
 	 * @param sortType : Tri des groupes en fonction de l'importance. ASC ou DESC
 	 */
 	 this.getGroupsToConstruct = function(sortType, level){
+		 var groups = this.findGroupes();	// structure : [color:{color,proprietes:[]}]
+		 // Pas de terrains constructibles
+		 if (groups.size() == 0) {
+		   throw "Impossible";
+		 }
 	 	// On determine les terrains les plus rentables a court terme (selon la position des joueurs)
 		 var maisons = this.comportement.getNextProprietesVisitees(this,level);
 		 // On Calcule pour chaque maison des groupes (meme ceux sans interet) plusieurs indicateurs : proba (pondere a 3), la rentabilite (pondere a 1)
@@ -565,12 +558,6 @@ Object.defineProperty(Array.prototype, "size", {
       */
      this.buildConstructions = function(){
 		 
-		 var groups = this.findGroupes();	// structure : [color:{color,proprietes:[]}]
-		 // Pas de terrains constructibles
-		 if (groups.size() == 0) {
-		   return;	
-		 }
-		 
 		 var budget = this.comportement.getBudget(this);
 		 // Pas d'argent
 		 if(budget < 5000){
@@ -609,7 +596,13 @@ Object.defineProperty(Array.prototype, "size", {
 		 	if(a.interetGlobal > b.interetGlobal){return -1;}
 		 	return 1;
 		 });*/
-		 var sortedGroups = this.getGroupsToConstruct("DESC",0.1);
+		 var sortedGroups = [];
+		 try{
+		  sortedGroups = this.getGroupsToConstruct("DESC",0.1);
+		 }catch(e){
+		  // Pas de terrains constructibles
+		    return;			 
+		 }
 
 		 /* Plusieurs regles pour gerer les constructions : 
 		 * Si un seul groupe, on construit notre budget dessus
@@ -2377,12 +2370,27 @@ Object.defineProperty(Array.prototype, "size", {
     // On charge les cartes chances et caisse de communaute
     if (data.chance) {
       $(data.chance.cartes).each(function(){
-	   cartesChance.push(new CarteChance(this.nom, (this.montant>0)?new GagnerCarte(this.montant):new PayerCarte(this.montant)));
+	   cartesChance.push(new CarteChance(this.nom, (this.montant>0)?new GagnerCarte(this.montant):new PayerCarte(this.montant*-1)));
 	 });
     }
     if (data.communaute) {      
 	 $(data.communaute.cartes).each(function(){
-	  cartesCaisseCommunaute.push(new CarteCaisseDeCommunaute(this.nom, (this.montant>0)?new GagnerCarte(this.montant):new PayerCarte(this.montant)));
+	   var carte = null;
+	   switch (this.type) {
+		/* Amande a payer */
+		case "taxe" : carte = new CarteCaisseDeCommunaute(this.nom, new PayerCarte(this.montant));break;
+		/* Argent a toucher */
+		case "prime" : carte = new CarteCaisseDeCommunaute(this.nom, new GagnerCarte(this.montant));break;
+		/* Endroit ou aller */
+		case "goto" : break;
+		/* Deplacement a effectuer */
+		case "move" : break;
+	   }
+	   if (carte!=null) {
+		cartesCaisseCommunaute.push(carte);
+	   }
+	   
+	  cartesCaisseCommunaute.push(new CarteCaisseDeCommunaute(this.nom, (this.montant>0)?new GagnerCarte(this.montant):new PayerCarte(this.montant*-1)));
 	 });
     }
     

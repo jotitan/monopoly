@@ -1127,7 +1127,7 @@ Object.defineProperty(Array.prototype, "size", {
           }
       }
 
-      this.goDirectToCell = function (etat, pos) {
+      this.goDirectToCell = function (etat, pos,callback) {
           // On calcule la fonction affine
           var p1 = fiches[this.etat + "-" + this.position].
       drawing.getCenter()
@@ -1144,6 +1144,9 @@ Object.defineProperty(Array.prototype, "size", {
                   _self.etat = etat;
                   _self.position = pos;
                   clearInterval(interval);
+			   if (callback) {
+				callback();
+			   }
                   return;
               }
               _self.pion.y += 30 * ((sens < 0) ? -1 : 1);
@@ -1162,6 +1165,9 @@ Object.defineProperty(Array.prototype, "size", {
                   _self.etat = etat;
                   _self.position = pos;
                   clearInterval(interval);
+			   if (callback) {
+				callback();
+			   }
                   return;
               }
               _self.pion.x = x;
@@ -1247,6 +1253,28 @@ Object.defineProperty(Array.prototype, "size", {
   }
   }
 
+  /* Action de déplacement vers une case */
+  /* @param direct : si renseigné a vrai, le pion est deplacé directement vers la case, sans passer par la case depart */
+  function GotoCarte(axe,pos,direct) {
+      this.action = function () {
+		if (direct) {
+		  joueurCourant.pion.goDirectToCell(axe,pos,doActions);
+		}
+		else{
+		  joueurCourant.pion.goto(axe, pos,doActions);
+		}
+      }
+  }
+  
+  /* Action de déplacement d'un certain nombre de case */
+  function MoveNbCarte(nb) {
+      this.action = function () {
+	   var pos = joueurCourant.pion.deplaceValeursDes(nb+40);	// On ajoute 40 pour les cases négatives
+	   joueurCourant.pion.goDirectToCell(pos.axe,pos.pos,doActions);
+      }
+  }
+
+  /* Action de gain d'argent pour une carte */
   function PayerCarte(montant) {
       this.montant = montant;
       this.action = function () {
@@ -1254,6 +1282,7 @@ Object.defineProperty(Array.prototype, "size", {
       }
   }
 
+  /* Action de perte d'argent pour une carte */
   function GagnerCarte(montant) {
       this.montant = montant;
       this.action = function () {
@@ -1287,6 +1316,9 @@ Object.defineProperty(Array.prototype, "size", {
   });
   Drawer.add(this.drawing);
   this.action = function () {
+	 if (cartesChance.length == 0) {
+	   throw "Aucune carte chance";
+	 }
       var c = cartesChance[Math.round((Math.random() * 1000)) % (cartesChance.length)];
       return c.action();
   }
@@ -1294,13 +1326,16 @@ Object.defineProperty(Array.prototype, "size", {
 
   function CaisseDeCommunaute(etat, pos) {
       this.drawing = new Case(pos, etat, null, titles.communaute, null, {
-      src: "img/banque.png",
-      width: 50,
-      height: 50
+      src: "img/banque2.png",
+      width: 60,
+      height: 60
   });
   Drawer.add(this.drawing);
   this.action = function () {
-      var c = cartesCaisseCommunaute[Math.round((Math.random() * 1000)) % (cartesCaisseCommunaute.length)];
+      if (cartesCaisseCommunaute.length == 0) {
+	   throw "Aucune carte caisse de communaute";
+	 }
+	 var c = cartesCaisseCommunaute[Math.round((Math.random() * 1000)) % (cartesCaisseCommunaute.length)];
       return c.action();
   }
   }
@@ -2370,30 +2405,36 @@ Object.defineProperty(Array.prototype, "size", {
     // On charge les cartes chances et caisse de communaute
     if (data.chance) {
       $(data.chance.cartes).each(function(){
-	   cartesChance.push(new CarteChance(this.nom, (this.montant>0)?new GagnerCarte(this.montant):new PayerCarte(this.montant*-1)));
+	   var action = buildCarteAction(this);	   
+	   if (action!=null) {
+		cartesChance.push(new CarteChance(this.nom, action));
+	   }
 	 });
     }
     if (data.communaute) {      
 	 $(data.communaute.cartes).each(function(){
-	   var carte = null;
-	   switch (this.type) {
-		/* Amande a payer */
-		case "taxe" : carte = new CarteCaisseDeCommunaute(this.nom, new PayerCarte(this.montant));break;
-		/* Argent a toucher */
-		case "prime" : carte = new CarteCaisseDeCommunaute(this.nom, new GagnerCarte(this.montant));break;
-		/* Endroit ou aller */
-		case "goto" : break;
-		/* Deplacement a effectuer */
-		case "move" : break;
+	   var action = buildCarteAction(this);
+	   if (action!=null) {		
+		cartesCaisseCommunaute.push(new CarteCaisseDeCommunaute(this.nom, action));
 	   }
-	   if (carte!=null) {
-		cartesCaisseCommunaute.push(carte);
-	   }
-	   
-	  cartesCaisseCommunaute.push(new CarteCaisseDeCommunaute(this.nom, (this.montant>0)?new GagnerCarte(this.montant):new PayerCarte(this.montant*-1)));
 	 });
-    }
+    }  
     
+  }
+  
+  function buildCarteAction(data) {
+    var action = null;    
+    switch (data.type) {
+	 /* Amande a payer */
+	 case "taxe" : action = new PayerCarte(data.montant);break;
+	 /* Argent a toucher */
+	 case "prime" : action = new GagnerCarte(data.montant);break;
+	 /* Endroit ou aller */
+	 case "goto" : action = new GotoCarte(data.axe,data.pos,data.direct);break;
+	 /* Deplacement a effectuer */
+	 case "move" : action = new MoveNbCarte(data.nb);break;
+    }
+    return action;
   }
 
   function initDetailFiche() {

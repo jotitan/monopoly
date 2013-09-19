@@ -15,7 +15,7 @@
                   equal(cartesCaisseCommunaute.size(),0,"Cartes caisse de communaute vide");                  
                });
                
-               test("Chargement plateau avec des donnees",function(){
+               test("Chargement plateau avec des donnees incomplete",function(){
                   loadPlateau({
                      chance:{
                         cartes:[
@@ -29,6 +29,28 @@
                            {nom:"communaute 1",montant:1000},
                            {nom:"communaute 2",montant:-1000},
                            {nom:"communaute 3",montant:1000}
+                        ]
+                     }
+                  });
+                  equal(fiches.size(),0, "Fiches non chargees");
+                  equal(cartesChance.size(),0, "Cartes chances chargees");
+                  equal(cartesCaisseCommunaute.size(),0,"Cartes caisse de communaute chargees");                  
+               });
+			
+			 test("Chargement plateau avec des donnees",function(){
+                  loadPlateau({
+                     chance:{
+                        cartes:[
+                           {nom:"Carte 1",type:"taxe",montant:10000},
+                           {nom:"Carte 2",type:"taxe",montant:-5000},
+                           {nom:"Carte 3",type:"taxe",montant:2000}
+                        ]
+                     },
+                     communaute:{
+                        cartes:[
+                           {nom:"communaute 1",type:"taxe",montant:1000},
+                           {nom:"communaute 2",type:"taxe",montant:-1000},
+                           {nom:"communaute 3",type:"taxe",montant:1000}
                         ]
                      }
                   });
@@ -108,7 +130,7 @@
                   joueurs[1] = new JoueurOrdinateur(0,"Joueur 2");
                   joueurs[1].pion = {stats:{tour:0,prison:0}};
                   joueurs[1].div = $('');
-                  
+			   equal(true,true)                  
 			   // On cree 2 groupes sur lesquels construire
 			});
 			

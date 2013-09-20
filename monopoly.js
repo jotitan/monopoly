@@ -69,7 +69,7 @@ Object.defineProperty(Array.prototype, "size", {
       };
 	 $('#message').bind('dialogclose.message',function(){
 	   call(param);
-	   $('#message').unbind('dialogclose.prison');
+	   $('#message').unbind('dialogclose.message');
 	 });
       if (call != null) {
           $('#message').dialog('option', 'buttons', button);
@@ -79,11 +79,11 @@ Object.defineProperty(Array.prototype, "size", {
   }
 
   
-  function createPrisonMessage(nbTours){
+  function createPrisonMessage(nbTours,callback){
     $('#message').prev().css("background-color", "red");
-    $('#message').dialog('option', 'title', "Vous &ecirc;tes en prison depuis " + nbTours + " tours.");
+    $('#message').dialog('option', 'title', "Vous êtes en prison depuis " + nbTours + " tours.");
     $('#message').empty();
-    $('#message').append("Vous &ecirc;tes en prison, que voulez vous faire");
+    $('#message').append("Vous êtes en prison, que voulez vous faire");
     
     var buttons = {
 	 "Payer":function(){
@@ -95,23 +95,21 @@ Object.defineProperty(Array.prototype, "size", {
 	   $('#message').dialog('close');
 	 }
     }
-    if (joueurCourant.carteSortiePrison>0) {
+    if (joueurCourant.cartesSortiePrison.length>0) {
 	 buttons["Utiliser carte"] = function(){
-		joueurCourant.carteSortiePrison--;
+		joueurCourant.utiliseCarteSortiePrison();
 		joueurCourant.enPrison = false;
 		$('#message').dialog('close');
 	 }
     }
     $('#message').dialog('option', 'buttons', buttons);
-    $('#message').bind('dialogclose.prison',closePrisonDialog);
+    $('#message').bind('dialogclose.prison',{
+    	$('#message').unbind('dialogclose.prison');
+    	callback();
+  	});
     $('#message').dialog('open');
   }
-  
-  function closePrisonDialog() {
-    $('#message').unbind('dialogclose.prison');
-    animeDes();
-  }
-
+ 
 
   function getNextPos(etat, position) {
       position++;
@@ -600,39 +598,6 @@ Object.defineProperty(Array.prototype, "size", {
 		 if(budget < 5000){
 		 	return;
 		 }
-		 // On determine les terrains les plus rentables a court terme (selon la position des joueurs)
-		 /*var maisons = this.comportement.getNextProprietesVisitees(this,0.1);
-		// On Calcule pour chaque maison des groupes (meme ceux sans interet) plusieurs indicateurs : proba (pondere a 3), la rentabilite (pondere a 1)
-		 var totalMaisons = 0;	// Nombre total de proprietes constructibles
-		 for (var color in groups) {
-		  var group = groups[color];
-		  group.proba = 0;
-		  group.rentabilite = 0;
-		  group.lessThree=0;
-		  group.interetGlobal=0;
-		  for (var index in group.proprietes) {
-		    var propriete = group.proprietes[index];
-		    totalMaisons++;
-		    // On cherche si proba
-		    if (maisons[propriete.id]!=null) {
-			 group.proba+=maisons[propriete.id].proba*3;
-		    }
-		    group.rentabilite+=propriete.getRentabilite();
-		    group.lessThree+= (propriete.nbMaison <=3) ? 0.5 : 0;
-		  }
-		 }
-		 // On trie les groupes
-		 var sortedGroups = [];
-		 for (var color in groups) {
-			var group = groups[color];
-			group.interetGlobal = group.proba + group.rentabilite + ((group.lessThree > 0)?0.5:0);
-		  	sortedGroups.push(group);
-		 }
-		 sortedGroups.sort(function(a,b){
-		 	if(a.interetGlobal == b.interetGlobal){return 0;}
-		 	if(a.interetGlobal > b.interetGlobal){return -1;}
-		 	return 1;
-		 });*/
 		 var sortedGroups = [];
 		 try{
 		  sortedGroups = this.getGroupsToConstruct("DESC",0.1);
@@ -777,22 +742,40 @@ Object.defineProperty(Array.prototype, "size", {
           }
           setTimeout(function () {
               if (buttons.Acheter != null && propriete != null) {
-                  var interet = current.strategie.interetGlobal(propriete);
-			   var comportement = current.comportement.getRisqueTotal(current,propriete.achat);
-                  console.log("Strategie : " + interet + " " + comportement);
-			   if (interet > comportement) {
-				console.log("achete");
-                      buttons.Acheter();
-                      return;
-                  }
-              }
-              for (var i in buttons) {
-                  if (i != "Acheter") {
-                      buttons[i]();
-                      return;
+                var interet = current.strategie.interetGlobal(propriete);
+			   	var comportement = current.comportement.getRisqueTotal(current,propriete.achat);
+                console.log("Strategie : " + interet + " " + comportement);
+			   	if (interet > comportement) {
+					console.log("achete");
+                    buttons.Acheter();
+                    return;
+                }
+             }
+             for (var i in buttons) {
+                 if (i != "Acheter") {
+                     buttons[i]();
+                     return;
                   }
               }
           }, 1000);
+      }
+      
+      /* Fonction appelee avant que les des ne soit lances, lorsqu'il est en prison */
+      /* Regle : si on est au debut du jeu, on sort de prison pour acheter des terrains. 
+      * Si on est en cours de jeu et que le terrain commence a etre miné, on reste en prison */
+      this.actionAvantDesPrison = function(buttons){
+      	// Cas 1 : on prend la carte de sortie TODO
+      	if(this.findGroupes().size() >= 1){
+      		if(buttons["Utiliser carte"]!=null){
+      			buttons["Utiliser carte"]();
+      		}
+      		else{
+      			buttons.["Payer"]();
+      		}
+      	}
+      	else{
+      		buttons["Attendre"]();
+      	}
       }
 
       // decide si achete ou non la maison
@@ -815,13 +798,22 @@ Object.defineProperty(Array.prototype, "size", {
       this.pion = null;
 	 this.bloque = false;	// Indique que le joueur est bloque. Il doit se debloquer pour que le jeu continue
 	 this.defaite = false;
-	 this.carteSortiePrison = 0;	// Nombre de carte sortie de prison
+	 this.cartesSortiePrison = [];	// Cartes sortie de prison
 	 
       this.equals = function (joueur) {
           if (joueur == null) {
               return false;
           }
           return this.numero == joueur.numero;
+      }
+      
+      // Utilise la carte sortie de prison
+      this.utiliseCarteSortiePrison = function(){
+      	if(this.cartesSortiePrison.length == 0){
+      		throw "Impossible d'utiliser cette carte";
+      	}
+      	this.cartesSortiePrison[this.cartesSortiePrison.length-1].joueurPossede = null;
+      	delete this.cartesSortiePrison[this.cartesSortiePrison.length-1];
       }
       
       /* Renvoie les stats et infos du jour : 
@@ -877,6 +869,9 @@ Object.defineProperty(Array.prototype, "size", {
       // Fonction a ne pas implementer avec un vrai joueur
       this.actionApresDes = function (buttons, propriete) {}
 
+		// Fonction a ne pas implementer pour un vrai joueur
+		this.actionAvantDesPrison = function(buttons){}
+
       // Achete une propriete
       this.acheteMaison = function (maison, id) {
       	// On verifie l'argent
@@ -885,7 +880,8 @@ Object.defineProperty(Array.prototype, "size", {
       	}
           if (maison.isLibre()) {
               var m = this.cherchePlacement(maison);
-              var input = '<input type=\"button\" id=\"idInputFiche' + id + '\" class=\"ui-corner-all color_' + maison.color.substring(1) + '\" style=\"display:block;height:27px;width:280px;\" value=\"' + maison.nom + '\" id=\"fiche_' + id + '\"/>';
+              var input = '<input type=\"button\" id=\"idInputFiche' + id + '\" class=\"ui-corner-all color_' 
+              	+ maison.color.substring(1) + '\" style=\"display:block;height:27px;width:280px;\" value=\"' + maison.nom + '\" id=\"fiche_' + id + '\"/>';
               if (m != null) {
                   m.after(input);
               } else {
@@ -894,7 +890,6 @@ Object.defineProperty(Array.prototype, "size", {
 
               maison.input = $('#idInputFiche' + id);
               maison.input.click(function () {
-                  //fiches[id].openFiche();
                   openDetailFiche(fiches[id], $(this));
               });
               maison.vendu(this);
@@ -967,8 +962,7 @@ Object.defineProperty(Array.prototype, "size", {
           this.setArgent(this.montant);
       }
 
-	/* Gestion de la defaite */
-	
+	/* Gestion de la defaite */	
 	this.defaite = function(dette){
 		// On paye notre dette avec tout nos actifs (stats.argentDispo)
 		this.div.empty();
@@ -1294,6 +1288,7 @@ Object.defineProperty(Array.prototype, "size", {
   /* Action de déplacement vers une case */
   /* @param direct : si renseigné a vrai, le pion est deplacé directement vers la case, sans passer par la case depart */
   function GotoCarte(axe,pos,direct) {
+  	  this.type="goto";
       this.action = function () {
 		if (direct) {
 		  joueurCourant.pion.goDirectToCell(axe,pos,doActions);
@@ -1304,78 +1299,110 @@ Object.defineProperty(Array.prototype, "size", {
       }
   }
   
+  /* Carte sortie de prison */
+  function PrisonCarte() {
+	  this.type="prison";
+  	  this.joueurPossede = null;
+      this.action = function () {	
+	  	joueurCourant.cartesSortiePrison.push(this);
+	  	this.joueurPossede = joueurCourant;
+	  	changeJoueur();
+      }
+      this.isLibre = function(){
+      	return this.joueurPossede == null;
+      }
+  }
+  
   /* Action de déplacement d'un certain nombre de case */
   function MoveNbCarte(nb) {
+	  this.type="move";
       this.action = function () {
 	   var pos = joueurCourant.pion.deplaceValeursDes(nb+40);	// On ajoute 40 pour les cases négatives
 	   joueurCourant.pion.goDirectToCell(pos.axe,pos.pos,doActions);
       }
   }
 
+
   /* Action de gain d'argent pour une carte */
   function PayerCarte(montant) {
+	  this.type="taxe";
       this.montant = montant;
       this.action = function () {
           joueurCourant.payerParcGratuit(this.montant);
+          changeJoueur();
       }
   }
 
   /* Action de perte d'argent pour une carte */
   function GagnerCarte(montant) {
+  	  this.type="prime";
       this.montant = montant;
       this.action = function () {
           joueurCourant.gagner(this.montant);
+          changeJoueur();
       }
   }
 
-  function CarteChance(libelle, actionCC) {
+  function CarteChance(libelle, carte) {
+		this.carte = carte;
       this.action = function () {
           return createMessage(titles.chance, "lightblue", libelle, function (param) {
-              actionCC.action();
-              changeJoueur();
+              carte.action();              
           }, {});
       }
   }
 
-  function CarteCaisseDeCommunaute(libelle, actionCC) {
+  function CarteCaisseDeCommunaute(libelle, carte) {
+		this.carte = carte;
       this.action = function () {
           return createMessage(titles.communaute, "pink", libelle, function (param) {
-              actionCC.action();
-              changeJoueur();
+              carte.action();              
           }, {});
       }
   }
 
   function Chance(etat, pos) {
       this.drawing = new Case(pos, etat, null, titles.chance, null, {
-      src: "img/interrogation.png",
-      width: 50,
-      height: 60
-  });
-  Drawer.add(this.drawing);
-  this.action = function () {
-	 if (cartesChance.length == 0) {
-	   throw "Aucune carte chance";
-	 }
-      var c = cartesChance[Math.round((Math.random() * 1000)) % (cartesChance.length)];
-      return c.action();
-  }
+		  src: "img/interrogation.png",
+		  width: 50,
+		  height: 60
+	  });
+	  Drawer.add(this.drawing);
+	  this.action = function () {
+		 if (cartesChance.length == 0) {
+		   throw "Aucune carte chance";
+		 }
+		  var randomValue = Math.round((Math.random() * 1000)) % (cartesChance.length);
+		 var c = cartesChance[randomValue];
+		 // On test si la carte est une carte sortie de prison est possedee par un joueur
+		 if(c.carte.type == "prison" && !c.carte.isLibre()){
+		 	// on prend la carte suivante
+		 	c = cartesChance[randomValue+1% (cartesChance.length)];
+		 }	 	 
+		  return c.action();
+	  }
   }
 
   function CaisseDeCommunaute(etat, pos) {
       this.drawing = new Case(pos, etat, null, titles.communaute, null, {
-      src: "img/banque2.png",
-      width: 60,
-      height: 60
-  });
-  Drawer.add(this.drawing);
-  this.action = function () {
-      if (cartesCaisseCommunaute.length == 0) {
-	   throw "Aucune carte caisse de communaute";
-	 }
-	 var c = cartesCaisseCommunaute[Math.round((Math.random() * 1000)) % (cartesCaisseCommunaute.length)];
-      return c.action();
-  }
+		  src: "img/banque2.png",
+		  width: 60,
+		  height: 60
+	  });
+	  Drawer.add(this.drawing);
+	  this.action = function () {
+		  if (cartesCaisseCommunaute.length == 0) {
+		   throw "Aucune carte caisse de communaute";
+		 }
+		 var randomValue = Math.round((Math.random() * 1000)) % (cartesCaisseCommunaute.length);
+		 var c = cartesCaisseCommunaute[randomValue];
+		 // On test si la carte est une carte sortie de prison est possedee par un joueur
+		 if(c.carte.type == "prison" && !c.carte.isLibre()){
+		 	// on prend la carte suivante
+		 	c = cartesCaisseCommunaute[randomValue+1% (cartesCaisseCommunaute.length)];
+		 }
+		  return c.action();
+	  }
   }
 
    // Gere les dessins
@@ -2250,7 +2277,10 @@ Object.defineProperty(Array.prototype, "size", {
 	 $('#informationsCentrale').html("");
       if (joueurCourant.enPrison) {
 	   // Propose au joueur de payer ou utiliser une carte
-	   createPrisonMessage(joueurCourant.nbDouble);
+	   var buttons = createPrisonMessage(joueurCourant.nbDouble,function(){
+	   	gestionDes();
+	   });
+	   joueurCourant.actionAvantDesPrison(buttons);
 	 }
 	 else{
 	   gestionDes();
@@ -2342,7 +2372,6 @@ Object.defineProperty(Array.prototype, "size", {
           joueur.setDiv($('#' + id));
           joueur.setPion(colorsJoueurs[i]);
 		// On defini la couleurs
-		console.log('linear(to right,white 60%,' + colorsJoueurs[i] + ')')
 		$('#' + id + ' > div.joueur-bloc').css('backgroundImage','linear-gradient(to right,white 50%,' + colorsJoueurs[i] + ')');
       }
       joueurCourant = joueurs[0];
@@ -2464,17 +2493,17 @@ Object.defineProperty(Array.prototype, "size", {
     // On charge les cartes chances et caisse de communaute
     if (data.chance) {
       $(data.chance.cartes).each(function(){
-	   var action = buildCarteAction(this);	   
-	   if (action!=null) {
-		cartesChance.push(new CarteChance(this.nom, action));
+	   var carte = buildCarteAction(this);	   
+	   if (carte!=null) {
+		cartesChance.push(new CarteChance(this.nom, carte));
 	   }
 	 });
     }
     if (data.communaute) {      
 	 $(data.communaute.cartes).each(function(){
-	   var action = buildCarteAction(this);
-	   if (action!=null) {		
-		cartesCaisseCommunaute.push(new CarteCaisseDeCommunaute(this.nom, action));
+	   var carte = buildCarteAction(this);
+	   if (carte!=null) {		
+		cartesCaisseCommunaute.push(new CarteCaisseDeCommunaute(this.nom, carte));
 	   }
 	 });
     }  
@@ -2482,18 +2511,20 @@ Object.defineProperty(Array.prototype, "size", {
   }
   
   function buildCarteAction(data) {
-    var action = null;    
+    var carte = null;    
     switch (data.type) {
 	 /* Amande a payer */
-	 case "taxe" : action = new PayerCarte(data.montant);break;
+	 case "taxe" : carte = new PayerCarte(data.montant);break;
 	 /* Argent a toucher */
-	 case "prime" : action = new GagnerCarte(data.montant);break;
+	 case "prime" : carte = new GagnerCarte(data.montant);break;
 	 /* Endroit ou aller */
-	 case "goto" : action = new GotoCarte(data.axe,data.pos,data.direct);break;
+	 case "goto" : carte = new GotoCarte(data.axe,data.pos,data.direct);break;
 	 /* Deplacement a effectuer */
-	 case "move" : action = new MoveNbCarte(data.nb);break;
+	 case "move" : carte = new MoveNbCarte(data.nb);break;
+	 /* Carte prison */
+	 case "prison" : carte = new PrisonCarte();break;
     }
-    return action;
+    return carte;
   }
 
   function initDetailFiche() {

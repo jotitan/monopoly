@@ -65,14 +65,51 @@ Object.defineProperty(Array.prototype, "size", {
       var button = {
           "Ok": function () {
               $('#message').dialog('close');
-              call(param);              
           }
       };
+	 $('#message').bind('dialogclose.message',function(){
+	   call(param);
+	   $('#message').unbind('dialogclose.prison');
+	 });
       if (call != null) {
           $('#message').dialog('option', 'buttons', button);
       }
       $('#message').dialog('open');
       return button;
+  }
+
+  
+  function createPrisonMessage(nbTours){
+    $('#message').prev().css("background-color", "red");
+    $('#message').dialog('option', 'title', "Vous &ecirc;tes en prison depuis " + nbTours + " tours.");
+    $('#message').empty();
+    $('#message').append("Vous &ecirc;tes en prison, que voulez vous faire");
+    
+    var buttons = {
+	 "Payer":function(){
+	   joueurCourant.payer(5000);
+	   joueurCourant.enPrison = false;
+	   $('#message').dialog('close');
+	 },
+	 "Attendre":function(){
+	   $('#message').dialog('close');
+	 }
+    }
+    if (joueurCourant.carteSortiePrison>0) {
+	 buttons["Utiliser carte"] = function(){
+		joueurCourant.carteSortiePrison--;
+		joueurCourant.enPrison = false;
+		$('#message').dialog('close');
+	 }
+    }
+    $('#message').dialog('option', 'buttons', buttons);
+    $('#message').bind('dialogclose.prison',closePrisonDialog);
+    $('#message').dialog('open');
+  }
+  
+  function closePrisonDialog() {
+    $('#message').unbind('dialogclose.prison');
+    animeDes();
   }
 
 
@@ -778,6 +815,7 @@ Object.defineProperty(Array.prototype, "size", {
       this.pion = null;
 	 this.bloque = false;	// Indique que le joueur est bloque. Il doit se debloquer pour que le jeu continue
 	 this.defaite = false;
+	 this.carteSortiePrison = 0;	// Nombre de carte sortie de prison
 	 
       this.equals = function (joueur) {
           if (joueur == null) {
@@ -2192,54 +2230,70 @@ Object.defineProperty(Array.prototype, "size", {
       return Math.round((Math.random() * 1000)) % 6 + 1;
   }
 
-  /* Lance et anime les des */
-
-  function lancerAnimerDes() {
-      // Fait tourner les des 8 fois
+  function animeDes() {
+    // Fait tourner les des 8 fois
       // On desactive le bouton pour eviter double click
       $('#idLancerDes,.action-joueur').attr('disabled', 'disabled');
       var nb = 8;
       var interval = setInterval(function () {
           if (nb-- < 0) {
               clearInterval(interval);
-              return lancerDes();
+              return gestionDes();
           }
           des1Cube.setValue(rand(), '#999999');
           des2Cube.setValue(rand(), '#999999');
       }, 100);
   }
 
-  function lancerDes() {
-      $('#informationsCentrale').html("");
-      des1 = rand();
+  /* Lance et anime les des */
+  function lancerAnimerDes() {
+	 $('#informationsCentrale').html("");
+      if (joueurCourant.enPrison) {
+	   // Propose au joueur de payer ou utiliser une carte
+	   createPrisonMessage(joueurCourant.nbDouble);
+	 }
+	 else{
+	   gestionDes();
+	 }
+  }
+  /* Regle de gestion pour la batterie 
+  * 1 - Le joueur peut payer 5000 Frs ou utiliser une carte sortie de prison avant de lancer les des
+  * 2 : Le joueur fait un double ou a payer, il sort
+  * 3 - Le joueur atteint sont 3eme lancer, il paie
+  * 4 - Pas de double, il reste en prison
+  * */  
+  function gestionDes() {
+     // Lancement des des
+	 des1 = rand();
       des2 = rand();
       des1Cube.setValue(des1);
       des2Cube.setValue(des2);
 
-      if (joueurCourant.enPrison == true) {
-          if (des1 == des2) {
-              var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison grece e un double", function () {
-			 joueurCourant.exitPrison();	 
-		    }, {});
-              joueurCourant.actionApresDes(buttons, null);
-          } else {
-              if (joueurCourant.nbDouble == 2) {
-                  var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
-                      joueurCourant.payerParcGratuit(5000);
-                      joueurCourant.exitPrison();
-                      joueurCourant.joueDes(des1 + des2);
-                  }, {});
-                  joueurCourant.actionApresDes(buttons, null);
-                  return;
-              } else {
-                  joueurCourant.nbDouble++;
-                  var buttons = createMessage("Tour " + joueurCourant.nbDouble, "red", "Vous restez en prison, vous n'avez pas fait de double.", function () {
-                      changeJoueur();
-                  }, {});
-                  joueurCourant.actionApresDes(buttons, null);
-                  return;
-              }
-          }
+      if (joueurCourant.enPrison == true) {      
+	   if (des1 == des2) {
+		  var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", function () {
+		    joueurCourant.exitPrison();	 
+		  }, {});
+		  joueurCourant.actionApresDes(buttons, null);
+	   } else {
+		  if (joueurCourant.nbDouble == 2) {
+			 var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
+				joueurCourant.payerParcGratuit(5000);
+				joueurCourant.exitPrison();
+				//joueurCourant.joueDes(des1 + des2);
+				changeJoueur();
+			 }, {});
+			 joueurCourant.actionApresDes(buttons, null);
+			 return;
+		  } else {
+			 joueurCourant.nbDouble++;
+			 var buttons = createMessage("Tour " + joueurCourant.nbDouble, "red", "Vous restez en prison, vous n'avez pas fait de double.", function () {
+				changeJoueur();
+			 }, {});
+			 joueurCourant.actionApresDes(buttons, null);
+			 return;
+		  }
+	   }	
       } else {
           if (des1 == des2) {
               if (nbDouble >= 2) {
@@ -2258,6 +2312,8 @@ Object.defineProperty(Array.prototype, "size", {
           $('#informationsCentrale').html("Relancez");
       }
   }
+
+  
 
 
   function init(plateau) {
@@ -2281,10 +2337,13 @@ Object.defineProperty(Array.prototype, "size", {
               joueur = new JoueurOrdinateur(i, "Joueur " + (i + 1));
           }
           joueurs[i] = joueur;
-          $('#informations').append('<div id=\"' + id + '\"><div><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY 
+          $('#informations').append('<div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY 
             + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user.png" style="cursor:pointer;width:16px;float:right"/></span></div></div><hr/>');
           joueur.setDiv($('#' + id));
           joueur.setPion(colorsJoueurs[i]);
+		// On defini la couleurs
+		console.log('linear(to right,white 60%,' + colorsJoueurs[i] + ')')
+		$('#' + id + ' > div.joueur-bloc').css('backgroundImage','linear-gradient(to right,white 50%,' + colorsJoueurs[i] + ')');
       }
       joueurCourant = joueurs[0];
       selectJoueurCourant();

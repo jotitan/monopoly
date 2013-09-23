@@ -17,7 +17,8 @@ Object.defineProperty(Array.prototype, "size", {
 });
  
 
-  var DEBUG = true;
+  var DEBUG = false;
+  var IA_TIMEOUT = 1000;	// Temps d'attente pour les actions de l'ordinateur
   /* Jets des des */
   var des1;
   var des2;
@@ -103,11 +104,12 @@ Object.defineProperty(Array.prototype, "size", {
 	 }
     }
     $('#message').dialog('option', 'buttons', buttons);
-    $('#message').bind('dialogclose.prison',{
-    	$('#message').unbind('dialogclose.prison');
-    	callback();
+    $('#message').bind('dialogclose.prison',function(){
+	  $('#message').unbind('dialogclose.prison');
+	   callback();
   	});
     $('#message').dialog('open');
+    return buttons;
   }
  
 
@@ -257,6 +259,20 @@ Object.defineProperty(Array.prototype, "size", {
               }
           }
           return max;
+      }
+	 
+	 // calcul le loyer moyen que peut rencontrer le joueur
+      this.getLoyerMoyen = function (joueur) {
+          var montant = 20000;	// Prix de la taxe de luxe
+		var nb = 1;
+          for (var id in fiches) {
+          	var f = fiches[id];
+              if (f.getLoyer != null && f.joueurPossede != null && !joueur.equals(f.joueurPossede)) {
+                  montant += f.getLoyer();
+			   nb++;
+              }
+          }
+          return {montant:montant/nb,nb:nb};
       }
   }
 
@@ -501,7 +517,7 @@ Object.defineProperty(Array.prototype, "size", {
       
 	 /* Override de la methode pere */
 	 this.resolveProblemeArgent = function(montant){
-		 // On verifie si c'est possible de recuperer les sommes
+	    // On verifie si c'est possible de recuperer les sommes
 		 if(this.getStats().argentDispo < montant){
 			 // Banqueroute, le joueur perd
 			 this.defaite(montant);
@@ -526,7 +542,8 @@ Object.defineProperty(Array.prototype, "size", {
 		 // 2 terrains en groupe mais non construits
 		 for (var index = 0 ; index < this.maisons.length && this.montant < montant; index++) {
 		  var maison = this.maisons[index];
-		  if (maison.statutHypotheque == false && !maison.isGroupeeAndBuild()) {
+		  var isGroup =  maison.isGroupeeAndBuild();
+		  if (maison.statutHypotheque == false && isGroup == false) {
 		    maison.hypotheque();
 		  }
 		 }
@@ -534,8 +551,11 @@ Object.defineProperty(Array.prototype, "size", {
 		  return true;	// Somme recouvree, on arrete
 		 }
 		 
+		 console.log("PHASE 3");
 		 // 3 Terrains construits, on vend les maisons dessus
 		 // On recupere les groupes construits classes par ordre inverse d'importance. On applique la meme regle que la construction tant que les sommes ne sont pas recupereres
+		 var sortedGroups = this.getGroupsToConstruct("ASC",0.1);
+		 
 		 return true;
 	 }
 	 
@@ -764,18 +784,22 @@ Object.defineProperty(Array.prototype, "size", {
       /* Regle : si on est au debut du jeu, on sort de prison pour acheter des terrains. 
       * Si on est en cours de jeu et que le terrain commence a etre miné, on reste en prison */
       this.actionAvantDesPrison = function(buttons){
-      	// Cas 1 : on prend la carte de sortie TODO
-      	if(this.findGroupes().size() >= 1){
-      		if(buttons["Utiliser carte"]!=null){
-      			buttons["Utiliser carte"]();
-      		}
-      		else{
-      			buttons.["Payer"]();
-      		}
-      	}
-      	else{
-      		buttons["Attendre"]();
-      	}
+	   var _self = this;
+      	setTimeout(function(){
+		  // Cas 1 : on prend la carte de sortie
+		  var loyerStat = _self.comportement.getLoyerMoyen(joueurCourant);
+		  if(_self.findGroupes().size() >= 1 && loyerStat.nb > 3 && loyerStat.montant > 10000){
+			  if(buttons["Utiliser carte"]!=null){
+				  buttons["Utiliser carte"]();
+			  }
+			  else{
+				  buttons["Payer"]();
+			  }
+		  }
+		  else{
+			  buttons["Attendre"]();
+		  }
+		},1000);
       }
 
       // decide si achete ou non la maison
@@ -796,6 +820,7 @@ Object.defineProperty(Array.prototype, "size", {
       this.maisons = new Array();
       this.enPrison = false;
       this.pion = null;
+	 this.nbDouble = 0;
 	 this.bloque = false;	// Indique que le joueur est bloque. Il doit se debloquer pour que le jeu continue
 	 this.defaite = false;
 	 this.cartesSortiePrison = [];	// Cartes sortie de prison
@@ -935,12 +960,21 @@ Object.defineProperty(Array.prototype, "size", {
           this.pion = new Pion(color, this);
       }
 	 
+	 /* Verifie si le joueur peut payer ses dettes */
+	 this.isSolvable = function(montant){	   
+	   return this.getStats().argentDispo >= montant;
+      }
+		 
+	   
+	 }
+	 
 	 /* Paye la somme demandee. Si les fonds ne sont pas disponibles, l'utilisateur doit d'abord réunir la somme, on le bloque */
       this.payer = function (montant) {
       	/* Verifie si le joueur peut payer */
       	if(montant > this.montant){
       		this.bloque = true;
-      		return this.resolveProblemeArgent(montant);
+			var _self = this;
+      		return this.resolveProblemeArgent(montant,function(){_self.payer();});
       	}
 	     this.montant -= montant;
           this.setArgent(this.montant);
@@ -948,8 +982,9 @@ Object.defineProperty(Array.prototype, "size", {
       }
 	 /* Paye une somme a un joueur */
 	 this.payerTo = function(montant,joueur){
-	   if(this.payer(montant) == true){
-	   	joueur.gagner(montant);
+	   if (this.isSolvable(montant)) {
+		this.payer(montant);
+		joueur.gagner(montant);
 	   }
 	   else{
 	   	// Banqueroute, on paye le joueur avec le peu qui est recuperable
@@ -973,7 +1008,8 @@ Object.defineProperty(Array.prototype, "size", {
 	
 	 /* Resourd les problemes d'argent du joueur */
 	 /* @param montant : argent a recouvrer */
-	 this.resolveProblemeArgent = function(montant){
+	 /* @param joueur : beneficiaire */
+	 this.resolveProblemeArgent = function(montant,joueur){
 		 // On verifie si c'est possible de recuperer les sommes
 		 if(this.getStats().argentDispo < montant){
 			 // Banqueroute, le joueur perd
@@ -982,10 +1018,10 @@ Object.defineProperty(Array.prototype, "size", {
 		 }
 		 // On ouvre le panneau de resolution en empechant la fermeture
 		 this.montant-=montant;
+		 var _self = this;
 		 var button = createMessage("Attention","red","Vous n'avez pas les fonds necessaires, il faut trouver de l'argent",function(){
 			 // On attache un evenement a la fermeture
-			 var onclose = function(e){
-				 
+			 var onclose = function(e){				 
 				 if(joueurCourant.montant < 0){
 					 // Message d'erreur pas possible
 					 createMessage("Attention","red","Impossible, il faut trouver les fonds avant de fermer");
@@ -993,6 +1029,8 @@ Object.defineProperty(Array.prototype, "size", {
 				 }
 				 else{
 					 joueurCourant.bloque = false;
+					 // On paye la dette
+					 _self.payerTo(montant,joueur);
 					 changeJoueur();
 				 }
 			 }
@@ -1079,14 +1117,13 @@ Object.defineProperty(Array.prototype, "size", {
           var mc = new Array();
           var colorsOK = new Array();
           var colorsKO = new Array();
-
-		// Si une maison est hypotequee, on ne peut plus construire sur le groupe
 		
+		// Si une maison est hypotequee, on ne peut plus construire sur le groupe
           for (var i = 0; i < this.maisons.length; i++) {
               var m = this.maisons[i];
               if (m.constructible == true) {
                   if (colorsOK[m.color] == true) {
-                      mc[mc.length] = m; // on a la couleur, on ajoute
+                      mc.push(m); // on a la couleur, on ajoute
                   } else {
                       if (colorsKO[m.color] == null) {
                           // On recherche si on a toutes les couleurs
@@ -1094,7 +1131,7 @@ Object.defineProperty(Array.prototype, "size", {
 					 // On cherche une propriete qui n'appartient pas au joueur
                           for (var f in fiches) {
                               if (fiches[f].constructible == true && fiches[f].color == m.color &&
-						    (fiches[f].joueurPossede == null || !fiches[f].joueurPossede.equals(this)) || fiches[f].statutHypotheque == true) {
+						    (fiches[f].joueurPossede == null || !fiches[f].joueurPossede.equals(this) || fiches[f].statutHypotheque == true)) {
                                   ok = false;
                               }
                           }
@@ -1969,8 +2006,8 @@ Object.defineProperty(Array.prototype, "size", {
   
   /* Hypotheque le terrain */
   this.hypotheque = function(){
-    if (this.input == null || this.statut != ETAT_ACHETE) {
-	 return;
+    if (this.input == null || this.statut != ETAT_ACHETE || this.nbMaison > 0) {
+	 throw "Impossible d'hypothequer ce terrain";
     }
     this.statutHypotheque=true;
     this.input.addClass('hypotheque');
@@ -2119,7 +2156,7 @@ Object.defineProperty(Array.prototype, "size", {
     this.isGroupeeAndBuild = function () {
 	   if (this.joueurPossede == null) {
 		  return false;
-	   }
+	   }	   
 	   // Renvoie les maisons constructibles (lorsque le groupe est complet)
 	   var l = this.joueurPossede.findMaisonsConstructibles();
 	   for (var i = 0; i < l.length; i++) {
@@ -2278,12 +2315,13 @@ Object.defineProperty(Array.prototype, "size", {
       if (joueurCourant.enPrison) {
 	   // Propose au joueur de payer ou utiliser une carte
 	   var buttons = createPrisonMessage(joueurCourant.nbDouble,function(){
-	   	gestionDes();
+	   	animeDes();
 	   });
+	   console.log(buttons)
 	   joueurCourant.actionAvantDesPrison(buttons);
 	 }
 	 else{
-	   gestionDes();
+	   animeDes();
 	 }
   }
   /* Regle de gestion pour la batterie 
@@ -2346,7 +2384,8 @@ Object.defineProperty(Array.prototype, "size", {
   
 
 
-  function init(plateau) {
+  function init(plateau,debugValue) {
+	 DEBUG = debugValue;
 	 initDetailFiche();
       initFiches();
       initPlateau(plateau,initJoueurs);
@@ -2357,7 +2396,7 @@ Object.defineProperty(Array.prototype, "size", {
   }
 
 	function initJoueurs(){
-	 var nb = 2;//prompt("Nombre de joueurs ?");
+	 var nb = (DEBUG) ? 2 : prompt("Nombre de joueurs ?");
       for (var i = 0; i < nb; i++) {
           var id = 'joueur' + i;
           var joueur = null;
@@ -2368,11 +2407,12 @@ Object.defineProperty(Array.prototype, "size", {
           }
           joueurs[i] = joueur;
           $('#informations').append('<div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY 
-            + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user.png" style="cursor:pointer;width:16px;float:right"/></span></div></div><hr/>');
+            + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div><hr/>');
           joueur.setDiv($('#' + id));
           joueur.setPion(colorsJoueurs[i]);
 		// On defini la couleurs
 		$('#' + id + ' > div.joueur-bloc').css('backgroundImage','linear-gradient(to right,white 50%,' + colorsJoueurs[i] + ')');
+		
       }
       joueurCourant = joueurs[0];
       selectJoueurCourant();
@@ -2726,7 +2766,7 @@ Object.defineProperty(Array.prototype, "size", {
 			  boutonAnnuler.click(function(){
 				  _self.addOption(fiche);
 				  $(this).parent().remove();
-				  GestionTerrains.addCout(-fiche.hypotheque);
+				  GestionTerrains.addCout(-fiche.montantHypotheque);
 				  delete _self.table[fiche.id];
 				  // On permet l'achat de maison sur les terrains si aucune maison hypotheque
 				  // On prend toutes les couleurs et on les elimine
@@ -2844,7 +2884,6 @@ Object.defineProperty(Array.prototype, "size", {
 		    for (var index in exludeColors) {
 			 selectors+=':not([class*="-' + exludeColors[index] + '"])';
 		    }
-		    console.log(selectors);
 		    this.div.find(selectors).show();
 		  },
 		  load:function(){
@@ -2929,7 +2968,7 @@ Object.defineProperty(Array.prototype, "size", {
           $(this).text(fiche.loyer[parseInt($(this).attr('name').substring(5))]);
       });
       $('td[name]:not([name^="loyer"]),span[name]:not([name^="loyer"])', div).each(function () {
-          $(this).html(fiche[$(this).attr('name')]);
+	   $(this).html(fiche[$(this).attr('name')]);
       });
       $(div).css('backgroundColor', color);
       $('#loyer0', div).text((fiche.isGroupee() == true) ? parseInt(fiche.loyer[0]) * 2 : fiche.loyer[0]);

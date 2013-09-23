@@ -37,7 +37,7 @@
 	 
 	   <div id="fiche" style="background-color:white;font-size:12px">
 		<table style="width:250px;">
-		  <tr><td></td><td>€</td></tr>
+		  <tr><td></td><td>â‚¬</td></tr>
 		  <tr><td>ACHAT</td><td id="achat" name="achat"></td></tr>
 		  <tr><td>LOYER terrain nu</td><td id="loyer0"></td></tr>
 		  <tr class="maison"><td> - 1 maison</td><td id="loyer1" name="loyer1"></td></tr>
@@ -49,21 +49,21 @@
 		<hr/>
 		<div class="infos-group">
 	   Si un joueur poss&eacute;de <span style="font-weight:bold">TOUS</span> les terrains d'un Groupe de Couleur quelconque,
-	   le loyer des terrains nus de ce groupe est doublé.
+	   le loyer des terrains nus de ce groupe est double.
 		</div>
 		<hr/>
 		<div>
 		Prix des Maisons  F <span id="prixMaison" name="prixMaison"></span> chacune<br/>
 		Prix d'un H&ocirc;tel&nbsp; F <span id="prixHotel" name="prixMaison"></span> chacun<br/>
 		</div>
-		Valeur hypotécaire : Frs <span id="hypotheque" name="hypotheque"></span>
+		Valeur hypotÃ©caire : Frs <span id="hypotheque" name="montantHypotheque"></span>
 		
 	   </div>
 	   
 	   <div id="ficheCompagnie" style="background-color:white">
 		<br/>
-		Si l'on poss&eagrave;de UNE carte de compagnie de Service Public, le loyer est 400 fois le montant indiqué par les d&eacute;s.<br/><br/>
-		Si l'on poss&eagrave;de les DEUX cartes de compagnies de Service Public, le loyer est MILLE fois le montant indiqué par les d&eacute;s.<br/><br/>
+		Si l'on poss&eagrave;de UNE carte de compagnie de Service Public, le loyer est 400 fois le montant indiquÃ© par les d&eacute;s.<br/><br/>
+		Si l'on poss&eagrave;de les DEUX cartes de compagnies de Service Public, le loyer est MILLE fois le montant indiquÃ© par les d&eacute;s.<br/><br/>
 		Valeur hypot&eacute;caire : Frs 7.500
 	   </div>
 	   
@@ -81,16 +81,16 @@
 	 	<div style="width:50%;height:calc(100% - 40px);background-color:lightblue;float:left">
 	 		<div class="title-dialog">Hypotheque</div>
 			<div id="idTerrainsHypotheques">
-				Terrains hypothéqués<br/>
+				Terrains hypothÃ©quÃ©s<br/>
 				<div>
 				
 				</div>
 			</div>
 			<hr/>
 			<div id="idTerrains">
-				Terrains hypothécables<br/>
+				Terrains hypothÃ©cables<br/>
 				<select></select>
-				<button id="idHypothequeAction">Hypothéquer</button>
+				<button id="idHypothequeAction">HypothÃ©quer</button>
 				<div id="toHypotheque"></div>
 			</div>			
 	 	</div>
@@ -130,7 +130,16 @@
 			</div>
 	 	</div>
 	 
-	 
+		<div style="display:none" id="idPanelCreatePartie">
+		  Nombre de joueur :
+		  <select>
+		    <option value="2">2</option>
+		    <option value="3">3</option>
+		    <option value="4">4</option>
+		    <option value="5">5</option>
+		    <option value="6">6</option>
+		  </select>
+		</div>
 	 
 	   <script language="javascript">
 		// On detecte le type de donnees a charger
@@ -138,11 +147,13 @@
 		if (location.href.indexOf("plateau=")!=-1) {
 		  plateau = "data-monopoly-" + location.href.substring(location.href.indexOf("plateau=")+8) + ".json";
 		}
+		var debug = false;
 		if (location.href.indexOf("debug=1")!=-1) {
 		  $('#idDebug').show();
+		  debug = true;
 		}
 		$(function(){
-		  init(plateau);
+		  init(plateau,debug);
 		});
 		
 		

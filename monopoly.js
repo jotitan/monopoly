@@ -516,13 +516,8 @@ Object.defineProperty(Array.prototype, "size", {
 	 }
       
 	 /* Override de la methode pere */
-	 this.resolveProblemeArgent = function(montant){
-	    // On verifie si c'est possible de recuperer les sommes
-		 if(this.getStats().argentDispo < montant){
-			 // Banqueroute, le joueur perd
-			 this.defaite(montant);
-			 return false;
-		 }
+	 this.resolveProblemeArgent = function(montant,callback){
+	    
 		 /* Ordre de liquidations :
 		 * 1) Hypotheque des terrains seuls
 		 * 2) Hypotheque des terrains en groupe non construit
@@ -536,26 +531,26 @@ Object.defineProperty(Array.prototype, "size", {
 		    maison.hypotheque();
 		  }
 		 }
-		 if ( this.montant >= montant) {
-		  return true;	// Somme recouvree, on arrete
+		 if ( this.montant < montant) {		  
+			 // 2 terrains en groupe mais non construits
+			 for (var index = 0 ; index < this.maisons.length && this.montant < montant; index++) {
+			  var maison = this.maisons[index];
+			  var isGroup =  maison.isGroupeeAndBuild();
+			  if (maison.statutHypotheque == false && isGroup == false) {
+				maison.hypotheque();
+			  }
+			 }
+	 		 if ( this.montant < montant) {
+			   console.log("PHASE 3");
+			 // 3 Terrains construits, on vend les maisons dessus
+			 // On recupere les groupes construits classes par ordre inverse d'importance. On applique la meme regle que la construction tant que les sommes ne sont pas recupereres
+			 var sortedGroups = this.getGroupsToConstruct("ASC",0.1);
+			 }
 		 }
-		 // 2 terrains en groupe mais non construits
-		 for (var index = 0 ; index < this.maisons.length && this.montant < montant; index++) {
-		  var maison = this.maisons[index];
-		  var isGroup =  maison.isGroupeeAndBuild();
-		  if (maison.statutHypotheque == false && isGroup == false) {
-		    maison.hypotheque();
-		  }
-		 }
- 		 if ( this.montant >= montant) {
-		  return true;	// Somme recouvree, on arrete
-		 }
-		 
-		 console.log("PHASE 3");
-		 // 3 Terrains construits, on vend les maisons dessus
-		 // On recupere les groupes construits classes par ordre inverse d'importance. On applique la meme regle que la construction tant que les sommes ne sont pas recupereres
-		 var sortedGroups = this.getGroupsToConstruct("ASC",0.1);
-		 
+		// Somme recouvree
+		if(callback){
+			callback();
+		}		 
 		 return true;
 	 }
 	 
@@ -964,31 +959,45 @@ Object.defineProperty(Array.prototype, "size", {
 	 this.isSolvable = function(montant){	   
 	   return this.getStats().argentDispo >= montant;
       }
-		 
-	   
-	 }
+		
 	 
 	 /* Paye la somme demandee. Si les fonds ne sont pas disponibles, l'utilisateur doit d'abord réunir la somme, on le bloque */
-      this.payer = function (montant) {
+	 /* @param callback : action a effectuer apres le paiement */
+      this.payer = function (montant,callback) {
+  		 // On verifie si c'est possible de recuperer les sommes
+		 if(this.getStats().argentDispo < montant){
+			 // Banqueroute, le joueur perd
+			 this.defaite(montant);
+			 throw "Le joueur est insolvable";
+		 }
+      
       	/* Verifie si le joueur peut payer */
       	if(montant > this.montant){
       		this.bloque = true;
 			var _self = this;
-      		return this.resolveProblemeArgent(montant,function(){_self.payer();});
+      		this.resolveProblemeArgent(montant,callback);
+
       	}
-	     this.montant -= montant;
-          this.setArgent(this.montant);
-          return true;
+      	else{
+			 this.montant -= montant;
+		     this.setArgent(this.montant);
+			 if(callback){
+			 	callback();
+			 }
+		 }
       }
 	 /* Paye une somme a un joueur */
+	 /* Si le joueur ne peut pas payer, une exception est lancee (il a perdu). On recupere le peut d'argent a prendre */
+	 /* Payer est potentiellement asynchrone (resolve manuel), on indique l'etape suivante en cas de reussite */
 	 this.payerTo = function(montant,joueur){
-	   if (this.isSolvable(montant)) {
-		this.payer(montant);
-		joueur.gagner(montant);
-	   }
-	   else{
-	   	// Banqueroute, on paye le joueur avec le peu qui est recuperable
-	   	joueur.gagner(this.getStats().argentDispo);
+	   try{
+	   	   this.payer(montant,function(){
+	   			joueur.gagner(montant); 
+	   			changeJoueur();  
+	   	   });
+	   }catch(insolvable){
+	   	// Le joueur n'est pas solvable, on se sert sur le reste
+	   	joueur.gagner(this.getStats().argentDispo);		   	
 	   }
 	 }
 	 
@@ -1009,16 +1018,9 @@ Object.defineProperty(Array.prototype, "size", {
 	 /* Resourd les problemes d'argent du joueur */
 	 /* @param montant : argent a recouvrer */
 	 /* @param joueur : beneficiaire */
-	 this.resolveProblemeArgent = function(montant,joueur){
-		 // On verifie si c'est possible de recuperer les sommes
-		 if(this.getStats().argentDispo < montant){
-			 // Banqueroute, le joueur perd
-			 this.defaite(montant);
-			 return false;
-		 }
+	 this.resolveProblemeArgent = function(montant,callback){		 
 		 // On ouvre le panneau de resolution en empechant la fermeture
 		 this.montant-=montant;
-		 var _self = this;
 		 var button = createMessage("Attention","red","Vous n'avez pas les fonds necessaires, il faut trouver de l'argent",function(){
 			 // On attache un evenement a la fermeture
 			 var onclose = function(e){				 
@@ -1029,9 +1031,9 @@ Object.defineProperty(Array.prototype, "size", {
 				 }
 				 else{
 					 joueurCourant.bloque = false;
-					 // On paye la dette
-					 _self.payerTo(montant,joueur);
-					 changeJoueur();
+					 if(callback){
+					 	callback();
+					 }													 
 				 }
 			 }
 			 GestionTerrains.open(true,onclose);				
@@ -2084,8 +2086,6 @@ Object.defineProperty(Array.prototype, "size", {
   this.payerLoyer = function () {
       return createMessage("Vous etes " + this.nom, this.color, "Vous etes chez " + this.joueurPossede.nom + " vous devez payez la somme de " + this.getLoyer() + " " + CURRENCY, function (param) {
           param.joueurPaye.payerTo(param.loyer,param.joueurLoyer);
-          //param.joueurLoyer.gagner(param.loyer);
-          changeJoueur();
       }, {
           loyer: this.getLoyer(),
           joueurPaye: joueurCourant,

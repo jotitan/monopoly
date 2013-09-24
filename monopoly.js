@@ -772,7 +772,7 @@ Object.defineProperty(Array.prototype, "size", {
                      return;
                   }
               }
-          }, 1000);
+          }, IA_TIMEOUT);
       }
       
       /* Fonction appelee avant que les des ne soit lances, lorsqu'il est en prison */
@@ -783,7 +783,8 @@ Object.defineProperty(Array.prototype, "size", {
       	setTimeout(function(){
 		  // Cas 1 : on prend la carte de sortie
 		  var loyerStat = _self.comportement.getLoyerMoyen(joueurCourant);
-		  if(_self.findGroupes().size() >= 1 && loyerStat.nb > 3 && loyerStat.montant > 10000){
+		  console.log(loyerStat)
+		  if(_self.findGroupes().size() < 2 && (loyerStat.nb < 4 || loyerStat.montant < 15000)){
 			  if(buttons["Utiliser carte"]!=null){
 				  buttons["Utiliser carte"]();
 			  }
@@ -794,7 +795,7 @@ Object.defineProperty(Array.prototype, "size", {
 		  else{
 			  buttons["Attendre"]();
 		  }
-		},1000);
+		},IA_TIMEOUT);
       }
 
       // decide si achete ou non la maison

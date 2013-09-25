@@ -798,14 +798,31 @@ Object.defineProperty(Array.prototype, "size", {
 		},IA_TIMEOUT);
       }
 	 
+	 /* On sort de prison prison dans les cas suivants 
+	 * 1) Le joueur a moins de deux groupes et le terrain n'est pas mine (moyenne des loyers < 20% de ses moyens) avec au moins 3 terrains de vendu
+	 * 2) Si le terrain est miné (moyenne < 30% des moyens) mais que le joueur a absolument besoin d'un terrain encore libre pour termine son groupe (pas de groupe)
+	 * 3) On sort de prison pour acheter en debut de jeu
+	 * Corolaire, on reste en prison
+	 * 1) Si le joueur a au moins deux groupes
+	 * 2) Si le terrain est miné > 15% et qu'il n'a pas un terrain a recuperer absoluement
+	 * 3) Si le terrain est très miné > 30%, quelque soit sa recherche de terrain
+	 */
 	 this.getOutPrison = function(){
 	   var loyerStat = this.comportement.getLoyerMoyen(this);
+	   var groupesPossibles = this.getGroupesPossibles();
 	   // On peut augmenter le risque si les terrains rouges et oranges sont blindes (sortie de prison)
 	   // depend de l'argent dispo et du besoin d'acheter un terrain (libre et indispensable pour finir le groupe)
-	   if(this.findGroupes().size() < 2 && (loyerStat.nb < 4 || loyerStat.montant < 15000)){
-		return true;
+	   // Cas pour rester en prison	   
+	   if(this.findGroupes().size() >= 2){
+	   	return false;
+	   }	
+	   if(groupesPossibles.length > 0 && loyerStat.montant < (this.montant*0.3)){
+	   	return true;
 	   }
-	   return false;
+	   if(loyerStat.nb >= 4 && loyerStat.montant > (this.montant*0.15)){
+	   	return false;
+	   }
+	   return true;
 	 }
 
       // decide si achete ou non la maison
@@ -878,6 +895,35 @@ Object.defineProperty(Array.prototype, "size", {
 	 this.getPosition = function(){
 	   return {pos:this.pion.pos,etat:this.pion.etat};
 	 }
+	 
+	 /**
+	 * Renvoie la liste des groupes presque complet (un terrain manquant) pour lequel le terrain est encore libre
+	 */
+	 this.getGroupesPossibles = function(){
+	 	var groups = [];
+	 	for(var index in this.maisons){
+	 		var maison = this.maisons[index];
+	 		if(!maison.isGroupee()){
+	 			// calcule les terrains libre de la meme couleurs
+	 			var stat = {libre:0,adversaire:0};
+	 			for(var id in fiches){
+	 				if(fiches[id].color == maison.color && !this.equals(fiches[id].joueurPossede)){
+	 					if(fiches[id].statut == ETAT_LIBRE){
+	 						stat.libre++;
+	 					}
+	 					else{
+	 						stat.adversaire++;
+	 					}
+	 				}
+	 			}
+	 			if(stat.libre == 1 && stat.adversaire == 0){
+	 				groups.push(maison.color);
+	 			}
+	 			
+	 		}
+	 	}
+	 	return groups;
+	 }	 
 	 
       // Cherche la position ou placer la nouvelle fiche (tri par couleur)
       this.cherchePlacement = function (maison) {
@@ -1116,8 +1162,8 @@ Object.defineProperty(Array.prototype, "size", {
 						// on possede le groupe
                               colorsOK[m.color] = true;
                               groups[m.color] = {color:m.color,proprietes:[]};
-						groups[m.color].proprietes.push(m);
-                          }
+							  groups[m.color].proprietes.push(m);
+				          }
                       }
                   }
               }

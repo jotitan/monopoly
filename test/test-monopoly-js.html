@@ -109,17 +109,17 @@
                   // Achat maison
                   var maison = new Fiche(null, null, ["",""], "", "", 10000, [1000,2000,4000], 5000);
                   maison.vendu(joueurs[0]);
-			   joueurs[0].payer(maison.achat);
+			   	  joueurs[0].payer(maison.achat);
                   equal(joueurs[0].montant,90000,"Achat propriete");
                   equal(joueurs[0].getStats().argentDispo,95000,"Achat propriete (argent dispo)");
 			   
-			   maison.nbMaison=2;
-			   equal(joueurs[0].getStats().argentDispo,100000,"Achat 2 maisons");
-			   joueurs[0].montant=2500;
-			   equal(joueurs[0].getStats().argentDispo,12500,"Achat 2 maisons et argent a 2500");
-			   joueurs[0].payerTo(15000,joueurs[1]);
-			   equal(joueurs[0].defaite,true,"Defaite du joueur");
-			   equal(joueurs[1].montant,112500,"Argent du joueur 2");
+				   maison.nbMaison=2;
+				   equal(joueurs[0].getStats().argentDispo,100000,"Achat 2 maisons");
+				   joueurs[0].montant=2500;
+				   equal(joueurs[0].getStats().argentDispo,12500,"Achat 2 maisons et argent a 2500");
+				   joueurs[0].payerTo(15000,joueurs[1]);
+				   equal(joueurs[0].defaite,true,"Defaite du joueur");
+				   equal(joueurs[1].montant,112500,"Argent du joueur 2");
                });
                
 			test("Constructions maison",function(){
@@ -138,7 +138,6 @@
 			   fiches[4] = new Fiche(null, null, ["#AAABBB",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
 			   fiches[5] = new Fiche(null, null, ["#CCCCCC",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
 			   fiches[6] = new Fiche(null, null, ["#CCCCCC",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-			   
 			   buyHouse(joueurs[1],0,5);
 			   buyHouse(joueurs[1],1,5);			   
 			   equal(joueurs[1].findGroupes().size(),1,"Joueur 1 possede un groupe");
@@ -151,18 +150,33 @@
 			   buyHouse(joueurs[1],4,4);
 			   equal(joueurs[0].getOutPrison(),false,"Terrain miné");
 			   
-			   joueurs[1].maisons = [];
-			   fiches[0].joueurPossede = null;
-			   fiches[1].joueurPossede = null;
-			   fiches[2].joueurPossede = null;
-			   fiches[3].joueurPossede = null;
-			   fiches[4].joueurPossede = null;
+			   buyHouse(joueurs[0],5,0);
+			   equal(joueurs[0].getOutPrison(),true,"Terrain miné mais besoin d'un terrain");
+			   
+			   joueurs[0].maisons = [];
+			   joueurs[1].maisons = [];			
+			   resetHouses();   
+			  
+			   buyHouse(joueurs[0],0,0);			   
+			   buyHouse(joueurs[0],1,0);
+			   buyHouse(joueurs[0],2,0);
+			   buyHouse(joueurs[0],3,0);
+			   buyHouse(joueurs[0],4,0);
+			   console.log(joueurs[0].maisons.length)
+			   equal(joueurs[0].getOutPrison(),false,"Possede 2 groupes");			   
 			   
 			});
 						
+			function resetHouses(){
+				for(var index in fiches){
+					fiches[index].statut = ETAT_LIBRE;
+					fiches[index].joueurPossede = null;
+				}
+			}
 			
 			function buyHouse(joueur,index,nb){
 			   fiches[index].joueurPossede = joueur;
+			   fiches[index].statut = ETAT_ACHETE;
 			   joueur.maisons.push(fiches[index]);
 			   fiches[index].nbMaison = nb;
 			   if (nb == 5) {

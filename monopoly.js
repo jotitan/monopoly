@@ -1,6 +1,7 @@
 // TODO : moteur pour achat maison pour ordinateur, limites maison 32 hotel 12, strategie smart sur stats maisons les plus visites
 // TODO : strategie prison : permettre la sortie anticiper. Decider quand un ordinateur peut sortir 
 // Bilan joueurs : nombres proprietes, nombres maisons / hotels, argent, argent dispo (apres hypotheque / vente)
+// Gestion hypotheque pour acheter plus de maison d'un coup (IA)
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
@@ -267,7 +268,7 @@ Object.defineProperty(Array.prototype, "size", {
 		var nb = 1;
           for (var id in fiches) {
           	var f = fiches[id];
-              if (f.getLoyer != null && f.joueurPossede != null && !joueur.equals(f.joueurPossede)) {
+		   if (f.getLoyer != null && f.joueurPossede != null && !joueur.equals(f.joueurPossede)) {
                   montant += f.getLoyer();
 			   nb++;
               }
@@ -782,9 +783,8 @@ Object.defineProperty(Array.prototype, "size", {
 	   var _self = this;
       	setTimeout(function(){
 		  // Cas 1 : on prend la carte de sortie
-		  var loyerStat = _self.comportement.getLoyerMoyen(joueurCourant);
-		  console.log(loyerStat)
-		  if(_self.findGroupes().size() < 2 && (loyerStat.nb < 4 || loyerStat.montant < 15000)){
+		  var getOut = _self.getOutPrison();		  
+		  if(getOut){
 			  if(buttons["Utiliser carte"]!=null){
 				  buttons["Utiliser carte"]();
 			  }
@@ -797,6 +797,16 @@ Object.defineProperty(Array.prototype, "size", {
 		  }
 		},IA_TIMEOUT);
       }
+	 
+	 this.getOutPrison = function(){
+	   var loyerStat = this.comportement.getLoyerMoyen(this);
+	   // On peut augmenter le risque si les terrains rouges et oranges sont blindes (sortie de prison)
+	   // depend de l'argent dispo et du besoin d'acheter un terrain (libre et indispensable pour finir le groupe)
+	   if(this.findGroupes().size() < 2 && (loyerStat.nb < 4 || loyerStat.montant < 15000)){
+		return true;
+	   }
+	   return false;
+	 }
 
       // decide si achete ou non la maison
       // On se base sur la politique, les fiches obtenues par les autres

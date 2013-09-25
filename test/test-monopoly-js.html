@@ -123,16 +123,63 @@
                });
                
 			test("Constructions maison",function(){
-			   joueurs = [];
-                  joueurs[0] = new JoueurOrdinateur(0,"Joueur 1");
-                  joueurs[0].pion = {stats:{tour:0,prison:0}};
-			   joueurs[0].div = $('');
-                  joueurs[1] = new JoueurOrdinateur(0,"Joueur 2");
-                  joueurs[1].pion = {stats:{tour:0,prison:0}};
-                  joueurs[1].div = $('');
+			   joueurs = initJoueurs();
 			   equal(true,true)                  
 			   // On cree 2 groupes sur lesquels construire
 			});
+			
+			test("Gestion prison",function(){
+			   joueurs = initJoueurs();
+			   fiches = [];
+			   fiches[0] = new Fiche(null, null, ["#AAAAAA",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);			   
+			   fiches[1] = new Fiche(null, null, ["#AAAAAA",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[2] = new Fiche(null, null, ["#AAABBB",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[3] = new Fiche(null, null, ["#AAABBB",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[4] = new Fiche(null, null, ["#AAABBB",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[5] = new Fiche(null, null, ["#CCCCCC",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[6] = new Fiche(null, null, ["#CCCCCC",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   
+			   buyHouse(joueurs[1],0,5);
+			   buyHouse(joueurs[1],1,5);			   
+			   equal(joueurs[1].findGroupes().size(),1,"Joueur 1 possede un groupe");
+			   
+			   joueurs[0].enPrison=true;
+			   equal(joueurs[0].getOutPrison(),true,"Pas de terrain ni de risque");
+			   
+			   buyHouse(joueurs[1],2,4);
+			   buyHouse(joueurs[1],3,4);
+			   buyHouse(joueurs[1],4,4);
+			   equal(joueurs[0].getOutPrison(),false,"Terrain miné");
+			   
+			   joueurs[1].maisons = [];
+			   fiches[0].joueurPossede = null;
+			   fiches[1].joueurPossede = null;
+			   fiches[2].joueurPossede = null;
+			   fiches[3].joueurPossede = null;
+			   fiches[4].joueurPossede = null;
+			   
+			});
+						
+			
+			function buyHouse(joueur,index,nb){
+			   fiches[index].joueurPossede = joueur;
+			   joueur.maisons.push(fiches[index]);
+			   fiches[index].nbMaison = nb;
+			   if (nb == 5) {
+				 fiches[index].hotel = true;
+			   }
+			}		  
+			
+			function initJoueurs() {
+			   var joueurs = [];
+			   joueurs[0] = new JoueurOrdinateur(0,"Joueur 1");
+                  joueurs[0].pion = {stats:{tour:0,prison:0}};
+			   joueurs[0].div = $('');
+                  joueurs[1] = new JoueurOrdinateur(1,"Joueur 2");
+                  joueurs[1].pion = {stats:{tour:0,prison:0}};
+                  joueurs[1].div = $('');
+			   return joueurs;
+			}
 			
             </script>
    </head>

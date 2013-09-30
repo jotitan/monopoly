@@ -195,6 +195,13 @@
 			   return joueurs;
 			}
 			
+			test("Gestion des constructions",function(){
+			   equal(GestionConstructions.nbInitHouse,32,"Cas nominal maison");
+			   GestionConstructions.buyHouse();
+			   equal(GestionConstructions.isFreeHouse(),true,"Reste des maisons");
+			   equal(GestionConstructions.getRestHouse(),31,"Nb maisons dispo");
+			});
+			
             </script>
    </head>
    <body>

@@ -158,6 +158,47 @@ Object.defineProperty(Array.prototype, "size", {
   this.setMontant(0);
 
   }
+  
+  
+  /* Gere les reserves de constructions (maison / hotel) */
+  
+  var GestionConstructions = {
+    nbInitHouse:32,
+    nbInitHotel:12,
+    nbSellHouse:0,
+    nbSellHotel:0,
+    
+    isFreeHouse:function(){
+	 return this.nbInitHouse > this.nbSellHouse;
+    },
+    isFreeHotel:function(nbActualHouse){
+	 if (nbActualHouse == null){
+	   return this.nbInitHotel > this.nbSellHotel;
+	 }
+	 var needHouse = 4 - nbActualHouse;
+	 return this.nbInitHotel > this.nbSellHotel
+	   & this.nbInitHouse >= this.nbSellHouse + needHouse;
+    },
+    getRestHouse:function(){
+	 return this.nbInitHouse - this.nbSellHouse;
+    },
+    buyHouse:function(){
+	 if (!this.isFreeHouse()) {
+	   throw "Impossible d'acheter une maison."
+	 }
+	 this.nbSellHouse++;
+    },
+    buyHotel:function(){
+	 if (!this.isFreeHouse()) {
+	   throw "Impossible d'acheter un hotel."
+	 }
+	 this.nbSellHotel++;
+	 // On libere les maisons liees (4)
+    }
+    
+    
+  }
+
 
   /* Objet qui gere le comportement (rapport a l'argent). Integre la prise de risque (position du jour) */
   /* @risque : prise de risque entre 0 et 1 */
@@ -676,11 +717,17 @@ Object.defineProperty(Array.prototype, "size", {
 		    }
 		    else{
 			    // On achete	
-			    budget-=maison.prixMaison;
-			    this.payer(maison.prixMaison);
-			    maison.buyMaison(this,true);	
-			    console.log("Buy one house for " + maison.prixMaison  + " on " + maison.id);
-			    currentMaison = (currentMaison+1)%group.proprietes.length;	
+			    try{
+				maison.buyMaison(this,true);
+				budget-=maison.prixMaison;
+				this.payer(maison.prixMaison);
+				console.log("Buy one house for " + maison.prixMaison  + " on " + maison.id);
+				currentMaison = (currentMaison+1)%group.proprietes.length;	
+			    }catch(e){
+				// Plus de maison ou d'hotel (on peut potentiellement continuer)
+				stopConstruct = true;
+			    }
+			    
 		    }		    		  
 		 }
 		 $('body').trigger('refreshPlateau');
@@ -2120,6 +2167,12 @@ Object.defineProperty(Array.prototype, "size", {
 	this.buyMaison = function(joueur,noRefresh){
 		if(joueur == null || !this.joueurPossede.equals(joueur) || this.nbMaison >=5){
 			return;
+		}
+		// On verifie la dispo
+		if ((this.nbMaison == 4 && !GestionConstructions.isFreeHotel())
+		    || (this.nbMaison < 4 && !GestionConstructions.isFreeHouse())){
+		  throw "Pas de construction disponible";
+			   
 		}
 		this.setNbMaison(this.nbMaison+1,noRefresh);
 		if(this.nbMaison == 5){

@@ -37,7 +37,7 @@
                   equal(cartesCaisseCommunaute.size(),0,"Cartes caisse de communaute chargees");                  
                });
 			
-			 test("Chargement plateau avec des donnees",function(){
+			test("Chargement plateau avec des donnees",function(){
                   loadPlateau({
                      chance:{
                         cartes:[
@@ -166,7 +166,44 @@
 			   equal(joueurs[0].getOutPrison(),false,"Possede 2 groupes");			   
 			   
 			});
+				
 						
+			
+			test("Reste constructions",function(){
+			   var projects,simulation;
+			   
+			   projects = [
+				 {
+				    from:{type:"maison",nb:0},
+				    to:{type:"maison",nb:2}
+				 }
+			   ]
+			   GestionConstructions.reset();
+			   simulation = GestionConstructions.simulateBuy(projects);
+			   equal(simulation.reste.maison,30,"Achat de 2 maisons, il reste 30");
+			   equal(simulation.achat.maison,2,"Achat de 2 maisons, on a consome 2");
+			   
+			   projects = [
+   				 {
+				    from:{type:"maison",nb:0},
+				    to:{type:"maison",nb:2}
+				 },
+				 {
+				    from:{type:"maison",nb:0},
+				    to:{type:"maison",nb:3}
+				 }
+			   ];
+			   GestionConstructions.reset();
+			   simulation = GestionConstructions.simulateBuy(projects);
+			   equal(simulation.reste.maison,27,"Achat de 2 et 3 maisons, il reste 27");
+			   equal(simulation.achat.maison,5,"Achat de 2 et 3 maisons, on a consome 5");
+			   
+			   GestionConstructions.buyHouses(5);
+			   equal(GestionConstructions.getRestHouse(),27,"Achat 5 maisons, reste");
+			   
+			});
+			
+			
 			function resetHouses(){
 				for(var index in fiches){
 					fiches[index].statut = ETAT_LIBRE;
@@ -196,6 +233,7 @@
 			}
 			
 			test("Gestion des constructions",function(){
+			   GestionConstructions.reset();
 			   equal(GestionConstructions.nbInitHouse,32,"Cas nominal maison");
 			   GestionConstructions.buyHouse();
 			   equal(GestionConstructions.isFreeHouse(),true,"Reste des maisons");

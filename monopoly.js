@@ -167,7 +167,12 @@ Object.defineProperty(Array.prototype, "size", {
     nbInitHotel:12,
     nbSellHouse:0,
     nbSellHotel:0,
-    
+    reset:function(){
+	 this.nbInitHouse=32;
+	 this.nbInitHotel=12;
+	 this.nbSellHouse=0;
+	 this.nbSellHotel=0; 
+    },
     isFreeHouse:function(){
 	 return this.nbInitHouse > this.nbSellHouse;
     },
@@ -188,14 +193,51 @@ Object.defineProperty(Array.prototype, "size", {
 	 }
 	 this.nbSellHouse++;
     },
+    buyHouses:function(nb){
+	 if (nb > this.getRestHouse()) {
+	   throw "Impossible d'acheter les maisons."
+	 }
+	 this.nbSellHouse+=nb;
+    },
     buyHotel:function(){
 	 if (!this.isFreeHouse()) {
 	   throw "Impossible d'acheter un hotel."
 	 }
 	 this.nbSellHotel++;
 	 // On libere les maisons liees (4)
+	 this.nbSellHouse-=4;
+    },
+    /* Calcule les restes finaux en maison / hotel. Renvoie egalement le delta */
+    // On calcule en premier les ventes de maisons
+    // On calcule les achats d'hotels (qui necessitent des maisons puis des hotels)
+    // Pour finir, on calcule l'achat de maison
+    simulateBuy:function(projects){
+	 // Projects est un tableau de from:{type,nb},to:{type,nb}
+	 var simulation = {achat:{maison:0,hotel:0},reste:{maison:this.nbInitHouse - this.nbSellHouse,hotel:this.nbInitHotel - this.nbSellHotel}};
+	 var hotels = [];
+	 // Vente de maison
+	 for (var index in projects) {
+	   var p = projects[index];
+	   if (p.from.type == "maison" && p.to.type == "maison" && p.from.nb > p.to.nb) {
+		var nb = p.from.nb-p.to.nb;
+		simulation.achat.maison-=nb;
+		simulation.reste.maison+=nb;
+	   }
+	   if (p.from.type == "maison" && p.to.type == "hotel") {
+		// On traite plus tard
+	   }
+	 }
+	 // Gestion des hotels
+	 for (var index in projects) {
+	   var p = projects[index];
+	   if (p.from.type == "maison" && p.to.type == "maison" && p.from.nb < p.to.nb) {
+		var nb = p.from.nb-p.to.nb;
+		simulation.achat.maison-=nb;
+		simulation.reste.maison+=nb;
+	   }	  
+	 }
+	 return simulation;
     }
-    
     
   }
 
@@ -2173,10 +2215,14 @@ Object.defineProperty(Array.prototype, "size", {
 		    || (this.nbMaison < 4 && !GestionConstructions.isFreeHouse())){
 		  throw "Pas de construction disponible";
 			   
-		}
+		}		
 		this.setNbMaison(this.nbMaison+1,noRefresh);
 		if(this.nbMaison == 5){
 			this.hotel = true;
+			GestionConstructions.buyHotel();
+		}
+		else{
+		  GestionConstructions.buyMaison();
 		}
 	}
 
@@ -2939,6 +2985,7 @@ Object.defineProperty(Array.prototype, "size", {
 		  },
 		  /* Verifie pour la validation et renvoie une exception */
 		  verify:function(){
+			  // On verifie les terrains libres
 			  var testGroups = [];
 			  $('select[data-color]',this.div).each(function(){
 				  var color = $(this).get(0).dataset.color;

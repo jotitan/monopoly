@@ -223,11 +223,27 @@ Object.defineProperty(Array.prototype, "size", {
 		simulation.achat.maison-=nb;
 		simulation.reste.maison+=nb;
 	   }
-	   if (p.from.type == "maison" && p.to.type == "hotel") {
-		// On traite plus tard
-	   }
+	  
 	 }
-	 // Gestion des hotels
+	 // Achat d'un hotel. On doit d'avoir verifier que 4 maisons pourraient etre construites
+	 for (var index in projects) {
+	   var p = projects[index];
+	   if (p.from.type == "maison" && p.to.type == "hotel") {
+			// Verifie qu'il y a assez de maison disponible
+			var resteMaison = 4-p.from.nb;
+			if(resteMaison > simulation.reste.maison){
+				// Impossible, pas assez de maison, on renvoie un nombre de maison negatif et on sort
+				simulation.reste.maison-=resteMaison;
+				return simulation;
+			}
+			else{
+				// On achete un hotel
+				simulation.reste.hotel--;
+				simulation.reste.maison+=p.from.nb;
+			}
+	   }	 
+	 }
+	 // Achat de maison
 	 for (var index in projects) {
 	   var p = projects[index];
 	   if (p.from.type == "maison" && p.to.type == "maison" && p.from.nb < p.to.nb) {

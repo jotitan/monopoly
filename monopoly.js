@@ -1,5 +1,4 @@
 // TODO : moteur pour achat maison pour ordinateur, limites maison 32 hotel 12, strategie smart sur stats maisons les plus visites
-// TODO : strategie prison : permettre la sortie anticiper. Decider quand un ordinateur peut sortir 
 // Bilan joueurs : nombres proprietes, nombres maisons / hotels, argent, argent dispo (apres hypotheque / vente)
 // Gestion hypotheque pour acheter plus de maison d'un coup (IA)
 
@@ -211,46 +210,69 @@ Object.defineProperty(Array.prototype, "size", {
     // On calcule en premier les ventes de maisons
     // On calcule les achats d'hotels (qui necessitent des maisons puis des hotels)
     // Pour finir, on calcule l'achat de maison
+    // Faire estimation du prix ?
     simulateBuy:function(projects){
 	 // Projects est un tableau de from:{type,nb},to:{type,nb}
 	 var simulation = {achat:{maison:0,hotel:0},reste:{maison:this.nbInitHouse - this.nbSellHouse,hotel:this.nbInitHotel - this.nbSellHotel}};
-	 var hotels = [];
-	 // Vente de maison
-	 for (var index in projects) {
-	   var p = projects[index];
-	   if (p.from.type == "maison" && p.to.type == "maison" && p.from.nb > p.to.nb) {
-		var nb = p.from.nb-p.to.nb;
-		simulation.achat.maison-=nb;
-		simulation.reste.maison+=nb;
-	   }
-	  
-	 }
-	 // Achat d'un hotel. On doit d'avoir verifier que 4 maisons pourraient etre construites
-	 for (var index in projects) {
-	   var p = projects[index];
-	   if (p.from.type == "maison" && p.to.type == "hotel") {
-			// Verifie qu'il y a assez de maison disponible
-			var resteMaison = 4-p.from.nb;
-			if(resteMaison > simulation.reste.maison){
-				// Impossible, pas assez de maison, on renvoie un nombre de maison negatif et on sort
-				simulation.reste.maison-=resteMaison;
-				return simulation;
+	 
+	 var actions = {
+	 	venteMaison:function(p,simulation){
+			if (p.from.type == "maison" && p.to.type == "maison" && p.from.nb > p.to.nb) {
+		 		var nb = p.from.nb-p.to.nb;
+				simulation.achat.maison-=nb;
+				simulation.reste.maison+=nb;
 			}
-			else{
-				// On achete un hotel
-				simulation.reste.hotel--;
-				simulation.reste.maison+=p.from.nb;
+	 	},
+	 	achatHotel:function(p,simulation){
+	 		if (p.from.type == "maison" && p.to.type == "hotel") {
+		 		// Verifie qu'il y a assez de maison disponible
+				var resteMaison = 4-p.from.nb;
+				if(resteMaison > simulation.reste.maison){
+					// Impossible, pas assez de maison, on renvoie un nombre de maison negatif et on sort
+					simulation.reste.maison-=resteMaison;
+					return simulation;
+				}
+				else{
+					// On achete un hotel
+					simulation.reste.hotel--;
+					simulation.achat.hotel++;
+					simulation.reste.maison+=p.from.nb;
+					simulation.achat.maison-=p.from.nb;
+				}
 			}
-	   }	 
+	 	},
+	 	venteHotel:function(p,simulation){
+	 		if (p.from.type == "hotel" && p.to.type == "maison") {
+		 		// Verifie qu'il y a assez de maison disponible
+				if(p.to.nb > simulation.reste.maison){
+					// Impossible, pas assez de maison, on renvoie un nombre de maison negatif et on sort
+					simulation.reste.maison-=p.to.nb;
+					return simulation;
+				}
+				else{
+					// On vend l'hotel et on place des maisons
+					simulation.reste.hotel++;
+					simulation.achat.hotel--;
+					simulation.reste.maison-=p.to.nb;
+					simulation.achat.maison+=p.to.nb;
+				}
+			}
+	 	},
+	 	achatMaison:function(p,simulation){
+	 		if (p.from.type == "maison" && p.to.type == "maison" && p.from.nb < p.to.nb) {
+		 		var nb = p.from.nb-p.to.nb;
+				simulation.achat.maison-=nb;
+				simulation.reste.maison+=nb;
+			}
+	 	}
 	 }
-	 // Achat de maison
-	 for (var index in projects) {
-	   var p = projects[index];
-	   if (p.from.type == "maison" && p.to.type == "maison" && p.from.nb < p.to.nb) {
-		var nb = p.from.nb-p.to.nb;
-		simulation.achat.maison-=nb;
-		simulation.reste.maison+=nb;
-	   }	  
+	 
+	 for(var a in actions){
+	 	var action = actions[a];
+	 	for(var index in projects){
+	 		var p = projects[index];
+		 	action(p,simulation);
+	 	}
 	 }
 	 return simulation;
     }
@@ -2199,10 +2221,10 @@ Object.defineProperty(Array.prototype, "size", {
   this.setNbMaison = function (nb,noRefresh) {
       this.nbMaison = nb;
       this.drawing.nbMaison = nb;
-	 // Lancer un evenement pour rafraichir le plateau
-	 if(!noRefresh){
-	   $('body').trigger('refreshPlateau');
-	 }
+	  // Lancer un evenement pour rafraichir le plateau
+	  if(!noRefresh){
+	    $('body').trigger('refreshPlateau');
+	  }
   }
 
   this.action = function () {
@@ -3020,6 +3042,8 @@ Object.defineProperty(Array.prototype, "size", {
 		  valider:function(){
 		    for (var achat in this.table) {
 			  var data = this.table[achat];
+			  // On calcule le delta a acheter (maison et hotel)
+			  //GestionConstructions.buyMaison();
 			  data.propriete.setNbMaison(data.nbMaison);
 			  joueurCourant.payer(data.cout);
 		    }
@@ -3036,16 +3060,40 @@ Object.defineProperty(Array.prototype, "size", {
 			  return colors;
 		  },
 		  update:function(){
-			  var totals = {nbMaison:0,nbHotel:0,cout:0}
+			  var totals = {nbMaison:0,nbHotel:0,cout:0};
+			  var projects = [];
 			  for (var achat in this.table) {
+				var project = {from:{},to:{}};
+			  	if(fiches[achat].hotel){
+			  		project.from.type = "hotel";
+			  		project.from.nb = 1;
+			  	}
+			  	else{
+			  		project.from.type = "maison";
+			  		project.from.nb = fiches[achat].nbMaison;
+			  	}
 				  var data = this.table[achat];
 				  totals.cout+=data.cout;
+				  if(data.hotel > 0){
+				  	project.to.type="hotel";
+				  	project.to.nb = 1;
+				  }
+				  else{
+				  	project.to.type="maison";				  	
+				  	project.to.nb = data.maison;
+				  }
 				  totals.nbMaison+=data.maison || 0;
 				  totals.nbHotel+=data.hotel || 0;
+				  projects.push(project);
 			  }
 			  $('span[name]',this.infos).each(function(){
 				  $(this).text(totals[$(this).attr('name')]);
 			  });
+			  /* Simulation d'achat (reste maison) */
+			  /* Il faut construire la situation avant / apres */
+			  var simulation = GestionConstructions.simulateBuy(projects);
+			  $('span[name="nbMaison"]','#resteConstructions').text(simulation.reste.maison);
+			  $('span[name="nbHotel"]','#resteConstructions').text(simulation.reste.hotel);
 			  return totals;
 		  },
 		  /* Supprime la possibilite d'acheter des maisons sur les terrains de cette couleur */

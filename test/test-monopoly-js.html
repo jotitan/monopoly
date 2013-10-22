@@ -211,6 +211,7 @@
 			   ];
 			   simulation = GestionConstructions.simulateBuy(projects);
   			   equal(simulation.reste.hotel,11,"Achat d'1 hotel, il reste 11 hotel");
+  			   equal(simulation.achat.hotel,1,"Achat d'un hotel");
   			   
   			   /* Achat d'un hotel a partir de 2 maisons */
 			   GestionConstructions.reset();
@@ -235,7 +236,32 @@
 			   simulation = GestionConstructions.simulateBuy(projects);
   			   equal(simulation.reste.maison,29,"Vente d'un hotel et achat de 3 maisons");
   			   equal(simulation.reste.hotel,13,"Vente d'un hotel, il reste 13 hotels");
-			   
+  			   
+  			   /* Achat d'un hotel, mais pas assez de maison */
+			   GestionConstructions.reset();
+			   GestionConstructions.nbSellHouse = 30;
+			   projects = [
+   				 {
+				    from:{type:"maison",nb:1},
+				    to:{type:"hotel",nb:1}
+				 }
+			   ];
+			   simulation = GestionConstructions.simulateBuy(projects);
+  			   equal(simulation.reste.maison,-1,"Achat d'un hotel mais pas assez de maison dispo");	   
+  			   equal(simulation.reste.hotel,12,"Aucun hotel achete");
+  			   
+  			   /* Vente d'un hotel, mais pas assez de maison */
+			   GestionConstructions.reset();
+			   GestionConstructions.nbSellHouse = 30;
+			   projects = [
+   				 {
+				    from:{type:"hotel",nb:1},
+				    to:{type:"maison",nb:4}
+				 }
+			   ];
+			   simulation = GestionConstructions.simulateBuy(projects);
+  			   equal(simulation.reste.maison,-2,"Vente d'hotel mais pas assez de maison dispo ensuite");
+  			   equal(simulation.reste.hotel,12,"Aucun hotel achete");  		  			   
 			});
 			
 			

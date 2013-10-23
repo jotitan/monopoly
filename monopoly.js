@@ -186,6 +186,9 @@ Object.defineProperty(Array.prototype, "size", {
     getRestHouse:function(){
 	 return this.nbInitHouse - this.nbSellHouse;
     },
+    getRestHotel:function(){
+	 return this.nbInitHotel - this.nbSellHotel;
+    },
     buyHouse:function(){
 	 if (!this.isFreeHouse()) {
 	   throw "Impossible d'acheter une maison."
@@ -197,6 +200,13 @@ Object.defineProperty(Array.prototype, "size", {
 	   throw "Impossible d'acheter les maisons."
 	 }
 	 this.nbSellHouse+=nb;
+    },
+    /* Achete / vend le nombre d'hotels indiques (verification simple sur le nombre d'hotel) */
+    buyHotels:function(nb){
+	 if (nb > this.getRestHotel()) {
+	   throw "Impossible d'acheter les hotels."
+	 }
+	 this.nbSellHotel+=nb;    	
     },
     buyHotel:function(){
 	 if (!this.isFreeHouse()) {
@@ -2221,6 +2231,12 @@ Object.defineProperty(Array.prototype, "size", {
   this.setNbMaison = function (nb,noRefresh) {
       this.nbMaison = nb;
       this.drawing.nbMaison = nb;
+      if(this.nbMaison == 5){
+      	this.hotel = true;
+      }
+      else{
+      	this.hotel = false;
+      }
 	  // Lancer un evenement pour rafraichir le plateau
 	  if(!noRefresh){
 	    $('body').trigger('refreshPlateau');
@@ -3017,6 +3033,7 @@ Object.defineProperty(Array.prototype, "size", {
 		  table:[],
 		  div:null,
 		  infos:null,
+		  simulation:null,	// Simulation d'achat pour evaluer la faisabilite
 		  init:function(){
 		    this.div = $('#idTerrainsConstructibles');
 		    this.infos = $('#coutAchats');
@@ -3038,14 +3055,21 @@ Object.defineProperty(Array.prototype, "size", {
 				    throw "Il faut equilibrer les maisons";  
 				  }
 			 }
+			 // On verifie sur la simulation est correcte
+			 if(this.simulation.reste.maison < 0 || this.simulation.reste.hotel < 0){
+			 	throw "Impossible d'acheter, il n'a y pas assez de maison / hotel disponibles";
+			 }
 		  },
 		  valider:function(){
 		    for (var achat in this.table) {
 			  var data = this.table[achat];
-			  // On calcule le delta a acheter (maison et hotel)
-			  //GestionConstructions.buyMaison();
 			  data.propriete.setNbMaison(data.nbMaison);
 			  joueurCourant.payer(data.cout);
+		    }
+		    // On modifie les quantites de maisons / hotels
+		    if(this.simulation!=null){
+		    	GestionConstructions.buyHouses(this.simulation.achat.maison);
+		    	GestionConstructions.buyHotels(this.simulation.achat.hotel);
 		    }
 		  },
 		  reset:function(){
@@ -3070,7 +3094,7 @@ Object.defineProperty(Array.prototype, "size", {
 			  	}
 			  	else{
 			  		project.from.type = "maison";
-			  		project.from.nb = fiches[achat].nbMaison;
+			  		project.from.nb = parseInt(fiches[achat].nbMaison);
 			  	}
 				  var data = this.table[achat];
 				  totals.cout+=data.cout;
@@ -3080,9 +3104,9 @@ Object.defineProperty(Array.prototype, "size", {
 				  }
 				  else{
 				  	project.to.type="maison";				  	
-				  	project.to.nb = data.maison;
+				  	project.to.nb = data.nbMaison;
 				  }
-				  totals.nbMaison+=data.maison || 0;
+				  totals.nbMaison+=data.nbMaison || 0;
 				  totals.nbHotel+=data.hotel || 0;
 				  projects.push(project);
 			  }
@@ -3091,9 +3115,9 @@ Object.defineProperty(Array.prototype, "size", {
 			  });
 			  /* Simulation d'achat (reste maison) */
 			  /* Il faut construire la situation avant / apres */
-			  var simulation = GestionConstructions.simulateBuy(projects);
-			  $('span[name="nbMaison"]','#resteConstructions').text(simulation.reste.maison);
-			  $('span[name="nbHotel"]','#resteConstructions').text(simulation.reste.hotel);
+			  this.simulation = GestionConstructions.simulateBuy(projects);
+			  $('span[name="nbMaison"]','#resteConstructions').text(this.simulation.reste.maison);
+			  $('span[name="nbHotel"]','#resteConstructions').text(this.simulation.reste.hotel);
 			  return totals;
 		  },
 		  /* Supprime la possibilite d'acheter des maisons sur les terrains de cette couleur */
@@ -3144,9 +3168,9 @@ Object.defineProperty(Array.prototype, "size", {
 							  GestionTerrains.update();
 							  return;
 						  }
-						  var data = ($(this).val() == 5)?{hotel:1}:{maison:$(this).val() - prop.nbMaison};
+						  var data = ($(this).val() == 5)?{hotel:1}:{maison:parseInt($(this).val()) - prop.nbMaison};
 						  data.propriete = prop;
-						  data.nbMaison = $(this).val();
+						  data.nbMaison = parseInt($(this).val());
 						  data.cout = ($(this).val() > prop.nbMaison)
 						    ?($(this).val()-prop.nbMaison)*prop.prixMaison
 						    :($(this).val()-prop.nbMaison )*prop.prixMaison/2;

@@ -220,7 +220,7 @@ Object.defineProperty(Array.prototype, "size", {
     // On calcule en premier les ventes de maisons
     // On calcule les achats d'hotels (qui necessitent des maisons puis des hotels)
     // Pour finir, on calcule l'achat de maison
-    // Faire estimation du prix ?
+	// Chaque projet contient la couleur du groupe, le from (nb, type) et le to (nb, type)
     simulateBuy:function(projects){
 	 // Projects est un tableau de from:{type,nb},to:{type,nb}
 	 var simulation = {achat:{maison:0,hotel:0},reste:{maison:this.nbInitHouse - this.nbSellHouse,hotel:this.nbInitHotel - this.nbSellHotel}};
@@ -234,7 +234,16 @@ Object.defineProperty(Array.prototype, "size", {
 			}
 	 	},
 	 	achatHotel:function(p,simulation){
+	 		// Pour valider un hotel, il faut que les autres proprietes aient au moins 4 maisons. On les achete maintenant si on les trouve
 	 		if (p.from.type == "maison" && p.to.type == "hotel") {
+	 			// On achete les maisons sur le meme groupe s'il y en a
+	 			for(var project in projects){
+	 				if(projects[project].color == p.color && p.from.type == "maison" && p.to.type == "maison" && p.to.nb == 4){
+	 					// On les achete maintenant
+	 					actions.venteHotel(projects[project],simulation);
+	 					projects[project].done = true;
+	 				}
+	 			}
 		 		// Verifie qu'il y a assez de maison disponible
 				var resteMaison = 4-p.from.nb;
 				if(resteMaison > simulation.reste.maison){
@@ -248,7 +257,7 @@ Object.defineProperty(Array.prototype, "size", {
 					simulation.achat.hotel++;
 					simulation.reste.maison+=p.from.nb;
 					simulation.achat.maison-=p.from.nb;
-				}
+				}				
 			}
 	 	},
 	 	venteHotel:function(p,simulation){
@@ -282,6 +291,7 @@ Object.defineProperty(Array.prototype, "size", {
 	 	for(var index in projects){
 	 		var p = projects[index];
 		 	action(p,simulation);
+		 	p.done = true;	// Indique qu'il est traite
 	 	}
 	 }
 	 return simulation;
@@ -3087,7 +3097,7 @@ Object.defineProperty(Array.prototype, "size", {
 			  var totals = {nbMaison:0,nbHotel:0,cout:0};
 			  var projects = [];
 			  for (var achat in this.table) {
-				var project = {from:{},to:{}};
+				var project = {from:{},to:{},group:fiches[achat].color};
 			  	if(fiches[achat].hotel){
 			  		project.from.type = "hotel";
 			  		project.from.nb = 1;

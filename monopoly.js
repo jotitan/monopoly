@@ -1,4 +1,3 @@
-// TODO : moteur pour achat maison pour ordinateur, limites maison 32 hotel 12, strategie smart sur stats maisons les plus visites
 // Bilan joueurs : nombres proprietes, nombres maisons / hotels, argent, argent dispo (apres hypotheque / vente)
 // Gestion hypotheque pour acheter plus de maison d'un coup (IA)
 
@@ -795,7 +794,7 @@ Object.defineProperty(Array.prototype, "size", {
 		 	var group = sortedGroups[currentGroup];
 			// Changement de group
 		    var maison = group.proprietes[currentMaison];
-		    // On invalide la maison et on passe a la suivante, ou au groupe suivant ou au seuil suivant
+		    // Si le seuil est atteint, on construit sur une autre maison ou sur un autre group
 		    if(maison.nbMaison>=seuil){
 			    if(group.treat == null){
 				group.treat = 1;
@@ -828,16 +827,16 @@ Object.defineProperty(Array.prototype, "size", {
 			    }			
 		    }
 		    else{
-			    // On achete	
+			    // On construit
 			    try{
-				maison.buyMaison(this,true);
-				budget-=maison.prixMaison;
-				this.payer(maison.prixMaison);
-				console.log("Buy one house for " + maison.prixMaison  + " on " + maison.id);
-				currentMaison = (currentMaison+1)%group.proprietes.length;	
+					maison.buyMaison(this,true);
+					budget-=maison.prixMaison;
+					this.payer(maison.prixMaison);
+					console.log("Buy one house for " + maison.prixMaison  + " on " + maison.id);
+					currentMaison = (currentMaison+1)%group.proprietes.length;	
 			    }catch(e){
-				// Plus de maison ou d'hotel (on peut potentiellement continuer)
-				stopConstruct = true;
+					// Plus de maison ou d'hotel (on peut potentiellement continuer en achetant des maisons ?)					
+					stopConstruct = true;
 			    }
 			    
 		    }		    		  
@@ -1136,7 +1135,7 @@ Object.defineProperty(Array.prototype, "size", {
       // Envoi le joueur (et le pion) en prison
       this.goPrison = function () {
           this.enPrison = true;
-          this.div.find('div:first').addClass('jail');
+          this.div.addClass('jail');
           this.nbDouble = 0;
           this.pion.goPrison();
       }

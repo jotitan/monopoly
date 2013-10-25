@@ -69,7 +69,9 @@ Object.defineProperty(Array.prototype, "size", {
           }
       };
 	 $('#message').bind('dialogclose.message',function(){
-	   call(param);
+	   if(call != null){
+	   	call(param);
+	   }
 	   $('#message').unbind('dialogclose.message');
 	 });
       if (call != null) {
@@ -231,6 +233,7 @@ Object.defineProperty(Array.prototype, "size", {
 		 		var nb = p.from.nb-p.to.nb;
 				simulation.achat.maison-=nb;
 				simulation.reste.maison+=nb;
+				p.done = true;				
 			}
 	 	},
 	 	achatHotel:function(p,simulation){
@@ -238,12 +241,12 @@ Object.defineProperty(Array.prototype, "size", {
 	 		if (p.from.type == "maison" && p.to.type == "hotel") {
 	 			// On achete les maisons sur le meme groupe s'il y en a
 	 			for(var project in projects){
-	 				if(projects[project].color == p.color && p.from.type == "maison" && p.to.type == "maison" && p.to.nb == 4){
+	 				var p2 = projects[project];
+	 				if(p2.color == p.color && p2.from.type == "maison" && p2.to.type == "maison" && p2.to.nb == 4){
 	 					// On les achete maintenant
-	 					actions.venteHotel(projects[project],simulation);
-	 					projects[project].done = true;
+	 					actions.achatMaison(p2,simulation);
 	 				}
-	 			}
+	 			}			
 		 		// Verifie qu'il y a assez de maison disponible
 				var resteMaison = 4-p.from.nb;
 				if(resteMaison > simulation.reste.maison){
@@ -258,6 +261,7 @@ Object.defineProperty(Array.prototype, "size", {
 					simulation.reste.maison+=p.from.nb;
 					simulation.achat.maison-=p.from.nb;
 				}				
+				p.done = true;
 			}
 	 	},
 	 	venteHotel:function(p,simulation){
@@ -275,6 +279,7 @@ Object.defineProperty(Array.prototype, "size", {
 					simulation.reste.maison-=p.to.nb;
 					simulation.achat.maison+=p.to.nb;
 				}
+				p.done = true;
 			}
 	 	},
 	 	achatMaison:function(p,simulation){
@@ -282,16 +287,23 @@ Object.defineProperty(Array.prototype, "size", {
 		 		var nb = p.from.nb-p.to.nb;
 				simulation.achat.maison-=nb;
 				simulation.reste.maison+=nb;
+				p.done = true;				
 			}
 	 	}
 	 }
-	 
 	 for(var a in actions){
 	 	var action = actions[a];
 	 	for(var index in projects){
 	 		var p = projects[index];
-		 	action(p,simulation);
-		 	p.done = true;	// Indique qu'il est traite
+		 	if(p.done == null){
+		 	 	try{
+			 		action(p,simulation);
+			 	}catch(e){
+					// Exception levee si le traitement doit etre interrompu
+					console.log("expcetion");
+			 		return simulation;
+			 	}
+		 	}
 	 	}
 	 }
 	 return simulation;

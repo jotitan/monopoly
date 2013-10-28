@@ -1,5 +1,7 @@
 // Bilan joueurs : nombres proprietes, nombres maisons / hotels, argent, argent dispo (apres hypotheque / vente)
 // Gestion hypotheque pour acheter plus de maison d'un coup (IA)
+// echange terrains
+// verifier achat gare
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
@@ -1143,7 +1145,7 @@ Object.defineProperty(Array.prototype, "size", {
       this.exitPrison = function () {
           this.enPrison = false;
           this.nbDouble = 0;
-          this.div.find('div:first').removeClass('jail');
+          this.div.removeClass('jail');
       }
 
       this.isEnPrison = function () {

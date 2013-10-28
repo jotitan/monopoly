@@ -21,7 +21,7 @@
 .jail {
     background-image: url("../img/jail.jpg");
     background-repeat: no-repeat;
-    background-size: contain;
+    background-size: 25px 25px;
     padding-left: 25px;
 }
 #informations > div {

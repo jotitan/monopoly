@@ -18,6 +18,15 @@ Object.defineProperty(Array.prototype, "size", {
 });
  
 
+$.bind = function(eventName,fct){
+  $('body').bind(eventName,fct);
+  return $('body');
+}
+
+$.trigger = function(eventName,params){
+  $('body').trigger(eventName,params);
+}
+
   var DEBUG = false;
   var IA_TIMEOUT = 1000;	// Temps d'attente pour les actions de l'ordinateur
   /* Jets des des */
@@ -253,7 +262,7 @@ Object.defineProperty(Array.prototype, "size", {
 				if(resteMaison > simulation.reste.maison){
 					// Impossible, pas assez de maison, on renvoie un nombre de maison negatif et on sort
 					simulation.reste.maison-=resteMaison;
-					return simulation;
+					return;
 				}
 				else{
 					// On achete un hotel
@@ -271,7 +280,7 @@ Object.defineProperty(Array.prototype, "size", {
 				if(p.to.nb > simulation.reste.maison){
 					// Impossible, pas assez de maison, on renvoie un nombre de maison negatif et on sort
 					simulation.reste.maison-=p.to.nb;
-					return simulation;
+					return;
 				}
 				else{
 					// On vend l'hotel et on place des maisons
@@ -595,8 +604,8 @@ Object.defineProperty(Array.prototype, "size", {
   /* Il faut, a la creation, definir le style de jeu : prudent (achat des deux premiere lignes), agressif (achete tout)
 	 mode fric (achete les plus chers).*/
 
-  function JoueurOrdinateur(numero, nom) {
-      Joueur.call(this, numero, nom);
+  function JoueurOrdinateur(numero, nom,color) {
+      Joueur.call(this, numero, nom,color);
       this.initialName = nom;
       /* Strategie : definit le comportement pour l'achat des maisons */
       this.strategie = null;
@@ -996,9 +1005,10 @@ Object.defineProperty(Array.prototype, "size", {
 
   /* Represente un joueur */
 
-  function Joueur(numero, nom) {
+  function Joueur(numero, nom, color) {
       this.numero = numero;
       this.nom = nom;
+	 this.color = color;
       this.montant = 100000;
       this.maisons = new Array();
       this.enPrison = false;
@@ -1140,6 +1150,7 @@ Object.defineProperty(Array.prototype, "size", {
           this.div.addClass('jail');
           this.nbDouble = 0;
           this.pion.goPrison();
+		MessageDisplayer.write(this,"va en prison");
       }
 
       this.exitPrison = function () {
@@ -2198,6 +2209,7 @@ Object.defineProperty(Array.prototype, "size", {
       this.statut = ETAT_ACHETE;
       this.joueurPossede = joueur;
 	 this.joueurPossede.maisons.push(this);
+	 $.trigger("monopoly.acheteMaison",{joueur:joueur,maison:this});	 
   }
   
   /* Renvoie la rentabilite de la propriete. Se base sur le rapport entre le loyer de trois maisons et le prix d'achat d'une maison */
@@ -2231,6 +2243,7 @@ Object.defineProperty(Array.prototype, "size", {
     this.statutHypotheque=true;
     this.input.addClass('hypotheque');
     this.joueurPossede.gagner(this.montantHypotheque);
+    $.trigger('monopoly.hypothequeMaison',{joueur:this.joueurPossede,maison:this});
   }
   
   this.leveHypotheque = function(){
@@ -2244,7 +2257,8 @@ Object.defineProperty(Array.prototype, "size", {
     this.statutHypotheque=false;
     this.joueurPossede.payer(cout);
     this.input.removeClass('hypotheque');
-  }
+    $.trigger('monopoly.leveHypothequeMaison',{joueur:this.joueurPossede,maison:this});
+ }
   
   this.isLibre = function () {
       return this.statut == ETAT_LIBRE;
@@ -2569,16 +2583,19 @@ Object.defineProperty(Array.prototype, "size", {
       des2 = rand();
       des1Cube.setValue(des1);
       des2Cube.setValue(des2);
-
+	 var message = "lance les dés et fait " + (des1+des2) + " (" + des1 + " et " + des2 + ") ";
+	 
       if (joueurCourant.enPrison == true) {      
 	   if (des1 == des2) {
+		  message+=" et sort de prison";
 		  var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", function () {
 		    joueurCourant.exitPrison();	 
 		  }, {});
 		  joueurCourant.actionApresDes(buttons, null);
 	   } else {
 		  if (joueurCourant.nbDouble == 2) {
-			 var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
+			 message+=" et sort de prison en payant " + CURRENCY + " 5.000";
+		     var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
 				joueurCourant.payerParcGratuit(5000);
 				joueurCourant.exitPrison();
 				//joueurCourant.joueDes(des1 + des2);
@@ -2587,6 +2604,7 @@ Object.defineProperty(Array.prototype, "size", {
 			 joueurCourant.actionApresDes(buttons, null);
 			 return;
 		  } else {
+			 message+" et reste en prison";
 			 joueurCourant.nbDouble++;
 			 var buttons = createMessage("Tour " + joueurCourant.nbDouble, "red", "Vous restez en prison, vous n'avez pas fait de double.", function () {
 				changeJoueur();
@@ -2598,13 +2616,15 @@ Object.defineProperty(Array.prototype, "size", {
       } else {
           if (des1 == des2) {
               if (nbDouble >= 2) {
-                  // prison
+                  message+=", fait un double et va en prison";
+			   // prison
                   $('#informationsCentrale').text("3eme double, allez en PRISON");
                   joueurCourant.goPrison();
                   changeJoueur();
                   return;
               } else {
                   nbDouble++;
+			   message+=" et rejoue";
               }
           }
       }
@@ -2612,6 +2632,7 @@ Object.defineProperty(Array.prototype, "size", {
       if (des1 == des2) {
           $('#informationsCentrale').html("Relancez");
       }
+	 MessageDisplayer.write(joueurCourant,message);
   }
 
   
@@ -2619,13 +2640,12 @@ Object.defineProperty(Array.prototype, "size", {
 
   function init(plateau,debugValue) {
 	 DEBUG = debugValue;
+	 MessageDisplayer.init('idInfoBox');
 	 initDetailFiche();
       initFiches();
       initPlateau(plateau,initJoueurs);
       initDes();
 	 GestionTerrains.init();
-      
-     
   }
 
 	function initJoueurs(){
@@ -2633,18 +2653,20 @@ Object.defineProperty(Array.prototype, "size", {
       for (var i = 0; i < nb; i++) {
           var id = 'joueur' + i;
           var joueur = null;
+		var color = colorsJoueurs[i];
           if (i == 0) {
-              joueur = new Joueur(i, "Joueur " + (i + 1));
+              joueur = new Joueur(i, "Joueur " + (i + 1),color);
           } else {
-              joueur = new JoueurOrdinateur(i, "Joueur " + (i + 1));
+              joueur = new JoueurOrdinateur(i, "Joueur " + (i + 1),color);
           }
           joueurs[i] = joueur;
           $('#informations').append('<div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY 
             + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div><hr/>');
           joueur.setDiv($('#' + id));
-          joueur.setPion(colorsJoueurs[i]);
+          joueur.setPion(color);
 		// On defini la couleurs
 		$('#' + id + ' > div.joueur-bloc').css('backgroundImage','linear-gradient(to right,white 50%,' + colorsJoueurs[i] + ')');
+		MessageDisplayer.write(joueur,"rentre dans la partie");
 		
       }
       joueurCourant = joueurs[0];
@@ -3094,6 +3116,8 @@ Object.defineProperty(Array.prototype, "size", {
 		    	GestionConstructions.buyHouses(this.simulation.achat.maison);
 		    	GestionConstructions.buyHotels(this.simulation.achat.hotel);
 		    }
+		    $.trigger('monopoly.acheteConstructions',{joueur:joueurCourant,achats:this.simulation.achat});
+		    
 		  },
 		  reset:function(){
 			  this.table = [];
@@ -3302,6 +3326,53 @@ Object.defineProperty(Array.prototype, "size", {
     }
     return null;
   } 
+
+
+  var MessageDisplayer = {
+    div:null,
+    init:function(id){
+	 this.div = $('#' + id);
+	 this.bindEvents();	 
+    },
+    
+    write : function(joueur,message){
+	 this.div.prepend('<div><span style="color:' + joueur.color + '">' + joueur.nom + '</span> : ' + message + '</div>');
+    },
+    bindEvents:function(){
+	 $.bind("monopoly.acheteMaison",function(e,data){
+	   MessageDisplayer.write(data.joueur,"achète " + data.maison.nom);	   
+	 }).bind("monopoly.hypothequeMaison",function(e,data){
+	   MessageDisplayer.write(data.joueur,"hypothèque " + data.maison.nom);
+	 }).bind("monopoly.leveHypothequeMaison",function(e,data){
+	   MessageDisplayer.write(data.joueur,"lève l'hypothèque de " + data.maison.nom);
+	 }).bind("monopoly.acheteConstructions",function(e,data){
+	   var message = "";
+	   var achats = data.achats;
+	   if (achats.maison > 0) {
+		message+="achète " + achats.maison + " maison(s) ";
+	   }
+	   else{
+		if (achats.maison < 0) {
+		  message+="vend " + (achats.maison*-1 ) + " maison(s) ";
+		}
+	   }
+	   if (achats.hotel > 0) {
+		message+=((message!="")?" et ":"") + "achète " + achats.hotel + " hôtel(s) ";
+	   }
+	   else{
+		if (achats.hotel< 0) {
+		  message+=((message!="")?" et ":"") + "vend " + (achats.hotel*-1 ) + " hôtel(s) ";
+		}
+	   }
+	   if (message!="") {
+		MessageDisplayer.write(data.joueur,message);
+	   }
+	 });
+    }
+    
+    
+    
+  }
   
   
   /* Fonction utilitaire pour le debug */

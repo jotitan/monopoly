@@ -63,3 +63,16 @@ body { margin: 0 }
 }
 .ui-widget { font-size: 0.9em }
 
+.info_box {
+            border:solid grey 2px;
+            background-color:lightgrey;
+            position:absolute;
+            top:400px;
+            left:200px;
+            width:400px;
+            height:250px;
+            overflow:auto;
+            font-size: 12px;
+            font-family: Helvetica;
+            padding-left:3px;
+}

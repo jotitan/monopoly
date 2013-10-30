@@ -608,6 +608,7 @@ $.trigger = function(eventName,params){
 
   function JoueurOrdinateur(numero, nom,color) {
       Joueur.call(this, numero, nom,color);
+      this.canPlay = false;
       this.initialName = nom;
       /* Strategie : definit le comportement pour l'achat des maisons */
       this.strategie = null;
@@ -1026,7 +1027,7 @@ $.trigger = function(eventName,params){
 	 this.bloque = false;	// Indique que le joueur est bloque. Il doit se debloquer pour que le jeu continue
 	 this.defaite = false;
 	 this.cartesSortiePrison = [];	// Cartes sortie de prison
-	 
+	 this.canPlay = true;
       this.equals = function (joueur) {
           if (joueur == null) {
               return false;
@@ -1040,7 +1041,7 @@ $.trigger = function(eventName,params){
       		throw "Impossible d'utiliser cette carte";
       	}
       	this.cartesSortiePrison[this.cartesSortiePrison.length-1].joueurPossede = null;
-      	delete this.cartesSortiePrison[this.cartesSortiePrison.length-1];
+		this.cartesSortiePrison.splice(this.cartesSortiePrison.length-1,1);
       }
       
       /* Renvoie les stats et infos du jour : 
@@ -2500,6 +2501,9 @@ $.trigger = function(eventName,params){
   }
 
   function getNextJoueur() {
+  if(joueurCourant == null){
+	return joueurs[0];
+  }
      // On verifie s'il y a encore de joueurs "vivants"
 	if (joueurCourant.bloque) {
 	   return null;
@@ -2533,7 +2537,7 @@ $.trigger = function(eventName,params){
 	   return null;
 	 }
 		 
-      $('#idLancerDes,.action-joueur').removeAttr('disabled');
+      $('.action-joueur').removeAttr('disabled');
 	 if (des1 != des2) {
           nbDouble = 0;
 	 }
@@ -2550,10 +2554,10 @@ $.trigger = function(eventName,params){
       return Math.round((Math.random() * 1000)) % 6 + 1;
   }
 
+	/* Fais tourner les des 8 fois */
   function animeDes() {
-    // Fait tourner les des 8 fois
       // On desactive le bouton pour eviter double click
-      $('#idLancerDes,.action-joueur').attr('disabled', 'disabled');
+      $('.action-joueur').attr('disabled', 'disabled');
       var nb = 8;
       var interval = setInterval(function () {
           if (nb-- < 0) {
@@ -2694,8 +2698,7 @@ $.trigger = function(eventName,params){
 		var joueur = createJoueur(i>0 || firstPlayerIA,i);
         joueurs[i] = joueur;
 	}
-	joueurCourant = joueurs[0];
-    selectJoueurCourant();
+    changeJoueur();
 	$('.info-joueur').tooltip({
       content:function(){
         var stats = getJoueurById($(this).data('idjoueur')).getStats();
@@ -3356,6 +3359,7 @@ $.trigger = function(eventName,params){
     if (!joueur.equals(joueurCourant)) {
 	 $('#informations > div > div').removeClass('joueurCourant');
     }
+    
     joueurCourant = joueur;    
     joueur.select();	 
   }

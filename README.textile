@@ -1,6 +1,3 @@
-monopoly-js
-===========
-
 h1. Monopoly full JS
 
 h2. Todo

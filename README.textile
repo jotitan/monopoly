@@ -1,0 +1,12 @@
+monopoly-js
+===========
+
+h1. Monopoly full JS
+
+h2. Todo
+
+Module d'échange entre joueurs (avec IA)
+
+h2. Capture d'une version intermédiaire : 
+
+!https://raw.github.com/jotitan/monopoly-js/gh-pages/screenshots/screenshot1.png!

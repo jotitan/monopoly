@@ -65,14 +65,16 @@ body { margin: 0 }
 
 .info_box {
             border:solid grey 2px;
-            background-color:lightgrey;
+            background-color:#999999;
             position:absolute;
-            top:400px;
-            left:200px;
-            width:400px;
-            height:250px;
+            top:360px;
+            left:170px;
+            width:460px;
+            height:300px;
             overflow:auto;
             font-size: 12px;
             font-family: Helvetica;
             padding-left:3px;
+            border-radius: 10px;
+            border:3px inset #A09A9A;
 }

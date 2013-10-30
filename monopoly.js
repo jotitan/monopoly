@@ -1150,13 +1150,14 @@ $.trigger = function(eventName,params){
           this.div.addClass('jail');
           this.nbDouble = 0;
           this.pion.goPrison();
-		MessageDisplayer.write(this,"va en prison");
+		$.trigger("monopoly.goPrison",{joueur:this});
       }
 
       this.exitPrison = function () {
           this.enPrison = false;
           this.nbDouble = 0;
           this.div.removeClass('jail');
+		$.trigger("monopoly.exitPrison",{joueur:this});
       }
 
       this.isEnPrison = function () {
@@ -3340,11 +3341,15 @@ $.trigger = function(eventName,params){
     },
     bindEvents:function(){
 	 $.bind("monopoly.acheteMaison",function(e,data){
-	   MessageDisplayer.write(data.joueur,"achète " + data.maison.nom);	   
+	   MessageDisplayer.write(data.joueur,'achète ' + '<span style="color:' + data.maison.color + '">' + data.maison.nom + '</span>');
 	 }).bind("monopoly.hypothequeMaison",function(e,data){
 	   MessageDisplayer.write(data.joueur,"hypothèque " + data.maison.nom);
 	 }).bind("monopoly.leveHypothequeMaison",function(e,data){
 	   MessageDisplayer.write(data.joueur,"lève l'hypothèque de " + data.maison.nom);
+	 }).bind("monopoly.goPrison",function(e,data){
+	   MessageDisplayer.write(data.joueur,"va en prison");
+	 }).bind("monopoly.exitPrison",function(e,data){
+	   MessageDisplayer.write(data.joueur,"sort de prison");
 	 }).bind("monopoly.acheteConstructions",function(e,data){
 	   var message = "";
 	   var achats = data.achats;

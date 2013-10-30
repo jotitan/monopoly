@@ -327,9 +327,10 @@ $.trigger = function(eventName,params){
   /* Objet qui gere le comportement (rapport a l'argent). Integre la prise de risque (position du jour) */
   /* @risque : prise de risque entre 0 et 1 */
 
-  function Comportement(risque) {
+  function Comportement(risque,name) {
       this.risque = risque;
       this.probaDes = [0, 2.77, 5.55, 8.33, 11.1, 13.8, 16.7, 13.8, 11.1, 8.33, 5.55, 2.77];
+      this.name = name;
 
 	  /* Indique le risque global a depenser cette somme pour le joueur */
 	  /* Se base sur 3 informations : 
@@ -443,15 +444,15 @@ $.trigger = function(eventName,params){
   }
 
   function CheapComportement() {
-      Comportement.call(this, 0.25);
+      Comportement.call(this, 0.25,"Cheap");
   }
 
   function MediumComportement() {
-      Comportement.call(this, 0.5);
+      Comportement.call(this, 0.5,"Moyen");
   }
 
   function HardComportement() {
-      Comportement.call(this, 0.8);
+      Comportement.call(this, 0.8,"Dur");
   }
 
   /* Objet qui gere la strategie. IL y a differentes implementations */
@@ -614,7 +615,7 @@ $.trigger = function(eventName,params){
       this.strategie = null;
       /* Comportement : definit le rapport e l'argent. Inclu la prise de risque */
       this.comportement = null;
-
+	  this.nom = nom;
 	 /* Determine les caracteristiques d'un ordinateur*/
 	 this.init = function(){
 	   // On choisit la strategie au hasard
@@ -628,15 +629,15 @@ $.trigger = function(eventName,params){
 		case 1 : this.comportement = new MediumComportement();break;
 		case 2 : this.comportement = new HardComportement();break;
 	   }
-	   this.updateName(true);
+	   //this.updateName(true);
 	 }
 	 
-	 this.updateName = function(noUpdate){
+	 /*this.updateName = function(noUpdate){
 	   this.nom= this.initialName + " " + this.strategie.name;
 	   if(noUpdate!=true){
 	   	$('.joueur_name','#joueur' + this.numero).text(this.nom);
 	   }
-	 }
+	 }*/
 	 
       // Fonction appelee lorsque le joueur a la main
       this.joue = function () {
@@ -1050,7 +1051,11 @@ $.trigger = function(eventName,params){
       * Argent disponible, argent apres vente maison / hypotheque, argent apres hypotheque
       */
       this.getStats = function(){
-		var stats = {prison:this.pion.stats.prison,tour:this.pion.stats.tour,argent:this.montant,argentDispo:this.montant,argentDispoHypo:this.montant,hotel:0,maison:0};
+		var stats = {
+			prison:this.pion.stats.prison,tour:this.pion.stats.tour,
+			argent:this.montant,argentDispo:this.montant,argentDispoHypo:this.montant,hotel:0,maison:0,
+			strategie:this.strategie != null ? this.strategie.name:'-',
+			comportement:this.comportement != null ? this.comportement.name:'-',};
 		for(var index in this.maisons){    
 		  var maison = this.maisons[index];
 		  stats.hotel+= parseInt(maison.hotel==true ? 1 : 0);
@@ -2728,7 +2733,7 @@ $.trigger = function(eventName,params){
 		  joueur.setPion(color);
 		// On defini la couleurs
 		$('#' + id + ' > div.joueur-bloc').css('backgroundImage','linear-gradient(to right,white 50%,' + color + ')');
-		$.trigger('monopoly.newPlayer',joueur);
+		$.trigger('monopoly.newPlayer',{joueur:joueur});
 		return joueur;
 	}
 
@@ -3386,6 +3391,8 @@ $.trigger = function(eventName,params){
     bindEvents:function(){
 	 $.bind("monopoly.acheteMaison",function(e,data){
 	   MessageDisplayer.write(data.joueur,'achète ' + '<span style="color:' + data.maison.color + '">' + data.maison.nom + '</span>');
+	 }).bind("monopoly.newPlayer",function(e,data){
+	 	MessageDisplayer.write(data.joueur,"rentre dans la partie");
 	 }).bind("monopoly.hypothequeMaison",function(e,data){
 	   MessageDisplayer.write(data.joueur,"hypothèque " + data.maison.nom);
 	 }).bind("monopoly.leveHypothequeMaison",function(e,data){

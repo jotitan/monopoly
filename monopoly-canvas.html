@@ -67,8 +67,8 @@
 	   </div>
 	   
 	   <div style="position:absolute;top:210px;left:320px;padding:5px;width:200px;height:80px;" class="ui-corner-all" id="informationsCentrale"></div>
-    	   <button style="position:absolute;top:260px;left:185px;" onclick="lancerAnimerDes()" id="idLancerDes" class="action-joueur">Lancez</button>
-    	   <button style="position:absolute;top:260px;left:260px;" class="action-joueur" onclick="GestionTerrains.open()">Gestion</button>
+    	   <button style="position:absolute;top:260px;left:185px;" onclick="lancerAnimerDes()" id="idLancerDes" class="action-joueur" disabled="disabled">Lancez</button>
+    	   <button style="position:absolute;top:260px;left:260px;" class="action-joueur" onclick="GestionTerrains.open()" disabled="disabled">Gestion</button>
     	   <div style="position:absolute;top:300px;left:200px;border:solid 1px black;border-radius:10px;width:230px;padding:5px" id="idMontantParc">
     		   Parc Gratuit : Frs <span></span>
          </div>
@@ -135,7 +135,8 @@
 	 	</div>
 	 
 		<div style="display:none" id="idPanelCreatePartie">
-		<input type="checkbox" name="firstIA" id="firstIA"/> <label for="firstIA">Premier joueur en IA</label>
+			<fieldset><legend>Joueurs</legend>
+		  <input type="checkbox" name="firstIA" id="idOptfirstIA"/> <label for="idOptfirstIA">Premier joueur en IA</label>
 		  Nombre de joueur :
 		  <select name="nbPlayers">
 		    <option value="2">2</option>
@@ -143,19 +144,20 @@
 		    <option value="4">4</option>
 		    <option value="5">5</option>
 		    <option value="6">6</option>
-		  </select>
+		  </select><br/>
 		  Rapidité des robots :
 		  <select name="waitTimeIA">
 			<option value="100">0s</option>
-		  	<option value="1000">1s</option>
+		  	<option value="1000" selected>1s</option>
 		  	<option value="1500">1.5s</option>
 		  	<option value="2000">2s</option>
 		  	<option value="4000">4s</option>
 		  </select>
+		  </fieldset>
 		  <fieldset>
 		  	<legend>Variantes</legend>
-		  		<input type="checkbox" name="parcGratuit"/> Jouer avec le parc gratuit<br/>
-		  		<input type="checkbox" name="caseDepart"/> Toucher 40000 sur la case depart
+		  		<input type="checkbox" name="parcGratuit" id="idOptParcGratuit"/> <label for="idOptParcGratuit">Jouer avec le parc gratuit</label><br/>
+		  		<input type="checkbox" name="caseDepart" id="idOptCaseDepart"/> <label for="idOptCaseDepart">Toucher 40000 sur la case depart</label>
 		  </fieldset>
 		</div>
 	 

@@ -29,6 +29,8 @@ $.trigger = function(eventName,params){
 
   var DEBUG = false;
   var IA_TIMEOUT = 1000;	// Temps d'attente pour les actions de l'ordinateur
+	/* Gestion des variantes, case depart (touche 40000) et parc gratuit (touche la somme des ammandes) */
+  var VARIANTES = {caseDepart:false,parcGratuit:false}
   /* Jets des des */
   var des1;
   var des2;
@@ -101,7 +103,7 @@ $.trigger = function(eventName,params){
     var buttons = {
 	 "Payer":function(){
 	   joueurCourant.payer(5000);
-	   joueurCourant.enPrison = false;
+	   joueurCourant.exitPrison();
 	   $('#message').dialog('close');
 	 },
 	 "Attendre":function(){
@@ -111,7 +113,7 @@ $.trigger = function(eventName,params){
     if (joueurCourant.cartesSortiePrison.length>0) {
 	 buttons["Utiliser carte"] = function(){
 		joueurCourant.utiliseCarteSortiePrison();
-		joueurCourant.enPrison = false;
+		joueurCourant.exitPrison();
 		$('#message').dialog('close');
 	 }
     }
@@ -681,8 +683,7 @@ $.trigger = function(eventName,params){
       
 	 /* Override de la methode pere */
 	 this.resolveProblemeArgent = function(montant,callback){
-	    
-		 /* Ordre de liquidations :
+	     /* Ordre de liquidations :
 		 * 1) Hypotheque des terrains seuls
 		 * 2) Hypotheque des terrains en groupe non construit
 		 * 3) Vente des maisons les maisons / hotels les mains rentables prochainement (base sur les stats des prochains passages)
@@ -712,6 +713,7 @@ $.trigger = function(eventName,params){
 			 }
 		 }
 		// Somme recouvree
+		this.setArgent(this.montant-montant);
 		if(callback){
 			callback();
 		}		 
@@ -800,6 +802,7 @@ $.trigger = function(eventName,params){
 		 var currentMaison = 0;
 		 var currentGroup = 0;		 
 		 var seuil = 3;	// Premier passage, ensuite passe a 4 ou 5
+		 var achats = {maison:0,hotel:0};
 		 while(budget >= 5000 && ! stopConstruct){
 		   // On choisit une maison
 		 	var group = sortedGroups[currentGroup];
@@ -840,10 +843,15 @@ $.trigger = function(eventName,params){
 		    else{
 			    // On construit
 			    try{
+					if(maison.nbMaison == 4){//hotel
+						achats.hotel++;
+					}
+					else{
+						achats.maison++;
+					}
 					maison.buyMaison(this,true);
 					budget-=maison.prixMaison;
 					this.payer(maison.prixMaison);
-					console.log("Buy one house for " + maison.prixMaison  + " on " + maison.id);
 					currentMaison = (currentMaison+1)%group.proprietes.length;	
 			    }catch(e){
 					// Plus de maison ou d'hotel (on peut potentiellement continuer en achetant des maisons ?)					
@@ -852,6 +860,7 @@ $.trigger = function(eventName,params){
 			    
 		    }		    		  
 		 }
+		 $.trigger('monopoly.acheteConstructions',{joueur:this,achats:achats});
 		 $('body').trigger('refreshPlateau');
      } 
       
@@ -1208,8 +1217,7 @@ $.trigger = function(eventName,params){
 
       	}
       	else{
-			 this.montant -= montant;
-		     this.setArgent(this.montant);
+		     this.setArgent(this.montant - montant);
 			 if(callback){
 			 	callback();
 			 }
@@ -1231,8 +1239,7 @@ $.trigger = function(eventName,params){
 	 }
 	 
       this.gagner = function (montant) {
-          this.montant += montant;
-          this.setArgent(this.montant);
+          this.setArgent(this.montant + montant);
       }
 
 	/* Gestion de la defaite */	
@@ -1260,6 +1267,7 @@ $.trigger = function(eventName,params){
 				 }
 				 else{
 					 joueurCourant.bloque = false;
+					 joueurCourant.setArgent(this.montant);
 					 if(callback){
 					 	callback();
 					 }													 
@@ -2314,7 +2322,7 @@ $.trigger = function(eventName,params){
 			GestionConstructions.buyHotel();
 		}
 		else{
-		  GestionConstructions.buyMaison();
+		  GestionConstructions.buyHouse();
 		}
 	}
 
@@ -2565,7 +2573,6 @@ $.trigger = function(eventName,params){
 	   var buttons = createPrisonMessage(joueurCourant.nbDouble,function(){
 	   	animeDes();
 	   });
-	   console.log(buttons)
 	   joueurCourant.actionAvantDesPrison(buttons);
 	 }
 	 else{
@@ -2644,36 +2651,14 @@ $.trigger = function(eventName,params){
 	 MessageDisplayer.init('idInfoBox');
 	 initDetailFiche();
       initFiches();
+      initPanels();
       initPlateau(plateau,initJoueurs);
       initDes();
 	 GestionTerrains.init();
   }
-
-	function initJoueurs(){
-	 var nb = (DEBUG) ? 2 : prompt("Nombre de joueurs ?");
-      for (var i = 0; i < nb; i++) {
-          var id = 'joueur' + i;
-          var joueur = null;
-		var color = colorsJoueurs[i];
-          if (i == 0) {
-              joueur = new Joueur(i, "Joueur " + (i + 1),color);
-          } else {
-              joueur = new JoueurOrdinateur(i, "Joueur " + (i + 1),color);
-          }
-          joueurs[i] = joueur;
-          $('#informations').append('<div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY 
-            + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div><hr/>');
-          joueur.setDiv($('#' + id));
-          joueur.setPion(color);
-		// On defini la couleurs
-		$('#' + id + ' > div.joueur-bloc').css('backgroundImage','linear-gradient(to right,white 50%,' + colorsJoueurs[i] + ')');
-		MessageDisplayer.write(joueur,"rentre dans la partie");
-		
-      }
-      joueurCourant = joueurs[0];
-      selectJoueurCourant();
-
-      $('#message').dialog({
+  
+  function initPanels(){
+  	$('#message').dialog({
           autoOpen: false
        });
       $('#message').prev().css("background", "url()");
@@ -2685,7 +2670,33 @@ $.trigger = function(eventName,params){
           width: 500,
           height: 300
       });
-      $('.info-joueur').tooltip({
+  }
+  
+  function showCreatePanel(){
+  	$('#idPanelCreatePartie').dialog({
+		title:"Création de partie",
+  		closeOnEscape:false,
+  		modal:true,
+  		buttons:[{text:"Valider",click:createPanelGame}]
+  	});
+  }
+  
+  function createPanelGame(){
+  	var nb = $('select[name="nbPlayers"]','#idPanelCreatePartie').val();
+  	var firstPlayerIA = $(':checkbox[name="firstIA"]:checked','#idPanelCreatePartie').length >0;
+  	var waitTimeIA = $('select[name="waitTimeIA"]','#idPanelCreatePartie').val();
+  	createGame(nb,firstPlayerIA,{waitTimeIA:waitTimeIA});
+  	$('#idPanelCreatePartie').dialog('close');
+  }
+  
+  function createGame(nbPlayers,firstPlayerIA,options){
+  	for (var i = 0; i < nbPlayers; i++) {
+		var joueur = createJoueur(i>0 || firstPlayerIA,i);
+        joueurs[i] = joueur;
+	}
+	joueurCourant = joueurs[0];
+    selectJoueurCourant();
+	$('.info-joueur').tooltip({
       content:function(){
         var stats = getJoueurById($(this).data('idjoueur')).getStats();
         $('span[name]','#infoJoueur').each(function(){
@@ -2694,6 +2705,35 @@ $.trigger = function(eventName,params){
         return $('#infoJoueur').html();
       }
     }); 
+	/* Gestion des options */
+	IA_TIMEOUT = options.waitTimeIA || IA_TIMEOUT;
+
+  }
+
+	function createJoueur(isRobot,i){
+		var id = 'joueur' + i;
+        var joueur = null;
+		var color = colorsJoueurs[i];
+		  if (isRobot) {
+		      joueur = new JoueurOrdinateur(i, "Joueur " + (i + 1),color);
+		  } else {
+		      joueur = new Joueur(i, "Joueur " + (i + 1),color);
+		  }
+		  $('#informations').append('<div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY 
+		    + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div><hr/>');
+		  joueur.setDiv($('#' + id));
+		  joueur.setPion(color);
+		// On defini la couleurs
+		$('#' + id + ' > div.joueur-bloc').css('backgroundImage','linear-gradient(to right,white 50%,' + color + ')');
+		$.trigger('monopoly.newPlayer',joueur);
+		return joueur;
+	}
+
+	function initJoueurs(){
+		if(!DEBUG){
+			return showCreatePanel();
+		}
+		createGame(2,false,{});
 
 	}
 

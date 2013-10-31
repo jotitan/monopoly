@@ -2193,6 +2193,65 @@ $.trigger = function(eventName,params){
 		return family;
 	}
 
+	/* Represente un groupe de terrain */
+	function Groupe(nom){
+		this.nom = nom;
+		/* Liste de ses terrains */
+		this.fiches = [];
+		
+		/* Ajoute une fiche au groupe (lors de l'init) */
+		this.add = function(fiche){
+			this.fiches.push(fiche);
+			fiche.groupe = this;
+		}
+		
+		/* Indique que tous les terrains appartiennent a la meme personne */
+		this.isGroupee = function(){
+			if(this.fiches == null || this.fiches.length == 0){return false;}
+			var joueur = this.fiches[0].joueurPossede;
+			for(var i = 0 ; i < this.fiches.length ; i++){
+				if(this.fiches[i].joueurPossede == null || !this.fiches[i].joueurPossede.equals(joueur)){
+					return false;
+				}
+				joueur = this.fiches[i].joueurPossede;				
+			}
+			return true;
+		}
+	
+		/* Indique que le terrain possede des constructions */	
+		this.isBuild = function(){
+			if(this.fiches == null || fiches.length == 0){return false;}
+			for(var i = 0 ; i < this.fiches.length ; i++){
+				if(this.fiches[i].nbMaison > 0){
+					return true;
+				}
+			}
+			
+			return false;
+		}
+		
+		/* Renvoie le nombre de constructions sur le groupe */
+		this.getConstructions = function(){
+			var constructions = {maison:0;hotel:0};
+			for(var i = 0 ; i < this.fiches.length ; i++){
+				if(this.fiches[i].hotel){
+					constructions.hotel++;
+				}
+				else{
+					constructions.maison+=this.fiches[i].nbMaison;
+				}
+			}
+			return constructions;
+		}
+		
+		/* Renvoie le nombre de fiche dans le groupe */
+		this.getNb = function(){
+			return (this.fiches == null) ? 0 : this.fiches.length;
+		}
+		
+	}
+
+	/* Represente un terrain */
   function Fiche(etat, pos, colors, nom, groupe, achat, loyers, prixMaison, img) {
       this.statut = ETAT_LIBRE;
       this.joueurPossede = null;
@@ -2783,11 +2842,16 @@ $.trigger = function(eventName,params){
     CURRENCY = data.currency;
     titles = data.titles;
     var colors = [];
+    var groups = [];
     $(data.fiches).each(function(){
 	    var fiche = null;
 	    switch(this.type){
 		    case "propriete":
-			    fiche = new Fiche(this.axe, this.pos, this.colors, this.nom, this.groupe, this.prix, this.loyers, this.prixMaison);
+		    	if(groups[this.colors[0] == null){
+		    		groups[this.colors[0]] = new Groupe(this.groupe);
+		    	}
+			    fiche = new Fiche(this.axe, this.pos, this.colors, this.nom, null, this.prix, this.loyers, this.prixMaison);
+			    groups[this.colors[0]].add(fiche);
 			    break;
 		    case "compagnie":
 			    fiche = new FicheCompagnie(this.axe, this.pos, this.colors,this.nom, this.prix, this.loyers);
@@ -3231,7 +3295,7 @@ $.trigger = function(eventName,params){
 			  var groups = joueurCourant.findGroupes();
 			  var table = $('#idTerrainsConstructibles');
 			  for(var color in groups) {
-				  var divTitre = $('<div style="cursor:pointer" class="group-' + color.substring(1) + '">Groupe <span style="color:' + color + ';font-weight:bold">' + groups[color].proprietes[0].groupe + '</span></div>');
+				  var divTitre = $('<div style="cursor:pointer" class="group-' + color.substring(1) + '">Groupe <span style="color:' + color + ';font-weight:bold">' + groups[color].proprietes[0].groupe.nom + '</span></div>');
 				  divTitre.data("color",color.substring(1));
 				  divTitre.click(function(){
 					  var id = 'div.propriete-' + $(this).data('color');

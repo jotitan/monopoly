@@ -167,6 +167,35 @@
 			});
 				
 						
+			test("Gestion groupe",function(){
+				function JoueurTest(id){
+					this.id = id;
+					this.equals = function(joueur){return this.id == joueur.id}
+				}
+				/* Cas groupe */
+				var groupe = new Groupe("nom");
+				groupe.add({joueurPossede:new JoueurTest(1)});
+				groupe.add({joueurPossede:new JoueurTest(1)});
+				groupe.add({joueurPossede:new JoueurTest(1)});
+				equal(groupe.isGroupee(),true,"Groupe appartenant a un joueur");
+				
+				groupe = new Groupe("nom");
+				groupe.add({joueurPossede:new JoueurTest(1)});
+				groupe.add({joueurPossede:null});
+				groupe.add({joueurPossede:new JoueurTest(1)});
+				equal(groupe.isGroupee(),false,"Groupe dont un terrain non acheté");
+				
+				groupe = new Groupe("nom");
+				groupe.add({joueurPossede:new JoueurTest(1)});
+				groupe.add({joueurPossede:new JoueurTest(2)});
+				groupe.add({joueurPossede:new JoueurTest(3)});
+				equal(groupe.isGroupee(),false,"Groupe avec 3 joueurs differents");
+				
+				groupe = new Groupe("nom");
+				equal(groupe.isGroupee(),false,"Groupe sans terrains");
+				
+			})						
+						
 			
 			test("Reste constructions",function(){
 			   var projects,simulation;

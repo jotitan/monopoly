@@ -312,7 +312,7 @@ $.trigger = function(eventName,params){
 			 		action(p,simulation);
 			 	}catch(e){
 					// Exception levee si le traitement doit etre interrompu
-					console.log("expcetion");
+					console.log("exception");
 			 		return simulation;
 			 	}
 		 	}
@@ -708,7 +708,7 @@ $.trigger = function(eventName,params){
 			  }
 			 }
 	 		 if ( this.montant < montant) {
-			   console.log("PHASE 3");
+			   $.trigger("monopoly.debug",{message:"PHASE 3"});
 			 // 3 Terrains construits, on vend les maisons dessus
 			 // On recupere les groupes construits classes par ordre inverse d'importance. On applique la meme regle que la construction tant que les sommes ne sont pas recupereres
 			 var sortedGroups = this.getGroupsToConstruct("ASC",0.1);
@@ -939,14 +939,14 @@ $.trigger = function(eventName,params){
           setTimeout(function () {
               if (buttons.Acheter != null && propriete != null) {
                 var interet = current.strategie.interetGlobal(propriete);
-			   	var comportement = current.comportement.getRisqueTotal(current,propriete.achat);
-                console.log("Strategie : " + interet + " " + comportement);
-			   	if (interet > comportement) {
-					console.log("achete");
-                    buttons.Acheter();
-                    return;
-                }
-             }
+			 var comportement = current.comportement.getRisqueTotal(current,propriete.achat);
+			 $.trigger("monopoly.debug",{message:"Strategie : " + interet + " " + comportement});
+			 if (interet > comportement) {
+				 $.trigger("monopoly.debug",{message:"IA Achete"});
+				buttons.Acheter();
+				return;
+			 }
+		    }
              for (var i in buttons) {
                  if (i != "Acheter") {
                      buttons[i]();
@@ -1426,10 +1426,8 @@ $.trigger = function(eventName,params){
           var center = fiches[this.etat + "-" + this.position].
 		drawing.getCenter();
 		this.pion.x = center.x;
-		this.pion.y = center.y;
-		if (DEBUG) {
-		  console.log(joueurCourant.numero + " va a " + etat + "-" + pos);
-		}	 
+		this.pion.y = center.y;		
+		$.trigger("monopoly.debug",{message:joueurCourant.numero + " va a " + etat + "-" + pos});		
 		this.gotoCell(etat, pos, call);
       }
 
@@ -2232,7 +2230,7 @@ $.trigger = function(eventName,params){
 		
 		/* Renvoie le nombre de constructions sur le groupe */
 		this.getConstructions = function(){
-			var constructions = {maison:0;hotel:0};
+			var constructions = {maison:0,hotel:0};
 			for(var i = 0 ; i < this.fiches.length ; i++){
 				if(this.fiches[i].hotel){
 					constructions.hotel++;
@@ -2847,7 +2845,7 @@ $.trigger = function(eventName,params){
 	    var fiche = null;
 	    switch(this.type){
 		    case "propriete":
-		    	if(groups[this.colors[0] == null){
+		    	if(groups[this.colors[0]] == null){
 		    		groups[this.colors[0]] = new Groupe(this.groupe);
 		    	}
 			    fiche = new Fiche(this.axe, this.pos, this.colors, this.nom, null, this.prix, this.loyers, this.prixMaison);
@@ -3487,6 +3485,11 @@ $.trigger = function(eventName,params){
 	   if (message!="") {
 		MessageDisplayer.write(data.joueur,message);
 	   }
+	 }).bind("monopoly.debug",function(e,data){
+	   if (DEBUG) {
+		MessageDisplayer.write({color:'red',nom:'debug'},data.message);
+	   }
+	   
 	 });
     }
     

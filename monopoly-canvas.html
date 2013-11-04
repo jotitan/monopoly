@@ -18,10 +18,9 @@
 		<body>
 		
 		<table><tr><td>
-		<div style="width:870px;height:870px" id="plateau">
-		<canvas id="canvas" width="870" height="870"></canvas>
-		<canvas id="canvas_rt" width="870" height="870" style="top:0px;left:0px;position:absolute"></canvas>
-		
+		<div style="width:840px;height:840px" id="plateau">
+		  <canvas id="canvas" width="840" height="840"></canvas>
+		  <canvas id="canvas_rt" width="870" height="840" style="top:0px;left:0px;position:absolute"></canvas>		
 		</div>
 		</td>
 		<td style="vertical-align:top">
@@ -29,6 +28,12 @@
 	   <div id="idDebug" style="display:none">
     	   case : <input type="text" size="3" id="nb"/><input type="button" onclick="joueurCourant.joueDes(parseInt($('#nb').val()))" value="click"/><br/>
     	   Goto : <input type="text" size="3" id="ide"/><input type="text" size="3" id="idp"/><input type="button" onclick="joueurCourant.pion.goto($('#ide').val(),$('#idp').val(),doActions)" value="goto"/><br/>
+	   </div>
+	   <div>
+		<h2 style="margin-top: 5px">
+		  MONOPOLY - 
+		  <img src="img/save.png" style="width:24px;height: 24px" id="idSavePanel"/>
+		</h2>
 	   </div>
 	   <div id="informations"></div>
 	 
@@ -160,6 +165,12 @@
 		  	<legend>Variantes</legend>
 		  		<input type="checkbox" name="parcGratuit" id="idOptParcGratuit"/> <label for="idOptParcGratuit">Jouer avec le parc gratuit</label><br/>
 		  		<input type="checkbox" name="caseDepart" id="idOptCaseDepart"/> <label for="idOptCaseDepart">Toucher 40000 sur la case depart</label>
+		  </fieldset>
+		  <fieldset>
+		    <legend>Sauvegardes</legend>
+		    <select id="idSauvegardes">
+			 <option>---</option>
+		    </select>		    
 		  </fieldset>
 		</div>
 	 

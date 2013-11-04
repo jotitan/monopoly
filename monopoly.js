@@ -35,6 +35,8 @@ $.trigger = function(eventName,params){
   var des1;
   var des2;
   var nbDouble = 0;
+
+  var currentSauvegardeName = null;	// Nom de la sauvegarde en cours
   
   /* Liste des cases et des cartes */
   var fiches = new Array();
@@ -327,10 +329,11 @@ $.trigger = function(eventName,params){
   /* Objet qui gere le comportement (rapport a l'argent). Integre la prise de risque (position du jour) */
   /* @risque : prise de risque entre 0 et 1 */
 
-  function Comportement(risque,name) {
+  function Comportement(risque,name,id) {
       this.risque = risque;
       this.probaDes = [0, 2.77, 5.55, 8.33, 11.1, 13.8, 16.7, 13.8, 11.1, 8.33, 5.55, 2.77];
       this.name = name;
+	 this.id = id;
 
 	  /* Indique le risque global a depenser cette somme pour le joueur */
 	  /* Se base sur 3 informations : 
@@ -444,26 +447,27 @@ $.trigger = function(eventName,params){
   }
 
   function CheapComportement() {
-      Comportement.call(this, 0.25,"Cheap");
+      Comportement.call(this, 0.25,"Cheap",0);
   }
 
   function MediumComportement() {
-      Comportement.call(this, 0.5,"Moyen");
+      Comportement.call(this, 0.5,"Moyen",1);
   }
 
   function HardComportement() {
-      Comportement.call(this, 0.8,"Dur");
+      Comportement.call(this, 0.8,"Dur",2);
   }
 
   /* Objet qui gere la strategie. IL y a differentes implementations */
   /* @colors : liste des groupes qui interessent le joueur */
   /* @param agressif : plus il est eleve, plus le joueur fait de l'antijeu (achat des terrains recherches par les adversaires) */
 
-  function Strategie(colors, agressif,name) {
+  function Strategie(colors, agressif,name,id) {
       this.groups = colors;
       this.agressif = agressif;
 	 this.interetGare = ((Math.random()*1000)%3==0)?true:false;	// Interet pour gare
 	 this.name = name;
+	 this.id = id;
 
 	 this.groups.contains = function(value){
 	   for (var val in this) {
@@ -580,7 +584,7 @@ $.trigger = function(eventName,params){
   /* Achete en prioriete les terrains les moins chers : bleu marine-812B5C, bleu clair-119AEB, violet-73316F et orange-D16E2D */
 
   function CheapStrategie() {
-      Strategie.call(this, ["#812B5C", "#119AEB", "#73316F", "#D16E2D"], 0, "cheap");
+      Strategie.call(this, ["#812B5C", "#119AEB", "#73316F", "#D16E2D"], 0, "cheap",0);
   }
   
   var strategies = [CheapStrategie,MediumStrategie,HardStrategie];	// liste des strategies
@@ -588,19 +592,19 @@ $.trigger = function(eventName,params){
   /* Achete en prioriete les terrains les moins chers : violet-73316F, orange-D16E2D, rouge-D32C19 et jaune-E6E018 */
 
   function MediumStrategie() {
-      Strategie.call(this, ["#73316F", "#D16E2D", "#D32C19", "#E6E018"], 1, "medium");
+      Strategie.call(this, ["#73316F", "#D16E2D", "#D32C19", "#E6E018"], 1, "medium",1);
   }
 
   /* Achete en prioriete les terrains les moins chers : rouge-D32C19, jaune-E6E018, vert-11862E et bleu fonce-132450 */
 
   function HardStrategie() {
-      Strategie.call(this, ["#D32C19", "#E6E018", "#11862E", "#132450"], 2, "hard");
+      Strategie.call(this, ["#D32C19", "#E6E018", "#11862E", "#132450"], 2, "hard",2);
   }
 
   /* Achete tout */
 
   function CrazyStrategie() {
-      Strategie.call(this, ["#812B5C", "#119AEB", "#73316F", "#D16E2D", "#D32C19", "#E6E018", "#11862E", "#132450"], 4, "crazy");
+      Strategie.call(this, ["#812B5C", "#119AEB", "#73316F", "#D16E2D", "#D32C19", "#E6E018", "#11862E", "#132450"], 4, "crazy",3);
   }
 
   /* Joueur ordinateur */
@@ -617,19 +621,34 @@ $.trigger = function(eventName,params){
       this.comportement = null;
 	  this.nom = nom;
 	 /* Determine les caracteristiques d'un ordinateur*/
-	 this.init = function(){
+	 this.init = function(idStrategie,idComportement){
+	   if (idStrategie == null) {
+		idStrategie = Math.round(Math.random()*1000)%3;
+	   }
+	   if (idComportement == null) {
+		idComportement = Math.round(Math.random()*1000)%3;
+	   }
 	   // On choisit la strategie au hasard
-	   switch (Math.round(Math.random()*1000)%3) {
+	   switch (idStrategie) {
 		case 0 : this.strategie = new CheapStrategie();break;
 		case 1 : this.strategie = new MediumStrategie();break;
 		case 2 : this.strategie = new HardStrategie();break;
 	   }
-	   switch (Math.round(Math.random()*1000)%3) {
+	   switch (idComportement) {
 		case 0 : this.comportement = new CheapComportement();break;
 		case 1 : this.comportement = new MediumComportement();break;
 		case 2 : this.comportement = new HardComportement();break;
 	   }
 	   //this.updateName(true);
+	 }
+	 
+	 this.saveMore = function(data){
+	   data.comportement = this.comportement.id;
+	   data.strategie = this.strategie.id;
+	 }
+	 
+	 this.loadMore = function(data){
+	   this.init(data.strategie,data.comportement);
 	 }
 	 
 	 /*this.updateName = function(noUpdate){
@@ -1018,6 +1037,7 @@ $.trigger = function(eventName,params){
 
   function Joueur(numero, nom, color) {
       this.numero = numero;
+	 this.id = numero;
       this.nom = nom;
 	 this.color = color;
       this.montant = 100000;
@@ -1036,10 +1056,42 @@ $.trigger = function(eventName,params){
           return this.numero == joueur.numero;
       }
       
+	 /* Sauvegarde un joueur */
+	 this.save = function(){
+	   // On sauvegarde id, nom, color,montant, prison, bloque, defaite, cartes, son type (manuel). Pas besoin des maisons (auto)
+	   var data = {
+		robot:!this.canPlay,
+		id:this.id,nom:this.nom,color:this.color,montant:this.montant,
+		prison:this.enPrison,bloque:this.bloque,defaite:this.defaite,
+		cartesPrison:this.cartesSortiePrison.length,
+		position:this.pion.position,etat:this.pion.etat
+	   };
+	   this.saveMore(data);
+	   return data;
+	 }
+	 
+	 this.load = function(data){
+	   for (var name in data) {
+		if (this[name]!=null) {
+		  this[name] = data[name];
+		}
+	   }
+	   this.setArgent(this.montant);
+	   this.enPrison = data.prison;
+	   this.loadMore(data);
+	   this.pion.goDirectToCell(data.etat,data.position);
+	   // Cas des cartes de prison
+	 }
+	 
+	 /* Template Method : les enfants peuvent la reimplementer */
+	 this.saveMore = function(){}
+	 
+	 this.loadMore = function(data){}
+	 
       // Utilise la carte sortie de prison
       this.utiliseCarteSortiePrison = function(){
       	if(this.cartesSortiePrison.length == 0){
-      		throw "Impossible d'utiliser cette carte";
+      		throw "Impossible d'utiliser cette carte";t
       	}
       	this.cartesSortiePrison[this.cartesSortiePrison.length-1].joueurPossede = null;
 		this.cartesSortiePrison.splice(this.cartesSortiePrison.length-1,1);
@@ -1135,30 +1187,34 @@ $.trigger = function(eventName,params){
 		this.actionAvantDesPrison = function(buttons){}
 
       // Achete une propriete
-      this.acheteMaison = function (maison, id) {
+      this.acheteMaison = function (maison) {
       	// On verifie l'argent
       	if(maison == null || maison.achat>this.montant){
       		throw "Achat de la maison impossible";
       	}
-          if (maison.isLibre()) {
-              var m = this.cherchePlacement(maison);
-              var input = '<input type=\"button\" id=\"idInputFiche' + id + '\" class=\"ui-corner-all color_' 
-              	+ maison.color.substring(1) + '\" style=\"display:block;height:27px;width:280px;\" value=\"' + maison.nom + '\" id=\"fiche_' + id + '\"/>';
-              if (m != null) {
-                  m.after(input);
-              } else {
-                  this.div.append(input);
-              }
-
-              maison.input = $('#idInputFiche' + id);
-              maison.input.click(function () {
-                  openDetailFiche(fiches[id], $(this));
-              });
-              maison.vendu(this);
-              this.payer(maison.achat);
-          }
+		if (maison.isLibre()) {
+		  this._drawTitrePropriete(maison);
+		  maison.vendu(this);
+		  this.payer(maison.achat);
+		}
       }
 
+	 this._drawTitrePropriete = function(maison){
+	   var m = this.cherchePlacement(maison);
+	   var input = '<input type=\"button\" id=\"idInputFiche' + maison.id + '\" class=\"ui-corner-all color_' 
+	    + maison.color.substring(1) + '\" style=\"display:block;height:27px;width:280px;\" value=\"' + maison.nom
+	    + '\" id=\"fiche_' + maison.id + '\"/>';
+	   if (m != null) {
+		  m.after(input);
+	   } else {
+		  this.div.append(input);
+	   }
+	   maison.input = $('#idInputFiche' + maison.id);
+	   maison.input.click(function () {
+		  openDetailFiche(fiches[maison.id], $(this));
+	   });
+	 }
+	 
       // Envoi le joueur (et le pion) en prison
       this.goPrison = function () {
           this.enPrison = true;
@@ -1211,7 +1267,7 @@ $.trigger = function(eventName,params){
   		 // On verifie si c'est possible de recuperer les sommes
 		 if(this.getStats().argentDispo < montant){
 			 // Banqueroute, le joueur perd
-			 this.defaite(montant);
+			 this.doDefaite(montant);
 			 throw "Le joueur est insolvable";
 		 }
       
@@ -1249,7 +1305,7 @@ $.trigger = function(eventName,params){
       }
 
 	/* Gestion de la defaite */	
-	this.defaite = function(dette){
+	this.doDefaite = function(dette){
 		// On paye notre dette avec tout nos actifs (stats.argentDispo)
 		this.div.empty();
 		$('.joueurCourant',this.div).addClass('defaite');
@@ -1427,7 +1483,7 @@ $.trigger = function(eventName,params){
 		drawing.getCenter();
 		this.pion.x = center.x;
 		this.pion.y = center.y;		
-		$.trigger("monopoly.debug",{message:joueurCourant.numero + " va a " + etat + "-" + pos});		
+		$.trigger("monopoly.debug",{message:joueurCourant.numero + " va en " + etat + "-" + pos});		
 		this.gotoCell(etat, pos, call);
       }
 
@@ -1440,53 +1496,56 @@ $.trigger = function(eventName,params){
       }
 
       this.goDirectToCell = function (etat, pos,callback) {
+	   if (etat == null || pos == null) {
+		return;
+	   }
           // On calcule la fonction affine
-          var p1 = fiches[this.etat + "-" + this.position].
-      drawing.getCenter()
-      var p2 = fiches[etat + "-" + pos].
-      drawing.getCenter()
-      // Si meme colonne, (x constant), on ne fait varier que y
-      if (p1.x == p2.x) {
-          var y = p1.y;
-          var sens = (p1.y > p2.y) ? -1 : 1;
-          // On fait varier x et on calcule y. Le pas est 30
-          var _self = this;
-          var interval = setInterval(function () {
-              if ((sens < 0 && _self.pion.y <= p2.y) || (sens > 0 && _self.pion.y >= p2.y)) {
-                  _self.etat = etat;
-                  _self.position = pos;
-                  clearInterval(interval);
-			   if (callback) {
-				callback();
-			   }
-                  return;
-              }
-              _self.pion.y += 30 * ((sens < 0) ? -1 : 1);
-          }, 30);
-      } else {
-          var pente = (p1.y - p2.y) / (p1.x - p2.x);
-          var coef = p2.y - pente * p2.x;
-          var x = p1.x;
-          var sens = (p1.x > p2.x) ? -1 : 1;
-
-
-          // On fait varier x et on calcule y. Le pas est 30
-          var _self = this;
-          var interval = setInterval(function () {
-              if ((sens < 0 && x <= p2.x) || (sens > 0 && x >= p2.x)) {
-                  _self.etat = etat;
-                  _self.position = pos;
-                  clearInterval(interval);
-			   if (callback) {
-				callback();
-			   }
-                  return;
-              }
-              _self.pion.x = x;
-              _self.pion.y = pente * x + coef;
-              x += 30 * ((sens < 0) ? -1 : 1);
-          }, 30);
-      }
+          var p1 = fiches[this.etat + "-" + this.position].drawing.getCenter()
+	   var p2 = fiches[etat + "-" + pos].
+	   drawing.getCenter()
+	   // Si meme colonne, (x constant), on ne fait varier que y
+	   if (p1.x == p2.x) {
+		  var y = p1.y;
+		  var sens = (p1.y > p2.y) ? -1 : 1;
+		  // On fait varier x et on calcule y. Le pas est 30
+		  var _self = this;
+		  var interval = setInterval(function () {
+			 if ((sens < 0 && _self.pion.y <= p2.y) || (sens > 0 && _self.pion.y >= p2.y)) {
+				_self.etat = etat;
+				_self.position = pos;
+				clearInterval(interval);
+				if (callback) {
+				  callback();
+				}
+				return;
+			 }
+			 _self.pion.y += 30 * ((sens < 0) ? -1 : 1);
+		  }, 30);
+	   } else {
+		  var pente = (p1.y - p2.y) / (p1.x - p2.x);
+		  var coef = p2.y - pente * p2.x;
+		  var x = p1.x;
+		  var sens = (p1.x > p2.x) ? -1 : 1;
+		
+		  // On fait varier x et on calcule y. Le pas est 30
+		  var _self = this;
+		  var interval = setInterval(function () {
+		     if ((sens < 0 && x <= p2.x) || (sens > 0 && x >= p2.x)) {
+				_self.pion.x = p2.x;
+				_self.pion.y = p2.y;
+				_self.etat = etat;
+				_self.position = pos;
+				clearInterval(interval);
+				if (callback) {
+				  callback();
+				}
+				return;
+			 }
+			 _self.pion.x = x;
+			 _self.pion.y = pente * x + coef;
+			 x += 30 * ((sens < 0) ? -1 : 1);
+		  }, 30);
+	   }
       }
 
       // Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
@@ -2251,18 +2310,19 @@ $.trigger = function(eventName,params){
 
 	/* Represente un terrain */
   function Fiche(etat, pos, colors, nom, groupe, achat, loyers, prixMaison, img) {
-      this.statut = ETAT_LIBRE;
-      this.joueurPossede = null;
       this.nom = nom;
-	  this.groupe = groupe;
+	 this.groupe = groupe;
       this.color = colors[0];
       this.secondColor = (colors.length == 2) ? colors[1] : colors[0];
       this.achat = achat;
-      this.montantHypotheque = achat / 2;
-      this.statutHypotheque=false;
-      this.loyer = loyers;
+      this.montantHypotheque = achat / 2;      
+	 this.loyer = loyers;
       this.loyerHotel = (loyers!=null && loyers.length == 6)?loyers[5]:0;
       this.prixMaison = prixMaison;
+      
+	 this.statut = ETAT_LIBRE;
+      this.joueurPossede = null;
+      this.statutHypotheque=false;
       this.fiche = $('#fiche');
       this.nbMaison = 0; // Nombre de maison construite sur le terrain par le proprietaire
       this.hotel = false; // Si un hotel est present
@@ -2275,8 +2335,27 @@ $.trigger = function(eventName,params){
 	 this.input = null;	// Bouton 
 
       this.drawing = new Case(pos, etat, this.color, this.nom, CURRENCY + " " + achat, img);
-  Drawer.add(this.drawing);
+	 Drawer.add(this.drawing);
 
+	 /* Renvoie l'etat courant du terrain (JSON) */
+	 this.save = function(){
+	   // On renvoie le statut, le proprio, le nombre de maison, le statut hypotheque
+	   return {id:this.id,statut:this.statut,joueur:((this.joueurPossede!=null)?this.joueurPossede.id:null),nb:this.nbMaison,hypotheque:this.statutHypotheque};
+	 }
+	 
+	 this.load = function(data){
+	   var joueur = data.joueur!=null ? getJoueurById(data.joueur) : null;
+	   this.joueurPossede = joueur;
+	   if (joueur!=null) {
+		joueur.maisons.push(this);	// Ajoute a la liste de ses maisons
+		joueur._drawTitrePropriete(this);
+	   }
+	   this.id = data.id;
+	   this.statut = data.statut;
+	   this.setNbMaison(data.nb,true);	   
+	   this.statutHypotheque = data.hypotheque;
+	 }
+	 
   this.vendu = function (joueur) {
       this.statut = ETAT_ACHETE;
       this.joueurPossede = joueur;
@@ -2405,10 +2484,12 @@ $.trigger = function(eventName,params){
   this.payerLoyer = function () {
       return createMessage("Vous etes " + this.nom, this.color, "Vous etes chez " + this.joueurPossede.nom + " vous devez payez la somme de " + this.getLoyer() + " " + CURRENCY, function (param) {
           param.joueurPaye.payerTo(param.loyer,param.joueurLoyer);
+		$.trigger('monopoly.payerLoyer',{joueur:param.joueurPaye,maison:param.maison});
       }, {
           loyer: this.getLoyer(),
           joueurPaye: joueurCourant,
-          joueurLoyer: this.joueurPossede
+          joueurLoyer: this.joueurPossede,
+		maison:this
       });
   }
 
@@ -2437,7 +2518,7 @@ $.trigger = function(eventName,params){
               return {
                   "Acheter": function () {
                       var id = joueurCourant.pion.etat + "-" + joueurCourant.pion.position;
-                      joueurCourant.acheteMaison(current, id);
+                      joueurCourant.acheteMaison(current);
                       current.fiche.dialog('close');
                   },
                   "Refuser": function () {
@@ -2456,7 +2537,8 @@ $.trigger = function(eventName,params){
 
     /* Renvoie vrai si le reste du groupe appartient au meme joueur.*/
     this.isGroupee = function () {
-	   if (this.joueurPossede == null) {
+	   return (this.groupe == null)?false:this.groupe.isGroupee();
+	   /*if (this.joueurPossede == null) {
 		  return false;
 	   }
 	   // Renvoie les maisons constructibles (lorsque le groupe est complet)
@@ -2467,7 +2549,7 @@ $.trigger = function(eventName,params){
 			 return true;
 		  }
 	   }
-	   return false;
+	   return false;*/
     }
     
     /* Renvoie vrai si le groupe est complet et construit */
@@ -2728,7 +2810,14 @@ $.trigger = function(eventName,params){
           autoOpen: false
        });
       $('#message').prev().css("background", "url()");
-
+	 /* Gestion de la sauvegarde */
+	 $('#idSavePanel').click(function(){
+	   if (currentSauvegardeName == null) {
+		var message = "Nom de la sauvegarde (si vide, defini par defaut)";
+		currentSauvegardeName = Sauvegarde.getSauvegardeName(prompt(message));
+	   }
+	   Sauvegarde.save(currentSauvegardeName);
+	 });
       // panneau de creation
       $('#achatMaisons').dialog({
           autoOpen: false,
@@ -2739,11 +2828,24 @@ $.trigger = function(eventName,params){
   }
   
   function showCreatePanel(){
+	 var sauvegardes = Sauvegarde.findSauvegardes();
+	 if (sauvegardes.length > 0) {
+	   for (var i = 0 ; i < sauvegardes.length ; i++) {
+		$('#idSauvegardes').append('<option value="' + sauvegardes[i] + '">' + sauvegardes[i] + '</option>');
+	   }
+	 }
+	 
   	$('#idPanelCreatePartie').dialog({
 		title:"Création de partie",
   		closeOnEscape:false,
   		modal:true,
-  		buttons:[{text:"Valider",click:createPanelGame}]
+  		buttons:[
+			    {text:"Charger",click:function(){
+				  Sauvegarde.load($('#idSauvegardes').val());
+				  $('#idPanelCreatePartie').dialog('close');
+				}},
+				{text:"Valider",click:createPanelGame}			   
+		]
   	});
   }
   
@@ -2761,6 +2863,15 @@ $.trigger = function(eventName,params){
         joueurs[i] = joueur;
 	}
     changeJoueur();
+    initToolTipJoueur();
+    
+	/* Gestion des options */
+	IA_TIMEOUT = options.waitTimeIA || IA_TIMEOUT;
+
+  }
+  
+  function initToolTipJoueur(){
+    
 	$('.info-joueur').tooltip({
       content:function(){
         var stats = getJoueurById($(this).data('idjoueur')).getStats();
@@ -2770,9 +2881,6 @@ $.trigger = function(eventName,params){
         return $('#infoJoueur').html();
       }
     }); 
-	/* Gestion des options */
-	IA_TIMEOUT = options.waitTimeIA || IA_TIMEOUT;
-
   }
 
 	function createJoueur(isRobot,i){
@@ -2794,11 +2902,17 @@ $.trigger = function(eventName,params){
 		return joueur;
 	}
 
+    function reset() {
+	 $('#informations').empty();
+	 joueurs = [];
+    }
+
 	function initJoueurs(){
 		if(!DEBUG){
-			return showCreatePanel();
+			showCreatePanel();
+		}else{
+		  createGame(2,false,{});
 		}
-		createGame(2,false,{});
 
 	}
 
@@ -3451,8 +3565,15 @@ $.trigger = function(eventName,params){
 	 this.div.prepend('<div><span style="color:' + joueur.color + '">' + joueur.nom + '</span> : ' + message + '</div>');
     },
     bindEvents:function(){
-	 $.bind("monopoly.acheteMaison",function(e,data){
+	 $.bind("monopoly.save",function(e,data){
+	   MessageDisplayer.write({color:'green',nom:'info'},'sauvegarde de la partie (' + data.name + ')');
+	 }).bind("monopoly.acheteMaison",function(e,data){
 	   MessageDisplayer.write(data.joueur,'achète ' + '<span style="color:' + data.maison.color + '">' + data.maison.nom + '</span>');
+	 }).bind("monopoly.payerLoyer",function(e,data){
+		var mais = data.maison;
+		var m = '<span style="color:' + mais.color + '">' + mais.nom + '</span>';
+		var jp = '<span style="color:' + mais.joueurPossede.color + '">' + mais.joueurPossede.nom + '</span>';
+	 	MessageDisplayer.write(data.joueur,"tombe sur " + m + " et paye " + mais.getLoyer() + " " + CURRENCY + " à " + jp);
 	 }).bind("monopoly.newPlayer",function(e,data){
 	 	MessageDisplayer.write(data.joueur,"rentre dans la partie");
 	 }).bind("monopoly.hypothequeMaison",function(e,data){
@@ -3493,7 +3614,80 @@ $.trigger = function(eventName,params){
 	 });
     }
     
-    
+  }
+
+  /* Gere la sauvegarde */
+  var Sauvegarde = {
+    prefix:"monopoly.",
+    suffix:".save",
+    save:function(name){
+	 if (name == null) {
+	   name = this.getSauvegardeName();
+	 }
+	 // On recupere la liste des joueurs
+	 var saveJoueurs = [];
+	 for (var j in joueurs) {
+	   if (joueurs[j].save != null) {
+		saveJoueurs.push(joueurs[j].save());
+		// On retient la position du joueur
+	   }
+	 }
+	 // On recupere la liste des fiches
+	 var saveFiches = [];
+	 for (var f in fiches) {
+	   if (fiches[f].save != null) {
+		saveFiches.push(fiches[f].save());
+	   }
+	 }
+	 var data = {joueurs:saveJoueurs,fiches:saveFiches,joueurCourant:joueurCourant.id};
+	 this._putStorage(name,data);
+	 $.trigger("monopoly.save",{name:name});
+    },
+    load:function(name){
+	 currentSauvegardeName = name;
+	 var data = this._getStorage(name);
+	 reset();
+	 for (var i = 0 ; i < data.joueurs.length ; i++) {
+	   var joueur = createJoueur(data.joueurs[i].robot,i);
+	   joueur.load(data.joueurs[i]);
+	   joueurs.push(joueur);
+	 }
+	 for (var i = 0 ; i < data.fiches.length ; i++) {
+	   fiches[data.fiches[i].id].load(data.fiches[i]);
+	 }
+	 var joueur = joueurs[0];
+	 if (data.joueurCourant!=null) {
+	   joueur = getJoueurById(data.joueurCourant);
+	 }
+	 selectJoueur(joueur);
+	 initToolTipJoueur();
+    },
+    _putStorage:function(name,data){
+	 localStorage[name] = JSON.stringify(data);
+    },
+    _getStorage:function(name){
+	 if (localStorage[name] == null) {
+	   throw "Aucune sauvegarde";
+	 }
+	 var data = localStorage[name];
+	 return JSON.parse(data);
+    },
+    autoSave:function(){
+	 
+    },
+    findSauvegardes:function(){
+	 var regexp = new RegExp("^" + this.prefix + ".*" + this.suffix + "$","g");
+	 var list = [];
+	 for (var name in localStorage) {
+	   if (regexp.test(name)) {
+		list.push(name);
+	   }
+	 }
+	 return list;
+    },    
+    getSauvegardeName:function(name){
+	 return this.prefix + ((name == null) ? new Date().getTime() : name) + this.suffix;
+    }
     
   }
   
@@ -3503,6 +3697,6 @@ $.trigger = function(eventName,params){
   /* Achete des maisons pour le joueur courant, on passe les ids de fiche */
   function buy(maisons){
   	for(var i in maisons){
-  		joueurCourant.acheteMaison(fiches[maisons[i]],maisons[i]);
+  		joueurCourant.acheteMaison(fiches[maisons[i]]);
   	}
   }

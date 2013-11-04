@@ -1,7 +1,5 @@
-// Bilan joueurs : nombres proprietes, nombres maisons / hotels, argent, argent dispo (apres hypotheque / vente)
 // Gestion hypotheque pour acheter plus de maison d'un coup (IA)
 // echange terrains
-// verifier achat gare
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
@@ -1245,10 +1243,10 @@ $.trigger = function(eventName,params){
       }
 
       this.payerParcGratuit = function (montant) {
-		var paiement = this.payer(montant);
-		  if(paiement==true){
-		      parcGratuit.payer(montant);
-	      }
+		this.payer(montant,function(){
+		  parcGratuit.payer(montant);
+		  changeJoueur();
+		});
       }
 
       this.setPion = function (color) {
@@ -1616,7 +1614,6 @@ $.trigger = function(eventName,params){
   this.action = function () {
       return createMessage(titre, "lightblue", "Vous devez payer la somme de " + montant + " " + CURRENCY, function (param) {
           param.joueur.payerParcGratuit(param.montant);
-          changeJoueur();
       }, {
           joueur: joueurCourant,
           montant: montant
@@ -1667,8 +1664,13 @@ $.trigger = function(eventName,params){
 	  this.type="taxe";
       this.montant = montant;
       this.action = function () {
-          joueurCourant.payerParcGratuit(this.montant);
-          changeJoueur();
+	   if (VARIANTES.parcGratuit) {
+		joueurCourant.payerParcGratuit(this.montant);
+	   }
+	   else{
+		joueurCourant.payer(this.montant);
+	   }          
+        changeJoueur();
       }
   }
 
@@ -2813,8 +2815,11 @@ $.trigger = function(eventName,params){
 	 /* Gestion de la sauvegarde */
 	 $('#idSavePanel').click(function(){
 	   if (currentSauvegardeName == null) {
-		var message = "Nom de la sauvegarde (si vide, defini par defaut)";
-		currentSauvegardeName = Sauvegarde.getSauvegardeName(prompt(message));
+		currentSauvegardeName = prompt("Nom de la sauvegarde (si vide, defini par defaut)");
+		if (currentSauvegardeName == null) {
+		  return;
+		}
+		currentSauvegardeName = Sauvegarde.getSauvegardeName(currentSauvegardeName);
 	   }
 	   Sauvegarde.save(currentSauvegardeName);
 	 });
@@ -2831,29 +2836,34 @@ $.trigger = function(eventName,params){
 	 var sauvegardes = Sauvegarde.findSauvegardes();
 	 if (sauvegardes.length > 0) {
 	   for (var i = 0 ; i < sauvegardes.length ; i++) {
-		$('#idSauvegardes').append('<option value="' + sauvegardes[i] + '">' + sauvegardes[i] + '</option>');
+		$('#idSauvegardes').append('<option value="' + sauvegardes[i].value + '">' + sauvegardes[i].label + '</option>');
 	   }
 	 }
 	 
   	$('#idPanelCreatePartie').dialog({
-		title:"Création de partie",
+		title:"Monopoly",
   		closeOnEscape:false,
   		modal:true,
   		buttons:[
-			    {text:"Charger",click:function(){
-				  Sauvegarde.load($('#idSauvegardes').val());
-				  $('#idPanelCreatePartie').dialog('close');
-				}},
-				{text:"Valider",click:createPanelGame}			   
+		  {text:"Valider",click:createPanelGame}			   
 		]
   	});
   }
   
   function createPanelGame(){
-  	var nb = $('select[name="nbPlayers"]','#idPanelCreatePartie').val();
-  	var firstPlayerIA = $(':checkbox[name="firstIA"]:checked','#idPanelCreatePartie').length >0;
-  	var waitTimeIA = $('select[name="waitTimeIA"]','#idPanelCreatePartie').val();
-  	createGame(nb,firstPlayerIA,{waitTimeIA:waitTimeIA});
+    /* Chargement d'une partie */
+    if ($('#idSauvegardes').val()!="") {
+	 Sauvegarde.load($('#idSauvegardes').val());
+    }else{
+	 var nb = $('select[name="nbPlayers"]','#idPanelCreatePartie').val();
+	 var firstPlayerIA = $(':checkbox[name="firstIA"]:checked','#idPanelCreatePartie').length >0;
+	 var waitTimeIA = $('select[name="waitTimeIA"]','#idPanelCreatePartie').val();
+	 /* Variantes */
+	 $(':checkbox[name]','#idVariantes').each(function(){
+	   VARIANTES[$(this).attr('name')] = $(this).is(':checked');
+	 });
+	 createGame(nb,firstPlayerIA,{waitTimeIA:waitTimeIA});
+    }
   	$('#idPanelCreatePartie').dialog('close');
   }
   
@@ -2997,7 +3007,13 @@ $.trigger = function(eventName,params){
 			    break;
 		   case "special-depart" : 
 			    fiche = new CarteActionSpeciale(this.nom, function () {
-				    joueurCourant.gagner(40000)
+				    if (VARIANTES.caseDepart) {
+					 joueurCourant.gagner(40000)
+				    }
+				    else{
+					 joueurCourant.gagner(20000)
+				    }
+				    
 			    }, this.axe, this.pos);
 			    break;				  						
 	    }
@@ -3676,11 +3692,12 @@ $.trigger = function(eventName,params){
 	 
     },
     findSauvegardes:function(){
-	 var regexp = new RegExp("^" + this.prefix + ".*" + this.suffix + "$","g");
+	 var exp = "^" + this.prefix + "(.*)" + this.suffix + "$";
 	 var list = [];
 	 for (var name in localStorage) {
-	   if (regexp.test(name)) {
-		list.push(name);
+	   var label = new RegExp(exp,"g").exec(name);
+	   if (label != null) {
+		list.push({value:name,label:label[1]});
 	   }
 	 }
 	 return list;

@@ -1,8 +1,8 @@
 <html>
    <head>
       <title>Test Monopoly</title>
-      <script language="javascript" src="../js/jquery-1.9.1.js">;</script>   
-      <script language="Javascript" src="../js/qunit-1.12.0.js">;</script>
+      <script language="javascript" src="../lib/jquery-1.9.1.js">;</script>   
+      <script language="Javascript" src="../lib/qunit-1.12.0.js">;</script>
       <script language="Javascript" src="../monopoly.js">;</script>
       <link rel="stylesheet" type="text/css" href="../css/qunit-1.12.0.css"/>
             
@@ -107,9 +107,9 @@
                   
                   equal(joueurs[0].getStats().argentDispo,100000,"Argent dispo J1");
                   // Achat maison
-                  var maison = new Fiche(null, null, ["",""], "", "", 10000, [1000,2000,4000], 5000);
+                  var maison = new Fiche(null, null, ["",""], "", 10000, [1000,2000,4000], 5000);
                   maison.vendu(joueurs[0]);
-			   	  joueurs[0].payer(maison.achat);
+			   joueurs[0].payer(maison.achat);
                   equal(joueurs[0].montant,90000,"Achat propriete");
                   equal(joueurs[0].getStats().argentDispo,95000,"Achat propriete (argent dispo)");
 			   
@@ -131,13 +131,13 @@
 			test("Gestion prison",function(){
 			   joueurs = initJoueurs();
 			   fiches = [];
-			   fiches[0] = new Fiche(null, null, ["#AAAAAA",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);			   
-			   fiches[1] = new Fiche(null, null, ["#AAAAAA",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-			   fiches[2] = new Fiche(null, null, ["#AAABBB",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-			   fiches[3] = new Fiche(null, null, ["#AAABBB",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-			   fiches[4] = new Fiche(null, null, ["#AAABBB",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-			   fiches[5] = new Fiche(null, null, ["#CCCCCC",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-			   fiches[6] = new Fiche(null, null, ["#CCCCCC",""], "", "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[0] = new Fiche(null, null, ["#AAAAAA",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);			   
+			   fiches[1] = new Fiche(null, null, ["#AAAAAA",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[2] = new Fiche(null, null, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[3] = new Fiche(null, null, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[4] = new Fiche(null, null, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[5] = new Fiche(null, null, ["#CCCCCC",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[6] = new Fiche(null, null, ["#CCCCCC",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
 			   buyHouse(joueurs[1],0,5);
 			   buyHouse(joueurs[1],1,5);			   
 			   equal(joueurs[1].findGroupes().size(),1,"Joueur 1 possede un groupe");

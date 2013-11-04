@@ -2311,9 +2311,9 @@ $.trigger = function(eventName,params){
 	}
 
 	/* Represente un terrain */
-  function Fiche(etat, pos, colors, nom, groupe, achat, loyers, prixMaison, img) {
+  function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
       this.nom = nom;
-	 this.groupe = groupe;
+	 this.groupe = null;
       this.color = colors[0];
       this.secondColor = (colors.length == 2) ? colors[1] : colors[0];
       this.achat = achat;
@@ -2573,7 +2573,7 @@ $.trigger = function(eventName,params){
   }
 
   function FicheGare(etat, pos, color, nom, achat, loyers,img) {
-      Fiche.call(this, etat, pos, color, nom, null,achat, loyers, null, img || {
+      Fiche.call(this, etat, pos, color, nom,achat, loyers, null, img || {
           src: "img/train.png",
           width: 40,
           height: 50
@@ -2595,7 +2595,7 @@ $.trigger = function(eventName,params){
   }
 
   function FicheCompagnie(etat, pos, color, nom, achat, loyers) {
-      Fiche.call(this, etat, pos, color, nom, null, achat, loyers);
+      Fiche.call(this, etat, pos, color, nom, achat, loyers);
       this.fiche = $('#ficheCompagnie');
       this.type = "compagnie";
       this.constructible = false;
@@ -2844,6 +2844,7 @@ $.trigger = function(eventName,params){
 		title:"Monopoly",
   		closeOnEscape:false,
   		modal:true,
+		width:400,
   		buttons:[
 		  {text:"Valider",click:createPanelGame}			   
 		]
@@ -2972,7 +2973,7 @@ $.trigger = function(eventName,params){
 		    	if(groups[this.colors[0]] == null){
 		    		groups[this.colors[0]] = new Groupe(this.groupe);
 		    	}
-			    fiche = new Fiche(this.axe, this.pos, this.colors, this.nom, null, this.prix, this.loyers, this.prixMaison);
+			    fiche = new Fiche(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers, this.prixMaison);
 			    groups[this.colors[0]].add(fiche);
 			    break;
 		    case "compagnie":

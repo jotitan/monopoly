@@ -504,6 +504,8 @@ $.trigger = function(eventName,params){
 	   return stats;
 	 }
 	 
+	 /* Calcul l'interet global du joueur pour une propriete */
+	 /* Prend en compte l'interet propre (liste d'achat) ainsi que l'etat du groupe */
       this.interetGlobal = function (propriete, joueur) {
           var i1 = this.interetPropriete(propriete);
           var i2 = this.statutGroup(propriete, joueur);
@@ -542,25 +544,23 @@ $.trigger = function(eventName,params){
           var nbLibre = 0;
           var dernierJoueur = null;
           var nbEquals = 0;
-          var nbPossede = 0;
-		  for(var id in fiches){
+          var nbPossede = 0;		
+		  for(var id in propriete.groupe.fiches){
 		  	var fiche = fiches[id];
-		  	if (fiche.color!=null && fiche.color == propriete.color) {
-                  nbTotal++;
-                  if (fiche.statut == ETAT_LIBRE) {
-                      nbLibre++;
-                  } else {
-                      if (fiche.joueurPossede.equals(joueur)) {
-                          nbPossede++;
-                      }
-                      else{
-		                  if (dernierJoueur == null || fiche.joueurPossede.equals(dernierJoueur)) {
-		                      nbEquals++;
-		                  }
-		              }                      
-                      dernierJoueur = fiche.joueurPossede;
-                  }
-              }
+			 nbTotal++;
+			 if (fiche.statut == ETAT_LIBRE) {
+				nbLibre++;
+			 } else {
+				if (fiche.joueurPossede.equals(joueur)) {
+				    nbPossede++;
+				}
+				else{
+					 if (dernierJoueur == null || fiche.joueurPossede.equals(dernierJoueur)) {
+						nbEquals++;
+					 }
+				  }                      
+				dernierJoueur = fiche.joueurPossede;
+			 }
 		  }          
           if (nbLibre == nbTotal) {
               return 0;
@@ -885,20 +885,19 @@ $.trigger = function(eventName,params){
       
       
 	 /* Reevalue la strategie. Se base sur plusieurs parametres :
-	 * Si peu de propriete ont ete achetees (<3) alors que 60% des terrains qui l'interessent ont ete vendu et qu'aucune famille n'est completable, on reevalue.
-	 * 
-	 *
-	 *
+	 * Si peu de propriete ont ete achetees (<3)
+	 * Si 60% des terrains qui l'interessent ont ete vendu
+	 * Si aucune famille n'est completable (dans la strategie choisie)
 	 */
 	 this.changeStrategie = function(){
 	   var stats = this.strategie.getStatsProprietes();
-	   if (stats.color.pourcent<40 && this.countInterestProperties()<=2 && this.isFamilyFree()) {
-		// On change de strategie. Une nouvelle strategie doit posseder au moins 60% de ces terrains de libre
+	   if (stats.color.pourcent<40 && this.countInterestProperties()<=2 && !this.isFamilyFree()) {
+		// On change de strategie. Une nouvelle strategie doit posseder au moins 60% de ses terrains de libre
 		for (var i in strategies) {
 			var s = new strategies[i]();
 			if(s.name!=this.strategie.name){
 				var strategieStats = s.getStatsProprietes();
-				if(strategieStats.color.pourcent > 60){
+				if(strategieStats.color.pourcent > 50){
 					// Nouvelle strategie
 					this.strategie = s;
 					return;
@@ -910,7 +909,7 @@ $.trigger = function(eventName,params){
 	 }
       var current = this;
  
-	 /* Compte le nombre de maison de la couleur possede */
+	 /* Compte le nombre de maison possedee correspondant a la strategie */
 	 this.countInterestProperties = function(){
 	   var count = 0;
 	   for (var i = 0 ; i < this.maisons.length ; i++) {
@@ -921,30 +920,28 @@ $.trigger = function(eventName,params){
 	   return count;
 	 }
 	 
-	 /* Analyse si une famille est en partie possedee et peut etre achetee (autre terrain libre) */
+	 /* Indique s'il existe des familles que je peux encore posseder sans echange
+	 * Se base sur les maisons de la strategie
+	 */
 	 this.isFamilyFree = function(){
-		// On compte par couleur
+		// On parcourt les terrains et on verifie la dispo des terrains
 		var family = new Array();
-	 	for (var i = 0 ; i < this.maisons.length ; i++) {
-			if(family[this.maisons[i].color] == null){
-				family[this.maisons[i].color] = 1;
-			}
-			else{
-				family[this.maisons[i].color]++;
-			}
-	 	}
-	 	// On verifie pour chaque couleur si les autres terrains sont libres
-	 	for(var color in family){
-	 		var fiches = getFichesOfFamily(color);
-	 		var isFree = true;
-	 		// On boucle sur les fiches et on verifie qu'elles sont soit libre, soit e nous
-	 		for(var index in fiches){
-	 			if(fiches[index].statut != ETAT_LIBRE && !fiches[index].joueurPossede.equals(this)){
-	 				isFree = false;
-	 			}
-	 		}
-	 		if(isFree){return true;}	 
-	 	}
+		for (var m in this.maisons) {
+		  var maison = this.maisons[m];
+		  if (!family[maison.groupe.nom]) {
+		    family[maison.groupe.nom] = true;	 
+		    var free = true;
+		    for(var idf in maison.groupe.fiches){
+			 var fiche = maison.groupe.fiches[idf];
+			 if (fiche.statut!=ETAT_LIBRE && !this.equals(fiche.joueurPossede)) {
+			   free = false;
+			 }
+		    }
+		    if (free) {
+			 return true;
+		    }
+		  }		  
+		}	 	
 	 	return false;
 	  }
 	 
@@ -1136,14 +1133,15 @@ $.trigger = function(eventName,params){
 	 */
 	 this.getGroupesPossibles = function(){
 	 	var groups = [];
-	 	for(var index in this.maisons){
+		for(var index in this.maisons){
 	 		var maison = this.maisons[index];
-	 		if(!maison.isGroupee()){
+			if(!maison.isGroupee()){
 	 			// calcule les terrains libre de la meme couleurs
-	 			var stat = {libre:0,adversaire:0};
-	 			for(var id in fiches){
-	 				if(fiches[id].color == maison.color && !this.equals(fiches[id].joueurPossede)){
-	 					if(fiches[id].statut == ETAT_LIBRE){
+				var stat = {libre:0,adversaire:0};
+	 			for(var id in maison.groupe.fiches){
+				    var f = maison.groupe.fiches[id];
+	 				if(!this.equals(f.joueurPossede)){					 
+	 					if(f.statut == ETAT_LIBRE){
 	 						stat.libre++;
 	 					}
 	 					else{
@@ -1156,7 +1154,7 @@ $.trigger = function(eventName,params){
 	 			}
 	 			
 	 		}
-	 	}
+	 	}		
 	 	return groups;
 	 }	 
 	 
@@ -1389,9 +1387,10 @@ $.trigger = function(eventName,params){
                       if (colorsKO[m.color] == null) {
                           // On recherche si on a toutes les proprietes du groupe
                           var ok = true;
-                          for (var f in fiches) {
-                              if (fiches[f].constructible == true && fiches[f].color == m.color
-						    && (fiches[f].joueurPossede == null || fiches[f].joueurPossede.numero != this.numero || fiches[f].statutHypotheque == true)) {
+                          for (var f in m.groupe.fiches) {
+                              if (fiches[f].constructible == true
+						    && (fiches[f].joueurPossede == null || fiches[f].joueurPossede.numero != this.numero
+							   || fiches[f].statutHypotheque == true)) {
                                   ok = false;
                               }
                           }
@@ -1417,7 +1416,7 @@ $.trigger = function(eventName,params){
           var colorsOK = new Array();
           var colorsKO = new Array();
 		
-		// Si une maison est hypotequee, on ne peut plus construire sur le groupe
+		// Si une maison est hypothequee, on ne peut plus construire sur le groupe
           for (var i = 0; i < this.maisons.length; i++) {
               var m = this.maisons[i];
               if (m.constructible == true) {
@@ -1428,8 +1427,8 @@ $.trigger = function(eventName,params){
                           // On recherche si on a toutes les couleurs
                           var ok = true;
 					 // On cherche une propriete qui n'appartient pas au joueur
-                          for (var f in fiches) {
-                              if (fiches[f].constructible == true && fiches[f].color == m.color &&
+                          for (var f in m.groupe.fiches) {
+                              if (fiches[f].constructible == true &&
 						    (fiches[f].joueurPossede == null || !fiches[f].joueurPossede.equals(this) || fiches[f].statutHypotheque == true)) {
                                   ok = false;
                               }
@@ -2242,19 +2241,10 @@ $.trigger = function(eventName,params){
 
   }
 
-	function getFichesOfFamily(color){
-		var family = new Array();
-		for(var fiche in fiches){
-			if(fiches[fiche].statut!=null && fiches[fiche].color == color){
-				family.push(fiches[fiche]);
-			}
-		}
-		return family;
-	}
-
 	/* Represente un groupe de terrain */
-	function Groupe(nom){
+	function Groupe(nom,color){
 		this.nom = nom;
+		this.color = color;
 		/* Liste de ses terrains */
 		this.fiches = [];
 		
@@ -2262,6 +2252,7 @@ $.trigger = function(eventName,params){
 		this.add = function(fiche){
 			this.fiches.push(fiche);
 			fiche.groupe = this;
+			return this;
 		}
 		
 		/* Indique que tous les terrains appartiennent a la meme personne */
@@ -2373,19 +2364,13 @@ $.trigger = function(eventName,params){
   	}
   	else{
 	   // Maison du groupe
-	   var proprietes = getFichesOfFamily(this.color);
+	   var proprietes = this.groupe.fiches;
 	   var nbMaisonsConstruites = 0;
 	   for (var i = 0 ; i < proprietes.length ; i++) {
 		nbMaisonsConstruites+=proprietes[i].nbMaison;
 	   }
 	   return (this.loyer[3] / ((proprietes.length*3 - nbMaisonsConstruites)*this.prixMaison)) / ponderation;
   	}
-  }
-  
-  this.getNbByGroupe = function(){
-  	var count = 0;
-  	for(var id in fiches){if(fiches[id].color == this.color){count++;}}
-  	return count;
   }
   
   /* Hypotheque le terrain */
@@ -2971,7 +2956,7 @@ $.trigger = function(eventName,params){
 	    switch(this.type){
 		    case "propriete":
 		    	if(groups[this.colors[0]] == null){
-		    		groups[this.colors[0]] = new Groupe(this.groupe);
+		    		groups[this.colors[0]] = new Groupe(this.groupe,this.colors[0]);
 		    	}
 			    fiche = new Fiche(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers, this.prixMaison);
 			    groups[this.colors[0]].add(fiche);
@@ -3656,7 +3641,7 @@ $.trigger = function(eventName,params){
 		saveFiches.push(fiches[f].save());
 	   }
 	 }
-	 var data = {joueurs:saveJoueurs,fiches:saveFiches,joueurCourant:joueurCourant.id};
+	 var data = {joueurs:saveJoueurs,fiches:saveFiches,joueurCourant:joueurCourant.id,variantes:VARIANTES};
 	 this._putStorage(name,data);
 	 $.trigger("monopoly.save",{name:name});
     },
@@ -3676,6 +3661,7 @@ $.trigger = function(eventName,params){
 	 if (data.joueurCourant!=null) {
 	   joueur = getJoueurById(data.joueurCourant);
 	 }
+	 VARIANTES = data.variantes || VARIANTES;
 	 selectJoueur(joueur);
 	 initToolTipJoueur();
     },

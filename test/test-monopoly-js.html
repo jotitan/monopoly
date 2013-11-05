@@ -138,6 +138,10 @@
 			   fiches[4] = new Fiche(null, null, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
 			   fiches[5] = new Fiche(null, null, ["#CCCCCC",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
 			   fiches[6] = new Fiche(null, null, ["#CCCCCC",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   new Groupe("Vert","#AAAAAA").add(fiches[0]).add(fiches[1]);
+			   new Groupe("Bleu","#AAABBB").add(fiches[2]).add(fiches[3]).add(fiches[4]);
+			   new Groupe("Rouge","#CCCCCC").add(fiches[5]).add(fiches[6]);
+			   
 			   buyHouse(joueurs[1],0,5);
 			   buyHouse(joueurs[1],1,5);			   
 			   equal(joueurs[1].findGroupes().size(),1,"Joueur 1 possede un groupe");
@@ -149,10 +153,8 @@
 			   buyHouse(joueurs[1],3,4);
 			   buyHouse(joueurs[1],4,4);
 			   equal(joueurs[0].getOutPrison(),false,"Terrain miné");
-			   
-			   buyHouse(joueurs[0],5,0);
+			   buyHouse(joueurs[0],5,0);			   
 			   equal(joueurs[0].getOutPrison(),true,"Terrain miné mais besoin d'un terrain");
-			   
 			   joueurs[0].maisons = [];
 			   joueurs[1].maisons = [];			
 			   resetHouses();   

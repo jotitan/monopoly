@@ -546,7 +546,7 @@ $.trigger = function(eventName,params){
           var nbEquals = 0;
           var nbPossede = 0;		
 		  for(var id in propriete.groupe.fiches){
-		  	var fiche = fiches[id];
+		  	var fiche = propriete.groupe.fiches[id];
 			 nbTotal++;
 			 if (fiche.statut == ETAT_LIBRE) {
 				nbLibre++;
@@ -791,8 +791,7 @@ $.trigger = function(eventName,params){
       * Calcul les groupes constructibles, verifie l'argent disponible. Construit sur les proprietes ou peuvent tomber les adversaires (base sur leur position et les stats au des)
       * Possibilite d'enregistrer tous les deplacements des joueurs pour affiner les cases les plus visitees
       */
-     this.buildConstructions = function(){
-		 
+     this.buildConstructions = function(){		 
 		 var budget = this.comportement.getBudget(this);
 		 // Pas d'argent
 		 if(budget < 5000){
@@ -899,6 +898,7 @@ $.trigger = function(eventName,params){
 				var strategieStats = s.getStatsProprietes();
 				if(strategieStats.color.pourcent > 50){
 					// Nouvelle strategie
+					$.trigger("monopoly.debug",{message:this.nom + " change de stratégie : " + this.strategie.name + " => " + s.name});
 					this.strategie = s;
 					return;
 				}
@@ -921,7 +921,7 @@ $.trigger = function(eventName,params){
 	 }
 	 
 	 /* Indique s'il existe des familles que je peux encore posseder sans echange
-	 * Se base sur les maisons de la strategie
+	 * Se base sur les maisons possedees et non celle de la strategie =>TODO
 	 */
 	 this.isFamilyFree = function(){
 		// On parcourt les terrains et on verifie la dispo des terrains
@@ -1151,8 +1151,7 @@ $.trigger = function(eventName,params){
 	 			}
 	 			if(stat.libre == 1 && stat.adversaire == 0){
 	 				groups.push(maison.color);
-	 			}
-	 			
+	 			}	 			
 	 		}
 	 	}		
 	 	return groups;
@@ -1272,7 +1271,6 @@ $.trigger = function(eventName,params){
       		this.bloque = true;
 			var _self = this;
       		this.resolveProblemeArgent(montant,callback);
-
       	}
       	else{
 		     this.setArgent(this.montant - montant);
@@ -1325,7 +1323,7 @@ $.trigger = function(eventName,params){
 				 }
 				 else{
 					 joueurCourant.bloque = false;
-					 joueurCourant.setArgent(this.montant);
+					 joueurCourant.setArgent(joueurCourant.montant);
 					 if(callback){
 					 	callback();
 					 }													 
@@ -1388,9 +1386,10 @@ $.trigger = function(eventName,params){
                           // On recherche si on a toutes les proprietes du groupe
                           var ok = true;
                           for (var f in m.groupe.fiches) {
-                              if (fiches[f].constructible == true
-						    && (fiches[f].joueurPossede == null || fiches[f].joueurPossede.numero != this.numero
-							   || fiches[f].statutHypotheque == true)) {
+					   var fiche = m.groupe.fiches[f];
+                              if (fiche.constructible == true
+						    && (fiche.joueurPossede == null || fiche.joueurPossede.numero != this.numero
+							   || fiche.statutHypotheque == true)) {
                                   ok = false;
                               }
                           }
@@ -1428,8 +1427,9 @@ $.trigger = function(eventName,params){
                           var ok = true;
 					 // On cherche une propriete qui n'appartient pas au joueur
                           for (var f in m.groupe.fiches) {
-                              if (fiches[f].constructible == true &&
-						    (fiches[f].joueurPossede == null || !fiches[f].joueurPossede.equals(this) || fiches[f].statutHypotheque == true)) {
+						var fiche = m.groupe.fiches[f];
+                              if (fiche.constructible == true &&
+						    (fiche.joueurPossede == null || !fiche.joueurPossede.equals(this) || fiche.statutHypotheque == true)) {
                                   ok = false;
                               }
                           }
@@ -2668,8 +2668,7 @@ $.trigger = function(eventName,params){
 	   return null;
 	 }
 		 
-      $('.action-joueur').removeAttr('disabled');
-	 if (des1 != des2) {
+      if (des1 != des2) {
           nbDouble = 0;
 	 }
 	 selectJoueur(joueur);
@@ -3539,6 +3538,7 @@ $.trigger = function(eventName,params){
   }
 
   function selectJoueur(joueur) {
+    $('.action-joueur').removeAttr('disabled');	 
     if (!joueur.equals(joueurCourant)) {
 	 $('#informations > div > div').removeClass('joueurCourant');
     }

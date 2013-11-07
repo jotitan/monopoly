@@ -1239,10 +1239,14 @@ $.trigger = function(eventName,params){
           $('.compte-banque',this.div).text(montant);
       }
 
-      this.payerParcGratuit = function (montant) {
+      this.payerParcGratuit = function (montant,callback) {
 		this.payer(montant,function(){
-		  parcGratuit.payer(montant);
-		  changeJoueur();
+		  if (VARIANTES.parcGratuit) {
+		    parcGratuit.payer(montant);
+		  }
+		  if(callback){
+		    callback();
+		  }
 		});
       }
 
@@ -1607,12 +1611,13 @@ $.trigger = function(eventName,params){
   }
   }
 
+  /* Case speciale, comme la taxe de luxe */
   function CarteSpeciale(titre, montant, etat, pos, img) {
       this.drawing = new Case(pos, etat, null, titre, CURRENCY + " " + montant, img);
   Drawer.add(this.drawing);
   this.action = function () {
       return createMessage(titre, "lightblue", "Vous devez payer la somme de " + montant + " " + CURRENCY, function (param) {
-          param.joueur.payerParcGratuit(param.montant);
+		  param.joueur.payerParcGratuit(param.montant,function(){changeJoueur();});
       }, {
           joueur: joueurCourant,
           montant: montant
@@ -1663,13 +1668,7 @@ $.trigger = function(eventName,params){
 	  this.type="taxe";
       this.montant = montant;
       this.action = function () {
-	   if (VARIANTES.parcGratuit) {
-		joueurCourant.payerParcGratuit(this.montant);
-	   }
-	   else{
-		joueurCourant.payer(this.montant);
-	   }          
-        changeJoueur();
+		joueurCourant.payerParcGratuit(this.montant,function(){changeJoueur();});
       }
   }
 
@@ -2294,6 +2293,20 @@ $.trigger = function(eventName,params){
 			return constructions;
 		}
 		
+		/* Renvoie des infos sur les proprietes du groupe */
+		this.getInfos = function(joueur){
+		  var infos = {free:0,joueur:0,adversaire:0};
+		  for(var i = 0 ; i < this.fiches.length ; i++){
+		    var f = this.fiches[i];
+		    if (fiche.statut == ETAT_LIBRE) {
+			 infos.free++;
+		    }
+		    else{
+			 
+		    }
+		  }
+		}
+		
 		/* Renvoie le nombre de fiche dans le groupe */
 		this.getNb = function(){
 			return (this.fiches == null) ? 0 : this.fiches.length;
@@ -2738,10 +2751,10 @@ $.trigger = function(eventName,params){
 		  if (joueurCourant.nbDouble == 2) {
 			 message+=" et sort de prison en payant " + CURRENCY + " 5.000";
 		     var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
-				joueurCourant.payerParcGratuit(5000);
-				joueurCourant.exitPrison();
-				//joueurCourant.joueDes(des1 + des2);
-				changeJoueur();
+				joueurCourant.payerParcGratuit(5000,function(){
+				  joueurCourant.exitPrison();
+				  changeJoueur();
+				});
 			 }, {});
 			 joueurCourant.actionApresDes(buttons, null);
 			 return;
@@ -2952,19 +2965,21 @@ $.trigger = function(eventName,params){
     var groups = [];
     $(data.fiches).each(function(){
 	    var fiche = null;
-	    switch(this.type){
-		    case "propriete":
-		    	if(groups[this.colors[0]] == null){
-		    		groups[this.colors[0]] = new Groupe(this.groupe,this.colors[0]);
-		    	}
+	    if(this.colors!=null && this.colors.length > 0 && groups[this.colors[0]] == null){
+		  groups[this.colors[0]] = new Groupe(this.groupe,this.colors[0]);
+		}
+		switch(this.type){
+		    case "propriete":		    	
 			    fiche = new Fiche(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers, this.prixMaison);
 			    groups[this.colors[0]].add(fiche);
 			    break;
 		    case "compagnie":
 			    fiche = new FicheCompagnie(this.axe, this.pos, this.colors,this.nom, this.prix, this.loyers);
+			    groups[this.colors[0]].add(fiche);
 			    break;
 		    case "gare":
 			    fiche = new FicheGare(this.axe, this.pos, this.colors, this.nom,this.prix, this.loyers,data.images.gare);
+			    groups[this.colors[0]].add(fiche);
 			    break;
 		    case "chance":
 			    fiche = new Chance(this.axe, this.pos);

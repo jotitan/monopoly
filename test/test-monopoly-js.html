@@ -7,7 +7,8 @@
       <link rel="stylesheet" type="text/css" href="../css/qunit-1.12.0.css"/>
             
             <script>
-               
+               // Mock de la fonction specifique a un vrai plateau
+			   calculeVoisinsGroupes = function(){}
                test("Chargement plateau a vide",function(){
                   loadPlateau({});
                   equal(fiches.size(),0, "Fiches vide");
@@ -152,8 +153,10 @@
 			   buyHouse(joueurs[1],2,4);
 			   buyHouse(joueurs[1],3,4);
 			   buyHouse(joueurs[1],4,4);
+			   equal(joueurs[1].findGroupes().size(),2,"Joueur 1 possede 2 groupes");
 			   equal(joueurs[0].getOutPrison(),false,"Terrain miné");
 			   buyHouse(joueurs[0],5,0);			   
+			   equal(joueurs[0].findGroupes().size(),0,"Joueur 0 possede 0 groupe");
 			   equal(joueurs[0].getOutPrison(),true,"Terrain miné mais besoin d'un terrain");
 			   joueurs[0].maisons = [];
 			   joueurs[1].maisons = [];			

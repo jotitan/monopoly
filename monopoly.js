@@ -173,8 +173,7 @@ $.trigger = function(eventName,params){
   }
   
   
-  /* Gere les reserves de constructions (maison / hotel) */
-  
+  /* Gere les reserves de constructions (maison / hotel) */  
   var GestionConstructions = {
     nbInitHouse:32,
     nbInitHotel:12,
@@ -964,13 +963,18 @@ $.trigger = function(eventName,params){
             treatGroups[maison.groupe.color] = true;
           }
         }
-       }
+       
+	   var groups = this.findGroupes();
+	   
        // On trie la liste selon rapport (argent de 3 maison / achat terrain + 3 maisons), le nombre de terrains a acheter
        interests.sort(function(a,b){
           /* Premier critere : nombre de terrain a acheter pour finir le groupe */
           var critere1 = a.nb / b.nb;
           /* Second critere : rentabilite du terrain */
           var criteres2 = a.maison.getRentabiliteBrute() / b.maison.getRentabiliteBrute();
+		  /* Troisieme critere : fait une ligne avec un autre groupe */
+		  for(var group : groups.getVoisins){}
+		  
             return 1;
        });
        return interests;
@@ -1409,19 +1413,28 @@ $.trigger = function(eventName,params){
       this.findGroupes = function () {
           var colorsOK = new Array();
           var colorsKO = new Array();
-        var groups = [];
+          var groups = [];
 
           for (var i = 0; i < this.maisons.length; i++) {
               var m = this.maisons[i];
-              if (m.constructible == true) {
-               // Deja traite, on possede la famille, on ajoute la maison
+              if (m.constructible == true && m.groupe!=null) {
+               // Deja traite, on possede la famille
                   if (colorsOK[m.color] == true) {
-                      groups[m.color].proprietes.push(m)
+                      //groups[m.color].proprietes.push(m);
                   } else {
                       if (colorsKO[m.color] == null) {
                           // On recherche si on a toutes les proprietes du groupe
-                          var ok = true;
-                          for (var f in m.groupe.fiches) {
+                          //var ok = true;
+						  var infos = m.groupe.getInfos(this);
+						  // Possede le groupe
+						  if(infos.free == 0 && infos.adversaire == 0 && infos.hypotheque == 0){
+							colorsOK[m.color] = true;
+						    groups[m.color] = {color:m.color,proprietes:m.groupe.fiches};
+						  }
+						  else{
+							colorsKO[m.color] = true;
+						  }
+                          /*for (var f in m.groupe.fiches) {
                        var fiche = m.groupe.fiches[f];
                               if (fiche.constructible == true
                             && (fiche.joueurPossede == null || fiche.joueurPossede.numero != this.numero
@@ -1437,7 +1450,7 @@ $.trigger = function(eventName,params){
                               colorsOK[m.color] = true;
                               groups[m.color] = {color:m.color,proprietes:[]};
                               groups[m.color].proprietes.push(m);
-                          }
+                          }*/
                       }
                   }
               }
@@ -2284,6 +2297,8 @@ $.trigger = function(eventName,params){
         this.getVoisins = function(){
           return [this.groupePrecedent,this.groupeSuivant];
         }
+		
+		this.isVoisin
         
         this.equals = function(groupe){
           return this.color == groupe.color;
@@ -2337,15 +2352,18 @@ $.trigger = function(eventName,params){
         
         /* Renvoie des infos sur les proprietes du groupe. Ajoute la liste des proprietes qui n'appartiennent pas au joueur */
         this.getInfos = function(joueur){
-          var infos = {free:0,joueur:0,adversaire:0,nbAdversaires:0,maisons:[]};
+          var infos = {free:0,joueur:0,adversaire:0,nbAdversaires:0,maisons:[],hypotheque:0};
           var adversaires = []; // Liste des adversaires possedant un terrains
           for(var i = 0 ; i < this.fiches.length ; i++){
             var f = this.fiches[i];
-            if (f.statut == ETAT_LIBRE) {
+			if (f.statut == ETAT_LIBRE) {
              infos.free++;
             }
             else{
-             if (joueur.equals(f.joueurPossede)) {
+             if(f.statutHypotheque){
+				infos.hypotheque++;
+			 }
+			 if (joueur.equals(f.joueurPossede)) {
                infos.joueur++;
              }
              else{
@@ -2369,12 +2387,12 @@ $.trigger = function(eventName,params){
     /* Represente un terrain */
   function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
       this.nom = nom;
-     this.groupe = null;
+	  this.groupe = null;
       this.color = colors[0];
       this.secondColor = (colors.length == 2) ? colors[1] : colors[0];
       this.achat = achat;
       this.montantHypotheque = achat / 2;      
-     this.loyer = loyers;
+      this.loyer = loyers;
       this.loyerHotel = (loyers!=null && loyers.length == 6)?loyers[5]:0;
       this.prixMaison = prixMaison;
       
@@ -3114,9 +3132,9 @@ $.trigger = function(eventName,params){
     // Parcourt les fiches. On enregistre le groupe courant, quand changement, on defini le groupe precedent et calcule le suivant du precedent
     for(var i = 0 ; i < 42 ; i++){
       var etat = Math.floor(i/10)%4;
-      var pos = i - (etat*10);
-      var fiche = getFiche({axe:etat,pos:pos});
-      if(fiche.groupe!=null){
+      var pos = i%40 - (etat*10);
+	  var fiche = getFiche({axe:etat,pos:pos});
+      if(fiche.groupe!=null && fiche.constructible){
         if(currentGroupe == null){
           // initialisation
           currentGroupe = fiche.groupe;

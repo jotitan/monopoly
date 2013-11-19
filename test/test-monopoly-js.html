@@ -188,11 +188,16 @@
 				equal(groupe.isGroupee(),false,"Groupe dont un terrain non acheté");
 				
 				groupe = new Groupe("nom");
-				groupe.add({joueurPossede:new JoueurTest(1)});
+				var j1 = new JoueurTest(1);
+				groupe.add({joueurPossede:j1});
 				groupe.add({joueurPossede:new JoueurTest(2)});
 				groupe.add({joueurPossede:new JoueurTest(3)});
 				equal(groupe.isGroupee(),false,"Groupe avec 3 joueurs differents");
-				
+				var infos = groupe.getInfos(j1);
+				equal(infos.free,0,"Aucun terrain du groupe libre");
+				equal(infos.joueur,1,"Le J1 en possede 1");
+				equal(infos.adversaire,2,"Deux autres terrains aux adversaires");
+				equal(infos.nbAdversaires,2,"Deux adversaires ont des terrains du groupe");
 				groupe = new Groupe("nom");
 				equal(groupe.isGroupee(),false,"Groupe sans terrains");
 				

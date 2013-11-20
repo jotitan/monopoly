@@ -971,11 +971,16 @@ $.trigger = function(eventName,params){
           /* Premier critere : nombre de terrain a acheter pour finir le groupe */
           var critere1 = a.nb / b.nb;
           /* Second critere : rentabilite du terrain */
-          var criteres2 = a.maison.getRentabiliteBrute() / b.maison.getRentabiliteBrute();
-		  /* Troisieme critere : fait une ligne avec un autre groupe */
-		  for(var group : groups.getVoisins){}
-		  
-            return 1;
+          var critere2 = a.maison.getRentabiliteBrute() / b.maison.getRentabiliteBrute();
+		      /* Troisieme critere : fait une ligne avec un autre groupe du joueur*/
+		      var voisinA = 1,voisinB=1;
+          for(var g in groups){
+            if(groups[g].group.isVoisin(a.maison.groupe)){voisinA++;}
+            if(groups[g].group.isVoisin(b.maison.groupe)){voisinB++;}
+          }
+          var critere3 = voisinA/voisinB;		  
+          var criteres = critere1*critere2*critere3;
+          return criteres -1;
        });
        return interests;
 
@@ -1429,7 +1434,7 @@ $.trigger = function(eventName,params){
 						  // Possede le groupe
 						  if(infos.free == 0 && infos.adversaire == 0 && infos.hypotheque == 0){
 							colorsOK[m.color] = true;
-						    groups[m.color] = {color:m.color,proprietes:m.groupe.fiches};
+						    groups[m.color] = {color:m.color,group:m.groupe,proprietes:m.groupe.fiches};
 						  }
 						  else{
 							colorsKO[m.color] = true;
@@ -2298,7 +2303,9 @@ $.trigger = function(eventName,params){
           return [this.groupePrecedent,this.groupeSuivant];
         }
 		
-		this.isVoisin
+		    this.isVoisin = function(groupe){
+          return (this.groupePrecedent!=null && this.groupePrecedent.equals(groupe)) || (this.groupeSuivant!=null && this.groupeSuivant.equals(groupe));
+        }
         
         this.equals = function(groupe){
           return this.color == groupe.color;

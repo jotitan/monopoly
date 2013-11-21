@@ -2918,6 +2918,13 @@ $.trigger = function(eventName,params){
        for (var i = 0 ; i < sauvegardes.length ; i++) {
         $('#idSauvegardes').append('<option value="' + sauvegardes[i].value + '">' + sauvegardes[i].label + '</option>');
        }
+       $('#idDeleteSauvegarde').unbind('click').bind('click',function(){
+          var save = $('#idSauvegardes').val();
+          if(save!=""){
+            Sauvegarde.delete(save);
+            $('#idSauvegardes > option:selected').remove();
+          }
+       });
      }
      
     $('#idPanelCreatePartie').dialog({
@@ -3788,6 +3795,9 @@ $.trigger = function(eventName,params){
      VARIANTES = data.variantes || VARIANTES;
      selectJoueur(joueur);
      initToolTipJoueur();
+    },
+    delete:function(name){
+        localStorage.removeItem(name);
     },
     _putStorage:function(name,data){
      localStorage[name] = JSON.stringify(data);

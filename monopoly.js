@@ -656,12 +656,51 @@ $.trigger = function(eventName,params){
       this.joue = function () {
         // On reevalue a intervalle regulier la strategie
         this.changeStrategie();     
+        // On fait des demandes d'echange de proprietes
+        thiS.echangeProprietes();
         // Construit des maisons / hotels
         this.buildConstructions();
         // on lance les des
         lancerAnimerDes();
       }
       
+      /* Cherche a echanger des proprietes. Methode bloquante car negociation avec d'autres joueurs
+      * Se deroule en plusieurs etapes : 
+      * Calcule les terrains qui l'interessent chez les adversaires
+      * Penser a prendre les affinites en compte
+      * @param callback : traitement a lancer a la fin des echanges
+      */
+      this.echangeProprietes = function(callback){
+        var proprietes = this.findOthersInterestProprietes();
+        if(proprietes.length == 0){
+          callback();
+          return;
+        }
+        /* On calcule l'importance d'echanger (si des groupes sont presents ou non) */
+        var interetEchance = this.findGroupes().length;
+
+        /* On cherche les monnaies d'echanges. Prendre en compte les gares ? */
+        var monnaiesEchange = [];  // Map par joueur
+        for(var p in proprietes){
+          var joueur = proprietes[p].maison.joueurPossede;
+          if(monnaiesEchange[joueur.id] == null){
+            monnaiesEchange[joueur.id] = proprietes[p].maison.joueurPossede.findOthersInterestProprietes(this);
+            // On evalue le risque a 
+          }
+        }
+        console.log(monnaiesEchange);
+      }
+
+      /* Suite a une demande d'echnage d'un joueur, analyse la requete. Plusieurs cas : 
+      * Repond favorablement a la proposition
+      * Refuse la proposition
+      * Fait une contre proposition
+      */
+      this.traiteRequeteEchange = function(joueur,maison,proposition){
+
+      }
+
+
       /* Fonction doBlocage a developpe permettant de faire du blocage de construction : vente d'un hotel pour limiter l'achat de maison, decision d'acheter un hotel pour bloquer.
       * Se base sur les terrains constructibles des adversaires ainsi que de leur tresorie.
       * Retourne vrai s'il faut bloquer le jeu de constructions
@@ -942,74 +981,6 @@ $.trigger = function(eventName,params){
         return false;
       }
 
-      /* Cherche les terrains qui interesse chez les adversaires */
-      /* Les terrains sont tries par interet.
-      * Les criteres : la rentabilite, le nombre de terrain a acheter (1 ou 2), le fait de faire une ligne avec un groupe possede */
-     this.findOthersInterestProprietes = function(){
-        var interests = [];
-        var treatGroups = []; // groupes traites
-       // On parcourt les terrains du joueur. Pour chaque, on etudie le groupe
-       for(var index in this.maisons){
-        var maison = this.maisons[index];
-        if(treatGroups[maison.groupe.color] == null){
-            // Structure : free,joueur,adversaire,nbAdversaires
-            var infos = maison.groupe.getInfos(this);
-            // Si tous les terrains vendus et un terrain a l'adversaire ou deux terrains a deux adversaires differents, on peut echanger
-            if(infos.free == 0 && (infos.adversaire == 1 || infos.nbAdversaires > 1)){
-                for(var idx in infos.maisons){
-                  interests.push({maison:infos.maisons[idx],nb:infos.maisons.length});  // On ajoute chaque maison avec le nombre a acheter pour terminer le groupe
-                }
-            }
-            treatGroups[maison.groupe.color] = true;
-          }
-        }
-       
-	   var groups = this.findGroupes();
-	   
-       // On trie la liste selon rapport (argent de 3 maison / achat terrain + 3 maisons), le nombre de terrains a acheter
-       interests.sort(function(a,b){
-          /* Premier critere : nombre de terrain a acheter pour finir le groupe */
-          var critere1 = a.nb / b.nb;
-          /* Second critere : rentabilite du terrain */
-          var critere2 = a.maison.getRentabiliteBrute() / b.maison.getRentabiliteBrute();
-		      /* Troisieme critere : fait une ligne avec un autre groupe du joueur*/
-		      var voisinA = 1,voisinB=1;
-          for(var g in groups){
-            if(groups[g].group.isVoisin(a.maison.groupe)){voisinA++;}
-            if(groups[g].group.isVoisin(b.maison.groupe)){voisinB++;}
-          }
-          var critere3 = voisinA/voisinB;		  
-          var criteres = critere1*critere2*critere3;
-          return criteres -1;
-       });
-       return interests;
-
-     }
-     
-      // Fonction appelee lorsque les des sont lances et que le pion est place
-      this.actionApresDes = function (buttons, propriete) {
-          if (buttons == null) {
-              return;
-          }
-          setTimeout(function () {
-              if (buttons.Acheter != null && propriete != null) {
-                var interet = current.strategie.interetGlobal(propriete);
-             var comportement = current.comportement.getRisqueTotal(current,propriete.achat);
-             $.trigger("monopoly.debug",{message:"Strategie : " + interet + " " + comportement});
-             if (interet > comportement) {
-                 $.trigger("monopoly.debug",{message:"IA Achete"});
-                buttons.Acheter();
-                return;
-             }
-            }
-             for (var i in buttons) {
-                 if (i != "Acheter") {
-                     buttons[i]();
-                     return;
-                  }
-              }
-          }, IA_TIMEOUT);
-      }
       
       /* Fonction appelee avant que les des ne soit lances, lorsqu'il est en prison */
       /* Regle : si on est au debut du jeu, on sort de prison pour acheter des terrains. 
@@ -1463,6 +1434,78 @@ $.trigger = function(eventName,params){
           return groups;
       }
       
+     /* Cherche les terrains qui interesse chez les adversaires */
+      /* Les terrains sont tries par interet.
+      * Les criteres : la rentabilite, le nombre de terrain a acheter (1 ou 2), le fait de faire une ligne avec un groupe possede */
+      /* @param joueur : ne recherche que les proprietes de ce joueur */
+     this.findOthersInterestProprietes = function(joueur){
+        var interests = [];
+        var treatGroups = []; // groupes traites
+       // On parcourt les terrains du joueur. Pour chaque, on etudie le groupe
+       for(var index in this.maisons){
+        var maison = this.maisons[index];
+        if(treatGroups[maison.groupe.color] == null){
+            // Structure : free,joueur,adversaire,nbAdversaires
+            var infos = maison.groupe.getInfos(this);
+            // Si tous les terrains vendus et un terrain a l'adversaire ou deux terrains a deux adversaires differents, on peut echanger
+            if(infos.free == 0 && (infos.adversaire == 1 || infos.nbAdversaires > 1)){
+                for(var idx in infos.maisons){
+                  if(joueur == null || joueur.equals(infos.maisons[idx].joueurPossede)){
+                    interests.push({maison:infos.maisons[idx],nb:infos.maisons.length});  // On ajoute chaque maison avec le nombre a acheter pour terminer le groupe
+                  }
+                }
+            }
+            treatGroups[maison.groupe.color] = true;
+          }
+        }
+       
+     var groups = this.findGroupes();
+     
+       // On trie la liste selon rapport (argent de 3 maison / achat terrain + 3 maisons), le nombre de terrains a acheter
+       interests.sort(function(a,b){
+          /* Premier critere : nombre de terrain a acheter pour finir le groupe */
+          var critere1 = a.nb / b.nb;
+          /* Second critere : rentabilite du terrain */
+          var critere2 = a.maison.getRentabiliteBrute() / b.maison.getRentabiliteBrute();
+          /* Troisieme critere : fait une ligne avec un autre groupe du joueur*/
+          var voisinA = 1,voisinB=1;
+          for(var g in groups){
+            if(groups[g].group.isVoisin(a.maison.groupe)){voisinA++;}
+            if(groups[g].group.isVoisin(b.maison.groupe)){voisinB++;}
+          }
+          var critere3 = voisinA/voisinB;     
+          var criteres = critere1*critere2*critere3;
+          return criteres -1;
+       });
+       return interests;
+
+     }
+     
+      // Fonction appelee lorsque les des sont lances et que le pion est place
+      this.actionApresDes = function (buttons, propriete) {
+          if (buttons == null) {
+              return;
+          }
+          setTimeout(function () {
+              if (buttons.Acheter != null && propriete != null) {
+                var interet = current.strategie.interetGlobal(propriete);
+             var comportement = current.comportement.getRisqueTotal(current,propriete.achat);
+             $.trigger("monopoly.debug",{message:"Strategie : " + interet + " " + comportement});
+             if (interet > comportement) {
+                 $.trigger("monopoly.debug",{message:"IA Achete"});
+                buttons.Acheter();
+                return;
+             }
+            }
+             for (var i in buttons) {
+                 if (i != "Acheter") {
+                     buttons[i]();
+                     return;
+                  }
+              }
+          }, IA_TIMEOUT);
+      }
+
       /* Renvoie les groupes constructibles avec les proprietes de chaque */
       this.findMaisonsConstructibles = function () {
           var mc = new Array();
@@ -2921,8 +2964,10 @@ $.trigger = function(eventName,params){
        $('#idDeleteSauvegarde').unbind('click').bind('click',function(){
           var save = $('#idSauvegardes').val();
           if(save!=""){
-            Sauvegarde.delete(save);
-            $('#idSauvegardes > option:selected').remove();
+            if(confirm("Etes vous sur de vouloir supprimer cette sauvegarde : " + save)){
+              Sauvegarde.delete(save);
+              $('#idSauvegardes > option:selected').remove();
+            }
           }
        });
      }

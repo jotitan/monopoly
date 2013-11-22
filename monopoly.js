@@ -664,6 +664,7 @@ $.trigger = function(eventName,params){
         lancerAnimerDes();
       }
       
+	  
       /* Cherche a echanger des proprietes. Methode bloquante car negociation avec d'autres joueurs
       * Se deroule en plusieurs etapes : 
       * Calcule les terrains qui l'interessent chez les adversaires
@@ -677,7 +678,7 @@ $.trigger = function(eventName,params){
           return;
         }
         /* On calcule l'importance d'echanger (si des groupes sont presents ou non) */
-        var interetEchance = this.findGroupes().length;
+        var interetEchance = Math.pow(1 / (1+this.findGroupes().length),2);
 
         /* On cherche les monnaies d'echanges. Prendre en compte les gares ? */
         var monnaiesEchange = [];  // Map par joueur
@@ -685,7 +686,7 @@ $.trigger = function(eventName,params){
           var joueur = proprietes[p].maison.joueurPossede;
           if(monnaiesEchange[joueur.id] == null){
             monnaiesEchange[joueur.id] = proprietes[p].maison.joueurPossede.findOthersInterestProprietes(this);
-            // On evalue le risque a 
+            // On evalue le risque a echanger contre ce joueur
           }
         }
         console.log(monnaiesEchange);
@@ -700,6 +701,17 @@ $.trigger = function(eventName,params){
 
       }
 
+	  /* Evalue la dangerosite d'un joueur s'il recupere une maison supplementaire pour finir un groupe */
+	  /* Plusieurs criteres : 
+	  * 1) Capacite a acheter des constructions
+	  * 2) Rentabilite du groupe (hors frais d'achat, uniquement maison + loyer)
+	  * 3) Creation d'une ligne
+	  */
+	  this.simuleDangerosite = function(groupe){
+		// Critere 1, nombre de maison pouvant etre achete
+		var nbMaison = this.argent / groupe.maisons[0].prixMaison;
+	  }
+	  
 
       /* Fonction doBlocage a developpe permettant de faire du blocage de construction : vente d'un hotel pour limiter l'achat de maison, decision d'acheter un hotel pour bloquer.
       * Se base sur les terrains constructibles des adversaires ainsi que de leur tresorie.

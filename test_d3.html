@@ -1,0 +1,38 @@
+<html>
+
+<head>
+
+<script src="lib/d3.v3/d3.v3.min.js"></script>
+
+</head>
+
+<body>
+
+
+<div id="zone" style="width:500px;height:400px"></div>
+
+
+<script>
+
+var svg = d3.select('#zone').append("svg").attr('width',500).attr('height',400);
+
+var circle = svg.append('circle').style('fill','#4C4').style('stroke','#000').attr('r',10).attr('cx',50).attr('cy',100);
+//circle.on('mouseover',function(){circle.transition().duration(100).style('fill','#282');});
+//circle.on('mouseout',function(){circle.transition().style('fill','#4C4');});
+
+circle.on('click',function(){
+	move();
+});
+
+function move(){
+	var x = parseInt(circle.attr('cx'));
+	if(x> 450){return;}
+	circle.transition().duration(40).attr('cx',x+10).each('end',move);
+}
+
+</script>
+
+</body>
+
+</html>
+

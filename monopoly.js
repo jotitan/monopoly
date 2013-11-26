@@ -27,7 +27,7 @@ $.trigger = function(eventName,params){
 
   var DEBUG = false;
   var IA_TIMEOUT = 1000;    // Temps d'attente pour les actions de l'ordinateur
-    /* Gestion des variantes, case depart (touche 40000) et parc gratuit (touche la somme des ammandes) */
+    /* Gestion des variantes, case depart (touche 40000) et parc gratuit (touche la somme des amendes) */
   var VARIANTES = {caseDepart:false,parcGratuit:false}
   /* Jets des des */
   var des1;
@@ -577,6 +577,36 @@ $.trigger = function(eventName,params){
           return 4;
       }
      
+	 /* Calcule le fait d'accepter un terrain d'un joueur.
+	 * Se base sur le fait que le joueur a un deja un groupe, qu'il n'en a aucun.
+	 * Renvoie l'attitude a avoir : Bloquer l'echange, faire monter les encheres, accepter
+	 * @param otherInteresets : autres terrains qui interesent le joueur
+	 */
+	 this.acceptSwapTerrain = function(terrain,joueur,otherInterests){
+		/* Calcule si le proprio est le seul fournisseur */
+		var alone = true;
+		for(var idx in otherInterests){
+			if(!otherInterests[idx].joueurPossede.equals(terrain.joueurPossede)){
+				alone = false;
+			}
+		}
+		var nbGroups = joueur.findGroupes().size();
+		/* Le proprio est le seul a pouvoir aider le demandeur et il n'a pas encore de groupe */
+		if(nbGroups == 0 && otherInteresets.length == 0 && alone){
+			return this.agressif == 2 ? "UP":"ACCEPT";
+		}
+		/* Beaucoup de groupe et seul fournisseur, on bloque si on est vicieux, on monte sinon */
+		if(nbGroups > 2= && alone){
+			return this.agressif > 0 ? "BLOCK":"UP";
+		}
+		
+		/* Beaucoup de groupe mais pas le seul fournisseur, on ne bloque pas */
+		if(nbGroups >= 2){
+			return this.agressif > 0 ? "UP":"ACCEPT";
+		}
+		return "ACCEPT";
+	 }
+	 
   }
 
   /* Achete en prioriete les terrains les moins chers : bleu marine-812B5C, bleu clair-119AEB, violet-73316F et orange-D16E2D */
@@ -720,7 +750,7 @@ var GestionEchange = function(){
         // On reevalue a intervalle regulier la strategie
         this.changeStrategie();     
         // On fait des demandes d'echange de proprietes
-        thiS.echangeProprietes();
+        this.echangeProprietes();
         // Construit des maisons / hotels
         this.buildConstructions();
         // on lance les des
@@ -769,7 +799,15 @@ var GestionEchange = function(){
           for(var idx in proprietesFiltrees){
             var p = proprietesFiltrees[idx];
             if(p.monnaiesEchange.length > 0 || (p.compensation!=null && p.compensation > 0)){
-              var proposition = {terrain:p.maison,echange:p.monnaiesEchange,}
+              var proposition = {terrains:p.monnaiesEchange,compensation:p.compensation};
+			  try{
+				GestionEchange.init(this,p.maison.joueurPossede,p.maison,function(){});
+				GestionEchange.propose(proposition);
+				return;
+				}  catch(e){
+					// Deja en cours quelque part
+				}
+			  
             }
           }
         }
@@ -782,12 +820,20 @@ var GestionEchange = function(){
 
 
       /* Suite a une demande d'echnage d'un joueur, analyse la requete. Plusieurs cas : 
-      * Repond favorablement a la proposition
-      * Refuse la proposition
-      * Fait une contre proposition
+      * Accepte la proposition (ACCEPT, indice > 5)
+      * Refuse la proposition (BLOCK, indice < 0)
+      * Fait une contre proposition en demandant plus d'argent et / ou d'autres terrains (UP, 1 < indice > 5)
+	  * Principe de l'algo : evalue les criteres pour obtenir un indicateur qui permet de repondre (bornes)
       */
       this.traiteRequeteEchange = function(joueur,maison,proposition){
-
+		var critereTerrains = 1;
+		var critereArgent = 1;
+		if(proposition.terrains!=null && proposition.terrains.length > 0){
+		
+		}
+		var others = joueur.findOthersInterestProprietes();
+		/* Confirme le traitement ou le durci. Prend le pas sur la decision calculee  */
+		var strategie = this.strategie.acceptSwapTerrain(terrain,joueur,others);
       }
 
       /* Traite la contre proposition qui peut se composer de terrain et / ou d'argent */

@@ -605,6 +605,69 @@ $.trigger = function(eventName,params){
       Strategie.call(this, ["#812B5C", "#119AEB", "#73316F", "#D16E2D", "#D32C19", "#E6E018", "#11862E", "#132450"], 4, "crazy",3);
   }
   
+  /* Gere l'echange d'une propriete entre deux joueurs */
+var GestionEchange = function(){
+  running:false,  /* Indique qu'un echange est en cours, la partie est bloquee */
+  demandeur:null,
+  proprietaire:null,
+  terrain:null,
+  proposition:null, /* Derniere proposition faite. */
+  endCallback:null, /* Methode appelee a la fin de la transaction */
+  /* Initialise une transaction entre deux joueurs */
+  init:function(demandeur,proprietaire,terrain,endCallback){
+    if(this.running){
+      throw "Transaction impossible, une transaction est deja en cours.";
+    }
+    this.demandeur = demandeur;
+    this.proprietaire = proprietaire;
+    this.terrain = terrain;
+    this.endCallback = endCallback;
+  },
+  /* Termine la transaction entre deux personnes */
+  end:function(){
+    this.running = false;
+    this.demandeur = null;
+    this.proprietaire = null;
+    this.terrain = null;
+    if(this.endCallback!=null){
+      this.endCallback();
+    }
+    this.endCallback = null;
+  },
+  /* Fait une proposition au proprietaire */
+  /* Une proposition peut etre un ou plusieurs terrains ou de l'argent. */
+  propose:function(proposition){
+    // On transmet la demande au proprietaire
+    this.proposition = proposition;
+    this.proprietaire.traiteRequeteEchange(proposition);
+  },
+  /* Contre proposition du proprietaire, ca peut être des terrains ou de l'argent */
+  contrePropose:function(proposition){
+    this.proposition = proposition;
+    this.demandeur.traiteContreProposition(proposition);
+  },
+  /* Le proprietaire accepte la proposition. On prend la derniere proposition et on l'applique */
+  accept:function(){
+    // La propriete change de proprietaire
+    this.demandeur.getSwapProperiete(this.terrain);
+    // Le proprietaire recoit la proposition
+    if(this.proposition.argent!=null){
+      this.proprietaire.gagner(this.proposition.argent);
+    }
+    if(this.proposition.terrains!=null && this.proposition.terrains.length > 0){
+      for(var t in this.proposition.terrains){
+        this.proprietaire.getSwapProperiete(this.proposition.terrains[t]);
+      }
+    }
+
+    this.end();
+  },
+  reject:function(){
+    this.end();
+  }
+}
+
+
   // Faire une clever qui achete les bons terrains
 
   /* Joueur ordinateur */
@@ -678,19 +741,45 @@ $.trigger = function(eventName,params){
           return;
         }
         /* On calcule l'importance d'echanger (si des groupes sont presents ou non) */
-        var interetEchance = Math.pow(1 / (1+this.findGroupes().length),2);
+        var interetEchange = Math.pow(1 / (1+this.findGroupes().length),2);
 
         /* On cherche les monnaies d'echanges. Prendre en compte les gares ? */
-        var monnaiesEchange = [];  // Map par joueur
+        var proprietesFiltrees = [];
         for(var p in proprietes){
-          var joueur = proprietes[p].maison.joueurPossede;
-          if(monnaiesEchange[joueur.id] == null){
-            monnaiesEchange[joueur.id] = proprietes[p].maison.joueurPossede.findOthersInterestProprietes(this);
-            // On evalue le risque a echanger contre ce joueur
+          var maison = proprietes[p].maison;
+          var joueur = maison.joueurPossede;
+
+          proprietes[p].monnaiesEchange = maison.joueurPossede.findOthersInterestProprietes(this);
+          if(proprietes[p].monnaiesEchange.length == 0){
+            proprietes[p].compensation = this.evalueCompensation(joueur,maison);
+          }
+          else{
+            // Si trop couteux, on propose autre chose, comme de l'argent. On evalue le risque a echanger contre ce joueur.  
+            if(this.simuleDangerosite(maison.groupe)>0){
+              proprietes[p].compensation = this.evalueCompensation(joueur,maison);
+              proprietes[p].monnaiesEchange = null;
+            }              
+          } 
+          if(proprietes[p].monnaiesEchange!=null || (proprietes[p].compensation!=null && proprietes[p].compensation >0))  {
+              proprietesFiltrees.push(proprietes[p]);
+          }       
+        }
+        // On choisit la propriete a demander en echange
+        if(proprietesFiltrees.length!=0){
+          for(var idx in proprietesFiltrees){
+            var p = proprietesFiltrees[idx];
+            if(p.monnaiesEchange.length > 0 || (p.compensation!=null && p.compensation > 0)){
+              var proposition = {terrain:p.maison,echange:p.monnaiesEchange,}
+            }
           }
         }
-        console.log(monnaiesEchange);
+        
       }
+
+      // La gestion des echanges se passe par des mecanismes asynchrones. On utilise un objet contenant une proposition / contre proposition et un statut.
+      // On bloque le traitement d'un joueur
+
+
 
       /* Suite a une demande d'echnage d'un joueur, analyse la requete. Plusieurs cas : 
       * Repond favorablement a la proposition
@@ -701,15 +790,35 @@ $.trigger = function(eventName,params){
 
       }
 
+      /* Traite la contre proposition qui peut se composer de terrain et / ou d'argent */
+      this.traiteContreProposition = function(proposition){
+
+      }
+
+
+      /* Si aucune monnaie d'echange ou si la monnaie d'echange est trop dangereuse, on evalue une compensation fincanciere
+      * Plusieurs criteres sont pris en compte : 
+      * 1) Prix de base du terrain.
+      * 2) Economie propre, il faut pouvoir acheter des maisons derriere (2 sur chaque terrain)
+      * Renvoie des bornes min / max. On propose le min au debut
+      */
+      this.evalueCompensation = function(joueur,maison){
+        return maison.achat;
+      }
+
 	  /* Evalue la dangerosite d'un joueur s'il recupere une maison supplementaire pour finir un groupe */
 	  /* Plusieurs criteres : 
 	  * 1) Capacite a acheter des constructions
 	  * 2) Rentabilite du groupe (hors frais d'achat, uniquement maison + loyer)
 	  * 3) Creation d'une ligne
+    * Renvoie un nombre. Au dessus de 1, dangereux, en dessous, pas trop.
 	  */
 	  this.simuleDangerosite = function(groupe){
-		// Critere 1, nombre de maison pouvant etre achete
-		var nbMaison = this.argent / groupe.maisons[0].prixMaison;
+		  // Critere 1, nombre de maison par terrain pouvant etre achete
+  		var nbMaison = (this.argent / groupe.maisons[0].prixMaison)/groupe.fiches.length;
+      // compte les autres groupes
+      groupe.maisons[0].loyers[3];
+      return 0;
 	  }
 	  
 
@@ -1152,6 +1261,16 @@ $.trigger = function(eventName,params){
        return {pos:this.pion.pos,etat:this.pion.etat};
      }
      
+      /* Affiche la demande d'echange d'un joueur */
+      this.traiteRequeteEchange = function(joueur,maison,proposition){
+
+      }
+
+      /* Affiche la contreproposition du joueur */
+      this.traiteContreProposition = function(proposition){
+
+      }
+
      /**
      * Renvoie la liste des groupes presque complet (un terrain manquant) pour lequel le terrain est encore libre
      */
@@ -1234,6 +1353,18 @@ $.trigger = function(eventName,params){
        });
      }
      
+     /* Permet de deplacer le terrain sur le joueur lors d'un echange */
+     this.getSwapProperiete = function(maison){
+        var m = this.cherchePlacement(maison);
+        if (m != null) {
+          m.after(maison.input);
+       } else {
+          this.div.append(maison.input);
+       }
+       maison.joueurPossede = this;
+       this.maisons.push(maison);
+     }
+
       // Envoi le joueur (et le pion) en prison
       this.goPrison = function () {
           this.enPrison = true;

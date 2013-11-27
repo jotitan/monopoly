@@ -596,7 +596,7 @@ $.trigger = function(eventName,params){
 			return this.agressif == 2 ? "UP":"ACCEPT";
 		}
 		/* Beaucoup de groupe et seul fournisseur, on bloque si on est vicieux, on monte sinon */
-		if(nbGroups > 2= && alone){
+		if(nbGroups >= 2 && alone){
 			return this.agressif > 0 ? "BLOCK":"UP";
 		}
 		
@@ -636,7 +636,7 @@ $.trigger = function(eventName,params){
   }
   
   /* Gere l'echange d'une propriete entre deux joueurs */
-var GestionEchange = function(){
+var GestionEchange = {
   running:false,  /* Indique qu'un echange est en cours, la partie est bloquee */
   demandeur:null,
   proprietaire:null,
@@ -652,6 +652,7 @@ var GestionEchange = function(){
     this.proprietaire = proprietaire;
     this.terrain = terrain;
     this.endCallback = endCallback;
+    $.trigger('monopoly.initEchange',{demandeur:demandeur,maison:terrain});
   },
   /* Termine la transaction entre deux personnes */
   end:function(){
@@ -669,7 +670,7 @@ var GestionEchange = function(){
   propose:function(proposition){
     // On transmet la demande au proprietaire
     this.proposition = proposition;
-    this.proprietaire.traiteRequeteEchange(proposition);
+    this.proprietaire.traiteRequeteEchange(this.demandeur,this.terrain,proposition);
   },
   /* Contre proposition du proprietaire, ca peut être des terrains ou de l'argent */
   contrePropose:function(proposition){
@@ -763,6 +764,7 @@ var GestionEchange = function(){
       * Calcule les terrains qui l'interessent chez les adversaires
       * Penser a prendre les affinites en compte
       * @param callback : traitement a lancer a la fin des echanges
+      * TODO : voir pour ajouter les gares
       */
       this.echangeProprietes = function(callback){
         var proprietes = this.findOthersInterestProprietes();
@@ -801,8 +803,8 @@ var GestionEchange = function(){
             if(p.monnaiesEchange.length > 0 || (p.compensation!=null && p.compensation > 0)){
               var proposition = {terrains:p.monnaiesEchange,compensation:p.compensation};
 			  try{
-				GestionEchange.init(this,p.maison.joueurPossede,p.maison,function(){});
-				GestionEchange.propose(proposition);
+  				GestionEchange.init(this,p.maison.joueurPossede,p.maison,function(){});
+  				GestionEchange.propose(proposition);
 				return;
 				}  catch(e){
 					// Deja en cours quelque part
@@ -829,7 +831,8 @@ var GestionEchange = function(){
 		var critereTerrains = 1;
 		var critereArgent = 1;
 		if(proposition.terrains!=null && proposition.terrains.length > 0){
-		
+		  // On mesure l'interet, la valeur du terrain / rapport a ce qui est demande
+      // On verifie que ces terrains peuvent nous faire finir un groupe
 		}
 		var others = joueur.findOthersInterestProprietes();
 		/* Confirme le traitement ou le durci. Prend le pas sur la decision calculee  */
@@ -837,6 +840,7 @@ var GestionEchange = function(){
       }
 
       /* Traite la contre proposition qui peut se composer de terrain et / ou d'argent */
+      /* A la fin, on a accepte ou pas. Plus d'aller retour */
       this.traiteContreProposition = function(proposition){
 
       }
@@ -3973,6 +3977,9 @@ var GestionEchange = function(){
        if (message!="") {
         MessageDisplayer.write(data.joueur,message);
        }
+     }).bind("monopoly.initEchange",function(){
+        var message = 'souhaite obtenir <span style="color:' + data.maison.color + '">' + data.maison.nom + '</span>  auprès de ' + data.maison.joueurPossede.nom;
+        MessageDisplayer.write(data.demandeur,message);
      }).bind("monopoly.debug",function(e,data){
        if (DEBUG) {
         MessageDisplayer.write({color:'red',nom:'debug'},data.message);

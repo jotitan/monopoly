@@ -322,6 +322,48 @@
 			});
 			
 			
+			test("Echange terrain",function(){
+				var statut = 0;
+				// On mock l'objet de gestion d'echange
+				GestionEchange.accept = function(){
+					statut = 1;
+				};
+				GestionEchange.reject = function(){
+					statut = 2;
+				};
+				GestionEchange.contrePropose = function(){
+					statut = 3;
+				}
+
+				// Creation de plusieurs terrains
+				joueurs = initJoueurs();
+			   fiches = [];
+			   fiches[0] = new Fiche(null, null, ["#AAAAAA",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);			   
+			   fiches[1] = new Fiche(null, null, ["#AAAAAA",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[2] = new Fiche(null, null, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[3] = new Fiche(null, null, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[4] = new Fiche(null, null, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[5] = new Fiche(null, null, ["#CCCCCC",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[6] = new Fiche(null, null, ["#CCCCCC",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   new Groupe("Vert","#AAAAAA").add(fiches[0]).add(fiches[1]);
+			   new Groupe("Bleu","#AAABBB").add(fiches[2]).add(fiches[3]).add(fiches[4]);
+			   new Groupe("Rouge","#CCCCCC").add(fiches[5]).add(fiches[6]);
+
+			   // Les joueurs ont chacun besoin de la propriete de l'autre
+			   fiches[0].joueurPossede = joueurs[0];
+			   fiches[1].joueurPossede = joueurs[1];
+			   fiches[5].joueurPossede = joueurs[1];
+			   fiches[6].joueurPossede = joueurs[0];
+
+			   GestionEchange.init(joueurs[0],joueurs[1],fiches[1],null);
+			   GestionEchange.propose({terrains:[fiches[6]]});
+			   equal(statut,1,"J0 et J1 s'echange un terrain de meme valeur");
+
+			   // Le joueur ne propose rien, le proprio contre propose (le terrain du joueur)
+
+
+			});
+
 			function resetHouses(){
 				for(var index in fiches){
 					fiches[index].statut = ETAT_LIBRE;

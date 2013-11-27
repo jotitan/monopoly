@@ -787,10 +787,15 @@ var GestionEchange = {
           }
           else{
             // Si trop couteux, on propose autre chose, comme de l'argent. On evalue le risque a echanger contre ce joueur.  
-            if(this.simuleDangerosite(maison.groupe)>0){
+			// On teste toutes les monnaies d'echanges
+			var monnaies = this.chooseMonnaiesEchange(proprietes[p].monnaiesEchange);
+            if(monnaies == null || monnaies.length == 0){
               proprietes[p].compensation = this.evalueCompensation(joueur,maison);
               proprietes[p].monnaiesEchange = null;
-            }              
+            } 
+			else{
+				
+			}
           } 
           if(proprietes[p].monnaiesEchange!=null || (proprietes[p].compensation!=null && proprietes[p].compensation >0))  {
               proprietesFiltrees.push(proprietes[p]);
@@ -866,11 +871,16 @@ var GestionEchange = {
 	  this.simuleDangerosite = function(groupe){
 		  // Critere 1, nombre de maison par terrain pouvant etre achete
   		var nbMaison = (this.argent / groupe.maisons[0].prixMaison)/groupe.fiches.length;
-      // compte les autres groupes
-      groupe.maisons[0].loyers[3];
-      return 0;
+		  // compte les autres groupes
+		  groupe.maisons[0].loyers[3];
+		  return 0;
 	  }
 	  
+	  /* Choisis les terrains qu'il est possible de ceder en echange du terrain */
+	  /* Se base sur la dangerosite du terrain (n'est pas pris en compte) et sur la valeur des terrains par rapport a ce qui est demande */
+	  this.chooseMonnaiesEchange = function(terrainVise,terrains,joueur){
+	  
+	  }
 
       /* Fonction doBlocage a developpe permettant de faire du blocage de construction : vente d'un hotel pour limiter l'achat de maison, decision d'acheter un hotel pour bloquer.
       * Se base sur les terrains constructibles des adversaires ainsi que de leur tresorie.

@@ -360,7 +360,14 @@
 			   equal(statut,1,"J0 et J1 s'echange un terrain de meme valeur");
 
 			   // Le joueur ne propose rien, le proprio contre propose (le terrain du joueur)
-
+			   GestionEchange.init(joueurs[0],joueurs[1],fiches[1],null);
+			   GestionEchange.propose({});
+			   equal(statut,3,"J0 souhaite un terrain de J1 mais ne propose rien");
+			   
+			   // Le joueur propose de l'argent mais le proprio veut un terrain
+			   GestionEchange.init(joueurs[0],joueurs[1],fiches[1],null);
+			   GestionEchange.propose({compensation:20000});
+			   equal(statut,3,"J0 souhaite un terrain de J1 et propose de l'argent, J1 veut un terrain");
 
 			});
 

@@ -772,8 +772,9 @@ var GestionEchange = {
           callback();
           return;
         }
+		var nbGroupesPossedes = this.findGroupes().length;
         /* On calcule l'importance d'echanger (si des groupes sont presents ou non) */
-        var interetEchange = Math.pow(1 / (1+this.findGroupes().length),2);
+        var interetEchange = Math.pow(1 / (1+nbGroupesPossedes),2);
 
         /* On cherche les monnaies d'echanges. Prendre en compte les gares ? */
         var proprietesFiltrees = [];
@@ -781,23 +782,23 @@ var GestionEchange = {
           var maison = proprietes[p].maison;
           var joueur = maison.joueurPossede;
 
-          proprietes[p].monnaiesEchange = maison.joueurPossede.findOthersInterestProprietes(this);
-          if(proprietes[p].monnaiesEchange.length == 0){
+          proprietes[p].deals = maison.joueurPossede.findOthersInterestProprietes(this);
+          if(proprietes[p].deals.length == 0){
             proprietes[p].compensation = this.evalueCompensation(joueur,maison);
           }
           else{
             // Si trop couteux, on propose autre chose, comme de l'argent. On evalue le risque a echanger contre ce joueur.  
 			// On teste toutes les monnaies d'echanges
-			var monnaies = this.chooseMonnaiesEchange(proprietes[p].monnaiesEchange);
+			var monnaies = this.chooseMonnaiesEchange(proprietes[p],proprietes[p].monnaiesEchange,true,nbGroupesPossedes>=2);
             if(monnaies == null || monnaies.length == 0){
               proprietes[p].compensation = this.evalueCompensation(joueur,maison);
-              proprietes[p].monnaiesEchange = null;
+              proprietes[p].deals = null;
             } 
 			else{
-				
+				proprietes[p].deals = monnaies;
 			}
           } 
-          if(proprietes[p].monnaiesEchange!=null || (proprietes[p].compensation!=null && proprietes[p].compensation >0))  {
+          if(proprietes[p].deals!=null || (proprietes[p].compensation!=null && proprietes[p].compensation >0))  {
               proprietesFiltrees.push(proprietes[p]);
           }       
         }
@@ -805,20 +806,16 @@ var GestionEchange = {
         if(proprietesFiltrees.length!=0){
           for(var idx in proprietesFiltrees){
             var p = proprietesFiltrees[idx];
-            if(p.monnaiesEchange.length > 0 || (p.compensation!=null && p.compensation > 0)){
-              var proposition = {terrains:p.monnaiesEchange,compensation:p.compensation};
-			  try{
-  				GestionEchange.init(this,p.maison.joueurPossede,p.maison,function(){});
-  				GestionEchange.propose(proposition);
+			var proposition = {terrains:p.deals,compensation:p.compensation};
+			try{
+				GestionEchange.init(this,p.maison.joueurPossede,p.maison,function(){});
+				GestionEchange.propose(proposition);
 				return;
 				}  catch(e){
 					// Deja en cours quelque part
-				}
-			  
-            }
-          }
-        }
-        
+				}		  
+			}
+        }        
       }
 
       // La gestion des echanges se passe par des mecanismes asynchrones. On utilise un objet contenant une proposition / contre proposition et un statut.
@@ -851,7 +848,7 @@ var GestionEchange = {
       }
 
 
-      /* Si aucune monnaie d'echange ou si la monnaie d'echange est trop dangereuse, on evalue une compensation fincanciere
+      /* Si aucune monnaie d'echange ou si la monnaie d'echange est trop dangereuse, on evalue une compensation financiere
       * Plusieurs criteres sont pris en compte : 
       * 1) Prix de base du terrain.
       * 2) Economie propre, il faut pouvoir acheter des maisons derriere (2 sur chaque terrain)
@@ -868,18 +865,52 @@ var GestionEchange = {
 	  * 3) Creation d'une ligne
     * Renvoie un nombre. Au dessus de 1, dangereux, en dessous, pas trop.
 	  */
-	  this.simuleDangerosite = function(groupe){
+	  this.isDangerous = function(groupe){
 		  // Critere 1, nombre de maison par terrain pouvant etre achete
-  		var nbMaison = (this.argent / groupe.maisons[0].prixMaison)/groupe.fiches.length;
+		  var nbMaison = (this.argent / groupe.maisons[0].prixMaison)/groupe.fiches.length;
 		  // compte les autres groupes
 		  groupe.maisons[0].loyers[3];
-		  return 0;
+		  // Ligne presente
+		  var groups = this.findGroupes();
+		  var isLigne = false;
+		  for(var g in groups){
+			if(groups[g].isVoisin(groupe)){
+				isLigne = true;
+			}
+		  }
+		  return isLigne;
 	  }
 	  
 	  /* Choisis les terrains qu'il est possible de ceder en echange du terrain */
 	  /* Se base sur la dangerosite du terrain (n'est pas pris en compte) et sur la valeur des terrains par rapport a ce qui est demande */
-	  this.chooseMonnaiesEchange = function(terrainVise,terrains,joueur){
-	  
+	  /* @param testDangerous : si le joueur est le seul fournisseur et qu'on a pas le choix, on prend le terrain*/
+	  /* @param strict : si strict est vrai, on ne relance pas l'algo en etant moins dangereux. Le joueur decide de ne pas faire de cadeau */
+	  this.chooseMonnaiesEchange = function(terrainVise,terrains,testDangerous,strict){
+		if(terrains == null || terrains.length == 0){return [];}
+		var proposition = [];
+		var valeur = 0;
+		// Si seul fournisseur, il faut etre plus laxiste.
+		for(var t in terrains){
+			if(!terrainVise.joueurPossede.isDangerous(terrains[t].groupe) || !testDangerous){
+				// On regarde si c'est necessaire de l'ajouter
+				if(valeur == 0){
+					proposition.push(terrains[t]);
+					valeur+=terrains[t].achat;
+				}
+				else{
+					var rapport = (Math.abs(1-terrainVise.achat/valeur)) / (Math.abs(1-terrainVise.achat(valeur+terrains[t].achat)));
+					if(rapport>1){
+						proposition.push(terrains[t]);
+						valeur+=terrains[t].achat;
+					}
+				}			
+			}
+		}
+		if(proposition.length == 0 && testDangerous && !strict){
+			// On relance sans etre strict
+			return this.chooseMonnaiesEchange(terrainVise,terrains,joueur,false,strict);
+		}
+		return proposition;
 	  }
 
       /* Fonction doBlocage a developpe permettant de faire du blocage de construction : vente d'un hotel pour limiter l'achat de maison, decision d'acheter un hotel pour bloquer.

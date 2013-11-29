@@ -830,21 +830,35 @@ var GestionEchange = {
 	  * Principe de l'algo : evalue les criteres pour obtenir un indicateur qui permet de repondre (bornes)
       */
       this.traiteRequeteEchange = function(joueur,maison,proposition){
-		var critereTerrains = 1;
-		var critereArgent = 1;
-		if(proposition.terrains!=null && proposition.terrains.length > 0){
-		  // On mesure l'interet, la valeur du terrain / rapport a ce qui est demande
-      // On verifie que ces terrains peuvent nous faire finir un groupe
-		}
-		var others = joueur.findOthersInterestProprietes();
-		/* Confirme le traitement ou le durci. Prend le pas sur la decision calculee  */
-		var strategie = this.strategie.acceptSwapTerrain(terrain,joueur,others);
+    		var critereTerrains = 0;  
+    		var critereArgent = 0;
+
+        // Si aucune compensation, on refuse
+        if((proposition.terrains == null || proposition.terrains.length == 0) && (proposition.compensation == null || proposition.compensation == 0){
+          GestionEchange.reject();
+          return;
+        }
+        if((proposition.terrains != null && proposition.terrains.length > 0)){
+          var others = joueur.findOthersInterestProprietes(joueur);
+          for(var t in proposition.terrains){
+            var terrain = proposition.terrains[t];
+          }
+        }
+    		critereArgent = proposition.compensation / maison.achat;        
+        // Cherche les terrains qui nous interesse et verifie s'il est dedans
+    		
+
+        
+
+    		/* Confirme le traitement ou le durci. Prend le pas sur la decision calculee  */
+    		var strategie = this.strategie.acceptSwapTerrain(terrain,joueur,others);
+        GestionEchange.accept();
       }
 
       /* Traite la contre proposition qui peut se composer de terrain et / ou d'argent */
       /* A la fin, on a accepte ou pas. Plus d'aller retour */
       this.traiteContreProposition = function(proposition){
-
+        /* On recupere les terrains qui nous interesse chez ce joueur*/
       }
 
 

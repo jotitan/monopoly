@@ -327,34 +327,37 @@
 				// On mock l'objet de gestion d'echange
 				GestionEchange.accept = function(){
 					statut = 1;
+					this.end();
 				};
 				GestionEchange.reject = function(){
 					statut = 2;
+					this.end();
 				};
 				GestionEchange.contrePropose = function(){
 					statut = 3;
+					this.end();
 				}
 
 				// Creation de plusieurs terrains
 				joueurs = initJoueurs();
 			   fiches = [];
-			   fiches[0] = new Fiche(null, null, ["#AAAAAA",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);			   
-			   fiches[1] = new Fiche(null, null, ["#AAAAAA",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-			   fiches[2] = new Fiche(null, null, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-			   fiches[3] = new Fiche(null, null, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-			   fiches[4] = new Fiche(null, null, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-			   fiches[5] = new Fiche(null, null, ["#CCCCCC",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-			   fiches[6] = new Fiche(null, null, ["#CCCCCC",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[0] = new Fiche(0, 0, ["#AAAAAA",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);			   
+			   fiches[1] = new Fiche(0, 1, ["#AAAAAA",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[2] = new Fiche(0, 4, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[3] = new Fiche(0, 6, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[4] = new Fiche(0, 7, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[5] = new Fiche(1, 1, ["#CCCCCC",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+			   fiches[6] = new Fiche(1, 2, ["#CCCCCC",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
 			   new Groupe("Vert","#AAAAAA").add(fiches[0]).add(fiches[1]);
 			   new Groupe("Bleu","#AAABBB").add(fiches[2]).add(fiches[3]).add(fiches[4]);
 			   new Groupe("Rouge","#CCCCCC").add(fiches[5]).add(fiches[6]);
 
 			   // Les joueurs ont chacun besoin de la propriete de l'autre
-			   fiches[0].joueurPossede = joueurs[0];
-			   fiches[1].joueurPossede = joueurs[1];
-			   fiches[5].joueurPossede = joueurs[1];
-			   fiches[6].joueurPossede = joueurs[0];
-
+			   buyHouse(joueurs[0],0,0);
+			   buyHouse(joueurs[1],1,0);
+			   buyHouse(joueurs[1],5,0);
+			   buyHouse(joueurs[0],6,0);
+			   
 			   GestionEchange.init(joueurs[0],joueurs[1],fiches[1],null);
 			   GestionEchange.propose({terrains:[fiches[6]]});
 			   equal(statut,1,"J0 et J1 s'echange un terrain de meme valeur");
@@ -362,13 +365,18 @@
 			   // Le joueur ne propose rien, le proprio contre propose (le terrain du joueur)
 			   GestionEchange.init(joueurs[0],joueurs[1],fiches[1],null);
 			   GestionEchange.propose({});
-			   equal(statut,3,"J0 souhaite un terrain de J1 mais ne propose rien");
+			   equal(statut,2,"J0 souhaite un terrain de J1 mais ne propose rien");
 			   
 			   // Le joueur propose de l'argent mais le proprio veut un terrain
 			   GestionEchange.init(joueurs[0],joueurs[1],fiches[1],null);
 			   GestionEchange.propose({compensation:20000});
 			   equal(statut,3,"J0 souhaite un terrain de J1 et propose de l'argent, J1 veut un terrain");
 
+			   
+			   GestionEchange.init(joueurs[0],joueurs[1],fiches[1],null);
+			   GestionEchange.propose({compensation:2000});
+			   equal(statut,2,"J0 souhaite un terrain de J1 et propose peu d'argent, on refuse");
+			   
 			});
 
 			function resetHouses(){

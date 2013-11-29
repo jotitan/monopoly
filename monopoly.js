@@ -579,32 +579,37 @@ $.trigger = function(eventName,params){
      
 	 /* Calcule le fait d'accepter un terrain d'un joueur.
 	 * Se base sur le fait que le joueur a un deja un groupe, qu'il n'en a aucun.
-	 * Renvoie l'attitude a avoir : Bloquer l'echange, faire monter les encheres, accepter
+	 * Renvoie un facteur jouant sur le calcul final. 0 est bloquant, 1 est neutre...
 	 * @param otherInteresets : autres terrains qui interesent le joueur
 	 */
 	 this.acceptSwapTerrain = function(terrain,joueur,otherInterests){
 		/* Calcule si le proprio est le seul fournisseur */
 		var alone = true;
 		for(var idx in otherInterests){
-			if(!otherInterests[idx].joueurPossede.equals(terrain.joueurPossede)){
+			if(!otherInterests[idx].maison.joueurPossede.equals(terrain.joueurPossede)){
 				alone = false;
 			}
 		}
 		var nbGroups = joueur.findGroupes().size();
 		/* Le proprio est le seul a pouvoir aider le demandeur et il n'a pas encore de groupe */
-		if(nbGroups == 0 && otherInteresets.length == 0 && alone){
-			return this.agressif == 2 ? "UP":"ACCEPT";
+		if(nbGroups == 0 && otherInterests.length == 0 && alone){
+			return this.agressif == 2 ? 0.5:1;
 		}
 		/* Beaucoup de groupe et seul fournisseur, on bloque si on est vicieux, on monte sinon */
 		if(nbGroups >= 2 && alone){
-			return this.agressif > 0 ? "BLOCK":"UP";
+			return this.agressif > 0 ? 0:0.5;
+		}
+		
+		/* Personne n'a de groupe et pas seul fournisseur */
+		if(nbGroups == 0){
+			return 1.5;
 		}
 		
 		/* Beaucoup de groupe mais pas le seul fournisseur, on ne bloque pas */
 		if(nbGroups >= 2){
-			return this.agressif > 0 ? "UP":"ACCEPT";
+			return this.agressif > 0 ? 0.5:1;
 		}
-		return "ACCEPT";
+		return 1;
 	 }
 	 
   }
@@ -648,6 +653,7 @@ var GestionEchange = {
     if(this.running){
       throw "Transaction impossible, une transaction est deja en cours.";
     }
+	this.running = true;
     this.demandeur = demandeur;
     this.proprietaire = proprietaire;
     this.terrain = terrain;
@@ -823,36 +829,84 @@ var GestionEchange = {
 
 
 
-      /* Suite a une demande d'echnage d'un joueur, analyse la requete. Plusieurs cas : 
-      * Accepte la proposition (ACCEPT, indice > 5)
+      /* Suite a une demande d'echange d'un joueur, analyse la requete. Plusieurs cas : 
+      * Accepte la proposition (ACCEPT, indice > 3)
       * Refuse la proposition (BLOCK, indice < 0)
       * Fait une contre proposition en demandant plus d'argent et / ou d'autres terrains (UP, 1 < indice > 5)
 	  * Principe de l'algo : evalue les criteres pour obtenir un indicateur qui permet de repondre (bornes)
+	  * Gerer le cas de 2 ou il nous demande le terrain que l'on a (et qui nous interesse)
       */
       this.traiteRequeteEchange = function(joueur,maison,proposition){
     		var critereTerrains = 0;  
     		var critereArgent = 0;
 
         // Si aucune compensation, on refuse
-        if((proposition.terrains == null || proposition.terrains.length == 0) && (proposition.compensation == null || proposition.compensation == 0){
-          GestionEchange.reject();
-          return;
+        if((proposition.terrains == null || proposition.terrains.length == 0) 
+			&& (proposition.compensation == null || proposition.compensation == 0)){
+          return GestionEchange.reject();
         }
-        if((proposition.terrains != null && proposition.terrains.length > 0)){
-          var others = joueur.findOthersInterestProprietes(joueur);
+		var recommandations = [];	// Enregistre des parametres pour la contre proposition
+		
+		var others = this.findOthersInterestProprietes(joueur);
+		var interesetMeToo = false;	// Indique qu'on est aussi interesse par ce groupe
+		for(var i = 0 ; i < others.length ; i++){
+			if(maison.groupe.equals(others[i].maison.groupe)){interesetMeToo = true;}
+		}
+		// Gestion des terrains
+		if((proposition.terrains != null && proposition.terrains.length > 0)){          
           for(var t in proposition.terrains){
             var terrain = proposition.terrains[t];
+			// On verifie si dans others et on note l'ordre dans la liste, signe de l'interet
+			var interetTerrain = null;
+			for(var i = 0 ; i < others.length ; i++){
+				if(others[i].maison.equals(terrain)){
+					interetTerrain = i;
+				}
+			}
+			// Si le terrain est dans la liste, on augmente le critere et prend en compte la position en plus value
+			if(interetTerrain!=null){
+				critereTerrains+=1 + (others.length - interetTerrain)/others.length;
+			}
+			// On ajoute une info sur le prix du terrain propose, constitue une valeur ajoutee
+			critereTerrains+=terrain.achat/maison.achat;
           }
         }
-    		critereArgent = proposition.compensation / maison.achat;        
-        // Cherche les terrains qui nous interesse et verifie s'il est dedans
+		else{
+			if(others!=null && others.length > 0){			
+				// On verifie si le terrain demande n'appartient pas un groupe qui nous interesse
+				var length = others.length - ((interesetMeToo)?1:0);
+				critereTerrains-=length;
+				recommandations["TERRAIN"] = 1;	// Indique qu'un terrain peut etre choisi en contre proposition
+			}
+		}
+		
+		// Gestion de la compensation
+    	if(proposition.compensation!=null){
+			critereArgent = proposition.compensation / maison.achat;
+		}
+		/* On ajoute de l'importance si proposition superieur au fond propre */
+		if(this.argent < proposition.compensation){
+			critereArgent+=Math.min(1.5,(proposition.compensation/this.argent)-1);
+		}
+        /* Confirme le traitement ou le durci. Prend le pas sur la decision calculee  */
+		var strategie = this.strategie.acceptSwapTerrain(maison,joueur,others);
     		
-
-        
-
-    		/* Confirme le traitement ou le durci. Prend le pas sur la decision calculee  */
-    		var strategie = this.strategie.acceptSwapTerrain(terrain,joueur,others);
-        GestionEchange.accept();
+		// On melange le tout
+		var critere = (critereTerrains+critereArgent)*strategie;
+		console.log(critere + " " + critereTerrains + " " + critereArgent);
+        if(critere >=3){
+			return GestionEchange.accept();
+		}
+		if(critere <= 0){
+			return GestionEchange.reject();
+		}	
+		var contreProposition = {};
+		// Contre proposition   
+		if((others.length > 0 && !interesetMeToo) || (others.length > 1)){
+			// On choisit le premier terrain
+			
+		}
+		return GestionEchange.contrePropose(contreProposition);
       }
 
       /* Traite la contre proposition qui peut se composer de terrain et / ou d'argent */
@@ -2590,6 +2644,11 @@ var GestionEchange = {
         this.groupePrecedent = null;
         this.groupeSuivant = null;
 
+		this.equals = function(groupe){
+			if(groupe == null){return false;}
+			return this.color == groupe.color;
+		}
+		
         this.getVoisins = function(){
           return [this.groupePrecedent,this.groupeSuivant];
         }
@@ -2711,6 +2770,11 @@ var GestionEchange = {
       this.drawing = new Case(pos, etat, this.color, this.nom, CURRENCY + " " + achat, img);
      Drawer.add(this.drawing);
 
+	 this.equals = function(fiche){
+		if(fiche == null){return false;}
+		return this.id == fiche.id;
+	 }
+	 
      /* Renvoie l'etat courant du terrain (JSON) */
      this.save = function(){
        // On renvoie le statut, le proprio, le nombre de maison, le statut hypotheque

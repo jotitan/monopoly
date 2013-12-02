@@ -333,8 +333,9 @@
 					statut = 2;
 					this.end();
 				};
-				GestionEchange.contrePropose = function(){
+				GestionEchange.contrePropose = function(contre){
 					statut = 3;
+					console.log(contre);
 					this.end();
 				}
 
@@ -371,12 +372,18 @@
 			   GestionEchange.init(joueurs[0],joueurs[1],fiches[1],null);
 			   GestionEchange.propose({compensation:20000});
 			   equal(statut,3,"J0 souhaite un terrain de J1 et propose de l'argent, J1 veut un terrain");
-
 			   
 			   GestionEchange.init(joueurs[0],joueurs[1],fiches[1],null);
 			   GestionEchange.propose({compensation:2000});
 			   equal(statut,2,"J0 souhaite un terrain de J1 et propose peu d'argent, on refuse");
-			   
+			
+			   resetTerrainsJoueurs(joueurs);
+			   buyHouse(joueurs[0],0,0);
+			   buyHouse(joueurs[1],1,0);
+			   GestionEchange.init(joueurs[0],joueurs[1],fiches[1],null);
+			   GestionEchange.propose({compensation:40000});
+			   equal(statut,2,"J0 souhaite un terrain de J1, mais unique groupe qui interesse J1, refus");
+				
 			});
 
 			function resetHouses(){
@@ -395,6 +402,16 @@
 				 fiches[index].hotel = true;
 			   }
 			}		  
+			
+			function resetTerrainsJoueurs(joueurs){
+				for(var j in joueurs){
+					for(var m in joueurs[j].maisons){
+						joueurs[j].maisons[m].joueurPossede = null;
+						joueurs[j].maisons[m].statut = ETAT_LIBRE;
+					}
+					joueurs[j].maisons = [];
+				}
+			}
 			
 			function initJoueurs() {
 			   var joueurs = [];

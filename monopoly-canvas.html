@@ -74,6 +74,7 @@
    <div style="position:absolute;top:210px;left:320px;padding:5px;width:200px;height:80px;" class="ui-corner-all" id="informationsCentrale"></div>
 	   <button style="position:absolute;top:260px;left:185px;" onclick="lancerAnimerDes()" id="idLancerDes" class="action-joueur" disabled="disabled">Lancez</button>
 	   <button style="position:absolute;top:260px;left:260px;" class="action-joueur" onclick="GestionTerrains.open()" disabled="disabled">Gestion</button>
+	   <button style="position:absolute;top:260px;left:335px;" class="action-joueur" onclick="EchangeDisplayer.open(joueurCourant)" disabled="disabled">Echanger</button>
 	   <div style="position:absolute;top:300px;left:200px;border:solid 1px black;border-radius:10px;width:230px;padding:5px" id="idMontantParc">
 		   Parc Gratuit : Frs <span></span>
      </div>
@@ -179,17 +180,18 @@
 	</div>
 
 	<div id="idPanelEchange">
-		Joueurs : 
+		Joueur : 
 		<select id="idSelectJoueurs">
 			<option value="">---</option>
 		</select>
 		<fieldset>
 			<legend>Liste de ses terrains</legend>
+			<select id="idListTerrainsAdversaire"><option value="">---</option></select>
 		</fieldset>
 		<fieldset>
 			<legend>Proposition</legend>
-			<div>Mes terrains</div>
-			Argent : <input type="text/>
+			<div id="idListTerrainsJoueur"></div>
+			Argent : <input type="text"/>
 		</fieldset>
 	</div>
  

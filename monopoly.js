@@ -86,6 +86,10 @@ function getFiche(info) {
     return fiches[info.axe + "-" + info.pos];
 }
 
+function getFicheById(id) {
+    return fiches[id];
+}
+
 // Parametrage des titres
 var titles = {};
 
@@ -627,7 +631,8 @@ var GestionConstructions = {
             /* Calcule si le proprio est le seul fournisseur */
             var alone = true;
 			/* Seul groupe qui m'interesse, on refuse */
-			if(interestGroupe == true && otherInterests.length == 1){
+			if((interestGroupe == true && otherInterests.length == 1)
+        || terrain.isGroupee()){
 				return 0;
 			}
             for (var idx in otherInterests) {
@@ -1589,21 +1594,21 @@ var GestionEchange = {
 		/* Renvoie les maisons du joueur regroupes par groupe */
 		this.getMaisonsGrouped = function(){
 			var groups = [];
-			for(var m in this.maisons){
+      for(var m in this.maisons){
 				var maison = this.maisons[m];
 				if(maison.groupe==null){
 					if(groups["others"] == null){
-						groups["others"] = {groupe:'Autres',terrains:[maison]};
+						groups["others"] = {groupe:'Autres',color:'black',terrains:[maison]};
 					}
 					else{
-						groups["others"].push(maison);
+						groups["others"].terrains.push(maison);
 					}
 				}else{
-					if(groups[maison.groupe] == null){
-						groups[groupe.id] = {groupe:maison.groupe.nom,terrains:[maison]};
+					if(groups[maison.groupe.nom] == null){
+						groups[maison.groupe.nom] = {groupe:maison.groupe.nom,color:maison.groupe.color,terrains:[maison]};
 					}
 					else{
-						groups[groupe.id].push(maison);
+						groups[maison.groupe.nom].terrains.push(maison);
 					}
 				}
 			}
@@ -1622,7 +1627,7 @@ var GestionEchange = {
                     var stat = {
                         libre: 0,
                         adversaire: 0
-                    };
+                      };
                     for (var id in maison.groupe.fiches) {
                         var f = maison.groupe.fiches[id];
                         if (!this.equals(f.joueurPossede)) {
@@ -3087,6 +3092,10 @@ var DrawerHelper = {
             return this.statut == ETAT_LIBRE;
         }
 
+        this.isConstructed = function(){
+          return this.nbMaison > 0;
+        }
+
         /* Modifie le nombre de maison sur le terrain */
         this.setNbMaison = function (nb, noRefresh) {
             this.nbMaison = nb;
@@ -3497,6 +3506,7 @@ var DrawerHelper = {
             width: 500,
             height: 300
         });
+        
     }
 
     function showCreatePanel() {
@@ -3571,6 +3581,8 @@ var DrawerHelper = {
                 return $('#infoJoueur').html();
             }
         });
+        // Panneau d'echange
+        EchangeDisplayer.init('idPanelEchange','idSelectJoueurs','idListTerrainsJoueur','idListTerrainsAdversaire');
     }
 
     function createJoueur(isRobot, i) {
@@ -3658,10 +3670,12 @@ var DrawerHelper = {
                 break;
             case "compagnie":
                 fiche = new FicheCompagnie(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers);
+                groups[this.colors[0]].nom='Compagnie';
                 groups[this.colors[0]].add(fiche);
                 break;
             case "gare":
                 fiche = new FicheGare(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers, data.images.gare);
+                groups[this.colors[0]].nom='Gare';
                 groups[this.colors[0]].add(fiche);
                 break;
             case "chance":
@@ -4316,6 +4330,7 @@ var EchangeDisplayer = {
 	selectJoueurs:null,
 	listTerrainsJoueur:null,
 	listTerrainsAdversaire:null,
+  joueur:null,
 	init:function(id,idSelectJoueurs,idListTerrainsJoueur,idListTerrainsAdversaire){
 		this.panel = $('#' + id);
 		this.selectJoueurs = $('#' + idSelectJoueurs);
@@ -4325,8 +4340,10 @@ var EchangeDisplayer = {
 		this.panel.dialog({
 			title:"Echange de terrains",
 			autoOpen:false,
+      width:400,
 			buttons:{
-				"Annuler":function(){EchangeDisplayer.close();}
+				"Annuler":function(){EchangeDisplayer.close();},
+        "Proposer":function(){EchangeDisplayer.propose();}
 			}
 		});
 		// On charge les joueurs
@@ -4334,26 +4351,55 @@ var EchangeDisplayer = {
 			this.selectJoueurs.append('<option value="' + joueurs[j].id + '">' + joueurs[j].nom + '</option>');
 		}
 		this.selectJoueurs.change(function(){
-			var joueur = getJoueurById(this.selectJoueurs.val());
+			var joueur = getJoueurById(EchangeDisplayer.selectJoueurs.val());
 			if(joueur!=null){
-				EchangeDisplayer.listTerrainsAdversaire.empty();
-				for(var group in joueur.getMaisonsGrouped()){
-					EchangeDisplayer.listTerrainsAdversaire.append("groupe : " + group + "<br/>");
-				}
+				$('option:not(:first)',EchangeDisplayer.listTerrainsAdversaire).remove();
+				var groups = joueur.getMaisonsGrouped();
+        for(var g in groups){
+          var group = groups[g];
+          var optionGroup = $('<optgroup label="Groupe ' + group.groupe + '" style="color:' + group.color + '"></optGroup>');
+          for(var f in group.terrains){
+            var fiche = group.terrains[f];
+            optionGroup.append('<option value="' + fiche.id + '">' + fiche.nom + '</option>');
+          }
+          EchangeDisplayer.listTerrainsAdversaire.append(optionGroup);
+        }
 			}
 		});		
 	},
 	open:function(joueur){
+    this.joueur = joueur;
 		// On cache le joueur qui a ouvert le panneau
 		this.selectJoueurs.find('option:not(:visible)').show();
 		this.selectJoueurs.find('option[value="' + joueur.id + '"]').hide();
 		
 		// Affichage des terrains du joueur
-		EchangeDisplayer.listTerrainsJoueur.empty();
-		for(var group in joueur.getMaisonsGrouped()){
-			EchangeDisplayer.listTerrainsJoueur.append("groupe : " + group + "<br/>");
+    this.listTerrainsJoueur.empty();
+    var groups = joueur.getMaisonsGrouped();
+    for(var g in groups){
+      // ne pas affiche si construit
+      var group = groups[g];
+      var div = $('<div style="font-weight:bold;color:' + group.color + '">Groupe ' + group.groupe + '<br/></div>');
+      for(var f in group.terrains){
+        var fiche = group.terrains[f];
+        div.append('<input type="checkbox" value="' + fiche.id + '" id="chk_id_' + fiche.id + '"/><label for="chk_id_' + fiche.id + '">' + fiche.nom + '</label><br/>');
+      }
+      EchangeDisplayer.listTerrainsJoueur.append(div);
 		}
+    this.panel.dialog('open');
 	},
+  propose:function(){
+    GestionEchange.init(this.joueur, getJoueurById(EchangeDisplayer.selectJoueurs.val()), getFicheById(), null);
+    // On recupere la proposition
+    var proposition = {terrains:[],compensation:null};
+    $(':checkbox:checked',this.listTerrainsJoueur).each(function(){
+      proposition.terrains.push(getFicheById($(this).val()));
+    });
+    if($('#idArgentProposition').val()!=""){
+      proposition.compensation = parseInt($('#idArgentProposition').val());
+    }
+    GestionEchange.propose(proposition);
+  },
 	close:function(){
 		this.panel.dialog('close');
 	}

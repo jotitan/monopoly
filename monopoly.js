@@ -744,7 +744,7 @@ var GestionEchange = {
             joueur: this.proprietaire
         });
         this.proposition = proposition;
-        this.demandeur.traiteContreProposition(proposition);
+        this.demandeur.traiteContreProposition(proposition);	// TODO : ajouter les infos sur qui fait quoi
     },
     abort:function(){
       this.end();
@@ -775,10 +775,16 @@ var GestionEchange = {
 
         this.end();
     },
-    reject: function () {
+    reject: function (joueurReject) {
 		$.trigger('monopoly.echange.reject', {
             joueur: this.proprietaire
         });
+		// On notifie le joueur
+		if(joueurReject.equals(this.demandeur)){
+			this.proprietaire.notifyRejectProposition();
+		}else{
+		  this.demandeur.notifyRejectProposition();
+		}		
         this.end();
     }
 }
@@ -847,15 +853,21 @@ var GestionEchange = {
         this.joue = function () {
             // On reevalue a intervalle regulier la strategie
             this.changeStrategie();
-            // On fait des demandes d'echange de proprietes
-            this.echangeProprietes();
-            // Construit des maisons / hotels
-            this.buildConstructions();
-            // on lance les des
-            lancerAnimerDes();
+            // On fait des demandes d'echange de proprietes. Asynchrone, le reste du traitement est  en callback
+            var joueur = this;
+			this.echangeProprietes(function(){
+				// Construit des maisons / hotels
+				joueur.buildConstructions();
+				// on lance les des
+				lancerAnimerDes();
+			});
+			
+            
         }
 		
 		this.notifyAcceptProposition = function(){}
+		
+		this.notifyRejectProposition = function(){}
 
         /* Cherche a echanger des proprietes. Methode bloquante car negociation avec d'autres joueurs
          * Se deroule en plusieurs etapes :
@@ -907,14 +919,19 @@ var GestionEchange = {
                         compensation: p.compensation
                     };
                     try {
-                        GestionEchange.init(this, p.maison.joueurPossede, p.maison, function () {});
+						// L'action de fin d'un ordinateur
+                        GestionEchange.init(this, p.maison.joueurPossede, p.maison, callback);
                         GestionEchange.propose(proposition);
                         return;
                     } catch (e) {
-                        // Deja en cours quelque part
+                        // Deja en cours quelque part, on continue
+						callback();
+						return;
                     }
                 }
             }
+			// Aucun echange n'est fait, on continue
+			callback();
         }
 
         // La gestion des echanges se passe par des mecanismes asynchrones. On utilise un objet contenant une proposition / contre proposition et un statut.
@@ -1071,7 +1088,8 @@ var GestionEchange = {
         /* Traite la contre proposition qui peut se composer de terrain et / ou d'argent */
         /* A la fin, on a accepte ou pas. Plus d'aller retour */
         this.traiteContreProposition = function (proposition) {
-            /* On recupere les terrains qui nous interesse chez ce joueur*/
+            /* On evalue la pertinence  */
+			this._calculatePropositionValue(maison,joueur,proposition,others)
         }
 
 
@@ -1606,19 +1624,25 @@ var GestionEchange = {
         }
 
         /* Affiche la demande d'echange d'un joueur */
-        this.traiteRequeteEchange = function (joueur, maison, proposition) {
-			
+        this.traiteRequeteEchange = function (joueur, terrain, proposition) {
+			// On affiche l'interface au joueur
+			CommunicationDisplayer.show(joueur,this,terrain,proposition,this);
         }
 
         /* Affiche la contreproposition du joueur */
         this.traiteContreProposition = function (proposition) {
- 
+			CommunicationDisplayer.showContreProposition(proposition);
         }
 
         /* On affiche a l'utilisateur l'acceptation de la proposition */
 		this.notifyAcceptProposition = function(){
 			// On affiche l'information
-      CommunicationDisplayer.showAccept();
+			CommunicationDisplayer.showAccept();
+		}
+		
+		/* On affiche a l'utilisateur le rejet de la proposition */
+		this.notifyRejectProposition = function(){
+			CommunicationDisplayer.showReject();
 		}
 		
 		/* Renvoie les maisons du joueur regroupes par groupe */
@@ -4371,35 +4395,53 @@ function getJoueurById(numero) {
 /* Affiche les echanges entre les joueurs */
 var CommunicationDisplayer = {
 	panel:null,
+	joueur:null,	// Joueur a qui est affiche le panneau
   buttons:null,  // Bouton actuellement affiche
 	init:function(idPanel){
 		this.panel = $('#' + idPanel);
 		this.panel.dialog({
 			autoOpen:false,
 			title:'Echange'
-		});
+		});		
 	},
 	/* Affiche la demande */
-	show:function(demandeur,proprietaire,terrain,proposition){
+	show:function(demandeur,proprietaire,terrain,proposition,displayJoueur){
+		this.joueur = displayJoueur;
 		this.panel.dialog('option','title','Echange entre ' + demandeur.nom + ' et ' + proprietaire.nom);
 		$('.proposition,.communications',this.panel).empty();
 		$('.proposition',this.panel).append('<div>Terrain : <span style="font-weight:bold;color:' + terrain.color + '">' + terrain.nom + '</div>');
-		$('.proposition',this.panel).append('Proposition : ');
+		
+		this._showProposition($('.proposition',this.panel),proposition);		
+		$('.communications',this.panel).empty();
+		this.panel.dialog('open');
+	},
+	_showProposition:function(div,proposition){
+		div.append('Proposition : ');
 		if(proposition.terrains.length > 0){
 			for(var t in proposition.terrains){
 				var terrain = proposition.terrains[t];
-				$('.proposition',this.panel).append('<div style="padding-left:20px;color:' + terrain.color + '">' + terrain.nom + '</div>');
+				div.append('<div style="padding-left:20px;color:' + terrain.color + '">' + terrain.nom + '</div>');
 			}
 		}
-		$('.proposition',this.panel).append('<div style="padding-left:20px;">Argent : ' + CURRENCY + ' ' + proposition.compensation + '</div>');
-		$('.communications',this.panel).empty();
-		this.panel.dialog('open');
+		div.append('<div style="padding-left:20px;">Argent : ' + CURRENCY + ' ' + proposition.compensation + '</div>');
 	},
   /* Affiche la proposition acceptee */
   showAccept:function(){
     this.addMessage("La proposition a été acceptée",[
         {nom:"Fermer",action:function(){CommunicationDisplayer.close();}}
-      ])
+    ]);
+  },
+  showReject:function(){
+	this.addMessage("La proposition a été rejectée",[
+		{nom:"Fermer",action:function(){CommunicationDisplayer.close();}}
+	]);
+  }
+  showContreProposition:function(contreProposition){	
+	this.addMessage("Une contreproposition a été faite",[
+        {nom:"Refuser",action:function(){GestionEchange.accept(GestionEchange.joueur);}},
+		{nom:"Accepter",action:function(){GestionEchange.reject();}}
+    ]);
+	this._showProposition($('.communications',this.panel),proposition);		
   },
   /* @param actions : beaucoup d'action a proposer au joueur */
 	addMessage:function(message,actions){
@@ -4493,6 +4535,7 @@ var EchangeDisplayer = {
   	var proprietaire = getJoueurById(EchangeDisplayer.selectJoueurs.val());
   	var terrain = getFicheById(this.listTerrainsAdversaire.val());
   	if(proprietaire == null || terrain == null){return;}
+		// L'action de fin, c'est la reprise du jeu par le joueur (donc rien)
       GestionEchange.init(this.joueur, proprietaire, terrain, null);
       // On recupere la proposition
       var proposition = {terrains:[],compensation:0};
@@ -4503,7 +4546,7 @@ var EchangeDisplayer = {
         proposition.compensation = parseInt($('#idArgentProposition').val());
       }
   	this.close();
-  	CommunicationDisplayer.show(this.joueur,proprietaire,terrain,proposition);
+  	CommunicationDisplayer.show(this.joueur,proprietaire,terrain,proposition,this.joueur);
       GestionEchange.propose(proposition);
     },
 	close:function(){

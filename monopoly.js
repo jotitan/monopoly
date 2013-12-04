@@ -710,7 +710,7 @@ var GestionEchange = {
         this.demandeur = demandeur;
         this.proprietaire = proprietaire;
         this.terrain = terrain;
-        this.endCallback = endCallback;
+        this.endCallback = endCallback;        
         $.trigger('monopoly.echange.init', {
             joueur: demandeur,
             maison: terrain
@@ -746,13 +746,21 @@ var GestionEchange = {
         this.proposition = proposition;
         this.demandeur.traiteContreProposition(proposition);
     },
+    abort:function(){
+      this.end();
+    },
     /* Le proprietaire accepte la proposition. On prend la derniere proposition et on l'applique */
-    accept: function () {
+    /* @param joueurAccept : joueur qui accepte la proposition (suite au aller retour) */
+    accept: function (joueurAccept) {
 		$.trigger('monopoly.echange.accept', {
             joueur: this.proprietaire
         });
-		// On notifie le joueur qui a fait la demande
-		this.demandeur.echangeAccepted();
+    // On notifie a l'autre joueur que c'est accepte
+    if(joueurAccept.equals(this.demandeur)){
+      this.proprietaire.notifyAcceptProposition();
+    }else{
+      this.demandeur.notifyAcceptProposition();
+    }		
         // La propriete change de proprietaire
         this.demandeur.getSwapProperiete(this.terrain);
         // Le proprietaire recoit la proposition
@@ -847,7 +855,7 @@ var GestionEchange = {
             lancerAnimerDes();
         }
 		
-		this.echangeAccepted = function(){}
+		this.notifyAcceptProposition = function(){}
 
         /* Cherche a echanger des proprietes. Methode bloquante car negociation avec d'autres joueurs
          * Se deroule en plusieurs etapes :
@@ -930,10 +938,10 @@ var GestionEchange = {
             var others = this.findOthersInterestProprietes(joueur);
             var infos = this._calculatePropositionValue(maison,joueur,proposition,others);
             if (infos.critere >= 3) {
-                return GestionEchange.accept();
+                return GestionEchange.accept(this);
             }
             if (infos.critere <= 0) {
-                return GestionEchange.reject();
+                return GestionEchange.reject(this);
             }
          
             var contreProposition = {terrains:[],compensation:0};
@@ -1607,8 +1615,10 @@ var GestionEchange = {
  
         }
 
-		this.echangeAccepted = function(){
+        /* On affiche a l'utilisateur l'acceptation de la proposition */
+		this.notifyAcceptProposition = function(){
 			// On affiche l'information
+      CommunicationDisplayer.showAccept();
 		}
 		
 		/* Renvoie les maisons du joueur regroupes par groupe */
@@ -1725,8 +1735,20 @@ var GestionEchange = {
             } else {
                 this.div.append(maison.input);
             }
+            // On supprime l'ancien proprio
+            maison.joueurPossede.removeMaison(maison);
             maison.joueurPossede = this;
             this.maisons.push(maison);
+        }
+
+        /* Supprime la maison de la liste */
+        this.removeMaison = function (maison){
+            for(var i = 0 ; i < this.maisons.length ; i++){
+              if(this.maisons[i].equals(maison)){
+                this.maisons.splice(i,1);
+                return;
+              }
+            }
         }
 
         // Envoi le joueur (et le pion) en prison
@@ -3603,7 +3625,7 @@ var DrawerHelper = {
         });
         // Panneau d'echange
         EchangeDisplayer.init('idPanelEchange','idSelectJoueurs','idListTerrainsJoueur','idListTerrainsAdversaire');
-		CommunicationDisplayer.init('idCommunicationEchange');
+		    CommunicationDisplayer.init('idCommunicationEchange');
     }
 
     function createJoueur(isRobot, i) {
@@ -4349,6 +4371,7 @@ function getJoueurById(numero) {
 /* Affiche les echanges entre les joueurs */
 var CommunicationDisplayer = {
 	panel:null,
+  buttons:null,  // Bouton actuellement affiche
 	init:function(idPanel){
 		this.panel = $('#' + idPanel);
 		this.panel.dialog({
@@ -4358,23 +4381,45 @@ var CommunicationDisplayer = {
 	},
 	/* Affiche la demande */
 	show:function(demandeur,proprietaire,terrain,proposition){
-		this.panel.dialog('options','title','Echange entre ' + demandeur.nom + ' et ' + proprietaire.nom);
-		$('.proposition',this.panel).empty();
-		$('.proposition',this.panel).append('<div style="color:' + terrain.color + '">' + terrain.nom + '</div>');
+		this.panel.dialog('option','title','Echange entre ' + demandeur.nom + ' et ' + proprietaire.nom);
+		$('.proposition,.communications',this.panel).empty();
+		$('.proposition',this.panel).append('<div>Terrain : <span style="font-weight:bold;color:' + terrain.color + '">' + terrain.nom + '</div>');
 		$('.proposition',this.panel).append('Proposition : ');
 		if(proposition.terrains.length > 0){
 			for(var t in proposition.terrains){
 				var terrain = proposition.terrains[t];
-				$('.proposition',this.panel).append('<p style="color:' + terrain.color + '">' + terrain.nom + '</p>');
+				$('.proposition',this.panel).append('<div style="padding-left:20px;color:' + terrain.color + '">' + terrain.nom + '</div>');
 			}
 		}
-		$('.proposition',this.panel).append(CURRENCY + ' ' + proposition.compensation);
+		$('.proposition',this.panel).append('<div style="padding-left:20px;">Argent : ' + CURRENCY + ' ' + proposition.compensation + '</div>');
 		$('.communications',this.panel).empty();
 		this.panel.dialog('open');
 	},
-	addMessage:function(message){
-		$('.communications',this.panel).append(message);
-	}
+  /* Affiche la proposition acceptee */
+  showAccept:function(){
+    this.addMessage("La proposition a été acceptée",[
+        {nom:"Fermer",action:function(){CommunicationDisplayer.close();}}
+      ])
+  },
+  /* @param actions : beaucoup d'action a proposer au joueur */
+	addMessage:function(message,actions){
+		$('.communications',this.panel).append('<hr/>');
+    $('.communications',this.panel).append('<p>' + message + '</p>');
+    if(actions!=null && actions.length > 0){
+      this.buttons =  $('<div></div>');
+      for(var act in actions){
+        var action = actions[act];
+        var button = $('<button>' + action.nom + '</button>');
+        button.bind('click',function(){
+          CommunicationDisplayer.buttons.remove();
+          CommunicationDisplayer.buttons = null;
+          action.action();
+        });
+        this.buttons.append(button)
+      }
+      $('.communications',this.panel).append(this.buttons);
+    }
+	},
 	close:function(){
 		this.panel.dialog('close');
 	}
@@ -4409,7 +4454,7 @@ var EchangeDisplayer = {
 		this.selectJoueurs.change(function(){
 			var joueur = getJoueurById(EchangeDisplayer.selectJoueurs.val());
 			if(joueur!=null){
-				$('option:not(:first)',EchangeDisplayer.listTerrainsAdversaire).remove();
+				$('option:not(:first),optgroup',EchangeDisplayer.listTerrainsAdversaire).remove();
 				var groups = joueur.getMaisonsGrouped();
         for(var g in groups){
           var group = groups[g];
@@ -4433,7 +4478,7 @@ var EchangeDisplayer = {
     this.listTerrainsJoueur.empty();
     var groups = joueur.getMaisonsGrouped();
     for(var g in groups){
-      // ne pas affiche si construit
+      // ne pas affiche si construit )groups[g].isConstructed()
       var group = groups[g];
       var div = $('<div style="font-weight:bold;color:' + group.color + '">Groupe ' + group.groupe + '<br/></div>');
       for(var f in group.terrains){
@@ -4445,24 +4490,25 @@ var EchangeDisplayer = {
     this.panel.dialog('open');
 	},
   propose:function(){
-	var proprietaire = getJoueurById(EchangeDisplayer.selectJoueurs.val());
-	var terrain = getFicheById(this.listTerrainsAdversaire.val());
-	if(proprietaire == null || terrain == null){return;}
-    GestionEchange.init(this.joueur, proprietaire, getFicheById(), null);
-    // On recupere la proposition
-    var proposition = {terrains:[],compensation:0};
-    $(':checkbox:checked',this.listTerrainsJoueur).each(function(){
-      proposition.terrains.push(getFicheById($(this).val()));
-    });
-    if($('#idArgentProposition').val()!=""){
-      proposition.compensation = parseInt($('#idArgentProposition').val());
-    }
-	this.close();
-	CommunicationDisplayer.show(this.joueur,proprietaire,terrain,proposition);
-    GestionEchange.propose(proposition);
-  },
+  	var proprietaire = getJoueurById(EchangeDisplayer.selectJoueurs.val());
+  	var terrain = getFicheById(this.listTerrainsAdversaire.val());
+  	if(proprietaire == null || terrain == null){return;}
+      GestionEchange.init(this.joueur, proprietaire, terrain, null);
+      // On recupere la proposition
+      var proposition = {terrains:[],compensation:0};
+      $(':checkbox:checked',this.listTerrainsJoueur).each(function(){
+        proposition.terrains.push(getFicheById($(this).val()));
+      });
+      if($('#idArgentProposition').val()!=""){
+        proposition.compensation = parseInt($('#idArgentProposition').val());
+      }
+  	this.close();
+  	CommunicationDisplayer.show(this.joueur,proprietaire,terrain,proposition);
+      GestionEchange.propose(proposition);
+    },
 	close:function(){
 		this.panel.dialog('close');
+    $('option',this.selectJoueurs).removeAttr('selected');
 	}
 }
 
@@ -4519,17 +4565,17 @@ var MessageDisplayer = {
             if (message != "") {
                 MessageDisplayer.write(data.joueur, message);
             }
-        }).bind("monopoly.echange.init", function () {
+        }).bind("monopoly.echange.init", function (e,data) {
             var message = 'souhaite obtenir <span style="color:' + data.maison.color + '">' + data.maison.nom + '</span>  auprès de ' + data.maison.joueurPossede.nom;
             MessageDisplayer.write(data.joueur, message);
-        }).bind("monopoly.echange.propose", function () {
+        }).bind("monopoly.echange.propose", function (e,data) {
             var message = 'propose ' + data.proposition.terrains.length + ' terrain(s) et ' + data.proposition.compensation + ' en compensation';
             MessageDisplayer.write(data.joueur, message);
-        }).bind("monopoly.echange.accept", function () {
+        }).bind("monopoly.echange.accept", function (e,data) {
             MessageDisplayer.write(data.joueur, 'accepte la proposition');
-        }).bind("monopoly.echange.reject", function () {
+        }).bind("monopoly.echange.reject", function (e,data) {
             MessageDisplayer.write(data.joueur, 'rejete la proposition');
-        }).bind("monopoly.echange.contrepropose", function () {
+        }).bind("monopoly.echange.contrepropose", function (e,data) {
             MessageDisplayer.write(data.joueur, 'fait une contreproposition');
         }).bind("monopoly.debug", function (e, data) {
             if (DEBUG) {

@@ -739,12 +739,16 @@ var GestionEchange = {
         this.proprietaire.traiteRequeteEchange(this.demandeur, this.terrain, proposition);
     },
     /* Contre proposition du proprietaire, ca peut être des terrains ou de l'argent */
-    contrePropose: function (proposition) {
+    contrePropose: function (proposition,joueurContre) {
 		$.trigger('monopoly.echange.contrepropose', {
             joueur: this.proprietaire
         });
         this.proposition = proposition;
-        this.demandeur.traiteContreProposition(proposition);	// TODO : ajouter les infos sur qui fait quoi
+        if(joueurContre.equals(this.demandeur)){
+            this.proprietaire.traiteContreProposition(proposition,joueurContre, this.terrain);	// TODO : ajouter les infos sur qui fait quoi
+        }else{
+           this.demandeur.traiteContreProposition(proposition,joueurContre,this.terrain); // TODO : ajouter les infos sur qui fait quoi 
+        }
     },
     abort:function(){
       this.end();
@@ -1087,9 +1091,15 @@ var GestionEchange = {
 
         /* Traite la contre proposition qui peut se composer de terrain et / ou d'argent */
         /* A la fin, on a accepte ou pas. Plus d'aller retour */
-        this.traiteContreProposition = function (proposition) {
+        this.traiteContreProposition = function (proposition,joueur,maison) {
             /* On evalue la pertinence  */
-			this._calculatePropositionValue(maison,joueur,proposition,others)
+            var others = joueur.findOthersInterestProprietes(this);
+			var infos = this._calculatePropositionValue(maison,joueur,proposition,others);
+            // On peut etre un peu plus laxiste ?
+            if(infos > 3){
+                return GestionEchange.accept(this);
+            }
+            return GestionEchange.reject(this);
         }
 
 
@@ -1630,7 +1640,7 @@ var GestionEchange = {
         }
 
         /* Affiche la contreproposition du joueur */
-        this.traiteContreProposition = function (proposition) {
+        this.traiteContreProposition = function (proposition,joueur,terrain) {
 			CommunicationDisplayer.showContreProposition(proposition);
         }
 
@@ -4412,9 +4422,19 @@ var CommunicationDisplayer = {
 		$('.proposition',this.panel).append('<div>Terrain : <span style="font-weight:bold;color:' + terrain.color + '">' + terrain.nom + '</div>');
 		
 		this._showProposition($('.proposition',this.panel),proposition);		
+        // On ajoute les actions
+        this.addMessage("Que souhaitez vous faire",[
+            {nom:"Accepter",action:function(){GestionEchange.accept(CommunicationDisplayer.joueur)}},
+            {nom:"Refuser",action:function(){GestionEchange.reject(CommunicationDisplayer.joueur)}},
+            {nom:"Négocier",action:function(){CommunicationDisplayer._showContrePanel();}}
+            ],true)
 		$('.communications',this.panel).empty();
 		this.panel.dialog('open');
 	},
+    /* Affiche le panneau de saisie d'une contreproposition */
+    _showContrePanel:function(){
+
+    },
 	_showProposition:function(div,proposition){
 		div.append('Proposition : ');
 		if(proposition.terrains.length > 0){
@@ -4435,17 +4455,19 @@ var CommunicationDisplayer = {
 	this.addMessage("La proposition a été rejectée",[
 		{nom:"Fermer",action:function(){CommunicationDisplayer.close();}}
 	]);
-  }
+  },
   showContreProposition:function(contreProposition){	
 	this.addMessage("Une contreproposition a été faite",[
-        {nom:"Refuser",action:function(){GestionEchange.accept(GestionEchange.joueur);}},
-		{nom:"Accepter",action:function(){GestionEchange.reject();}}
+        {nom:"Refuser",action:function(){GestionEchange.accept(CommunicationDisplayer.joueur);}},
+		{nom:"Accepter",action:function(){GestionEchange.reject(CommunicationDisplayer.joueur);}}
     ]);
 	this._showProposition($('.communications',this.panel),proposition);		
   },
   /* @param actions : beaucoup d'action a proposer au joueur */
-	addMessage:function(message,actions){
-		$('.communications',this.panel).append('<hr/>');
+	addMessage:function(message,actions,noHr){
+		if(!noHr){
+            $('.communications',this.panel).append('<hr/>');
+        }
     $('.communications',this.panel).append('<p>' + message + '</p>');
     if(actions!=null && actions.length > 0){
       this.buttons =  $('<div></div>');

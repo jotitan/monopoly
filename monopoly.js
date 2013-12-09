@@ -703,7 +703,7 @@ var GestionEchange = {
     /* Initialise une transaction entre deux joueurs */
     init: function (demandeur, proprietaire, terrain, endCallback) {
         if (this.running) {
-            throw "Transaction impossible, une transaction est deja en cours.";
+		    throw "Transaction impossible, une transaction est deja en cours.";
         }
         this.running = true;
         this.demandeur = demandeur;
@@ -728,13 +728,15 @@ var GestionEchange = {
     },
     /* Fait une proposition au proprietaire */
     /* Une proposition peut etre un ou plusieurs terrains ou de l'argent. */
-    propose: function (proposition) {
-        // On transmet la demande au proprietaire
+    propose: function (proposition) {		
+		// On transmet la demande au proprietaire
         this.proposition = proposition;
+		console.log("1");
         $.trigger('monopoly.echange.propose', {
-            joueur: this.demandeur,
+            joueur: GestionEchange.demandeur,
             proposition: proposition
         });
+		console.log("2");
         this.proprietaire.traiteRequeteEchange(this.demandeur, this.terrain, proposition);
     },
     /* Contre proposition du proprietaire, ca peut être des terrains ou de l'argent */
@@ -800,7 +802,7 @@ var GestionEchange = {
      mode fric (achete les plus chers).*/
 
     function JoueurOrdinateur(numero, nom, color) {
-        Joueur.call(this, numero, nom, color);
+	    Joueur.call(this, numero, nom, color);
         this.canPlay = false;
         this.initialName = nom;
         /* Strategie : definit le comportement pour l'achat des maisons */
@@ -868,6 +870,36 @@ var GestionEchange = {
 
         }
 
+		// Fonction appelee lorsque les des sont lances et que le pion est place
+        this.actionApresDes = function (buttons, propriete) {
+			if (buttons == null) {
+                return;
+            }
+            var current = this;
+            setTimeout(function () {
+                if (buttons.Acheter != null && propriete != null) {
+                    var interet = current.strategie.interetGlobal(propriete);
+                    var comportement = current.comportement.getRisqueTotal(current, propriete.achat);
+                    $.trigger("monopoly.debug", {
+                        message: "Strategie : " + interet + " " + comportement
+                    });
+                    if (interet > comportement) {
+                        $.trigger("monopoly.debug", {
+                            message: "IA Achete"
+                        });
+                        buttons.Acheter();
+                        return;
+                    }
+                }
+                for (var i in buttons) {
+                    if (i != "Acheter") {
+                        buttons[i]();
+                        return;
+                    }
+                }
+            }, IA_TIMEOUT);
+        }
+		
         this.notifyAcceptProposition = function () {}
 
         this.notifyRejectProposition = function () {}
@@ -927,6 +959,7 @@ var GestionEchange = {
                         GestionEchange.propose(proposition);
                         return;
                     } catch (e) {
+						console.log(e);
                         // Deja en cours quelque part, on continue
                         callback();
                         return;
@@ -939,8 +972,6 @@ var GestionEchange = {
 
         // La gestion des echanges se passe par des mecanismes asynchrones. On utilise un objet contenant une proposition / contre proposition et un statut.
         // On bloque le traitement d'un joueur
-
-
 
         /* Suite a une demande d'echange d'un joueur, analyse la requete. Plusieurs cas : 
          * Accepte la proposition (ACCEPT, indice > 3)
@@ -1017,7 +1048,6 @@ var GestionEchange = {
             return contreProposition;
         }
 
-
         /* Calcule la valeur d'une proposition d'echange */
         /* @return : renvoie la valeur de la proposition ainsi que des recommandations (utilise pour les contre propositions) */
         this._calculatePropositionValue = function (maison, joueur, proposition, others) {
@@ -1090,8 +1120,6 @@ var GestionEchange = {
 
         }
 
-
-
         /* Traite la contre proposition qui peut se composer de terrain et / ou d'argent */
         /* A la fin, on a accepte ou pas. Plus d'aller retour */
         this.traiteContreProposition = function (proposition, joueur, maison) {
@@ -1104,7 +1132,6 @@ var GestionEchange = {
             }
             return GestionEchange.reject(this);
         }
-
 
         /* Si aucune monnaie d'echange ou si la monnaie d'echange est trop dangereuse, on evalue une compensation financiere
          * Plusieurs criteres sont pris en compte :
@@ -1847,7 +1874,6 @@ var GestionEchange = {
             return this.getStats().argentDispo >= montant;
         }
 
-
         /* Paye la somme demandee. Si les fonds ne sont pas disponibles, l'utilisateur doit d'abord réunir la somme, on le bloque */
         /* @param callback : action a effectuer apres le paiement */
         this.payer = function (montant, callback) {
@@ -2062,36 +2088,6 @@ var GestionEchange = {
             }
 
             return proprietes;
-        }
-
-        // Fonction appelee lorsque les des sont lances et que le pion est place
-        this.actionApresDes = function (buttons, propriete) {
-            if (buttons == null) {
-                return;
-            }
-            var current = this;
-            setTimeout(function () {
-                if (buttons.Acheter != null && propriete != null) {
-                    var interet = current.strategie.interetGlobal(propriete);
-                    var comportement = current.comportement.getRisqueTotal(current, propriete.achat);
-                    $.trigger("monopoly.debug", {
-                        message: "Strategie : " + interet + " " + comportement
-                    });
-                    if (interet > comportement) {
-                        $.trigger("monopoly.debug", {
-                            message: "IA Achete"
-                        });
-                        buttons.Acheter();
-                        return;
-                    }
-                }
-                for (var i in buttons) {
-                    if (i != "Acheter") {
-                        buttons[i]();
-                        return;
-                    }
-                }
-            }, IA_TIMEOUT);
         }
 
         /* Renvoie les groupes constructibles avec les proprietes de chaque */
@@ -3199,7 +3195,7 @@ var DrawerHelper = {
 
         this.action = function () {
             this.fiche.dialog('option', 'title', nom);
-            // si on est chez soit, on affiche pas
+            // si on est chez soi, on affiche pas
             if (this.joueurPossede != null && this.joueurPossede.equals(joueurCourant)) {
                 return this.chezSoi();
             }
@@ -3211,7 +3207,7 @@ var DrawerHelper = {
         }
 
         this.chezSoi = function () {
-            return createMessage("Vous etes " + this.nom, this.color, "Vous etes chez vous", changeJoueur)
+            return createMessage("Vous etes " + this.nom, this.color, "Vous etes chez vous", changeJoueur);
         }
 
         this.buyMaison = function (joueur, noRefresh) {
@@ -3384,14 +3380,14 @@ var DrawerHelper = {
     // Cree le comportement lorsque le joueur arrive sur la carte
 
     function doActions() {
-        var fiche = fiches[joueurCourant.pion.etat + "-" + joueurCourant.pion.position];
+		var fiche = fiches[joueurCourant.pion.etat + "-" + joueurCourant.pion.position];
         if (fiche == null) {
             changeJoueur();
             return;
         }
         var buttons = fiche.action(); // Recupere les actions jouables en tombant sur cette case 
         // une fois l'action cree, le joueur doit faire une action
-        joueurCourant.actionApresDes(buttons, fiche);
+		joueurCourant.actionApresDes(buttons, fiche);
     }
 
     function getWinner() {
@@ -3554,9 +3550,6 @@ var DrawerHelper = {
         }
         MessageDisplayer.write(joueurCourant, message);
     }
-
-
-
 
     function init(plateau, debugValue) {
         DEBUG = debugValue;
@@ -3736,7 +3729,6 @@ var DrawerHelper = {
         });
 
     }
-
 
     /* Charge les donnees du plateau */
     function loadPlateau(data) {
@@ -3919,9 +3911,6 @@ var DrawerHelper = {
     function closeDetailFiche() {
         $('#idDetailFiche').slideUp();
     }
-
-
-
 
 var GestionTerrains = {
     maisonsToLever: [],
@@ -4543,6 +4532,7 @@ var CommunicationDisplayer = {
         if (actions != null && actions.length > 0) {
             this.buttons = $('<div></div>');
             for (var act in actions) {
+				console.log(act.nom);
                 var action = actions[act];
                 var button = $('<button>' + action.nom + '</button>');
                 button.data("action",action.action);

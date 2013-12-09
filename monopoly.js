@@ -17,7 +17,7 @@ Object.defineProperty(Array.prototype, "size", {
 Object.defineProperty(Array.prototype, "contains", {
     value: function (value) {
         for (var i in this) {
-            if (this[i].equals(value)) {
+            if (this[i] == value) {
                 return true;
             }
         }
@@ -780,7 +780,7 @@ var GestionEchange = {
     },
     reject: function (joueurReject) {
         $.trigger('monopoly.echange.reject', {
-            joueur: joueurAccept
+            joueur: joueurReject
         });
         // On notifie le joueur
         if (joueurReject.equals(this.demandeur)) {
@@ -2069,6 +2069,7 @@ var GestionEchange = {
             if (buttons == null) {
                 return;
             }
+            var current = this;
             setTimeout(function () {
                 if (buttons.Acheter != null && propriete != null) {
                     var interet = current.strategie.interetGlobal(propriete);
@@ -4424,14 +4425,9 @@ var CommunicationDisplayer = {
             title: 'Echange'
         });
     },
-    /* Affiche la demande */
+    /* Affiche la demande (recapitulatif). On affiche les options si on recoit la demande */
     show: function (demandeur, proprietaire, terrain, proposition, displayJoueur) {
-        this.joueur = displayJoueur;
-        this.panel.dialog('option', 'title', 'Echange entre ' + demandeur.nom + ' et ' + proprietaire.nom);
-        $('.proposition,.communications', this.panel).empty();
-        $('.proposition', this.panel).append('<div>Terrain : <span style="font-weight:bold;color:' + terrain.color + '">' + terrain.nom + '</div>');
-
-        this._showProposition($('.proposition', this.panel), proposition);
+        this.showPropose(demandeur, proprietaire, terrain, proposition, displayJoueur);
         // On ajoute les actions
         this.addMessage("Que souhaitez vous faire", [{
             nom: "Accepter",
@@ -4448,15 +4444,27 @@ var CommunicationDisplayer = {
         }, {
             nom: "Négocier",
             action: function () {
-                CommunicationDisplayer._showContrePanel(proprietaire);
+                CommunicationDisplayer._showContrePanel(demandeur);
             }
         }], true)
+        
+    },
+    /* Affiche juste la proposition, pas d'option */
+    showPropose:function(demandeur, proprietaire, terrain, proposition, displayJoueur){
+        this.joueur = displayJoueur;
+        this.panel.dialog('option', 'title', 'Echange entre ' + demandeur.nom + ' et ' + proprietaire.nom);
+        $('.proposition,.communications', this.panel).empty();
+        $('.proposition', this.panel).append('<div>Terrain : <span style="font-weight:bold;color:' + terrain.color + '">' + terrain.nom + '</div>');
+
+        this._showProposition($('.proposition', this.panel), proposition);
         $('.communications', this.panel).empty();
         this.panel.dialog('open');
     },
     /* Affiche le panneau de saisie d'une contreproposition */
-    _showContrePanel: function (joueur) {
+    _showContrePanel: function (joueur,joueurAdverse) {
         // Affichage sur l'ecran principal ou le meme
+        this.buttons.remove();
+        this.buttons = null;
 		var groups = joueur.getMaisonsGrouped();
         for (var g in groups) {
             // ne pas affiche si construit )groups[g].isConstructed()
@@ -4512,12 +4520,16 @@ var CommunicationDisplayer = {
         this.addMessage("Une contreproposition a été faite", [{
             nom: "Refuser",
             action: function () {
+                console.log("refuse");
                 GestionEchange.reject(CommunicationDisplayer.joueur);
+                CommunicationDisplayer.close();
             }
         }, {
             nom: "Accepter",
             action: function () {
+                console.log("accept");
                 GestionEchange.accept(CommunicationDisplayer.joueur);
+                CommunicationDisplayer.close();
             }
         }]);
         this._showProposition($('.communications', this.panel), contreProposition);
@@ -4533,13 +4545,15 @@ var CommunicationDisplayer = {
             for (var act in actions) {
                 var action = actions[act];
                 var button = $('<button>' + action.nom + '</button>');
-                button.bind('click', function () {
+                button.data("action",action.action);
+                button.unbind('click').bind('click', function () {
+                    $(this).data("action")();
                     CommunicationDisplayer.buttons.remove();
-                    CommunicationDisplayer.buttons = null;
-                    action.action();
+                    CommunicationDisplayer.buttons = null;                                     
                 });
                 this.buttons.append(button)
             }
+            console.log(this.buttons);
             $('.communications', this.panel).append(this.buttons);
         }
     },
@@ -4636,7 +4650,7 @@ var EchangeDisplayer = {
             proposition.compensation = parseInt($('#idArgentProposition').val());
         }
         this.close();
-        CommunicationDisplayer.show(this.joueur, proprietaire, terrain, proposition, this.joueur);
+        CommunicationDisplayer.showPropose(this.joueur, proprietaire, terrain, proposition, this.joueur);
         GestionEchange.propose(proposition);
     },
     close: function () {

@@ -35,7 +35,7 @@ $.bind = function (eventName, fct) {
 }
 
 $.trigger = function (eventName, params) {
-    $('body').trigger(eventName, params);
+ 	$('body').trigger(eventName, params);
 }
 
 var DEBUG = false;
@@ -731,7 +731,6 @@ var GestionEchange = {
     propose: function (proposition) {		
 		// On transmet la demande au proprietaire
         this.proposition = proposition;
-		console.log("1");
         $.trigger('monopoly.echange.propose', {
             joueur: GestionEchange.demandeur,
             proposition: proposition
@@ -950,7 +949,7 @@ var GestionEchange = {
                 for (var idx in proprietesFiltrees) {
                     var p = proprietesFiltrees[idx];
                     var proposition = {
-                        terrains: p.deals,
+                        terrains: (p.deals == null)?[]:p.deals,
                         compensation: p.compensation
                     };
                     try {
@@ -4532,8 +4531,7 @@ var CommunicationDisplayer = {
         if (actions != null && actions.length > 0) {
             this.buttons = $('<div></div>');
             for (var act in actions) {
-				console.log(act.nom);
-                var action = actions[act];
+				var action = actions[act];
                 var button = $('<button>' + action.nom + '</button>');
                 button.data("action",action.action);
                 button.unbind('click').bind('click', function () {
@@ -4542,9 +4540,11 @@ var CommunicationDisplayer = {
                     CommunicationDisplayer.buttons = null;                                     
                 });
                 this.buttons.append(button)
-            }
-            console.log(this.buttons);
+            }            
             $('.communications', this.panel).append(this.buttons);
+			console.log($('.communications', this.panel));
+			console.log(this.buttons);
+			console.log(this.buttons.parent());
         }
     },
     close: function () {
@@ -4706,7 +4706,7 @@ var MessageDisplayer = {
             var message = 'souhaite obtenir <span style="color:' + data.maison.color + '">' + data.maison.nom + '</span>  auprès de ' + data.maison.joueurPossede.nom;
             MessageDisplayer.write(data.joueur, message);
         }).bind("monopoly.echange.propose", function (e, data) {
-            var message = 'propose ' + data.proposition.terrains.length + ' terrain(s) et ' + data.proposition.compensation + ' en compensation';
+			var message = 'propose ' + data.proposition.terrains.length + ' terrain(s) et ' + data.proposition.compensation + ' en compensation';
             MessageDisplayer.write(data.joueur, message);
         }).bind("monopoly.echange.accept", function (e, data) {
             MessageDisplayer.write(data.joueur, 'accepte la proposition');

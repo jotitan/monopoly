@@ -4451,10 +4451,13 @@ var CommunicationDisplayer = {
     /* Affiche le panneau de saisie d'une contreproposition */
     _showContrePanel: function (joueur,joueurAdverse) {
         // Affichage sur l'ecran principal ou le meme
-        this.buttons.remove();
-        this.buttons = null;
+		if(this.buttons){
+			this.buttons.remove();
+			this.buttons = null;
+		}
 		var groups = joueur.getMaisonsGrouped();
-        for (var g in groups) {
+        var divProposition = $('<div class="contreProposition"></div>');
+		for (var g in groups) {
             // ne pas affiche si construit )groups[g].isConstructed()
             var group = groups[g];
             var div = $('<div style="font-weight:bold;color:' + group.color + '">Groupe ' + group.groupe + '<br/></div>');
@@ -4462,20 +4465,40 @@ var CommunicationDisplayer = {
                 var fiche = group.terrains[f];
                 div.append('<input type="checkbox" value="' + fiche.id + '" id="chk_id_' + fiche.id + '"/><label for="chk_id_' + fiche.id + '">' + fiche.nom + '</label><br/>');
             }
-            $('.communications', this.panel).append(div);
+            divProposition.append(div);
         }
-		$('.communications', this.panel).append('Argent : <input type="text"/>');
+		$('.communications', this.panel).append(divProposition);
+		$('.communications', this.panel).append('Argent : <input class="argent" type="text"/>');
 		this.addMessage("Quelle est votre contreproposition", [
 			{
 				nom:"Proposer",
 				action:function(){
-					CommunicationDisplayer._doContreproposition();
+					CommunicationDisplayer._doContreproposition(CommunicationDisplayer.joueur);
+				}
+			},
+			{
+				nom:"Rejeter",
+				action:function(){
+					GestionEchange.reject(CommunicationDisplayer.joueur);
+					CommunicationDisplayer.close();
 				}
 			}
 		], true)
     },
-	_doContreproposition:function(){
-	
+	_doContreproposition:function(joueur){
+		// On recupere les informations
+		var proposition = {terrains:[],compensation:0};
+		$('.contreProposition:last :checkbox:checked',this.panel).each(function(){
+			var terrain = getFicheById($(this).val());
+			if(terrain!=null){
+				proposition.terrains.push(terrain);
+			}
+		});
+		var argent = $('.contreProposition:last :text.argent').val();
+		if(argent!=""){
+			proposition.compensation = parseInt(argent);
+		}
+		GestionEchange.contrePropose(proposition,joueur);
 	},
     _showProposition: function (div, proposition) {
         div.append('Proposition : ');
@@ -4529,22 +4552,20 @@ var CommunicationDisplayer = {
         }
         $('.communications', this.panel).append('<p>' + message + '</p>');
         if (actions != null && actions.length > 0) {
-            this.buttons = $('<div></div>');
+            this.buttons = $('<div class="buttons"></div>');
             for (var act in actions) {
 				var action = actions[act];
                 var button = $('<button>' + action.nom + '</button>');
                 button.data("action",action.action);
-                button.unbind('click').bind('click', function () {
-                    $(this).data("action")();
-                    CommunicationDisplayer.buttons.remove();
+                button.bind('click', function () {
+                    var action = $(this).data("action");
+					CommunicationDisplayer.buttons.remove();
                     CommunicationDisplayer.buttons = null;                                     
+					action();                    
                 });
                 this.buttons.append(button)
             }            
-            $('.communications', this.panel).append(this.buttons);
-			console.log($('.communications', this.panel));
-			console.log(this.buttons);
-			console.log(this.buttons.parent());
+			$('.communications', this.panel).append(this.buttons);			
         }
     },
     close: function () {

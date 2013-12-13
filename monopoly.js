@@ -1,4 +1,3 @@
-// Gestion hypotheque pour acheter plus de maison d'un coup (IA)
 // echange terrains
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
@@ -629,7 +628,7 @@ var GestionConstructions = {
          */
         this.acceptSwapTerrain = function (terrain, joueur, otherInterests, interestGroupe) {
             /* Calcule si le proprio est le seul fournisseur */
-            var alone = true;
+            var alone = joueurs.length > 2;	// Faux si seulement 2 joueurs
             /* Seul groupe qui m'interesse, on refuse */
             if ((interestGroupe == true && otherInterests.length == 1) || terrain.isGroupee()) {
                 return 0;
@@ -783,13 +782,13 @@ var GestionEchange = {
         $.trigger('monopoly.echange.reject', {
             joueur: joueurReject
         });
-        // On notifie le joueur
+        // On notifie le joueur et on lui donne le callback(end) pour lancer la suite du traitement
         if (joueurReject.equals(this.demandeur)) {
-            this.proprietaire.notifyRejectProposition();
+            this.proprietaire.notifyRejectProposition(GestionEchange.end);
         } else {
-            this.demandeur.notifyRejectProposition();
+            this.demandeur.notifyRejectProposition(GestionEchange.end);
         }
-        this.end();
+        //this.end();
     }
 }
 
@@ -928,7 +927,15 @@ var GestionEchange = {
 
                 proprietes[p].deals = maison.joueurPossede.findOthersInterestProprietes(this);
                 if (proprietes[p].deals.length == 0) {
-                    proprietes[p].compensation = this.evalueCompensation(joueur, maison);
+					// On ajoute les terrains non importants (gare seule, compagnie)
+					var othersProprietes = joueur.findUnterestsProprietes()
+					if(othersProprietes!=null && othersProprietes.size()){
+						// on ajoute le premier
+						
+					}
+					else{
+						proprietes[p].compensation = this.evalueCompensation(joueur, maison);
+					}
                 } else {
                     // Si trop couteux, on propose autre chose, comme de l'argent. On evalue le risque a echanger contre ce joueur.  
                     // On teste toutes les monnaies d'echanges
@@ -1843,7 +1850,8 @@ var GestionEchange = {
         this.isEnPrison = function () {
             return this.enPrison;
         }
-        this.setDiv = function (div) {
+        
+		this.setDiv = function (div) {
             this.div = div;
             this.setArgent(this.montant);
         }
@@ -1895,7 +1903,8 @@ var GestionEchange = {
                 }
             }
         }
-        /* Paye une somme a un joueur */
+        
+		/* Paye une somme a un joueur */
         /* Si le joueur ne peut pas payer, une exception est lancee (il a perdu). On recupere le peut d'argent a prendre */
         /* Payer est potentiellement asynchrone (resolve manuel), on indique l'etape suivante en cas de reussite */
         this.payerTo = function (montant, joueur) {

@@ -1098,7 +1098,6 @@ var GestionEchange = {
                     recommandations["TERRAIN_DISPO"] = 1; // Indique qu'un terrain peut etre choisi en contre proposition
                 }
             }
-
             // Gestion de la compensation
             if (proposition.compensation != null) {
                 critereArgent = proposition.compensation / maison.achat;
@@ -4476,8 +4475,8 @@ var CommunicationDisplayer = {
             }
             divProposition.append(div);
         }
-		$('.communications', this.panel).append(divProposition);
-		$('.communications', this.panel).append('Argent : <input class="argent" type="text"/>');
+		divProposition.append('Argent : <input class="argent" type="text"/>');
+        $('.communications', this.panel).append(divProposition);		
 		this.addMessage("Quelle est votre contreproposition", [
 			{
 				nom:"Proposer",
@@ -4503,7 +4502,7 @@ var CommunicationDisplayer = {
 				proposition.terrains.push(terrain);
 			}
 		});
-		var argent = $('.contreProposition:last :text.argent').val();
+		var argent = $('.contreProposition:last :text.argent',this.panel).val();
 		if(argent!=""){
 			proposition.compensation = parseInt(argent);
 		}

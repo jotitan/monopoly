@@ -492,10 +492,10 @@ var GestionConstructions = {
     /* @colors : liste des groupes qui interessent le joueur */
     /* @param agressif : plus il est eleve, plus le joueur fait de l'antijeu (achat des terrains recherches par les adversaires) */
 
-    function Strategie(colors, agressif, name, id) {
+    function Strategie(colors, agressif, name, id,interetGare) {
         this.groups = colors;
         this.agressif = agressif;
-        this.interetGare = ((Math.random() * 1000) % 3 == 0) ? true : false; // Interet pour gare
+        this.interetGare = (interetGare == null)?(((Math.random() * 1000) % 3 == 0) ? true : false):interetGare; // Interet pour gare
         this.name = name;
         this.id = id;
 
@@ -662,25 +662,32 @@ var GestionConstructions = {
 
     }
 
-    /* Achete en prioriete les terrains les moins chers : bleu marine-812B5C, bleu clair-119AEB, violet-73316F et orange-D16E2D */
+/* Achete en priorite les terrains les moins chers : bleu marine-812B5C, bleu clair-119AEB, violet-73316F et orange-D16E2D */
 
-    function CheapStrategie() {
-        Strategie.call(this, ["#812B5C", "#119AEB", "#73316F", "#D16E2D"], 0, "cheap", 0);
-    }
+function CheapStrategie() {
+	Strategie.call(this, ["#812B5C", "#119AEB", "#73316F", "#D16E2D"], 0, "cheap", 0);
+}
 
 var strategies = [CheapStrategie, MediumStrategie, HardStrategie]; // liste des strategies
 
-/* Achete en prioriete les terrains les moins chers : violet-73316F, orange-D16E2D, rouge-D32C19 et jaune-E6E018 */
+/* Achete en priorite les terrains les moins chers : violet-73316F, orange-D16E2D, rouge-D32C19 et jaune-E6E018 */
 
 function MediumStrategie() {
     Strategie.call(this, ["#73316F", "#D16E2D", "#D32C19", "#E6E018"], 1, "medium", 1);
 }
 
-/* Achete en prioriete les terrains les moins chers : rouge-D32C19, jaune-E6E018, vert-11862E et bleu fonce-132450 */
+/* Achete en priorite les terrains les moins chers : rouge-D32C19, jaune-E6E018, vert-11862E et bleu fonce-132450 */
 
 function HardStrategie() {
     Strategie.call(this, ["#D32C19", "#E6E018", "#11862E", "#132450"], 2, "hard", 2);
 }
+
+/* Achete en priorite les terrains les meilleurs (gare, orange-D16E2D, rouge-D32C19, jaune-E6E018) */
+
+function SmartStrategie() {
+    Strategie.call(this, ["#D16E2D", "#D32C19", "#E6E018"], 2, "smart", 3,true);
+}
+
 
 /* Achete tout */
 
@@ -951,11 +958,24 @@ var GestionEchange = {
                 prop.deals = maison.joueurPossede.findOthersInterestProprietes(this);
                 if (prop.deals.length == 0) {
 					// On ajoute les terrains non importants (gare seule, compagnie)
-					var othersProprietes = joueur.findUnterestsProprietes()
-					if(othersProprietes!=null && othersProprietes.size()){
-						// on ajoute le premier
+					var othersProprietes = joueur.findUnterestsProprietes();
+					if(othersProprietes!=null && othersProprietes.proprietes!=null && othersProprietes.proprietes.length>0){
+						// On en ajoute. En fonction de la strategie, on n'ajoute que les terrains seuls dans le groupe (peu important)
+						var montant = 0;	// Pour ne pas trop en mettre
+						// TODO FINIR boucle (montant engage)
+						for(int i = 0 ; i < othersProprietes.proprietes.length ; i++){
+							var terrain = othersProprietes.proprietes[i];
+							if(!this.strategie.interetPropriete(terrain)){
+								// On le refourgue
+								prop.deals.push(terrain);
+								montant+=terrain.achat;
+								
+							}
+						}
+						
 						
 					}
+					// Permettre calcul compensation quand traitement fournit des terrains < 80% du montant
 					else{
 						prop.compensation = this.evalueCompensation(joueur, maison);
 					}
@@ -1064,8 +1084,8 @@ var GestionEchange = {
                         if (!done) {
                             // Il faut proposer autre chose, autre terrain
                             var uselessPropritetes = joueur.findUnterestsProprietes();
-                            if (uselessProprietes.length > 0) {
-                                contreProposition.terrains.push(uselessProprietes[0]);
+                            if (uselessProprietes.proprietes.length > 0) {
+                                contreProposition.terrains.push(uselessProprietes.proprietes[0]);
                             }
                         }
                     }
@@ -2108,16 +2128,24 @@ var GestionEchange = {
         }
 
         /* Renvoie la liste des terrains peu important (gare, compagnie et terrains hypotheques) */
+		/* On integre dans les resultats le nombre d'elements par groupe */
         this.findUnterestsProprietes = function () {
             var proprietes = [];
+			var nbByGroups = [];
             for (var m in this.maisons) {
                 var maison = this.maisons[m];
                 if (!maison.constructible) {
                     proprietes.push(maison);
+					if(nbByGroups[maison.groupe.nom] == null){
+						nbByGroups[maison.groupe.nom]=1;
+					}
+					else{
+						nbByGroups[maison.groupe.nom]++;
+					}
                 }
             }
 
-            return proprietes;
+            return {proprietes:proprietes,nbByGroups:nbByGroups};
         }
 
         /* Renvoie les groupes constructibles avec les proprietes de chaque */

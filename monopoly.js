@@ -734,8 +734,7 @@ var GestionEchange = {
             joueur: GestionEchange.demandeur,
             proposition: proposition
         });
-		console.log("2");
-        this.proprietaire.traiteRequeteEchange(this.demandeur, this.terrain, proposition);
+		this.proprietaire.traiteRequeteEchange(this.demandeur, this.terrain, proposition);
     },
     /* Contre proposition du proprietaire, ca peut être des terrains ou de l'argent */
     contrePropose: function (proposition, joueurContre) {
@@ -760,10 +759,25 @@ var GestionEchange = {
         });
         // On notifie a l'autre joueur que c'est accepte
         if (joueurAccept.equals(this.demandeur)) {
-            this.proprietaire.notifyAcceptProposition();
+            this.proprietaire.notifyAcceptProposition(GestionEchange._doAccept);
         } else {
-            this.demandeur.notifyAcceptProposition();
+            this.demandeur.notifyAcceptProposition(GestionEchange._doAccept);
         }
+        // La propriete change de proprietaire
+        /*this.demandeur.getSwapProperiete(this.terrain);
+        // Le proprietaire recoit la proposition
+        if (this.proposition.argent != null) {
+            this.proprietaire.gagner(this.proposition.argent);
+        }
+        if (this.proposition.terrains != null && this.proposition.terrains.length > 0) {
+            for (var t in this.proposition.terrains) {
+                this.proprietaire.getSwapProperiete(this.proposition.terrains[t]);
+            }
+        }
+
+        this.end();*/
+    },
+    _doAccept:function(){
         // La propriete change de proprietaire
         this.demandeur.getSwapProperiete(this.terrain);
         // Le proprietaire recoit la proposition
@@ -898,9 +912,17 @@ var GestionEchange = {
             }, IA_TIMEOUT);
         }
 		
-        this.notifyAcceptProposition = function () {}
+        this.notifyAcceptProposition = function (callback) {
+            if(callback){
+                callback();
+            }
+        }
 
-        this.notifyRejectProposition = function () {}
+        this.notifyRejectProposition = function (callback) {
+            if(callback){
+                callback();
+            }
+        }
 
         /* Cherche a echanger des proprietes. Methode bloquante car negociation avec d'autres joueurs
          * Se deroule en plusieurs etapes :
@@ -922,11 +944,12 @@ var GestionEchange = {
             /* On cherche les monnaies d'echanges. Prendre en compte les gares ? */
             var proprietesFiltrees = [];
             for (var p in proprietes) {
-                var maison = proprietes[p].maison;
+                var prop = proprietes[p];
+                var maison = prop.maison;
                 var joueur = maison.joueurPossede;
-
-                proprietes[p].deals = maison.joueurPossede.findOthersInterestProprietes(this);
-                if (proprietes[p].deals.length == 0) {
+                prop.compensation = 0;
+                prop.deals = maison.joueurPossede.findOthersInterestProprietes(this);
+                if (prop.deals.length == 0) {
 					// On ajoute les terrains non importants (gare seule, compagnie)
 					var othersProprietes = joueur.findUnterestsProprietes()
 					if(othersProprietes!=null && othersProprietes.size()){
@@ -934,21 +957,21 @@ var GestionEchange = {
 						
 					}
 					else{
-						proprietes[p].compensation = this.evalueCompensation(joueur, maison);
+						prop.compensation = this.evalueCompensation(joueur, maison);
 					}
                 } else {
                     // Si trop couteux, on propose autre chose, comme de l'argent. On evalue le risque a echanger contre ce joueur.  
                     // On teste toutes les monnaies d'echanges
-                    var monnaies = this.chooseMonnaiesEchange(proprietes[p], proprietes[p].monnaiesEchange, true, nbGroupesPossedes >= 2);
+                    var monnaies = this.chooseMonnaiesEchange(prop,prop.monnaiesEchange, true, nbGroupesPossedes >= 2);
                     if (monnaies == null || monnaies.length == 0) {
-                        proprietes[p].compensation = this.evalueCompensation(joueur, maison);
-                        proprietes[p].deals = null;
+                        prop.compensation = this.evalueCompensation(joueur, maison);
+                        prop.deals = null;
                     } else {
-                        proprietes[p].deals = monnaies;
+                        prop.deals = monnaies;
                     }
                 }
-                if (proprietes[p].deals != null || (proprietes[p].compensation != null && proprietes[p].compensation > 0)) {
-                    proprietesFiltrees.push(proprietes[p]);
+                if (prop.deals != null || (prop.compensation != null && prop.compensation > 0)) {
+                    proprietesFiltrees.push(prop);
                 }
             }
             // On choisit la propriete a demander en echange
@@ -1680,14 +1703,14 @@ var GestionEchange = {
         }
 
         /* On affiche a l'utilisateur l'acceptation de la proposition */
-        this.notifyAcceptProposition = function () {
+        this.notifyAcceptProposition = function (callback) {
             // On affiche l'information
-            CommunicationDisplayer.showAccept();
+            CommunicationDisplayer.showAccept(callback);
         }
 
         /* On affiche a l'utilisateur le rejet de la proposition */
-        this.notifyRejectProposition = function () {
-            CommunicationDisplayer.showReject();
+        this.notifyRejectProposition = function (callback) {
+            CommunicationDisplayer.showReject(callback);
         }
 
         /* Renvoie les maisons du joueur regroupes par groupe */
@@ -4519,19 +4542,25 @@ var CommunicationDisplayer = {
         div.append('<div style="padding-left:20px;">Argent : ' + CURRENCY + ' ' + proposition.compensation + '</div>');
     },
     /* Affiche la proposition acceptee */
-    showAccept: function () {
+    showAccept: function (callback) {
         this.addMessage("La proposition a été acceptée", [{
             nom: "Fermer",
             action: function () {
                 CommunicationDisplayer.close();
+                if(callback){
+                    callback();
+                }
             }
         }]);
     },
-    showReject: function () {
+    showReject: function (callback) {
         this.addMessage("La proposition a été rejetée", [{
             nom: "Fermer",
             action: function () {
                 CommunicationDisplayer.close();
+                if(callback){
+                    callback();
+                }
             }
         }]);
     },

@@ -374,7 +374,6 @@ var GestionConstructions = {
             return risque1 * (risque2 / 100 + 1);
         }
 
-
         /* Calcul le budget depensable pour la construction de maison / hotel */
         /* Prendre en compte l'achat potentiel de nouveau terrain. Pour la strategie, on calcule les terrains qui interessent */
         this.getBudget = function (joueur) {
@@ -419,7 +418,6 @@ var GestionConstructions = {
             }
             return maisons;
         }
-
 
         /* Calcule la marge d'achat par rapport au montant et le pondere par rapport a la prise de risque */
         this.calculMargeMontant = function (joueur, cout) {
@@ -723,7 +721,7 @@ var GestionEchange = {
     },
     /* Termine la transaction entre deux personnes */
     end: function () {
-        this.running = false;
+	    this.running = false;
         this.demandeur = null;
         this.proprietaire = null;
         this.terrain = null;
@@ -766,37 +764,24 @@ var GestionEchange = {
         });
         // On notifie a l'autre joueur que c'est accepte
         if (joueurAccept.equals(this.demandeur)) {
-            this.proprietaire.notifyAcceptProposition(GestionEchange._doAccept);
+            this.proprietaire.notifyAcceptProposition(function(){GestionEchange._doAccept();});
         } else {
-            this.demandeur.notifyAcceptProposition(GestionEchange._doAccept);
-        }
-        // La propriete change de proprietaire
-        /*this.demandeur.getSwapProperiete(this.terrain);
-        // Le proprietaire recoit la proposition
-        if (this.proposition.argent != null) {
-            this.proprietaire.gagner(this.proposition.argent);
-        }
-        if (this.proposition.terrains != null && this.proposition.terrains.length > 0) {
-            for (var t in this.proposition.terrains) {
-                this.proprietaire.getSwapProperiete(this.proposition.terrains[t]);
-            }
-        }
-
-        this.end();*/
+            this.demandeur.notifyAcceptProposition(function(){GestionEchange._doAccept();});
+        }        
     },
     _doAccept:function(){
         // La propriete change de proprietaire
         this.demandeur.getSwapProperiete(this.terrain);
         // Le proprietaire recoit la proposition
-        if (this.proposition.argent != null) {
-            this.proprietaire.gagner(this.proposition.argent);
+        if (this.proposition.compensation != null) {
+            this.proprietaire.gagner(this.proposition.compensation);
+			this.demandeur.payer(this.proposition.compensation);
         }
         if (this.proposition.terrains != null && this.proposition.terrains.length > 0) {
             for (var t in this.proposition.terrains) {
                 this.proprietaire.getSwapProperiete(this.proposition.terrains[t]);
             }
         }
-
         this.end();
     },
     reject: function (joueurReject) {
@@ -805,11 +790,10 @@ var GestionEchange = {
         });
         // On notifie le joueur et on lui donne le callback(end) pour lancer la suite du traitement
         if (joueurReject.equals(this.demandeur)) {
-            this.proprietaire.notifyRejectProposition(GestionEchange.end);
+            this.proprietaire.notifyRejectProposition(function(){GestionEchange.end();});
         } else {
-            this.demandeur.notifyRejectProposition(GestionEchange.end);
-        }
-        //this.end();
+            this.demandeur.notifyRejectProposition(function(){GestionEchange.end();});
+        }        
     }
 }
 
@@ -885,9 +869,7 @@ var GestionEchange = {
                 // on lance les des
                 lancerAnimerDes();
             });
-
-
-        }
+		}
 
 		// Fonction appelee lorsque les des sont lances et que le pion est place
         this.actionApresDes = function (buttons, propriete) {
@@ -936,7 +918,7 @@ var GestionEchange = {
          * Calcule les terrains qui l'interessent chez les adversaires
          * Penser a prendre les affinites en compte
          * @param callback : traitement a lancer a la fin des echanges
-         * TODO : voir pour ajouter les gares
+         * Il faut retenir les demandes rejetees pour proposer plus et ne pas demander a chaque tour
          */
         this.echangeProprietes = function (callback) {
             var proprietes = this.findOthersInterestProprietes();
@@ -959,25 +941,21 @@ var GestionEchange = {
                 if (prop.deals.length == 0) {
 					// On ajoute les terrains non importants (gare seule, compagnie)
 					var othersProprietes = joueur.findUnterestsProprietes();
+					var montant = 0;
 					if(othersProprietes!=null && othersProprietes.proprietes!=null && othersProprietes.proprietes.length>0){
 						// On en ajoute. En fonction de la strategie, on n'ajoute que les terrains seuls dans le groupe (peu important)
-						var montant = 0;	// Pour ne pas trop en mettre
-						// TODO FINIR boucle (montant engage)
-						for(int i = 0 ; i < othersProprietes.proprietes.length ; i++){
+						for(var i = 0 ; i < othersProprietes.proprietes.length && montant/maison.achat < 0.7; i++){
 							var terrain = othersProprietes.proprietes[i];
 							if(!this.strategie.interetPropriete(terrain)){
 								// On le refourgue
 								prop.deals.push(terrain);
-								montant+=terrain.achat;
-								
+								montant+=terrain.achat;								
 							}
-						}
-						
-						
+						}						
 					}
 					// Permettre calcul compensation quand traitement fournit des terrains < 80% du montant
-					else{
-						prop.compensation = this.evalueCompensation(joueur, maison);
+					if(montant/maison.achat < 0.8){
+						prop.compensation = this.evalueCompensation(joueur, maison) - montant;
 					}
                 } else {
                     // Si trop couteux, on propose autre chose, comme de l'argent. On evalue le risque a echanger contre ce joueur.  
@@ -1124,7 +1102,7 @@ var GestionEchange = {
                     }
                     // Si le terrain est dans la liste, on augmente le critere et prend en compte la position en plus value
                     if (interetTerrain != null) {
-                        critereTerrains += 1 + (others.length - interetTerrain) / others.length;
+				        critereTerrains += 1 + (others.length - interetTerrain) / others.length;
                         useList = true;
                     }
                     // On ajoute une info sur le prix du terrain propose, constitue une valeur ajoutee
@@ -1145,8 +1123,8 @@ var GestionEchange = {
             if (proposition.compensation != null) {
                 critereArgent = proposition.compensation / maison.achat;
                 /* On ajoute de l'importance si proposition superieur au fond propre */
-                if (this.argent < proposition.compensation) {
-                    critereArgent += Math.min(1.5, (proposition.compensation / this.argent) - 1);
+                if (this.montant < proposition.compensation) {
+                    critereArgent += Math.min(1.5, (proposition.compensation / this.montant) - 1);
                 } else {
                     recommandations["ARGENT_INSUFFISANT"] = 1;
                 }
@@ -1169,13 +1147,28 @@ var GestionEchange = {
         }
 
         /* Traite la contre proposition qui peut se composer de terrain et / ou d'argent */
-        /* A la fin, on a accepte ou pas. Plus d'aller retour */
+        /* A la fin, on a accepte ou pas. Plus d'aller retour. */
+		/* Prendre en compte qu'on est a l'origine de la demande, un peu plus laxiste, en fonction du comportement */
         this.traiteContreProposition = function (proposition, joueur, maison) {
-            /* On evalue la pertinence  */
-            var others = joueur.findOthersInterestProprietes(this);
-            var infos = this._calculatePropositionValue(maison, joueur, proposition, others);
-            // On peut etre un peu plus laxiste ?
-            if (infos > 3) {
+            if(proposition.terrains.length == 0 && proposition.compensation == 0){
+				return GestionEchange.reject(this);
+			}
+			/* On evalue la pertinence  */
+            var others = this.findOthersInterestProprietes(joueur);
+			var infos = null;
+			if(proposition.terrains.length > 0){
+				// On inverse les parametres
+				var prop = {terrains:[maison],compensation:proposition.compensation*-1};
+				var terrain = proposition.terrains[0];
+				var infos = this._calculatePropositionValue(terrain, joueur, prop, others);
+			}
+			else{
+				// Uniquement de la tune
+				// Il demande de l'argent, on verifie par rapport a nos resources
+				infos = {critere:2};
+			}
+			// On peut etre un peu plus laxiste ?
+            if (infos.critere > 3) {
                 return GestionEchange.accept(this);
             }
             return GestionEchange.reject(this);
@@ -1285,6 +1278,7 @@ var GestionEchange = {
 
         /* Override de la methode pere */
         this.resolveProblemeArgent = function (montant, callback) {
+			$.trigger('monopoly.debug',{message:'Resoud probleme argent'});
             /* Ordre de liquidations :
              * 1) Hypotheque des terrains seuls
              * 2) Hypotheque des terrains en groupe non construit
@@ -1974,7 +1968,7 @@ var GestionEchange = {
             this.defaite = true;
         }
 
-        /* Resourd les problemes d'argent du joueur */
+        /* Resoud les problemes d'argent du joueur */
         /* @param montant : argent a recouvrer */
         /* @param joueur : beneficiaire */
         this.resolveProblemeArgent = function (montant, callback) {

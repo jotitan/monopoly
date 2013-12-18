@@ -1,4 +1,7 @@
-// echange terrains
+/* Gestion du Monopoly */
+/* Dependances a charger : */
+/* * GestionConstructions.js */
+
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
     value: function () {
@@ -48,7 +51,7 @@ var VARIANTES = {
 var des1;
 var des2;
 var nbDouble = 0;
-
+var nbTours = 0;	// Nombre de tours de jeu depuis le depuis (nb de boucle de joueurs)
 var currentSauvegardeName = null; // Nom de la sauvegarde en cours
 
 /* Liste des cases et des cartes */
@@ -72,7 +75,7 @@ var des2Cube;
 
 var CURRENCY = "F.";
 
-/* Dimensions */
+/* Dimensions du plateau */
 var largeur = 65;
 var hauteur = 100;
 var total = (largeur * 9) / 2;
@@ -194,163 +197,6 @@ function ParcGratuit(id) {
 
 }
 
-
-/* Gere les reserves de constructions (maison / hotel) */
-var GestionConstructions = {
-    nbInitHouse: 32,
-    nbInitHotel: 12,
-    nbSellHouse: 0,
-    nbSellHotel: 0,
-    reset: function () {
-        this.nbInitHouse = 32;
-        this.nbInitHotel = 12;
-        this.nbSellHouse = 0;
-        this.nbSellHotel = 0;
-    },
-    isFreeHouse: function () {
-        return this.nbInitHouse > this.nbSellHouse;
-    },
-    isFreeHotel: function (nbActualHouse) {
-        if (nbActualHouse == null) {
-            return this.nbInitHotel > this.nbSellHotel;
-        }
-        var needHouse = 4 - nbActualHouse;
-        return this.nbInitHotel > this.nbSellHotel & this.nbInitHouse >= this.nbSellHouse + needHouse;
-    },
-    getRestHouse: function () {
-        return this.nbInitHouse - this.nbSellHouse;
-    },
-    getRestHotel: function () {
-        return this.nbInitHotel - this.nbSellHotel;
-    },
-    buyHouse: function () {
-        if (!this.isFreeHouse()) {
-            throw "Impossible d'acheter une maison."
-        }
-        this.nbSellHouse++;
-    },
-    buyHouses: function (nb) {
-        if (nb > this.getRestHouse()) {
-            throw "Impossible d'acheter les maisons."
-        }
-        this.nbSellHouse += nb;
-    },
-    /* Achete / vend le nombre d'hotels indiques (verification simple sur le nombre d'hotel) */
-    buyHotels: function (nb) {
-        if (nb > this.getRestHotel()) {
-            throw "Impossible d'acheter les hotels."
-        }
-        this.nbSellHotel += nb;
-    },
-    buyHotel: function () {
-        if (!this.isFreeHouse()) {
-            throw "Impossible d'acheter un hotel."
-        }
-        this.nbSellHotel++;
-        // On libere les maisons liees (4)
-        this.nbSellHouse -= 4;
-    },
-    /* Calcule les restes finaux en maison / hotel. Renvoie egalement le delta */
-    // On calcule en premier les ventes de maisons
-    // On calcule les achats d'hotels (qui necessitent des maisons puis des hotels)
-    // Pour finir, on calcule l'achat de maison
-    // Chaque projet contient la couleur du groupe, le from (nb, type) et le to (nb, type)
-    simulateBuy: function (projects) {
-        // Projects est un tableau de from:{type,nb},to:{type,nb}
-        var simulation = {
-            achat: {
-                maison: 0,
-                hotel: 0
-            },
-            reste: {
-                maison: this.nbInitHouse - this.nbSellHouse,
-                hotel: this.nbInitHotel - this.nbSellHotel
-            }
-        };
-
-        var actions = {
-            venteMaison: function (p, simulation) {
-                if (p.from.type == "maison" && p.to.type == "maison" && p.from.nb > p.to.nb) {
-                    var nb = p.from.nb - p.to.nb;
-                    simulation.achat.maison -= nb;
-                    simulation.reste.maison += nb;
-                    p.done = true;
-                }
-            },
-            achatHotel: function (p, simulation) {
-                // Pour valider un hotel, il faut que les autres proprietes aient au moins 4 maisons. On les achete maintenant si on les trouve
-                if (p.from.type == "maison" && p.to.type == "hotel") {
-                    // On achete les maisons sur le meme groupe s'il y en a
-                    for (var project in projects) {
-                        var p2 = projects[project];
-                        if (p2.color == p.color && p2.from.type == "maison" && p2.to.type == "maison" && p2.to.nb == 4) {
-                            // On les achete maintenant
-                            actions.achatMaison(p2, simulation);
-                        }
-                    }
-                    // Verifie qu'il y a assez de maison disponible
-                    var resteMaison = 4 - p.from.nb;
-                    if (resteMaison > simulation.reste.maison) {
-                        // Impossible, pas assez de maison, on renvoie un nombre de maison negatif et on sort
-                        simulation.reste.maison -= resteMaison;
-                        return;
-                    } else {
-                        // On achete un hotel
-                        simulation.reste.hotel--;
-                        simulation.achat.hotel++;
-                        simulation.reste.maison += p.from.nb;
-                        simulation.achat.maison -= p.from.nb;
-                    }
-                    p.done = true;
-                }
-            },
-            venteHotel: function (p, simulation) {
-                if (p.from.type == "hotel" && p.to.type == "maison") {
-                    // Verifie qu'il y a assez de maison disponible
-                    if (p.to.nb > simulation.reste.maison) {
-                        // Impossible, pas assez de maison, on renvoie un nombre de maison negatif et on sort
-                        simulation.reste.maison -= p.to.nb;
-                        return;
-                    } else {
-                        // On vend l'hotel et on place des maisons
-                        simulation.reste.hotel++;
-                        simulation.achat.hotel--;
-                        simulation.reste.maison -= p.to.nb;
-                        simulation.achat.maison += p.to.nb;
-                    }
-                    p.done = true;
-                }
-            },
-            achatMaison: function (p, simulation) {
-                if (p.from.type == "maison" && p.to.type == "maison" && p.from.nb < p.to.nb) {
-                    var nb = p.from.nb - p.to.nb;
-                    simulation.achat.maison -= nb;
-                    simulation.reste.maison += nb;
-                    p.done = true;
-                }
-            }
-        }
-        for (var a in actions) {
-            var action = actions[a];
-            for (var index in projects) {
-                var p = projects[index];
-                if (p.done == null) {
-                    try {
-                        action(p, simulation);
-                    } catch (e) {
-                        // Exception levee si le traitement doit etre interrompu
-                        console.log("exception");
-                        return simulation;
-                    }
-                }
-            }
-        }
-        return simulation;
-    }
-
-}
-
-
 /* Objet qui gere le comportement (rapport a l'argent). Integre la prise de risque (position du jour) */
 /* @risque : prise de risque entre 0 et 1 */
 
@@ -376,11 +222,12 @@ var GestionConstructions = {
 
         /* Calcul le budget depensable pour la construction de maison / hotel */
         /* Prendre en compte l'achat potentiel de nouveau terrain. Pour la strategie, on calcule les terrains qui interessent */
-        this.getBudget = function (joueur) {
+		/* @param forceHypotheque : si vrai, on force l'usage de l'argent dispo apres hypotheque */
+        this.getBudget = function (joueur,forceHypotheque) {
             var assiette = joueur.montant; // Utilise pour calculer les risques
             // Si le joueur est une charogne, on utilise l'argent dispo avec les possibles hypotheques (tous les terrains sauf les groupes). 
             // Utilise uniquement pour le calcul de risque, pas pour l'achat (pour ne pas hypothequer lors de l'achat).
-            if (this.risque > 0.6) {
+            if (forceHypotheque==true || this.risque > 0.6) {
                 assiette = joueur.getStats().argentDispoHypo;
             }
             // On prend le plus fort loyer du plateau
@@ -774,8 +621,8 @@ var GestionEchange = {
         this.demandeur.getSwapProperiete(this.terrain);
         // Le proprietaire recoit la proposition
         if (this.proposition.compensation != null) {
-            this.proprietaire.gagner(this.proposition.compensation);
-			this.demandeur.payer(this.proposition.compensation);
+            this.demandeur.payerTo(this.proposition.compensation,this.proprietaire);
+			//this.proprietaire.gagner(this.proposition.compensation);			
         }
         if (this.proposition.terrains != null && this.proposition.terrains.length > 0) {
             for (var t in this.proposition.terrains) {
@@ -878,7 +725,7 @@ var GestionEchange = {
             }
             var current = this;
             setTimeout(function () {
-                if (buttons.Acheter != null && propriete != null) {
+			    if (buttons.Acheter != null && propriete != null) {
                     var interet = current.strategie.interetGlobal(propriete);
                     var comportement = current.comportement.getRisqueTotal(current, propriete.achat);
                     $.trigger("monopoly.debug", {
@@ -908,6 +755,8 @@ var GestionEchange = {
         }
 
         this.notifyRejectProposition = function (callback) {
+			// On enregistre le refus du proprietaire : le terrain, la proposition et le numero de tour
+			// utiliser pour plus tard pour ne pas redemander immediatement
             if(callback){
                 callback();
             }
@@ -955,14 +804,14 @@ var GestionEchange = {
 					}
 					// Permettre calcul compensation quand traitement fournit des terrains < 80% du montant
 					if(montant/maison.achat < 0.8){
-						prop.compensation = this.evalueCompensation(joueur, maison) - montant;
+						prop.compensation = this.evalueCompensation(joueur, maison,interetEchange) - montant;
 					}
                 } else {
                     // Si trop couteux, on propose autre chose, comme de l'argent. On evalue le risque a echanger contre ce joueur.  
                     // On teste toutes les monnaies d'echanges
                     var monnaies = this.chooseMonnaiesEchange(prop,prop.monnaiesEchange, true, nbGroupesPossedes >= 2);
                     if (monnaies == null || monnaies.length == 0) {
-                        prop.compensation = this.evalueCompensation(joueur, maison);
+                        prop.compensation = this.evalueCompensation(joueur, maison, interetEchange);
                         prop.deals = null;
                     } else {
                         prop.deals = monnaies;
@@ -1180,8 +1029,10 @@ var GestionEchange = {
          * 2) Economie propre, il faut pouvoir acheter des maisons derriere (2 sur chaque terrain)
          * Renvoie des bornes min / max. On propose le min au debut
          */
-        this.evalueCompensation = function (joueur, maison) {
-            return maison.achat;
+        this.evalueCompensation = function (joueur, maison, interetTerrain) {
+            // On calcule les sommes dispos. En fonction de l'interet pour le terrain, on peut potentiellement hypothequer
+			var budgetMax = this.comportement.getBudget(this,(interetTerrain!=null && interetTerrain > 2));
+			return Math.min(budgetMax,maison.achat);
         }
 
         /* Evalue la dangerosite d'un joueur s'il recupere une maison supplementaire pour finir un groupe */
@@ -3462,7 +3313,7 @@ var DrawerHelper = {
         if (joueurCourant == null) {
             return joueurs[0];
         }
-        // On verifie s'il y a encore de joueurs "vivants"
+        // On verifie s'il y a encore des joueurs "vivants"
         if (joueurCourant.bloque) {
             return null;
         }
@@ -3472,17 +3323,26 @@ var DrawerHelper = {
             throw gagnant;
         }
         var joueur = joueurCourant;
-        if (des1 != des2) {
+        /* Changement de joueur */
+		if (des1 != des2) {
             var pos = 0;
-            joueur = joueurs[(joueur.numero + 1) % (joueurs.length)];
+			joueur = joueurs[(joueur.numero + 1) % (joueurs.length)];
             while (joueur.defaite == true & pos++ < joueurs.length) {
                 joueur = joueurs[(joueur.numero + 1) % (joueurs.length)];
             }
+			// On incremente le nb de tours
+			if(joueur.numero < joueurCourant.numero){
+				nbTours++;            
+			}
         }
         return joueur;
     }
 
     function changeJoueur() {
+		// Si un echange est en cours, on ne change pas de joueur
+		if(GestionEchange.running){
+			return;
+		}
         // Joueur bloque, on le debloque avant de continuer
         var joueur = null;
         try {
@@ -3596,7 +3456,7 @@ var DrawerHelper = {
                 }
             }
         }
-        joueurCourant.joueDes(des1 + des2);
+		joueurCourant.joueDes(des1 + des2);
         if (des1 == des2) {
             $('#informationsCentrale').html("Relancez");
         }
@@ -3655,6 +3515,12 @@ var DrawerHelper = {
                     }
                 }
             });
+			 $('#idLoadSauvegarde').unbind('click').bind('click', function () {
+				if ($('#idSauvegardes').val() != "") {
+					Sauvegarde.load($('#idSauvegardes').val());
+					$('#idPanelCreatePartie').dialog('close');
+				}
+			 });
         }
 
         $('#idPanelCreatePartie').dialog({
@@ -4435,7 +4301,7 @@ function selectJoueurCourant() {
 }
 
 function selectJoueur(joueur) {
-    $('.action-joueur').removeAttr('disabled');
+	$('.action-joueur').removeAttr('disabled');
     if (!joueur.equals(joueurCourant)) {
         $('#informations > div > div').removeClass('joueurCourant');
     }
@@ -4458,12 +4324,12 @@ function getJoueurById(numero) {
 var CommunicationDisplayer = {
     panel: null,
     joueur: null, // Joueur a qui est affiche le panneau
-    buttons: null, // Bouton actuellement affiche
     init: function (idPanel) {
         this.panel = $('#' + idPanel);
         this.panel.dialog({
             autoOpen: false,
-            title: 'Echange'
+            title: 'Echange',
+			width:400
         });
     },
     /* Affiche la demande (recapitulatif). On affiche les options si on recoit la demande */
@@ -4504,10 +4370,6 @@ var CommunicationDisplayer = {
     /* Affiche le panneau de saisie d'une contreproposition */
     _showContrePanel: function (joueur,joueurAdverse) {
         // Affichage sur l'ecran principal ou le meme
-		if(this.buttons){
-			this.buttons.remove();
-			this.buttons = null;
-		}
 		var groups = joueur.getMaisonsGrouped();
         var divProposition = $('<div class="contreProposition"></div>');
 		for (var g in groups) {
@@ -4611,20 +4473,13 @@ var CommunicationDisplayer = {
         }
         $('.communications', this.panel).append('<p>' + message + '</p>');
         if (actions != null && actions.length > 0) {
-            this.buttons = $('<div class="buttons"></div>');
-            for (var act in actions) {
+			var buttons = [];
+			for (var act in actions) {
 				var action = actions[act];
-                var button = $('<button>' + action.nom + '</button>');
-                button.data("action",action.action);
-                button.bind('click', function () {
-                    var action = $(this).data("action");
-					CommunicationDisplayer.buttons.remove();
-                    CommunicationDisplayer.buttons = null;                                     
-					action();                    
-                });
-                this.buttons.append(button)
+                var button = {text:action.nom,click:action.action};
+                buttons.push(button)
             }            
-			$('.communications', this.panel).append(this.buttons);			
+			this.panel.dialog('option','buttons',buttons);
         }
     },
     close: function () {
@@ -4731,13 +4586,15 @@ var EchangeDisplayer = {
 
 var MessageDisplayer = {
     div: null,
+	order:0,
     init: function (id) {
         this.div = $('#' + id);
         this.bindEvents();
     },
 
     write: function (joueur, message) {
-        this.div.prepend('<div><span style="color:' + joueur.color + '">' + joueur.nom + '</span> : ' + message + '</div>');
+		MessageDisplayer.order++;
+        this.div.prepend('<div><span style="color:' + joueur.color + '">' + joueur.nom + '</span> : ' + message + ' (' + MessageDisplayer.order + ')</div>');
     },
     bindEvents: function () {
         $.bind("monopoly.save", function (e, data) {
@@ -4834,7 +4691,8 @@ var Sauvegarde = {
             joueurs: saveJoueurs,
             fiches: saveFiches,
             joueurCourant: joueurCourant.id,
-            variantes: VARIANTES
+            variantes: VARIANTES,
+			nbTours:nbTours
         };
         this._putStorage(name, data);
         $.trigger("monopoly.save", {
@@ -4858,6 +4716,7 @@ var Sauvegarde = {
             joueur = getJoueurById(data.joueurCourant);
         }
         VARIANTES = data.variantes || VARIANTES;
+		nbTours = data.nbTours || 0;
         selectJoueur(joueur);
         initToolTipJoueur();
     },

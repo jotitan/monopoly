@@ -63,7 +63,11 @@
 			{"nom":"Casino de Monte Carlo, vous gagner 10000£ au bacarra","type":"prime","montant":10000},
 			{"nom":"Une partie de poker improvisée sur un yacht vous rapporte £ 5.000","type":"prime","montant":5000},
 			{"nom":"Vous récupérez la malette d'un terroriste, elle contient £ 15.000","type":"prime","montant":15000},
-			{"nom":"Amende pour ivresse : £ 2.000","type":"taxe","montant":2000}															
+			{"nom":"Amende pour ivresse : £ 2.000","type":"taxe","montant":2000},
+			{"nom":"Rendez vous au Casino Royale","type":"goto","axe":1,"pos":9},
+			{"nom":"Q a un cadeau pour vous, avancez jusqu'à la case Départ","type":"goto","axe":2,"pos":0},
+			{"nom":"Regardez OHMSS. Si vous passez par la case Départ, recevez £ 20.000","type":"goto","axe":3,"pos":1},
+			{"nom":"Allez en prison. Rendez vous directement à la prison. Ne franchissez par la case Départ. Ne touchez pas £ 20.000","type":"goto","axe":1,"pos":0,"direct":true}			
 		]
 	},
 	"communaute":{

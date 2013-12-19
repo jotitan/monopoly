@@ -26,6 +26,12 @@ var GestionConstructions = {
     getRestHotel: function () {
         return this.nbInitHotel - this.nbSellHotel;
     },
+	sellHotel:function(){
+		this.nbSellHotel--;
+	},
+	sellHouse:function(){
+		this.nbSellHouse--;
+	},
     buyHouse: function () {
         if (!this.isFreeHouse()) {
             throw "Impossible d'acheter une maison."

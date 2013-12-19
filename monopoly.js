@@ -1159,7 +1159,34 @@ var GestionEchange = {
                     // 3 Terrains construits, on vend les maisons dessus
                     // On recupere les groupes construits classes par ordre inverse d'importance. On applique la meme regle que la construction tant que les sommes ne sont pas recupereres
                     var sortedGroups = this.getGroupsToConstruct("ASC", 0.1);
-                    // TODO
+                    // On boucle (tant que les sommes ne sont pas recouvres) sur le groupe pour reduire le nombre de maison, on tourne sur les maisons
+					// TODO
+					var run = true;
+					for(var idGroup in sortedGroups){
+						var group = sortedGroups[idGroup];
+						// On boucle pour reduire les maisons au fur et a mesure
+						var proprietes = group.proprietes;
+						// On trie par nombre de maison
+						proprietes.sort(function(a,b){
+							return a.nbMaison > b.nbMaison;
+						});
+						var currentId = 0;
+						var nbNoHouse = 0;
+						while(this.montant < montant && nbNoHouse < proprietes.length){
+							var p = proprietes[currentId];
+							if(p.nbMaison == 0){
+								nbNoHouse++;
+							}
+							else{
+								p.sellMaison();
+							}
+							currentId = (currentId+1)%proprietes.length;
+						}
+						if(this.montant > montant){
+							break;
+						}
+					}
+					
                 }
             }
             // Somme recouvree
@@ -2248,7 +2275,6 @@ var GestionEchange = {
         }
     }
 
-
     /* Action de gain d'argent pour une carte */
     function PayerCarte(montant) {
         this.type = "taxe";
@@ -2507,8 +2533,6 @@ var DrawerHelper = {
             canvas.fillRect(this.data.x, this.data.y, this.data.width, this.data.height);
         }
     }
-
-
 
     // Represente un pion d'un joueur
     function PionJoueur(color, x, y) {
@@ -3113,6 +3137,29 @@ var DrawerHelper = {
             return createMessage("Vous etes " + this.nom, this.color, "Vous etes chez vous", changeJoueur);
         }
 
+		this.sellMaison = function(joueur,noRefresh){
+			if(joueur == null || !this.joueurPossede.equals(joueur) || this.nbMaison <= 0) {
+				return;
+			}
+			if(this.nbMaison == 5){
+				// On verifie qu'il reste assez de maison (4)
+				if(GestionConstructions.getRestHouse()>=4){
+					GestionConstructions.buyHouses(4);
+					GestionConstructions.sellHotel();
+					this.hotel = false;
+				}
+				else{
+					return;	// Pas assez de maison
+				}
+			}else{
+				GestionConstructions.sellHouse();
+			}
+			this.setNbMaison(this.nbMaison - 1,noRefresh);
+		}
+		
+		
+		/* Utilise principalement par un joueur ordi qui achete les maisons une par une. */
+		/* Un joueur humain utilise des methodes de modifications directes */
         this.buyMaison = function (joueur, noRefresh) {
             if (joueur == null || !this.joueurPossede.equals(joueur) || this.nbMaison >= 5) {
                 return;
@@ -3361,7 +3408,6 @@ var DrawerHelper = {
         selectJoueur(joueur);
         return null;
     }
-
 
     function closeFiche() {
         changeJoueur();
@@ -4095,6 +4141,7 @@ var GestionTerrains = {
             if (this.simulation != null) {
                 GestionConstructions.buyHouses(this.simulation.achat.maison);
                 GestionConstructions.buyHotels(this.simulation.achat.hotel);
+				// TODO => utiliser les methodes sell qui font d'autres verifications
             }
             $.trigger('monopoly.acheteConstructions', {
                 joueur: joueurCourant,

@@ -1532,7 +1532,7 @@ var GestionEchange = {
                 var maison = this.maisons[index];
                 stats.hotel += parseInt(maison.hotel == true ? 1 : 0);
                 stats.maison += parseInt(maison.hotel == false ? maison.nbMaison : 0);
-                stats.argentDispo += maison.nbMaison * (maison.prixMaison / 2) + maison.achat / 2; // Revente des maisons + hypotheque
+                stats.argentDispo += ((maison.constructible)?(maison.nbMaison * (maison.prixMaison / 2)):0) + maison.achat / 2; // Revente des maisons + hypotheque
                 stats.argentDispoHypo += (!maison.isGroupee()) ? maison.achat / 2 : 0; // hypotheque des terrains non groupes
             }
             return stats;

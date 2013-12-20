@@ -1,6 +1,4 @@
-1) Gestion des encheres
-2) Prevoir un ecran de log des actions
-3) Voir pour un panneau de creation de la partie (parc gratuit pour les amendes, case départ a 40000 Frs)
-4) Gestion de l'échange avec l'IA. Communication entre robot
-5) Verifier strategie sortie prison
+1) Gestion des encheres (pour achat de terrains a partir d'un certain tour) => prevoir budget max a accorder, blocage du jeu en faisant monter les encheres
 6) Racheter les hypotheques
+7) Ajout de messages sympas lors de l'echange
+8) Module reseau

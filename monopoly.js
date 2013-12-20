@@ -1168,22 +1168,36 @@ var GestionEchange = {
 						var proprietes = group.proprietes;
 						// On trie par nombre de maison
 						proprietes.sort(function(a,b){
-							return a.nbMaison > b.nbMaison;
+							if(a.nbMaison == b.nbMaison){return 0;}
+							return a.nbMaison < b.nbMaison ? 1 : -1;
 						});
 						var currentId = 0;
 						var nbNoHouse = 0;
-						while(this.montant < montant && nbNoHouse < proprietes.length){
+						var boucle = 0;	// Securite pour eviter boucle infinie
+						var maisonVendues = 0;
+						while(this.montant < montant && nbNoHouse < proprietes.length && boucle++ < 100){
 							var p = proprietes[currentId];
 							if(p.nbMaison == 0){
 								nbNoHouse++;
 							}
 							else{
-								p.sellMaison();
+								if(p.sellMaison(this)){
+									maisonVendues++;
+									this.gagner(p.prixMaison/2,true);
+								}
 							}
 							currentId = (currentId+1)%proprietes.length;
 						}
 						if(this.montant > montant){
+							// On peut logger les terrains vendus
+							if(maisonVendues>0){
+								$.trigger('monopoly.vendMaison',{joueur:this,nbMaison:maisonVendues});
+							}
+							$.trigger('refreshPlateau');
 							break;
+						}else{
+							// Defaite
+							this.doDefaite();
 						}
 					}
 					
@@ -2424,7 +2438,7 @@ var Drawer = {
         //this.setFrequency(2000, this.canvas);
         this.setFrequency(50, this.canvasRT);
 
-        $('body').bind('refreshPlateau', function () {
+        $.bind('refreshPlateau', function () {
             Drawer.refresh(Drawer.canvas);
         });
         return this;
@@ -3116,7 +3130,7 @@ var DrawerHelper = {
             }
             // Lancer un evenement pour rafraichir le plateau
             if (!noRefresh) {
-                $('body').trigger('refreshPlateau');
+                $.trigger('refreshPlateau');
             }
         }
 
@@ -3139,7 +3153,7 @@ var DrawerHelper = {
 
 		this.sellMaison = function(joueur,noRefresh){
 			if(joueur == null || !this.joueurPossede.equals(joueur) || this.nbMaison <= 0) {
-				return;
+				return false;
 			}
 			if(this.nbMaison == 5){
 				// On verifie qu'il reste assez de maison (4)
@@ -3155,6 +3169,7 @@ var DrawerHelper = {
 				GestionConstructions.sellHouse();
 			}
 			this.setNbMaison(this.nbMaison - 1,noRefresh);
+			return true;
 		}
 		
 		
@@ -4641,7 +4656,8 @@ var MessageDisplayer = {
 
     write: function (joueur, message) {
 		MessageDisplayer.order++;
-        this.div.prepend('<div><span style="color:' + joueur.color + '">' + joueur.nom + '</span> : ' + message + ' (' + MessageDisplayer.order + ')</div>');
+		var orderMessage = (debug)?(' (' + MessageDisplayer.order + ')'):'';
+        this.div.prepend('<div><span style="color:' + joueur.color + '">' + joueur.nom + '</span> : ' + message + orderMessage + '</div>');
     },
     bindEvents: function () {
         $.bind("monopoly.save", function (e, data) {
@@ -4651,6 +4667,8 @@ var MessageDisplayer = {
             }, 'sauvegarde de la partie (' + data.name + ')');
         }).bind("monopoly.acheteMaison", function (e, data) {
             MessageDisplayer.write(data.joueur, 'achète ' + '<span style="color:' + data.maison.color + '">' + data.maison.nom + '</span>');
+        }).bind("monopoly.vendMaison", function (e, data) {
+            MessageDisplayer.write(data.joueur, 'vends ' + data.nbMaison + ' maison(s)</span>');
         }).bind("monopoly.payerLoyer", function (e, data) {
             var mais = data.maison;
             var m = '<span style="color:' + mais.color + '">' + mais.nom + '</span>';

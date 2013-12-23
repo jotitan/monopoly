@@ -606,6 +606,7 @@ var GestionEchange = {
     /* Le proprietaire accepte la proposition. On prend la derniere proposition et on l'applique */
     /* @param joueurAccept : joueur qui accepte la proposition (suite au aller retour) */
     accept: function (joueurAccept) {
+        console.log("Accept",joueurAccept);
         $.trigger('monopoly.echange.accept', {
             joueur: joueurAccept
         });
@@ -632,14 +633,15 @@ var GestionEchange = {
         this.end();
     },
     reject: function (joueurReject) {
+        console.log("Reject",joueurReject);
         $.trigger('monopoly.echange.reject', {
             joueur: joueurReject
         });
         // On notifie le joueur et on lui donne le callback(end) pour lancer la suite du traitement
         if (joueurReject.equals(this.demandeur)) {
-            this.proprietaire.notifyRejectProposition(function(){GestionEchange.end();});
+            this.proprietaire.notifyRejectProposition(function(){GestionEchange.end();},this.terrain,this.proposition);
         } else {
-            this.demandeur.notifyRejectProposition(function(){GestionEchange.end();});
+            this.demandeur.notifyRejectProposition(function(){GestionEchange.end();},this.terrain,this.proposition);
         }        
     }
 }
@@ -660,6 +662,8 @@ var GestionEchange = {
         /* Comportement : definit le rapport e l'argent. Inclu la prise de risque */
         this.comportement = null;
         this.nom = nom;
+        this.rejectedPropositions = []; // Sotcke les propositions rejetees
+
         /* Determine les caracteristiques d'un ordinateur*/
         this.init = function (idStrategie, idComportement) {
             if (idStrategie == null) {
@@ -754,9 +758,13 @@ var GestionEchange = {
             }
         }
 
-        this.notifyRejectProposition = function (callback) {
+        this.notifyRejectProposition = function (callback,terrain,proposition) {
 			// On enregistre le refus du proprietaire : le terrain, la proposition et le numero de tour
 			// utiliser pour plus tard pour ne pas redemander immediatement
+            if(this.rejectedPropositions[terrain.id] == null){
+                this.rejectedPropositions[terrain.id] = [];
+            }
+            this.rejectedPropositions[terrain.id].push({nbTours:nbTours,proposition:proposition});
             if(callback){
                 callback();
             }
@@ -818,7 +826,13 @@ var GestionEchange = {
                     }
                 }
                 if (prop.deals != null || (prop.compensation != null && prop.compensation > 0)) {
-                    proprietesFiltrees.push(prop);
+                    // On verifie si pas de demande faite recemment
+                    if(this._canAskTerrain(prop.maison)){
+                        proprietesFiltrees.push(prop);    
+                    }else{
+                        $.trigger('monopoly.debug',{message:'Le joueur ne demande pas ' + prop.maison.nom});
+                    }
+                    
                 }
             }
             // On choisit la propriete a demander en echange
@@ -846,6 +860,19 @@ var GestionEchange = {
             callback();
         }
 
+        /* Verifie que le terrain peut etre demande a l'echange (si une precedente demande n'a pas été faite trop recemment) */
+        this._canAskTerrain = function(terrain){
+            if(this.rejectedPropositions!=null && this.rejectedPropositions[terrain.id]!=null){
+                // On prend le dernier
+                var last = this.rejectedPropositions[terrain.id][this.rejectedPropositions[terrain.id].length -1];
+                var pas = 3 + (Math.round((Math.random()*1000)%2));
+                return last.nbTours + pas < nbTours;
+
+            }
+            return true;
+
+        }
+
         // La gestion des echanges se passe par des mecanismes asynchrones. On utilise un objet contenant une proposition / contre proposition et un statut.
         // On bloque le traitement d'un joueur
 
@@ -859,7 +886,7 @@ var GestionEchange = {
         this.traiteRequeteEchange = function (joueur, maison, proposition) {
             // Si aucune compensation, on refuse
             if ((proposition.terrains == null || proposition.terrains.length == 0) && (proposition.compensation == null || proposition.compensation == 0)) {
-                return GestionEchange.reject();
+                return GestionEchange.reject(this);
             }
             var others = this.findOthersInterestProprietes(joueur);
             var infos = this._calculatePropositionValue(maison, joueur, proposition, others);
@@ -881,7 +908,7 @@ var GestionEchange = {
             } while (infos.critere < 3 && turn++ < 3);
 
             if (infos.critere < 3) { // Impossible a generer
-                return GestionEchange.reject();
+                return GestionEchange.reject(this);
             }
             return GestionEchange.contrePropose(contreProposition,this);
         }
@@ -4708,13 +4735,17 @@ var MessageDisplayer = {
             var message = 'souhaite obtenir <span style="color:' + data.maison.color + '">' + data.maison.nom + '</span>  auprès de ' + data.maison.joueurPossede.nom;
             MessageDisplayer.write(data.joueur, message);
         }).bind("monopoly.echange.propose", function (e, data) {
+            console.log("monopoly.echange.propose");
 			var message = 'propose ' + data.proposition.terrains.length + ' terrain(s) et ' + data.proposition.compensation + ' en compensation';
             MessageDisplayer.write(data.joueur, message);
         }).bind("monopoly.echange.accept", function (e, data) {
+            console.log("monopoly.echange.accept");
             MessageDisplayer.write(data.joueur, 'accepte la proposition');
         }).bind("monopoly.echange.reject", function (e, data) {
+            console.log("monopoly.echange.reject");
             MessageDisplayer.write(data.joueur, 'rejete la proposition');
         }).bind("monopoly.echange.contrepropose", function (e, data) {
+            console.log("monopoly.echange.contre");
             MessageDisplayer.write(data.joueur, 'fait une contreproposition');
         }).bind("monopoly.debug", function (e, data) {
             if (DEBUG) {

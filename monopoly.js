@@ -2,6 +2,13 @@
 /* Dependances a charger : */
 /* * GestionConstructions.js */
 
+/* TODO : racheter les hypotheques quand l'argent rentre a nouveau */
+/* Permettre l'achat de terrain hors strategie quand on est blinde et qu'on a deja des groupes et des constructions dessus */
+/* Gerer la mise en vente de terrain (apres l'hypotheque) */
+/* Echange uniquement quand tous les terrains sont vendus */
+/* Faire un ecran qui liste les terrains libres */
+/* Bug L1895 "impossible" */
+
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
     value: function () {
@@ -606,7 +613,6 @@ var GestionEchange = {
     /* Le proprietaire accepte la proposition. On prend la derniere proposition et on l'applique */
     /* @param joueurAccept : joueur qui accepte la proposition (suite au aller retour) */
     accept: function (joueurAccept) {
-        console.log("Accept",joueurAccept);
         $.trigger('monopoly.echange.accept', {
             joueur: joueurAccept
         });
@@ -633,7 +639,6 @@ var GestionEchange = {
         this.end();
     },
     reject: function (joueurReject) {
-        console.log("Reject",joueurReject);
         $.trigger('monopoly.echange.reject', {
             joueur: joueurReject
         });
@@ -706,7 +711,6 @@ var GestionEchange = {
         this.loadMore = function (data) {
             this.init(data.strategie, data.comportement);
         }
-
 
         // Fonction appelee lorsque le joueur a la main
         this.joue = function () {
@@ -790,52 +794,55 @@ var GestionEchange = {
             /* On cherche les monnaies d'echanges. Prendre en compte les gares ? */
             var proprietesFiltrees = [];
             for (var p in proprietes) {
-                var prop = proprietes[p];
-                var maison = prop.maison;
-                var joueur = maison.joueurPossede;
-                prop.compensation = 0;
-                prop.deals = maison.joueurPossede.findOthersInterestProprietes(this);
-                if (prop.deals.length == 0) {
-					// On ajoute les terrains non importants (gare seule, compagnie)
-					var othersProprietes = joueur.findUnterestsProprietes();
-					var montant = 0;
-					if(othersProprietes!=null && othersProprietes.proprietes!=null && othersProprietes.proprietes.length>0){
-						// On en ajoute. En fonction de la strategie, on n'ajoute que les terrains seuls dans le groupe (peu important)
-						for(var i = 0 ; i < othersProprietes.proprietes.length && montant/maison.achat < 0.7; i++){
-							var terrain = othersProprietes.proprietes[i];
-							if(!this.strategie.interetPropriete(terrain)){
-								// On le refourgue
-								prop.deals.push(terrain);
-								montant+=terrain.achat;								
-							}
-						}						
+				var prop = proprietes[p];					
+				var maison = prop.maison;
+				// On verifie si une demande n'a pas ete faite trop recemment
+				if(this._canAskTerrain(maison)){
+					var last = this._getLastProposition(maison);
+					var joueur = maison.joueurPossede;
+					prop.compensation = 0;
+					prop.deals = maison.joueurPossede.findOthersInterestProprietes(this);
+					if (prop.deals.length == 0) {
+						// On ajoute les terrains non importants (gare seule, compagnie)
+						var othersProprietes = joueur.findUnterestsProprietes();
+						var montant = 0;
+						if(othersProprietes!=null && othersProprietes.proprietes!=null && othersProprietes.proprietes.length>0){
+							// On en ajoute. En fonction de la strategie, on n'ajoute que les terrains seuls dans le groupe (peu important)
+							for(var i = 0 ; i < othersProprietes.proprietes.length && montant/maison.achat < 0.7; i++){
+								var terrain = othersProprietes.proprietes[i];
+								if(!this.strategie.interetPropriete(terrain)){
+									// On le refourgue
+									prop.deals.push(terrain);
+									montant+=terrain.achat;								
+								}
+							}						
+						}
+						// Permettre calcul compensation quand traitement fournit des terrains < 80% du montant
+						if(montant/maison.achat < 0.8){
+							prop.compensation = this.evalueCompensation(joueur, maison,interetEchange,last) - montant;
+						}
+					} else {
+						// Si trop couteux, on propose autre chose, comme de l'argent. On evalue le risque a echanger contre ce joueur.  
+						// On teste toutes les monnaies d'echanges
+						var monnaies = this.chooseMonnaiesEchange(prop,prop.monnaiesEchange, true, nbGroupesPossedes >= 2, last);
+						if (monnaies == null || monnaies.length == 0) {
+							prop.compensation = this.evalueCompensation(joueur, maison, interetEchange,last);
+							prop.deals = null;
+						} else {
+							prop.deals = monnaies;
+						}
 					}
-					// Permettre calcul compensation quand traitement fournit des terrains < 80% du montant
-					if(montant/maison.achat < 0.8){
-						prop.compensation = this.evalueCompensation(joueur, maison,interetEchange) - montant;
+					if (prop.deals != null || (prop.compensation != null && prop.compensation > 0)) {
+						// On verifie si pas de demande faite recemment
+						proprietesFiltrees.push(prop); 						
 					}
-                } else {
-                    // Si trop couteux, on propose autre chose, comme de l'argent. On evalue le risque a echanger contre ce joueur.  
-                    // On teste toutes les monnaies d'echanges
-                    var monnaies = this.chooseMonnaiesEchange(prop,prop.monnaiesEchange, true, nbGroupesPossedes >= 2);
-                    if (monnaies == null || monnaies.length == 0) {
-                        prop.compensation = this.evalueCompensation(joueur, maison, interetEchange);
-                        prop.deals = null;
-                    } else {
-                        prop.deals = monnaies;
-                    }
-                }
-                if (prop.deals != null || (prop.compensation != null && prop.compensation > 0)) {
-                    // On verifie si pas de demande faite recemment
-                    if(this._canAskTerrain(prop.maison)){
-                        proprietesFiltrees.push(prop);    
-                    }else{
-                        $.trigger('monopoly.debug',{message:'Le joueur ne demande pas ' + prop.maison.nom});
-                    }
-                    
-                }
+				}
+				else{
+					$.trigger('monopoly.debug',{message:'Le joueur ne demande pas ' + maison.nom});
+				}
             }
-            // On choisit la propriete a demander en echange
+			
+			// On choisit la propriete a demander en echange
             if (proprietesFiltrees.length != 0) {
                 for (var idx in proprietesFiltrees) {
                     var p = proprietesFiltrees[idx];
@@ -862,16 +869,22 @@ var GestionEchange = {
 
         /* Verifie que le terrain peut etre demande a l'echange (si une precedente demande n'a pas été faite trop recemment) */
         this._canAskTerrain = function(terrain){
-            if(this.rejectedPropositions!=null && this.rejectedPropositions[terrain.id]!=null){
-                // On prend le dernier
-                var last = this.rejectedPropositions[terrain.id][this.rejectedPropositions[terrain.id].length -1];
-                var pas = 3 + (Math.round((Math.random()*1000)%2));
-                return last.nbTours + pas < nbTours;
+			// On prend le dernier
+			var last = this._getLastProposition(terrain);
+			if(last!=null){
+				var pas = 3 + (Math.round((Math.random()*1000)%2));
+				return last.nbTours + pas < nbTours;
+			}
 
-            }
             return true;
-
         }
+		
+		this._getLastProposition = function(terrain){
+			if(this.rejectedPropositions!=null && this.rejectedPropositions[terrain.id]!=null){
+				return this.rejectedPropositions[terrain.id][this.rejectedPropositions[terrain.id].length -1];
+			}
+			return null;
+		}
 
         // La gestion des echanges se passe par des mecanismes asynchrones. On utilise un objet contenant une proposition / contre proposition et un statut.
         // On bloque le traitement d'un joueur
@@ -1055,11 +1068,16 @@ var GestionEchange = {
          * 1) Prix de base du terrain.
          * 2) Economie propre, il faut pouvoir acheter des maisons derriere (2 sur chaque terrain)
          * Renvoie des bornes min / max. On propose le min au debut
+		 * @param oldPropal : si non nulle, il existe une precedente proposition et on propose une compensation plus importante
          */
-        this.evalueCompensation = function (joueur, maison, interetTerrain) {
+        this.evalueCompensation = function (joueur, maison, interetTerrain,oldProposition) {
             // On calcule les sommes dispos. En fonction de l'interet pour le terrain, on peut potentiellement hypothequer
 			var budgetMax = this.comportement.getBudget(this,(interetTerrain!=null && interetTerrain > 2));
-			return Math.min(budgetMax,maison.achat);
+			var budget = Math.min(budgetMax,maison.achat);
+			if(oldProposition!=null && oldProposition.compensation>=budget){
+				budget = Math.min(this.montant,oldProposition.compensation*1.2);
+			}
+			return budget;
         }
 
         /* Evalue la dangerosite d'un joueur s'il recupere une maison supplementaire pour finir un groupe */
@@ -1073,7 +1091,7 @@ var GestionEchange = {
             // Critere 1, nombre de maison par terrain pouvant etre achete
             var nbMaison = (this.argent / groupe.maisons[0].prixMaison) / groupe.fiches.length;
             // compte les autres groupes
-            groupe.maisons[0].loyers[3];
+            var criterePrix = (groupe.maisons[0].loyers[nbMaison])/100000;
             // Ligne presente
             var groups = this.findGroupes();
             var isLigne = false;
@@ -1082,14 +1100,18 @@ var GestionEchange = {
                     isLigne = true;
                 }
             }
-            return isLigne;
+			// Resultat : nb maison, le fait de faire une ligne et une ponderation par le prix
+			var moteur = (nbMaison + criterePrix) * (isLigne?2:1);
+			
+            return moteur >= 5;
         }
 
         /* Choisis les terrains qu'il est possible de ceder en echange du terrain */
         /* Se base sur la dangerosite du terrain (n'est pas pris en compte) et sur la valeur des terrains par rapport a ce qui est demande */
         /* @param testDangerous : si le joueur est le seul fournisseur et qu'on a pas le choix, on prend le terrain*/
         /* @param strict : si strict est vrai, on ne relance pas l'algo en etant moins dangereux. Le joueur decide de ne pas faire de cadeau */
-        this.chooseMonnaiesEchange = function (terrainVise, terrains, testDangerous, strict) {
+		/* @param oldProposition : derniere proposition refusee qui a ete faite, plus laxiste dans ce cas */
+        this.chooseMonnaiesEchange = function (terrainVise, terrains, testDangerous, strict, oldProposition) {
             if (terrains == null || terrains.length == 0) {
                 return [];
             }
@@ -1111,7 +1133,7 @@ var GestionEchange = {
                     }
                 }
             }
-            if (proposition.length == 0 && testDangerous && !strict) {
+            if (proposition.length == 0 && !strict && (testDangerous || oldProposition!=null)) {
                 // On relance sans etre strict
                 return this.chooseMonnaiesEchange(terrainVise, terrains, joueur, false, strict);
             }
@@ -1232,8 +1254,9 @@ var GestionEchange = {
             }
             // Somme recouvree
             this.setArgent(this.montant - montant);
-            if (callback) {
-                callback();
+			this.bloque = false;
+			if (callback) {
+			    callback();
             }
             return true;
         }
@@ -1572,8 +1595,7 @@ var GestionEchange = {
         // Utilise la carte sortie de prison
         this.utiliseCarteSortiePrison = function () {
             if (this.cartesSortiePrison.length == 0) {
-                throw "Impossible d'utiliser cette carte";
-                t
+                throw "Impossible d'utiliser cette carte";                
             }
             this.cartesSortiePrison[this.cartesSortiePrison.length - 1].joueurPossede = null;
             this.cartesSortiePrison.splice(this.cartesSortiePrison.length - 1, 1);
@@ -1839,20 +1861,20 @@ var GestionEchange = {
         /* Paye la somme demandee. Si les fonds ne sont pas disponibles, l'utilisateur doit d'abord réunir la somme, on le bloque */
         /* @param callback : action a effectuer apres le paiement */
         this.payer = function (montant, callback) {
-            // On verifie si c'est possible de recuperer les sommes
+			// On verifie si c'est possible de recuperer les sommes
             if (this.getStats().argentDispo < montant) {
-                // Banqueroute, le joueur perd
-                this.doDefaite(montant);
-                throw "Le joueur est insolvable";
+              // Banqueroute, le joueur perd
+                this.doDefaite();
+                throw "Le joueur " + this.nom + " est insolvable";
             }
 
             /* Verifie si le joueur peut payer */
             if (montant > this.montant) {
-                this.bloque = true;
+			    this.bloque = true;
                 var _self = this;
                 this.resolveProblemeArgent(montant, callback);
             } else {
-                this.setArgent(this.montant - montant);
+			    this.setArgent(this.montant - montant);
                 if (callback) {
                     callback();
                 }
@@ -1870,7 +1892,11 @@ var GestionEchange = {
                 });
             } catch (insolvable) {
                 // Le joueur n'est pas solvable, on se sert sur le reste
-                joueur.gagner(this.getStats().argentDispo);
+				console.log(insolvable);
+				if(joueur!=null){	// Pb quand amende ?
+					joueur.gagner(this.getStats().argentDispo);
+				}
+				changeJoueur();
             }
         }
 
@@ -1879,11 +1905,18 @@ var GestionEchange = {
         }
 
         /* Gestion de la defaite */
-        this.doDefaite = function (dette) {
-            // On paye notre dette avec tout nos actifs (stats.argentDispo)
-            this.div.empty();
-            $('.joueurCourant', this.div).addClass('defaite');
+        this.doDefaite = function () {
+            // On laisse juste le nom et on supprime le reste, on supprime le pion, on remet les fiches a la vente
+			for(var f in this.fiches){
+				this.fiches[f].libere();
+			}
+			this.fiches = [];
+			$('input',this.div).remove();
             // On affiche un style sur la liste
+            $('.joueurCourant', this.div).removeAttr('style').addClass('defaite');
+			$.trigger("monopoly.defaite", {
+                joueur: joueur
+            });
             this.defaite = true;
         }
 
@@ -2393,7 +2426,7 @@ var GestionEchange = {
             // On test si la carte est une carte sortie de prison est possedee par un joueur
             if (c.carte.type == "prison" && !c.carte.isLibre()) {
                 // on prend la carte suivante
-                c = cartesCaisseCommunaute[randomValue + 1 % (cartesCaisseCommunaute.length)];
+                c = cartesCaisseCommunaute[(randomValue + 1) % (cartesCaisseCommunaute.length)];
             }
             return c.action();
         }
@@ -3083,6 +3116,14 @@ var DrawerHelper = {
             });
         }
 
+		/* Le terrain est rendu (manque d'argent) */
+		this.libere = function(){
+			this.statut = ETAT_LIBRE;
+			this.joueurPossede = null;
+			this.nbMaison = 0;
+			this.hotel = false;
+		}
+		
         /* Renvoie la rentabilite de la propriete. Se base sur le rapport entre le loyer de trois maisons et le prix d'achat d'une maison */
         this.getRentabilite = function () {
             var ponderation = 10; // Facteur pour nivelle le taux
@@ -4683,7 +4724,7 @@ var MessageDisplayer = {
 
     write: function (joueur, message) {
 		MessageDisplayer.order++;
-		var orderMessage = (debug)?(' (' + MessageDisplayer.order + ')'):'';
+		var orderMessage = (DEBUG)?(' (' + MessageDisplayer.order + ')'):'';
         this.div.prepend('<div><span style="color:' + joueur.color + '">' + joueur.nom + '</span> : ' + message + orderMessage + '</div>');
     },
     bindEvents: function () {
@@ -4693,18 +4734,18 @@ var MessageDisplayer = {
                 nom: 'info'
             }, 'sauvegarde de la partie (' + data.name + ')');
         }).bind("monopoly.acheteMaison", function (e, data) {
-            MessageDisplayer.write(data.joueur, 'achète ' + '<span style="color:' + data.maison.color + '">' + data.maison.nom + '</span>');
+            MessageDisplayer.write(data.joueur, 'achète ' + '<span style="font-weight:bold;color:' + data.maison.color + '">' + data.maison.nom + '</span>');
         }).bind("monopoly.vendMaison", function (e, data) {
             MessageDisplayer.write(data.joueur, 'vends ' + data.nbMaison + ' maison(s)</span>');
         }).bind("monopoly.payerLoyer", function (e, data) {
             var mais = data.maison;
-            var m = '<span style="color:' + mais.color + '">' + mais.nom + '</span>';
+            var m = '<span style="font-weight:bold;color:' + mais.color + '">' + mais.nom + '</span>';
             var jp = '<span style="color:' + mais.joueurPossede.color + '">' + mais.joueurPossede.nom + '</span>';
             MessageDisplayer.write(data.joueur, "tombe sur " + m + " et paye " + mais.getLoyer() + " " + CURRENCY + " à " + jp);
         }).bind("monopoly.newPlayer", function (e, data) {
             MessageDisplayer.write(data.joueur, "rentre dans la partie");
         }).bind("monopoly.hypothequeMaison", function (e, data) {
-            MessageDisplayer.write(data.joueur, "hypothèque " + data.maison.nom);
+            MessageDisplayer.write(data.joueur, 'hypothèque <span style="font-weight:bold;color:' + data.maison.color + '">' + data.maison.nom + '</span>');
         }).bind("monopoly.leveHypothequeMaison", function (e, data) {
             MessageDisplayer.write(data.joueur, "lève l'hypothèque de " + data.maison.nom);
         }).bind("monopoly.goPrison", function (e, data) {
@@ -4735,18 +4776,16 @@ var MessageDisplayer = {
             var message = 'souhaite obtenir <span style="color:' + data.maison.color + '">' + data.maison.nom + '</span>  auprès de ' + data.maison.joueurPossede.nom;
             MessageDisplayer.write(data.joueur, message);
         }).bind("monopoly.echange.propose", function (e, data) {
-            console.log("monopoly.echange.propose");
-			var message = 'propose ' + data.proposition.terrains.length + ' terrain(s) et ' + data.proposition.compensation + ' en compensation';
+            var message = 'propose ' + data.proposition.terrains.length + ' terrain(s) et ' + data.proposition.compensation + ' en compensation';
             MessageDisplayer.write(data.joueur, message);
         }).bind("monopoly.echange.accept", function (e, data) {
-            console.log("monopoly.echange.accept");
             MessageDisplayer.write(data.joueur, 'accepte la proposition');
         }).bind("monopoly.echange.reject", function (e, data) {
-            console.log("monopoly.echange.reject");
             MessageDisplayer.write(data.joueur, 'rejete la proposition');
         }).bind("monopoly.echange.contrepropose", function (e, data) {
-            console.log("monopoly.echange.contre");
             MessageDisplayer.write(data.joueur, 'fait une contreproposition');
+        }).bind("monopoly.defaite", function (e, data) {
+            MessageDisplayer.write(data.joueur, 'est battu');
         }).bind("monopoly.debug", function (e, data) {
             if (DEBUG) {
                 MessageDisplayer.write({

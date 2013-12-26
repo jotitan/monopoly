@@ -2,12 +2,12 @@
 /* Dependances a charger : */
 /* * GestionConstructions.js */
 
-/* TODO : racheter les hypotheques quand l'argent rentre a nouveau */
-/* Permettre l'achat de terrain hors strategie quand on est blinde et qu'on a deja des groupes et des constructions dessus */
-/* Gerer la mise en vente de terrain (apres l'hypotheque) */
-/* Echange uniquement quand tous les terrains sont vendus */
-/* Faire un ecran qui liste les terrains libres */
-/* Bug L1895 "impossible" */
+/* racheter les hypotheques quand l'argent rentre a nouveau */
+/* TODO : Permettre l'achat de terrain hors strategie quand on est blinde et qu'on a deja des groupes et des constructions dessus */
+/* TODO : Gerer la mise en vente de terrain (apres l'hypotheque) */
+/* TODO : Echange uniquement quand tous les terrains sont vendus */
+/* TODO : Faire un ecran qui liste les terrains libres */
+/* -Bug L1895 "impossible" */
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
@@ -721,6 +721,8 @@ var GestionEchange = {
             this.echangeProprietes(function () {
                 // Construit des maisons / hotels
                 joueur.buildConstructions();
+                // rachete les hypotheques
+                joueur.rebuyHypotheque();
                 // on lance les des
                 lancerAnimerDes();
             });
@@ -804,7 +806,7 @@ var GestionEchange = {
 					prop.deals = maison.joueurPossede.findOthersInterestProprietes(this);
 					if (prop.deals.length == 0) {
 						// On ajoute les terrains non importants (gare seule, compagnie)
-						var othersProprietes = joueur.findUnterestsProprietes();
+                        var othersProprietes = this.findUnterestsProprietes();
 						var montant = 0;
 						if(othersProprietes!=null && othersProprietes.proprietes!=null && othersProprietes.proprietes.length>0){
 							// On en ajoute. En fonction de la strategie, on n'ajoute que les terrains seuls dans le groupe (peu important)
@@ -832,16 +834,27 @@ var GestionEchange = {
 							prop.deals = monnaies;
 						}
 					}
-					if (prop.deals != null || (prop.compensation != null && prop.compensation > 0)) {
-						// On verifie si pas de demande faite recemment
-						proprietesFiltrees.push(prop); 						
+                    if((prop.deals == null || prop.deals.length == 0) && prop.compensation == 0){
+                        // On ajoute les autres terrains dont on se moque (terrains constructibles mais non intéressant)
+                        var terrains = this.findOthersProperties();
+                        var montant = 0;
+                        for(var i = 0 ; i < terrains.length && montant/maison.achat < 0.7; i++){
+                            var terrain = terrains[i];
+                            if(!this.strategie.interetPropriete(terrain)){
+                                // On le refourgue
+                                prop.deals.push(terrain);
+                                montant+=terrain.achat;
+                            }
+                        }
+                    }
+					if ((prop.deals != null && prop.deals.length>0) || (prop.compensation != null && prop.compensation > 0)) {
+						proprietesFiltrees.push(prop);
 					}
 				}
 				else{
 					$.trigger('monopoly.debug',{message:'Le joueur ne demande pas ' + maison.nom});
 				}
             }
-			
 			// On choisit la propriete a demander en echange
             if (proprietesFiltrees.length != 0) {
                 for (var idx in proprietesFiltrees) {
@@ -1077,7 +1090,7 @@ var GestionEchange = {
 			if(oldProposition!=null && oldProposition.compensation>=budget){
 				budget = Math.min(this.montant,oldProposition.compensation*1.2);
 			}
-			return budget;
+			return Math.max(0,budget);
         }
 
         /* Evalue la dangerosite d'un joueur s'il recupere une maison supplementaire pour finir un groupe */
@@ -1207,7 +1220,10 @@ var GestionEchange = {
                     });
                     // 3 Terrains construits, on vend les maisons dessus
                     // On recupere les groupes construits classes par ordre inverse d'importance. On applique la meme regle que la construction tant que les sommes ne sont pas recupereres
-                    var sortedGroups = this.getGroupsToConstruct("ASC", 0.1);
+                    var sortedGroups = [];
+                    try{
+                        sortedGroups = this.getGroupsToConstruct("ASC", 0.1);
+                    }catch(e){}
                     // On boucle (tant que les sommes ne sont pas recouvres) sur le groupe pour reduire le nombre de maison, on tourne sur les maisons
 					// TODO
 					var run = true;
@@ -1313,6 +1329,33 @@ var GestionEchange = {
             return sortedGroups;
         }
 
+        /* Renvoie les groupes construits */
+        /* @param nbMaison : nombre de maison moyen qui servent de palier */
+        this.hasConstructedGroups = function(nbMaison){
+            var nb = nbMaison || 0;
+            var groups = this.findGroupes();
+            for(var idGroup in groups){
+               if(groups[idGroup].group.getAverageConstructions() > nb){
+                    return true;
+               }
+            }
+            return false;
+        }
+
+        /* Rachete les hypotheques */
+        /* Cas : groupes presents (1) et construits (nb>3). Liquidite > 10 fois prix hypotheque */
+        this.rebuyHypotheque = function(){
+            // Hypotheque presentes
+            var terrains = this.findMaisonsHypothequees();
+            if(terrains == null || terrains.length == 0 && !this.hasConstructedGroups(3)){
+                return;
+            }
+            var pos = 0;
+            while(pos < terrains.length && this.montant > 10 * terrains[pos].achatHypotheque){
+                terrains[pos].leveHypotheque();
+            }
+        }
+
         /* Construit des maisons / hotels 
          * Calcul les groupes constructibles, verifie l'argent disponible. Construit sur les proprietes ou peuvent tomber les adversaires (base sur leur position et les stats au des)
          * Possibilite d'enregistrer tous les deplacements des joueurs pour affiner les cases les plus visitees
@@ -1326,6 +1369,16 @@ var GestionEchange = {
             var sortedGroups = [];
             try {
                 sortedGroups = this.getGroupsToConstruct("DESC", 0.1);
+                // On tri les maisons de chaque groupe en fonction du prix et du nombre (le moins de maison en premier puis l'achat le plus eleve
+                for(var idGroup in sortedGroups){
+                    sortedGroups[idGroup].proprietes.sort(function(a,b){
+                        if(a.nbMaison == b.nbMaison){
+                            if(a.achat == b.achat){return 0;}
+                            return a.achat < b.achat ? 1 : -1
+                        }
+                        return a.nbMaison > b.nbMaison ? 1 : -1;
+                    });
+                }
             } catch (e) {
                 // Pas de terrains constructibles
                 return;
@@ -1950,9 +2003,9 @@ var GestionEchange = {
             return fiches[this.pion.etat + "-" + this.pion.position];
         }
 
-        /* Renvoie la liste des terrains hypothecables : sans construction sur le terrain et ceux de la famille, pas deja hypotheques */
-        /* @return : la liste des terrains */
-        this.findMaisonsHypothecables = function () {
+        /** Renvoie la liste des terrains hypothecables : sans construction sur le terrain et ceux de la famille, pas deja hypotheques
+        * @return : la liste des terrains */
+         this.findMaisonsHypothecables = function () {
             var proprietes = [];
             for (var i = 0; i < this.maisons.length; i++) {
                 var propriete = this.maisons[i];
@@ -1983,7 +2036,11 @@ var GestionEchange = {
             return proprietes;
         }
 
-        /* Renvoie la liste des groupes constructibles du joueur */
+        /*
+        /**
+         * Renvoie la liste des groupes constructibles du joueur
+         * @returns {Array}
+         */
         this.findGroupes = function () {
             var colorsOK = new Array();
             var colorsKO = new Array();
@@ -2092,6 +2149,20 @@ var GestionEchange = {
             }
 
             return {proprietes:proprietes,nbByGroups:nbByGroups};
+        }
+
+        /**
+         * Renvoie les terrains constructibles qui n'interessent (pas en groupe)
+         */
+        this.findOthersProperties = function(){
+            var terrains = [];
+            for(var f in this.maisons){
+                var maison = this.maisons[f];
+                if(maison.constructible && !maison.isGroupee()){
+                    terrains.push(maison);
+                }
+            }
+            return terrains;
         }
 
         /* Renvoie les groupes constructibles avec les proprietes de chaque */
@@ -2990,6 +3061,14 @@ var DrawerHelper = {
             return false;
         }
 
+        this.getAverageConstructions = function(){
+            var nb = 0;
+            for(var i = 0 ; i < this.fiches.length; i++) {
+                nb+=this.fiches[i].nbMaison;
+            }
+            return nb/this.fiches.length;
+        }
+
         /* Renvoie le nombre de constructions sur le groupe */
         this.getConstructions = function () {
             var constructions = {
@@ -3053,6 +3132,7 @@ var DrawerHelper = {
         this.secondColor = (colors.length == 2) ? colors[1] : colors[0];
         this.achat = achat;
         this.montantHypotheque = achat / 2;
+        this.achatHypotheque = this.montantHypotheque * 1.1;
         this.loyer = loyers;
         this.loyerHotel = (loyers != null && loyers.length == 6) ? loyers[5] : 0;
         this.prixMaison = prixMaison;
@@ -3166,7 +3246,7 @@ var DrawerHelper = {
             if (this.input == null || this.statut != ETAT_ACHETE || this.statutHypotheque == false) {
                 return;
             }
-            var cout = Math.round(this.montantHypotheque * 1.1);
+            var cout = Math.round(this.achatHypotheque);
             if (this.joueurPossede.montant < cout) {
                 throw "Impossible de lever l'hypotheque";
             }

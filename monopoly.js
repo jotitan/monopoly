@@ -2,7 +2,6 @@
 /* Dependances a charger : */
 /* * GestionConstructions.js */
 
-/* racheter les hypotheques quand l'argent rentre a nouveau */
 /* TODO : Permettre l'achat de terrain hors strategie quand on est blinde et qu'on a deja des groupes et des constructions dessus */
 /* TODO : Gerer la mise en vente de terrain (apres l'hypotheque) */
 /* TODO : Echange uniquement quand tous les terrains sont vendus */
@@ -834,13 +833,16 @@ var GestionEchange = {
 							prop.deals = monnaies;
 						}
 					}
+					// Si aucune proposition, on ajoute les autres terrains dont on se moque (terrains constructibles mais non intéressant)                        
                     if((prop.deals == null || prop.deals.length == 0) && prop.compensation == 0){
-                        // On ajoute les autres terrains dont on se moque (terrains constructibles mais non intéressant)
-                        var terrains = this.findOthersProperties();
+                        var terrains = this.findOthersProperties(proprietes);
                         var montant = 0;
                         for(var i = 0 ; i < terrains.length && montant/maison.achat < 0.7; i++){
                             var terrain = terrains[i];
                             if(!this.strategie.interetPropriete(terrain)){
+								if(prop.deals == null){
+									prop.deals = [];
+								}
                                 // On le refourgue
                                 prop.deals.push(terrain);
                                 montant+=terrain.achat;
@@ -1194,16 +1196,29 @@ var GestionEchange = {
 			$.trigger('monopoly.debug',{message:'Resoud probleme argent'});
             /* Ordre de liquidations :
              * 1) Hypotheque des terrains seuls
-             * 2) Hypotheque des terrains en groupe non construit
+             * 2) Hypotheque des terrains en groupe non construit (ou en groupe prochainement (2 terrains))
              * 3) Vente des maisons les maisons / hotels les mains rentables prochainement (base sur les stats des prochains passages)
              * 4) Cession des proprietes ?
              **/
             // 1 hypotheque terrains seuls
-            for (var index = 0; index < this.maisons.length && this.montant < montant; index++) {
-                var maison = this.maisons[index];
-                if (maison.statutHypotheque == false && !maison.isGroupee()) {
-                    maison.hypotheque();
-                }
+			// On tri les maisons par interet
+			var maisons = [];
+			for (var index in this.maisons) {
+				var maison = this.maisons[index];
+				if(maison.statutHypotheque == false && !maison.isGroupee()){
+					maisons.push(maison);
+				}
+			}
+			// On tri
+			var joueur = this;
+			maisons.sort(function(a,b){
+				var infosA = (a.constructible)?a.groupe.getInfos(joueur):{joueur : 0};
+				var infosB = (b.constructible)?b.groupe.getInfos(joueur):{joueur : 0};
+				return infosA.joueur - infosB.joueur;
+			});
+			for (var index = 0; index < maisons.length && this.montant < montant; index++) {
+                var maison = maisons[index];
+			    maison.hypotheque();
             }
             if (this.montant < montant) {
                 // 2 terrains en groupe mais non construits
@@ -1277,6 +1292,20 @@ var GestionEchange = {
             return true;
         }
 
+		this.getNbGroupConstructibles = function(){
+			var nb = 0;
+			var tempGroup = [];
+			for(var idx in this.maisons){
+				var maison = this.maisons[idx];
+				if(maison.isGroupee() && tempGroup[maison.groupe.nom] == null){
+					nb++;
+					tempGroup[maison.groupe.nom] = 1;
+				}
+				
+			}
+			return nb;
+		}
+		
         /* Renvoie la liste des groupes a construire trie. 
          * @param sortType : Tri des groupes en fonction de l'importance. ASC ou DESC
          */
@@ -1343,16 +1372,16 @@ var GestionEchange = {
         }
 
         /* Rachete les hypotheques */
-        /* Cas : groupes presents (1) et construits (nb>3). Liquidite > 10 fois prix hypotheque */
+        /* Cas : groupes presents (1) et construits (nb>3). Liquidite > 7 fois prix hypotheque */
         this.rebuyHypotheque = function(){
             // Hypotheque presentes
             var terrains = this.findMaisonsHypothequees();
-            if(terrains == null || terrains.length == 0 && !this.hasConstructedGroups(3)){
+            if(terrains == null || terrains.length == 0 && (this.getNbGroupConstructibles() > 0 && !this.hasConstructedGroups(3))){
                 return;
             }
             var pos = 0;
-            while(pos < terrains.length && this.montant > 10 * terrains[pos].achatHypotheque){
-                terrains[pos].leveHypotheque();
+            while(pos < terrains.length && this.montant > 7 * terrains[pos].achatHypotheque){
+                terrains[pos++].leveHypotheque();
             }
         }
 
@@ -1968,7 +1997,7 @@ var GestionEchange = {
             // On affiche un style sur la liste
             $('.joueurCourant', this.div).removeAttr('style').addClass('defaite');
 			$.trigger("monopoly.defaite", {
-                joueur: joueur
+                joueur: this
             });
             this.defaite = true;
         }
@@ -2153,12 +2182,15 @@ var GestionEchange = {
 
         /**
          * Renvoie les terrains constructibles qui n'interessent (pas en groupe)
+		 * @param interestTerrains : terrains qui interessent, on filtre
          */
-        this.findOthersProperties = function(){
+        this.findOthersProperties = function(interestTerrains){
             var terrains = [];
+			var mapInterests = [];
+			for(var i in interestTerrains){mapInterests[interestTerrains[i].id] = 1;}
             for(var f in this.maisons){
                 var maison = this.maisons[f];
-                if(maison.constructible && !maison.isGroupee()){
+                if(maison.constructible && !maison.isGroupee() && mapInterests[maison.id] == null){
                     terrains.push(maison);
                 }
             }
@@ -3413,19 +3445,7 @@ var DrawerHelper = {
 
         /* Renvoie vrai si le reste du groupe appartient au meme joueur.*/
         this.isGroupee = function () {
-            return (this.groupe == null) ? false : this.groupe.isGroupee();
-            /*if (this.joueurPossede == null) {
-          return false;
-       }
-       // Renvoie les maisons constructibles (lorsque le groupe est complet)
-       var l = this.joueurPossede.findMaisonsConstructibles();
-       for (var i = 0; i < l.length; i++) {
-          // Si la couleur apparait dans une propriete, le groupe est complet
-          if (l[i].color == this.color) {
-             return true;
-          }
-       }
-       return false;*/
+            return (this.groupe == null) ? false : this.groupe.isGroupee();          
         }
 
         /* Renvoie vrai si le groupe est complet et construit */
@@ -4009,8 +4029,6 @@ var DrawerHelper = {
         div.attr('id', 'idDetailFiche').hide();
         $('body').append(div);
     }
-
-
 
     function openDetailFiche(fiche, input) {
         if (currentFiche != null && currentFiche.etat == fiche.etat && currentFiche.pos == fiche.pos) {
@@ -4971,6 +4989,36 @@ var Sauvegarde = {
 
 }
 
+
+/* Gestion d'une mise aux enchere d'un terrain */
+var GestionEnchere = {
+	terrain:null,
+	miseDepart:0,
+	ventePerte:false,
+	pasVente:1000,
+	joueurLastEnchere:null,
+	/* Initialise une mise aux enchere */
+	/* @param miseDepart : prix de depart */
+	/* @param ventePerte : si vrai, permet de baisser la mise de depart (cas d'une vente obligee pour payer une dette) */
+	init:function(terrain,miseDepart,ventePerte){
+		this.terrain = terrain;
+		this.miseDepart = miseDepart;
+		this.ventePerte = ventePerte;
+		this.joueurLastEnchere = null;
+		// Mise aux encheres en parcourant a chaque fois les joueurs sauf le proprio et le dernie rencherisseur
+	},
+	computeEncherisseurs:function(){
+		var encherisseurs = [];
+		for(var j in joueurs){
+			if(!joueurs[j].equals(this.terrain.joueurPossede) && !joueurs[j].equals(this.joueurLastEnchere)){
+				encherisseurs.push(joueurs[j]);
+			}
+		}
+		return encherisseurs;
+	}
+	
+
+}
 
 /* Fonction utilitaire pour le debug */
 

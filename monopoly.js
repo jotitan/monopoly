@@ -3660,7 +3660,6 @@ var DrawerHelper = {
                         });
                     }, {});
                     joueurCourant.actionApresDes(buttons, null);
-                    return;
                 } else {
                     message + " et reste en prison";
                     joueurCourant.nbDouble++;
@@ -4998,7 +4997,9 @@ var GestionEnchere = {
 	ventePerte:false,
 	pasVente:1000,
 	joueurLastEnchere:null,
+	lastEnchere:0,
     currentJeton:0,
+	
 	/* Initialise une mise aux enchere */
 	/* @param miseDepart : prix de depart */
 	/* @param ventePerte : si vrai, permet de baisser la mise de depart (cas d'une vente obligee pour payer une dette) */
@@ -5007,8 +5008,8 @@ var GestionEnchere = {
 		this.miseDepart = miseDepart;
 		this.ventePerte = ventePerte;
 		this.joueurLastEnchere = null;
-		// Mise aux encheres en parcourant a chaque fois les joueurs sauf le proprio et le dernie rencherisseur
-
+		this.currentJeton = 0;
+		// Mise aux encheres en parcourant a chaque fois les joueurs sauf le proprio et le dernie rencherisseur		
 	},
 	computeEncherisseurs:function(){
 		var encherisseurs = [];
@@ -5024,9 +5025,15 @@ var GestionEnchere = {
         var joueurs = this.computeEncherisseurs();
         var enchere = null;
         var pos = 0;
+		// On lance un compte a rebours
+		var currentjeton = this.currentJeton;
+		setTimeout(function(){
+			GestionEnchere.checkEnchere(currentjeton);
+		},10000);
         while(enchere == null && pos < joueurs.length){
 
         }
+		
     },
     /* Methode appelee par un joueur pour valider une enchere, le premier invalide les autres */
     doEnchere:function(joueur,montant,jeton){
@@ -5034,7 +5041,29 @@ var GestionEnchere = {
             // Demande non prise en compte
         }
         this.currentJeton = jeton;
-    }
+		this.joueurLastEnchere = joueur;
+		this.lastEnchere = montant;
+		this.runEnchere();
+    },
+	checkEnchere:function(jeton){
+		if(jeton>=this.currentJeton){
+			// Pas d'enchere, la derniere est la bonne
+			this.manageEndEnchere();
+		}
+		else{
+			// Rien, gestion autonome
+		}
+	},
+	manageEndEnchere:function(){
+		if(this.joueurLastEnchere == null){
+			// On relance les encheres en diminuant la mise de depart
+		}else{
+			// La mise aux encheres est terminee, on procede a l'echange
+			this.joueurLastEnchere.payerTo(this.lastEnchere,this.terrain.joueurPossede);
+			this.joueurLastEnchere.getSwapProperiete(this.terrain);			
+		}
+	}
+	
 	
 
 }

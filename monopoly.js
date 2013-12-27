@@ -6,6 +6,7 @@
 /* TODO : Gerer la mise en vente de terrain (apres l'hypotheque) */
 /* TODO : Echange uniquement quand tous les terrains sont vendus */
 /* TODO : Faire un ecran qui liste les terrains libres */
+/* TODO : bug sur la sortie de prison, on paye 5000 (3eme coup) mais on n'avance pas */
 /* -Bug L1895 "impossible" */
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
@@ -4997,15 +4998,17 @@ var GestionEnchere = {
 	ventePerte:false,
 	pasVente:1000,
 	joueurLastEnchere:null,
+    currentJeton:0,
 	/* Initialise une mise aux enchere */
 	/* @param miseDepart : prix de depart */
 	/* @param ventePerte : si vrai, permet de baisser la mise de depart (cas d'une vente obligee pour payer une dette) */
 	init:function(terrain,miseDepart,ventePerte){
-		this.terrain = terrain;
+ 		this.terrain = terrain;
 		this.miseDepart = miseDepart;
 		this.ventePerte = ventePerte;
 		this.joueurLastEnchere = null;
 		// Mise aux encheres en parcourant a chaque fois les joueurs sauf le proprio et le dernie rencherisseur
+
 	},
 	computeEncherisseurs:function(){
 		var encherisseurs = [];
@@ -5015,7 +5018,23 @@ var GestionEnchere = {
 			}
 		}
 		return encherisseurs;
-	}
+	},
+    /* On lance aux joueurs les encheres, le premier qui repond prend la main, on relance a chaque fois (et on invalide le resultat des autres) */
+    runEnchere:function(){
+        var joueurs = this.computeEncherisseurs();
+        var enchere = null;
+        var pos = 0;
+        while(enchere == null && pos < joueurs.length){
+
+        }
+    },
+    /* Methode appelee par un joueur pour valider une enchere, le premier invalide les autres */
+    doEnchere:function(joueur,montant,jeton){
+        if(jeton < this.currentJeton){
+            // Demande non prise en compte
+        }
+        this.currentJeton = jeton;
+    }
 	
 
 }

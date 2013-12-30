@@ -227,6 +227,14 @@ function ParcGratuit(id) {
             return risque1 * (risque2 / 100 + 1);
         }
 
+        /* Determine le budget max pour un indicateur de strategie donne */
+        this.getMaxBudgetForStrategie = function(joueur,strategieValue){
+            // Renvoie la valeur du cout pour que getRisqueTotal = strategieValue
+            var risque2 = this.calculRisque(joueur, joueur.montant);
+            var marge = strategieValue / (risque2 / 100 + 1);
+            return Math.min(this.findCoutFromFixMarge(joueur,marge),joueur.montant-5000);
+        }
+
         /* Calcul le budget depensable pour la construction de maison / hotel */
         /* Prendre en compte l'achat potentiel de nouveau terrain. Pour la strategie, on calcule les terrains qui interessent */
 		/* @param forceHypotheque : si vrai, on force l'usage de l'argent dispo apres hypotheque */
@@ -278,6 +286,13 @@ function ParcGratuit(id) {
             var marge = cout / joueur.montant; // inferieur a 1
             return marge / this.risque;
         }
+
+        /* Calcul le cout pour une marge donnee */
+        this.findCoutFromFixMarge = function (joueur, marge) {
+            var cout = (marge * this.risque) * joueur.montant;
+            return cout;
+        }
+       
 
         /* Se base sur les prochaines cases a risque qui arrive, renvoi un pourcentage */
         this.calculRisque = function (joueur, argent) {
@@ -401,9 +416,9 @@ function ParcGratuit(id) {
 
         /* Calcul l'interet global du joueur pour une propriete */
         /* Prend en compte l'interet propre (liste d'achat) ainsi que l'etat du groupe */
-        this.interetGlobal = function (propriete, joueur) {
+        this.interetGlobal = function (propriete, joueur,isEnchere) {
             var i1 = this.interetPropriete(propriete);
-            var i2 = this.statutGroup(propriete, joueur);
+            var i2 = this.statutGroup(propriete, joueur,isEnchere);
             if (i1 == false && i2 == 0) {
                 return 0;
             }
@@ -433,8 +448,9 @@ function ParcGratuit(id) {
           2 : si toutes appartiennent a une meme personne sauf celle-ci
           3 : si toutes appartiennent sauf celle-ci
           4 : autres */
+          /* @param isEnchere : achat du terrain a un autre joueur, on ne prend pas en compte le statut libre */
         // Prendre en compte si j'ai la famille, que c'est la derniere carte. Il faut passer les autres options de risques, prix. Il faut absolument acheter
-        this.statutGroup = function (propriete, joueur) {
+        this.statutGroup = function (propriete, joueur,isEnchere) {
             var nbTotal = 0;
             var nbLibre = 0;
             var dernierJoueur = null;
@@ -463,7 +479,8 @@ function ParcGratuit(id) {
             if (nbLibre == 1 && nbEquals == nbTotal - 1) {
                 return 2;
             }
-            if (nbLibre == 1 && nbPossede == nbTotal - 1) {
+            /* Cas ou seul terrain manquant */
+            if ((nbLibre == 1 || isEnchere) && nbPossede == nbTotal - 1) {
                 return 3;
             }
             if (nbLibre > 0) {
@@ -1156,6 +1173,45 @@ var GestionEchange = {
             return proposition;
         }
 
+        this.initEnchere = function(transaction,terrain){
+            if(terrain.joueurPossede.equals(this)){
+                return;
+            }
+            // On calcule le budget max que le joueur peut depenser pour ce terrain
+            if(this.currentEchange!=null){
+                throw "Impossible de gerer une nouvelle enchere";
+            }
+            var interet = this.strategie.interetGlobal(terrain,this,true);            
+            var budgetMax = this.comportement.getMaxBudgetForStrategie(this,interet);
+            this.currentEnchere = {
+                transaction:transaction,
+                terrain:terrain,
+                budgetMax:budgetMax
+            }
+        }
+
+        this.updateEnchere = function(transaction,jeton,montant){
+            if(transaction!=this.currentEnchere.transaction){return;}
+            // On temporise la reponse de IA_TIMEOUT + random de ms
+            var timeout = IA_TIMEOUT + Math.round((Math.random*1000000)%1000);
+            var joueur = this;
+            setTimeout(function(){
+                if(montant > joueur.currentEnchere.budgetMax){
+                    // Exit enchere
+                    GestionEnchere.exitEnchere(joueur);
+                }
+                else{
+                    // Fait une enchere
+                    GestionEnchere.doEnchere(joueur,montant,jeton);
+                }
+            })
+        }
+
+        /* Comportement lorsque l'enchere est terminee */
+        this.endEnchere = function(){
+
+        }
+
         /* Fonction doBlocage a developpe permettant de faire du blocage de construction : vente d'un hotel pour limiter l'achat de maison, decision d'acheter un hotel pour bloquer.
          * Se base sur les terrains constructibles des adversaires ainsi que de leur tresorie.
          * Retourne vrai s'il faut bloquer le jeu de constructions
@@ -1706,7 +1762,7 @@ var GestionEchange = {
                 stats.hotel += parseInt(maison.hotel == true ? 1 : 0);
                 stats.maison += parseInt(maison.hotel == false ? maison.nbMaison : 0);
                 stats.argentDispo += ((maison.constructible)?(maison.nbMaison * (maison.prixMaison / 2)):0) + maison.achat / 2; // Revente des maisons + hypotheque
-                stats.argentDispoHypo += (!maison.isGroupee()) ? maison.achat / 2 : 0; // hypotheque des terrains non groupes
+                stats.argentDispoHypo += (!maison.isGroupee() && !maison.hypotheque) ? maison.achat / 2 : 0; // hypotheque des terrains non groupes
             }
             return stats;
         }
@@ -1749,6 +1805,12 @@ var GestionEchange = {
         /* On affiche a l'utilisateur le rejet de la proposition */
         this.notifyRejectProposition = function (callback) {
             CommunicationDisplayer.showReject(callback);
+        }
+
+        /* Initialise une mise aux encheres */
+        /* @param transaction : numero de transaction pour communiquer */
+        this.initEnchere = function(transaction,terrain){
+
         }
 
         /* Renvoie les maisons du joueur regroupes par groupe */
@@ -4991,30 +5053,43 @@ var Sauvegarde = {
 
 
 /* Gestion d'une mise aux enchere d'un terrain */
+/* Empecher un joueur d'acquerir un terrain ? */
 var GestionEnchere = {
 	terrain:null,
+    callback:null,
 	miseDepart:0,
 	ventePerte:false,
 	pasVente:1000,
 	joueurLastEnchere:null,
 	lastEnchere:0,
+    nextMontantEnchere:0,
     currentJeton:0,
+    joueursExit:[],
+    transaction:0,  // Permet d'authentifier la transaction
 	
 	/* Initialise une mise aux enchere */
 	/* @param miseDepart : prix de depart */
 	/* @param ventePerte : si vrai, permet de baisser la mise de depart (cas d'une vente obligee pour payer une dette) */
-	init:function(terrain,miseDepart,ventePerte){
+	init:function(terrain,miseDepart,ventePerte,callback){
  		this.terrain = terrain;
+        this.callback = callback;
 		this.miseDepart = miseDepart;
+        this.nextMontantEnchere = miseDepart;
 		this.ventePerte = ventePerte;
 		this.joueurLastEnchere = null;
 		this.currentJeton = 0;
-		// Mise aux encheres en parcourant a chaque fois les joueurs sauf le proprio et le dernie rencherisseur		
+        this.joueursExit = [];
+		this.transaction++;
+
+        for(var j in joueurs){
+            joueurs[j].initEnchere(this.transaction,this.terrain);
+        }
+
 	},
 	computeEncherisseurs:function(){
 		var encherisseurs = [];
 		for(var j in joueurs){
-			if(!joueurs[j].equals(this.terrain.joueurPossede) && !joueurs[j].equals(this.joueurLastEnchere)){
+			if(!joueurs[j].equals(this.terrain.joueurPossede) && !joueurs[j].equals(this.joueurLastEnchere) && this.joueursExit[joueurs[j].nom] == null){
 				encherisseurs.push(joueurs[j]);
 			}
 		}
@@ -5023,26 +5098,30 @@ var GestionEnchere = {
     /* On lance aux joueurs les encheres, le premier qui repond prend la main, on relance a chaque fois (et on invalide le resultat des autres) */
     runEnchere:function(){
         var joueurs = this.computeEncherisseurs();
-        var enchere = null;
         var pos = 0;
 		// On lance un compte a rebours
-		var currentjeton = this.currentJeton;
-		setTimeout(function(){
-			GestionEnchere.checkEnchere(currentjeton);
-		},10000);
-        while(enchere == null && pos < joueurs.length){
-
+		while(pos < joueurs.length){
+            joueurs[pos++].updateEnchere(this.transaction,this.currentJeton,this.nextMontantEnchere);
         }
 		
+    },
+    /* Appele par un joueur  */
+    exitEnchere:function(joueur){
+        this.joueursExit[joueur.nom] = joueur;
+        if(this.joueursExit.size() >= joueurs.length-1){
+            this.manageEndEnchere();
+        }
     },
     /* Methode appelee par un joueur pour valider une enchere, le premier invalide les autres */
     doEnchere:function(joueur,montant,jeton){
         if(jeton < this.currentJeton){
             // Demande non prise en compte
         }
-        this.currentJeton = jeton;
+        this.currentJeton++;
 		this.joueurLastEnchere = joueur;
 		this.lastEnchere = montant;
+        this.nextMontantEnchere = this.lastEnchere+this.pasVente;
+        // On notifie les joueurs ?
 		this.runEnchere();
     },
 	checkEnchere:function(jeton){
@@ -5057,12 +5136,32 @@ var GestionEnchere = {
 	manageEndEnchere:function(){
 		if(this.joueurLastEnchere == null){
 			// On relance les encheres en diminuant la mise de depart
+            if(this.nextMontantEnchere > this.miseDepart/2){
+                this.nextMontantEnchere -= this.pasVente;
+                this.runEnchere();
+            }
+            else{
+                //pas de vente
+                thiS.endEnchere();
+            }
+
 		}else{
 			// La mise aux encheres est terminee, on procede a l'echange
 			this.joueurLastEnchere.payerTo(this.lastEnchere,this.terrain.joueurPossede);
 			this.joueurLastEnchere.getSwapProperiete(this.terrain);			
+            thiS.endEnchere();
 		}
-	}
+	},
+    endEnchere:function(){
+        this.terrain = null;
+        // On notifie les joueurs que c'est termine
+        for(var j in joueurs){
+            joueurs[j].endEnchere(this.transaction,this.terrain);
+        }
+        if(this.callback){
+            this.callback();
+        }
+    }
 	
 	
 

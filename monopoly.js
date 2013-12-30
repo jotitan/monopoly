@@ -1190,7 +1190,7 @@ var GestionEchange = {
             }
         }
 
-        this.updateEnchere = function(transaction,jeton,montant){
+        this.updateEnchere = function(transaction,jeton,montant,lastEncherisseur){
             if(transaction!=this.currentEnchere.transaction){return;}
             // On temporise la reponse de IA_TIMEOUT + random de ms
             var timeout = IA_TIMEOUT + Math.round((Math.random*1000000)%1000);
@@ -1209,7 +1209,7 @@ var GestionEchange = {
 
         /* Comportement lorsque l'enchere est terminee */
         this.endEnchere = function(){
-
+			this.currentEnchere = null;
         }
 
         /* Fonction doBlocage a developpe permettant de faire du blocage de construction : vente d'un hotel pour limiter l'achat de maison, decision d'acheter un hotel pour bloquer.
@@ -1810,9 +1810,22 @@ var GestionEchange = {
         /* Initialise une mise aux encheres */
         /* @param transaction : numero de transaction pour communiquer */
         this.initEnchere = function(transaction,terrain){
-
+			GestionEnchereDisplayer.display(terrain,this);			
         }
 
+		/* Met a jour la derniere enchere qui a été faite (pour suivre l'avancement) quand le joueur ne participe plus */
+		this.updateInfoEnchere = function(montant,lastEncherisseur){
+			GestionEnchereDisplayer.updateInfo(montant,lastEncherisseur,false);
+		}
+		
+		this.updateEnchere = function(transaction,jeton,montant,lastEncherisseur){
+			GestionEnchereDisplayer.updateInfo(montant,lastEncherisseur,true,{transaction:transaction,jeton:jeton});
+		}
+		
+		this.endEnchere = function(){
+			GestionEnchereDisplayer.displayCloseOption();
+		}
+		
         /* Renvoie les maisons du joueur regroupes par groupe */
         this.getMaisonsGrouped = function () {
             var groups = [];
@@ -3788,6 +3801,8 @@ var DrawerHelper = {
             width: 500,
             height: 300
         });
+		// Panneau d'enchere
+		GestionEnchereDisplayer.init('idEncherePanel');
 
     }
 
@@ -4887,14 +4902,24 @@ var MessageDisplayer = {
 		var orderMessage = (DEBUG)?(' (' + MessageDisplayer.order + ')'):'';
         this.div.prepend('<div><span style="color:' + joueur.color + '">' + joueur.nom + '</span> : ' + message + orderMessage + '</div>');
     },
+	_buildTerrain:function(terrain){
+		return '<span style="font-weight:bold;color:' + terrain.color + '">' + terrain.nom + '</span>';
+	}
     bindEvents: function () {
         $.bind("monopoly.save", function (e, data) {
             MessageDisplayer.write({
                 color: 'green',
                 nom: 'info'
             }, 'sauvegarde de la partie (' + data.name + ')');
+        }).bind("monopoly.enchere.init", function (e, data) {			
+            MessageDisplayer.write(data.joueur,'met aux enchères ' + MessageDisplayer.buildTerrain(data.maison));
+        }).bind("monopoly.enchere.fail", function (e, data) {			
+            MessageDisplayer.write({color:'red',nom:'Commissaire priseur'},
+				'le terrain ' + MessageDisplayer.buildTerrain(data.maison) + ' n\'a pas trouvé preneur');
+        }).bind("monopoly.enchere.success", function (e, data) {
+            MessageDisplayer.write(data.joueur,'achète aux enchères le terrain ' + MessageDisplayer.buildTerrain(data.maison));
         }).bind("monopoly.acheteMaison", function (e, data) {
-            MessageDisplayer.write(data.joueur, 'achète ' + '<span style="font-weight:bold;color:' + data.maison.color + '">' + data.maison.nom + '</span>');
+            MessageDisplayer.write(data.joueur, 'achète ' + MessageDisplayer.buildTerrain(data.maison));
         }).bind("monopoly.vendMaison", function (e, data) {
             MessageDisplayer.write(data.joueur, 'vends ' + data.nbMaison + ' maison(s)</span>');
         }).bind("monopoly.payerLoyer", function (e, data) {
@@ -4905,9 +4930,9 @@ var MessageDisplayer = {
         }).bind("monopoly.newPlayer", function (e, data) {
             MessageDisplayer.write(data.joueur, "rentre dans la partie");
         }).bind("monopoly.hypothequeMaison", function (e, data) {
-            MessageDisplayer.write(data.joueur, 'hypothèque <span style="font-weight:bold;color:' + data.maison.color + '">' + data.maison.nom + '</span>');
+            MessageDisplayer.write(data.joueur, 'hypothèque ' + MessageDisplayer.buildTerrain(data.maison));
         }).bind("monopoly.leveHypothequeMaison", function (e, data) {
-            MessageDisplayer.write(data.joueur, "lève l'hypothèque de " + data.maison.nom);
+            MessageDisplayer.write(data.joueur, "lève l'hypothèque de " + MessageDisplayer.buildTerrain(data.maison));
         }).bind("monopoly.goPrison", function (e, data) {
             MessageDisplayer.write(data.joueur, "va en prison");
         }).bind("monopoly.exitPrison", function (e, data) {
@@ -4933,7 +4958,7 @@ var MessageDisplayer = {
                 MessageDisplayer.write(data.joueur, message);
             }
         }).bind("monopoly.echange.init", function (e, data) {
-            var message = 'souhaite obtenir <span style="color:' + data.maison.color + '">' + data.maison.nom + '</span>  auprès de ' + data.maison.joueurPossede.nom;
+            var message = 'souhaite obtenir ' + MessageDisplayer.buildTerrain(data.maison) + ' auprès de ' + data.maison.joueurPossede.nom;
             MessageDisplayer.write(data.joueur, message);
         }).bind("monopoly.echange.propose", function (e, data) {
             var message = 'propose ' + data.proposition.terrains.length + ' terrain(s) et ' + data.proposition.compensation + ' en compensation';
@@ -5080,30 +5105,35 @@ var GestionEnchere = {
 		this.currentJeton = 0;
         this.joueursExit = [];
 		this.transaction++;
-
+		$.trigger('monopoly.enchere.init',{maison:this.terrain,joueur:this.terrain.joueurPossede});
         for(var j in joueurs){
             joueurs[j].initEnchere(this.transaction,this.terrain);
         }
-
 	},
 	computeEncherisseurs:function(){
 		var encherisseurs = [];
+		var observers = [];
 		for(var j in joueurs){
 			if(!joueurs[j].equals(this.terrain.joueurPossede) && !joueurs[j].equals(this.joueurLastEnchere) && this.joueursExit[joueurs[j].nom] == null){
 				encherisseurs.push(joueurs[j]);
 			}
+			else{
+				observers.push(joueurs[j]);
+			}
 		}
-		return encherisseurs;
+		return {encherisseurs:encherisseurs,observers:observers};
 	},
     /* On lance aux joueurs les encheres, le premier qui repond prend la main, on relance a chaque fois (et on invalide le resultat des autres) */
     runEnchere:function(){
         var joueurs = this.computeEncherisseurs();
-        var pos = 0;
+        // On lance un compte a rebours
+		for(var i = 0 ; i < joueurs.encherisseurs.length, i++){
+            joueurs.encherisseurs[i].updateEnchere(this.transaction,this.currentJeton,this.nextMontantEnchere,this.joueurLastEnchere);
+        }		
 		// On lance un compte a rebours
-		while(pos < joueurs.length){
-            joueurs[pos++].updateEnchere(this.transaction,this.currentJeton,this.nextMontantEnchere);
+		for(var i = 0 ; i < joueurs.observers.length, i++){
+            joueurs.observers[i].updateInfoEnchere(this.nextMontantEnchere);
         }
-		
     },
     /* Appele par un joueur  */
     exitEnchere:function(joueur){
@@ -5142,13 +5172,15 @@ var GestionEnchere = {
             }
             else{
                 //pas de vente
-                thiS.endEnchere();
+				$.trigger('monopoly.enchere.fail',{maison:this.terrain});
+                this.endEnchere();
             }
 
 		}else{
 			// La mise aux encheres est terminee, on procede a l'echange
 			this.joueurLastEnchere.payerTo(this.lastEnchere,this.terrain.joueurPossede);
-			this.joueurLastEnchere.getSwapProperiete(this.terrain);			
+			this.joueurLastEnchere.getSwapProperiete(this.terrain);	
+			$.trigger('monopoly.enchere.fail',{joueur:this.joueurLastEnchere,maison:this.terrain});			
             thiS.endEnchere();
 		}
 	},
@@ -5162,9 +5194,74 @@ var GestionEnchere = {
             this.callback();
         }
     }
-	
-	
+}
 
+var GestionEnchereDisplayer = {
+	panel:null,
+	currentMontant:0,
+	currentEncherisseur:null,
+	terrain:null,
+	displayer:null,	// Joueur qui affiche le panneau
+	init:function(id){
+		this.panel = $('#' + id);
+		this.panel.dialog({
+			title:'Mise au enchere'
+		});
+	},
+	display:function(terrain,joueur){
+		this.terrain = terrain;
+		this.displayer = joueur;
+		$('.proprietaire',this.panel).text(terrain.joueurPossede.nom);
+		$('.terrain',this.panel).text(terrain.nom).css('background-color',terrain.color);
+		this.panel.dialog('open');
+	},
+	/* Affiche l'option pour fermer le panneau */
+	displayCloseOption:function(){
+		this.panel.dialog('option','buttons',[
+			text:'Fermer',
+			click:GestionEnchereDisplayer.close
+		]);
+	},
+	exitEnchere:function(){
+		// On supprime les boutons
+		this.panel.dialog('option','buttons',[]);
+	},
+	close:function(){
+		this.panel.dialog('close');
+	},
+	/* Si canDoEnchere est vrai, le contexte doit etre present */
+	updateInfo:function(montant,encherisseur,canDoEnchere,contexte){
+		if(canDoEnchere && contexte == null){
+			throw "Impossible de gerer l'enchere";
+		}
+		if(this.currentMontant!=null && this.currentEncherisseur!=null){
+			$('.list_encherisseurs',this.panel).prepend('<p>' + this.currentMontant + ' : ' + this.currentEncherisseur.nom + '</p>');
+		}
+		this.currentMontant = montant;
+		this.currentEncherisseur = encherisseur;
+		
+		$('.montant',this.panel).text(montant);
+		$('.last_encherisseur',this.panel).text(encherisseur.nom);	
+		if(canDoEnchere){
+			// On affiche les boutons pour encherir ou quitter
+			var buttons = [
+				{
+					text:'Encherir',
+					click:function(){
+						GestionEchange.doEnchere(GestionEchangeDisplayer.displayer,montant,contexte.jeton);
+					}
+				},{
+					text:'Quitter',
+					click:function(){
+						GestionEchange.exitEnchere(GestionEchangeDisplayer.displayer);
+					}
+				}
+			];
+			this.panel.dialog('option','buttons',buttons);
+		}else{
+			this.panel.dialog('option','buttons',[]);
+		}
+	}
 }
 
 /* Fonction utilitaire pour le debug */

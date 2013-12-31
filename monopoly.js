@@ -4904,7 +4904,7 @@ var MessageDisplayer = {
     },
 	_buildTerrain:function(terrain){
 		return '<span style="font-weight:bold;color:' + terrain.color + '">' + terrain.nom + '</span>';
-	}
+	},
     bindEvents: function () {
         $.bind("monopoly.save", function (e, data) {
             MessageDisplayer.write({
@@ -5127,11 +5127,11 @@ var GestionEnchere = {
     runEnchere:function(){
         var joueurs = this.computeEncherisseurs();
         // On lance un compte a rebours
-		for(var i = 0 ; i < joueurs.encherisseurs.length, i++){
+		for(var i = 0 ; i < joueurs.encherisseurs.length; i++){
             joueurs.encherisseurs[i].updateEnchere(this.transaction,this.currentJeton,this.nextMontantEnchere,this.joueurLastEnchere);
         }		
 		// On lance un compte a rebours
-		for(var i = 0 ; i < joueurs.observers.length, i++){
+		for(var i = 0 ; i < joueurs.observers.length; i++){
             joueurs.observers[i].updateInfoEnchere(this.nextMontantEnchere);
         }
     },
@@ -5205,22 +5205,23 @@ var GestionEnchereDisplayer = {
 	init:function(id){
 		this.panel = $('#' + id);
 		this.panel.dialog({
-			title:'Mise au enchere'
+			title:'Mise au enchere',
+            autoOpen:false
 		});
 	},
 	display:function(terrain,joueur){
 		this.terrain = terrain;
 		this.displayer = joueur;
 		$('.proprietaire',this.panel).text(terrain.joueurPossede.nom);
-		$('.terrain',this.panel).text(terrain.nom).css('background-color',terrain.color);
+		$('.terrain',this.panel).text(terrain.nom).css('color',terrain.color);
 		this.panel.dialog('open');
 	},
 	/* Affiche l'option pour fermer le panneau */
 	displayCloseOption:function(){
-		this.panel.dialog('option','buttons',[
+		this.panel.dialog('option','buttons',[{
 			text:'Fermer',
 			click:GestionEnchereDisplayer.close
-		]);
+		}]);
 	},
 	exitEnchere:function(){
 		// On supprime les boutons
@@ -5236,6 +5237,8 @@ var GestionEnchereDisplayer = {
 		}
 		if(this.currentMontant!=null && this.currentEncherisseur!=null){
 			$('.list_encherisseurs',this.panel).prepend('<p>' + this.currentMontant + ' : ' + this.currentEncherisseur.nom + '</p>');
+// TODO
+            if($('.list_encherisseurs',this.panel)
 		}
 		this.currentMontant = montant;
 		this.currentEncherisseur = encherisseur;
@@ -5248,12 +5251,12 @@ var GestionEnchereDisplayer = {
 				{
 					text:'Encherir',
 					click:function(){
-						GestionEchange.doEnchere(GestionEchangeDisplayer.displayer,montant,contexte.jeton);
+						GestionEchange.doEnchere(GestionEnchereDisplayer.displayer,montant,contexte.jeton);
 					}
 				},{
 					text:'Quitter',
 					click:function(){
-						GestionEchange.exitEnchere(GestionEchangeDisplayer.displayer);
+						GestionEchange.exitEnchere(GestionEnchereDisplayer.displayer);
 					}
 				}
 			];

@@ -4,7 +4,7 @@
 
 /* TODO : Permettre l'achat de terrain hors strategie quand on est blinde et qu'on a deja des groupes et des constructions dessus */
 /* TODO : Gerer la mise en vente de terrain (apres l'hypotheque) */
-/* TODO : Echange uniquement quand tous les terrains sont vendus */
+/* TODO : Echange uniquement quand tous les terrains sont vendus. La banque vend (quand on achete pas) ou quand un joueur perd */
 /* TODO : Faire un ecran qui liste les terrains libres */
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
@@ -1214,7 +1214,9 @@ var GestionEchange = {
                 }
             })
         }
-
+		
+		this.notifyExitEnchere = function(joueurs){}
+		
         /* Comportement lorsque l'enchere est terminee */
         this.endEnchere = function(){
 			this.currentEnchere = null;
@@ -1825,6 +1827,11 @@ var GestionEchange = {
 		/* Met a jour la derniere enchere qui a été faite (pour suivre l'avancement) quand le joueur ne participe plus */
 		this.updateInfoEnchere = function(montant,lastEncherisseur){
 			GestionEnchereDisplayer.updateInfo(montant,lastEncherisseur,false);
+		}
+		
+		/* Notifie lorsqu'un joueur quitte les encheres */
+		this.notifyExitEnchere = function(joueur){
+			GestionEnchereDisplayer.showJoueurExit(joueur);
 		}
 		
 		this.updateEnchere = function(transaction,jeton,montant,lastEncherisseur){
@@ -5149,6 +5156,9 @@ var GestionEnchere = {
     /* Appele par un joueur  */
     exitEnchere:function(joueur){
        this.joueursExit[joueur.nom] = joueur;
+	   for(var j in joueurs){
+		joueurs[j].notifyExitEnchere(joueur);
+	   }
 	   if(this.checkEndEnchere()){
             this.manageEndEnchere();
        }
@@ -5206,6 +5216,7 @@ var GestionEnchere = {
 
 		}else{
 			// La mise aux encheres est terminee, on procede a l'echange
+			// Correspond a un terrain
 			this.joueurLastEnchere.payerTo(this.lastEnchere,this.terrain.joueurPossede);
 			this.joueurLastEnchere.getSwapProperiete(this.terrain);	
 			$.trigger('monopoly.enchere.success',{joueur:this.joueurLastEnchere,maison:this.terrain});			
@@ -5252,6 +5263,8 @@ var GestionEnchereDisplayer = {
 		this.displayer = joueur;
 		$('.proprietaire',this.panel).text(terrain.joueurPossede.nom);
 		$('.terrain',this.panel).text(terrain.nom).css('color',terrain.color);
+		$('.list_exit',this.panel).empty();
+		$('.list_encherisseurs',this.panel).empty();
 		this.panel.dialog('open');
 	},
 	/* Affiche l'option pour fermer le panneau */
@@ -5278,6 +5291,10 @@ var GestionEnchereDisplayer = {
 			click:function(){GestionEnchereDisplayer.close();}
         }]);
 		
+	},
+	/* Affiche le depart d'un joueur des encheres */
+	showJoueurExit:function(joueur){
+		$('.list_exit',this.panel).append(joueur.nom + ' est sorti');
 	},
 	exitEnchere:function(){
 		// On supprime les boutons

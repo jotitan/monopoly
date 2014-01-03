@@ -1105,8 +1105,8 @@ var GestionEchange = {
             // On calcule les sommes dispos. En fonction de l'interet pour le terrain, on peut potentiellement hypothequer
 			var budgetMax = this.comportement.getBudget(this,(interetTerrain!=null && interetTerrain > 2));
 			var budget = Math.min(budgetMax,maison.achat);
-			if(oldProposition!=null && oldProposition.compensation>=budget){
-				budget = Math.min(this.montant,oldProposition.compensation*1.2);
+            if(oldProposition!=null && oldProposition.proposition.compensation>=budget){
+            	budget = Math.min(this.montant,oldProposition.proposition.compensation*1.2);
 			}
 			return Math.max(0,budget);
         }
@@ -1269,7 +1269,7 @@ var GestionEchange = {
              * 4) Cession des proprietes ?
              **/
             // 1 hypotheque terrains seuls
-			// On tri les maisons par interet
+			// On tri les maisons par interetb
 			var maisons = [];
 			for (var index in this.maisons) {
 				var maison = this.maisons[index];
@@ -1568,6 +1568,9 @@ var GestionEchange = {
         this.changeStrategie = function () {
             var stats = this.strategie.getStatsProprietes();
             if (stats.color.pourcent < 40 && this.countInterestProperties() <= 2 && !this.isFamilyFree()) {
+                $.trigger("monopoly.debug", {
+                    message: this.nom + " cherche une nouvelle strategie"
+                });
                 // On change de strategie. Une nouvelle strategie doit posseder au moins 60% de ses terrains de libre
                 for (var i in strategies) {
                     var s = new strategies[i]();
@@ -1688,7 +1691,7 @@ var GestionEchange = {
         this.id = numero;
         this.nom = nom;
         this.color = color;
-        this.montant = 100000;
+        this.montant = 150000;
         this.maisons = new Array();
         this.enPrison = false;
         this.pion = null;
@@ -1773,7 +1776,7 @@ var GestionEchange = {
                 stats.hotel += parseInt(maison.hotel == true ? 1 : 0);
                 stats.maison += parseInt(maison.hotel == false ? maison.nbMaison : 0);
                 stats.argentDispo += ((maison.constructible)?(maison.nbMaison * (maison.prixMaison / 2)):0) + maison.achat / 2; // Revente des maisons + hypotheque
-                stats.argentDispoHypo += (!maison.isGroupee() && !maison.hypotheque) ? maison.achat / 2 : 0; // hypotheque des terrains non groupes
+                stats.argentDispoHypo += (!maison.isGroupee() && !maison.statutHypotheque) ? maison.achat / 2 : 0; // hypotheque des terrains non groupes
             }
             return stats;
         }
@@ -4773,14 +4776,12 @@ var CommunicationDisplayer = {
         this.addMessage("Une contreproposition a été faite", [{
             nom: "Refuser",
             action: function () {
-                console.log("refuse");
                 GestionEchange.reject(CommunicationDisplayer.joueur);
                 CommunicationDisplayer.close();
             }
         }, {
             nom: "Accepter",
             action: function () {
-                console.log("accept");
                 GestionEchange.accept(CommunicationDisplayer.joueur);
                 CommunicationDisplayer.close();
             }

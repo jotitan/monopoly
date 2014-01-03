@@ -1269,7 +1269,7 @@ var GestionEchange = {
              * 4) Cession des proprietes ?
              **/
             // 1 hypotheque terrains seuls
-			// On tri les maisons par interetb
+			// On tri les maisons par interet
 			var maisons = [];
 			for (var index in this.maisons) {
 				var maison = this.maisons[index];
@@ -1289,6 +1289,7 @@ var GestionEchange = {
 			    maison.hypotheque();
             }
             if (this.montant < montant) {
+				// On charge les maisons en prenant les terrains groupes mais non construits
                 // 2 terrains en groupe mais non construits
                 for (var index = 0; index < this.maisons.length && this.montant < montant; index++) {
                     var maison = this.maisons[index];

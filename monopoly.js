@@ -93,6 +93,42 @@ function getFiche(info) {
     return fiches[info.axe + "-" + info.pos];
 }
 
+/* Permet de gerer les fiches */
+var GestionFiche = {
+	fiches:[],
+	keys:[],	// Cles des fiches
+	get:function(id){
+		return this.fiches[id];
+	},
+	add:function(fiche){
+		this.fiches[fiche.id] = fiche;
+		this.keys.push(fiche.id);
+	},
+	/* Renvoie les terrains libres */
+	getFrees:function(){
+		var frees = [];
+		for(var id in this.fiches){
+			if(this.fiches[id].statut == ETAT_LIBRE){
+				frees.push(this.fiches[id]);
+			}
+		}
+		return frees;
+	},
+	/* iterateur pour parcourir les fiches */
+	iterator:function(){	
+		return {
+			pointer:0;
+			hasNext:function(){
+				return pointer<GestionFiche.keys.length - 1;
+			},
+			next:function(){
+				return GestionFiche.fiches[GestionFiche.keys[this.pointer++]];
+			}
+		}
+	
+	}
+}
+
 function getFicheById(id) {
     return fiches[id];
 }
@@ -1262,98 +1298,123 @@ var GestionEchange = {
         /* Override de la methode pere */
         this.resolveProblemeArgent = function (montant, callback) {
 			$.trigger('monopoly.debug',{message:'Resoud probleme argent'});
+			var joueur = this;
+			
             /* Ordre de liquidations :
-             * 1) Hypotheque des terrains seuls
-             * 2) Hypotheque des terrains en groupe non construit (ou en groupe prochainement (2 terrains))
-             * 3) Vente des maisons les maisons / hotels les mains rentables prochainement (base sur les stats des prochains passages)
-             * 4) Cession des proprietes ?
+             * 1) Terrains non constructibles, terrains non groupes, terrains groupes non construits
+             * 2) Vente des maisons les maisons / hotels les mains rentables prochainement (base sur les stats des prochains passages)
+             * 3) Hypotheque des terrains precedemment construits
              **/
-            // 1 hypotheque terrains seuls
-			// On tri les maisons par interet
+            
+			/* CAS 1 */
 			var maisons = [];
 			for (var index in this.maisons) {
 				var maison = this.maisons[index];
-				if(maison.statutHypotheque == false && !maison.isGroupee()){
+				// On prend les terrains non hypotheques et non construits
+				if(maison.statutHypotheque == false && !maison.isGroupeeAndBuild()){
 					maisons.push(maison);
 				}
 			}
-			// On tri
-			var joueur = this;
+			
+			var findInfo = function(maison){
+				switch(maison.type){
+					case "gare":return -1;break;
+					case "compagnie":return -2;break;
+					default:return (maison.constructible)?maison.groupe.getInfos(joueur):0;
+				}
+			}
 			maisons.sort(function(a,b){
-				var infosA = (a.constructible)?a.groupe.getInfos(joueur):{joueur : 0};
-				var infosB = (b.constructible)?b.groupe.getInfos(joueur):{joueur : 0};
-				return infosA.joueur - infosB.joueur;
+				var infosA = findInfo(a);
+				var infosB = findInfo(b);
+				
+				return infosA - infosB;
+			});
+			console.log("MAISON",maisons);
+			
+			$.trigger("monopoly.debug", {
+				message: "PHASE 1"
 			});
 			for (var index = 0; index < maisons.length && this.montant < montant; index++) {
                 var maison = maisons[index];
 			    maison.hypotheque();
             }
-            if (this.montant < montant) {
-				// On charge les maisons en prenant les terrains groupes mais non construits
-                // 2 terrains en groupe mais non construits
-                for (var index = 0; index < this.maisons.length && this.montant < montant; index++) {
-                    var maison = this.maisons[index];
-                    var isGroup = maison.isGroupeeAndBuild();
-                    if (maison.statutHypotheque == false && isGroup == false) {
-                        maison.hypotheque();
-                    }
-                }
-                if (this.montant < montant) {
-                    $.trigger("monopoly.debug", {
-                        message: "PHASE 3"
-                    });
-                    // 3 Terrains construits, on vend les maisons dessus
-                    // On recupere les groupes construits classes par ordre inverse d'importance. On applique la meme regle que la construction tant que les sommes ne sont pas recupereres
-                    var sortedGroups = [];
-                    try{
-                        sortedGroups = this.getGroupsToConstruct("ASC", 0.1);
-                    }catch(e){}
-                    // On boucle (tant que les sommes ne sont pas recouvres) sur le groupe pour reduire le nombre de maison, on tourne sur les maisons
-					// TODO
-					var run = true;
-					for(var idGroup in sortedGroups){
-						var group = sortedGroups[idGroup];
-						// On boucle pour reduire les maisons au fur et a mesure
-						var proprietes = group.proprietes;
-						// On trie par nombre de maison
-						proprietes.sort(function(a,b){
-							if(a.nbMaison == b.nbMaison){return 0;}
-							return a.nbMaison < b.nbMaison ? 1 : -1;
-						});
-						var currentId = 0;
-						var nbNoHouse = 0;
-						var boucle = 0;	// Securite pour eviter boucle infinie
-						var maisonVendues = 0;
-						while(this.montant < montant && nbNoHouse < proprietes.length && boucle++ < 100){
-							var p = proprietes[currentId];
-							if(p.nbMaison == 0){
-								nbNoHouse++;
-							}
-							else{
-								if(p.sellMaison(this)){
-									maisonVendues++;
-									this.gagner(p.prixMaison/2,true);
-								}
-							}
-							currentId = (currentId+1)%proprietes.length;
+			
+			/* CAS 2 */
+           if (this.montant < montant) {
+				$.trigger("monopoly.debug", {
+					message: "PHASE 2"
+				});
+				// 3 Terrains construits, on vend les maisons dessus
+				// On recupere les groupes construits classes par ordre inverse d'importance. On applique la meme regle que la construction tant que les sommes ne sont pas recupereres
+				var sortedGroups = [];
+				try{
+					sortedGroups = this.getGroupsToConstruct("ASC", 0.1);
+				}catch(e){}
+				// On boucle (tant que les sommes ne sont pas recouvres) sur le groupe pour reduire le nombre de maison, on tourne sur les maisons
+				var run = true;
+				for(var idGroup in sortedGroups){
+					var group = sortedGroups[idGroup];
+					// On boucle pour reduire les maisons au fur et a mesure
+					var proprietes = group.proprietes;
+					// On trie par nombre de maison
+					proprietes.sort(function(a,b){
+						if(a.nbMaison == b.nbMaison){return 0;}
+						return a.nbMaison < b.nbMaison ? 1 : -1;
+					});
+					var currentId = 0;
+					var nbNoHouse = 0;
+					var boucle = 0;	// Securite pour eviter boucle infinie
+					var maisonVendues = 0;
+					while(this.montant < montant && nbNoHouse < proprietes.length && boucle++ < 100){
+						var p = proprietes[currentId];
+						if(p.nbMaison == 0){
+							nbNoHouse++;
 						}
-						if(this.montant > montant){
-							// On peut logger les terrains vendus
-							if(maisonVendues>0){
-								$.trigger('monopoly.vendMaison',{joueur:this,nbMaison:maisonVendues});
+						else{
+							if(p.sellMaison(this)){
+								maisonVendues++;
+								this.gagner(p.prixMaison/2,true);
 							}
-							$.trigger('refreshPlateau');
-							break;
-						}else{
-							// Defaite
-							this.doDefaite();
 						}
+						currentId = (currentId+1)%proprietes.length;
 					}
-					
-                }
+					if(this.montant > montant){
+						if(maisonVendues>0){
+							$.trigger('monopoly.vendMaison',{joueur:this,nbMaison:maisonVendues});
+						}
+						$.trigger('refreshPlateau');
+						break;
+					}
+				}					
             }
+			/* CAS 3, il reste les maisons groupees desormais non construites */
+			if (this.montant < montant) {
+				var maisons = [];
+				for (var index in this.maisons) {
+					var maison = this.maisons[index];
+					// On prend les terrains non hypotheques
+					if(maison.statutHypotheque == false){
+						maisons.push(maison);
+					}
+				}
+				// On trie par montant (moins cher en premier). A deporter dans la strategie
+				maisons.sort(function(a,b){
+					return a.achat - b.achat;
+				});
+				for (var index = 0; index < maisons.length && this.montant < montant; index++) {
+					var maison = maisons[index];
+					maison.hypotheque();
+				}
+				if(this.montant < montant){
+					// Cas impossible car verification des fonds fait avant
+					this.deDefaite();
+					if (callback) {
+						callback();
+					}
+				}
+			}			
             // Somme recouvree
-            this.setArgent(this.montant - montant);
+            this.setArgent(this.montant - montant);	// Paiement de la dette
 			this.bloque = false;
 			if (callback) {
 			    callback();
@@ -2486,7 +2547,7 @@ var GestionEchange = {
     function CarteActionSpeciale(titre, actionSpeciale, etat, pos) {
         this.titre = titre;
         this.actionSpeciale = actionSpeciale;
-
+		this.id = etat + "-" + pos;
         this.drawing = new CaseSpeciale(etat, titre);
         Drawer.add(this.drawing);
 
@@ -2588,6 +2649,7 @@ var GestionEchange = {
     }
 
     function Chance(etat, pos) {
+		this.id = etat + "-" + pos;
         this.drawing = new Case(pos, etat, null, titles.chance, null, {
             src: "img/interrogation.png",
             width: 50,
@@ -2610,6 +2672,7 @@ var GestionEchange = {
     }
 
     function CaisseDeCommunaute(etat, pos) {
+		this.id = etat + "-" + pos;
         this.drawing = new Case(pos, etat, null, titles.communaute, null, {
             src: "img/banque2.png",
             width: 60,
@@ -3944,7 +4007,6 @@ var DrawerHelper = {
     }
 
     // Initialise les des
-
     function initDes() {
         des1Cube = new Des(200, 200, 50);
         des2Cube = new Des(260, 200, 50);
@@ -4037,6 +4099,7 @@ var DrawerHelper = {
                 break;
             }
             fiches[this.axe + "-" + this.pos] = fiche;
+			GestionFiche.add(fiche);
             if (fiche.color != null) {
                 if (colors[fiche.color] == null) {
                     // On genere un style

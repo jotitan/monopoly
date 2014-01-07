@@ -93,19 +93,26 @@ function getFiche(info) {
     return fiches[info.axe + "-" + info.pos];
 }
 
+function getFicheById(id) {
+    return fiches[id];
+}
+
 /* Permet de gerer les fiches */
 var GestionFiche = {
 	fiches:[],
 	keys:[],	// Cles des fiches
-	get:function(id){
+	getById:function(id){
 		return this.fiches[id];
+	},
+	get:function(info){
+		return this.fiches[info.axe + "-" + info.pos];
 	},
 	add:function(fiche){
 		this.fiches[fiche.id] = fiche;
 		this.keys.push(fiche.id);
 	},
 	/* Renvoie les terrains libres */
-	getFrees:function(){
+	getFreeFiches:function(){
 		var frees = [];
 		for(var id in this.fiches){
 			if(this.fiches[id].statut == ETAT_LIBRE){
@@ -117,21 +124,37 @@ var GestionFiche = {
 	/* iterateur pour parcourir les fiches */
 	iterator:function(){	
 		return {
-			pointer:0;
+			pointer:0,
 			hasNext:function(){
-				return pointer<GestionFiche.keys.length - 1;
+				return this.pointer<GestionFiche.keys.length;
 			},
 			next:function(){
 				return GestionFiche.fiches[GestionFiche.keys[this.pointer++]];
 			}
+		}	
+	},
+	/* iterateur pour parcourir les terrains (pas de carte chance, taxe...) */
+	iteratorTerrains:function(){
+		// On calcule des cles
+		var keys = [];
+		for(var id in this.fiches){
+			if(this.fiches[id].constructible || this.fiches[id].type == 'gare' || this.fiches[id].type == 'compagnie'){
+				keys.push(id);
+			}
 		}
-	
+		return {
+			pointer:0,
+			keys:keys,
+			hasNext:function(){
+				return this.pointer<this.keys.length;
+			},
+			next:function(){
+				return GestionFiche.fiches[this.keys[this.pointer++]];
+			}
+		}	
 	}
 }
 
-function getFicheById(id) {
-    return fiches[id];
-}
 
 // Parametrage des titres
 var titles = {};
@@ -208,7 +231,8 @@ function getNextPos(etat, position) {
 var ETAT_LIBRE = 0;
 var ETAT_ACHETE = 1;
 
-function ParcGratuit(id) {
+function ParcGratuit(axe,pos) {
+	this.id = axe + "-" + pos;
     this.montant = null;
 
     this.drawing = new CaseSpeciale(0, "Parc Gratuit");
@@ -297,7 +321,8 @@ function ParcGratuit(id) {
                     // On parcours toutes les statistiques et on mesure le risque de tomber sur une propriete du joueur
                     var posActuel = j.getPosition();
                     for (var i = 1; i < 12; i++) {
-                        var fiche = getFiche(j.pion.deplaceValeursDes(i));
+						var fiche = GestionFiche.get(j.pion.deplaceValeursDes(i));
+                        //var fiche = getFiche(j.pion.deplaceValeursDes(i));
                         if (fiche.constructible && fiche.joueurPossede != null && fiche.joueurPossede.equals(joueur)) {
                             //maison visitable, on ajoute la maison avec la proba
                             if (maisons[fiche.id] != null) {
@@ -339,7 +364,8 @@ function ParcGratuit(id) {
                 var pos = getNextPos(etat, position);
                 etat = pos.etat;
                 position = pos.position;
-                var fiche = fiches[etat + "-" + position];
+				var fiche = GestionFiche.getById(etat + "-" + position);
+                //var fiche = fiches[etat + "-" + position];
                 if (fiche != null && fiche.getLoyer != null && fiche.joueurPossede != null && !fiche.joueurPossede.equals(joueur) && (fiche.getLoyer() > (argent * this.risque))) {
                     stats += this.probaDes[i - 1];
                 }
@@ -350,12 +376,19 @@ function ParcGratuit(id) {
         // calcul le loyer le plus fort du joueur (et n'appartenant pas au joueur). Permet de connaitre la treso max que le joueur peut posseder sur lui
         this.plusFortLoyer = function (joueur) {
             var max = 20000; // Prix de la taxe de luxe
-            for (var id in fiches) {
-                var f = fiches[id];
+            var it = GestionFiche.iteratorTerrains();
+			while(it.hasNext()){
+				var f = it.next();
                 if (f.getLoyer != null && f.joueurPossede != null && !joueur.equals(f.joueurPossede) && f.getLoyer() > max) {
                     max = f.getLoyer();
                 }
-            }
+			}
+			/*for (var id in fiches) {
+                var f = fiches[id];
+				if (f.getLoyer != null && f.joueurPossede != null && !joueur.equals(f.joueurPossede) && f.getLoyer() > max) {
+                    max = f.getLoyer();
+                }
+            }*/
             return max;
         }
 
@@ -363,13 +396,20 @@ function ParcGratuit(id) {
         this.getLoyerMoyen = function (joueur) {
             var montant = 20000; // Prix de la taxe de luxe
             var nb = 1;
-            for (var id in fiches) {
-                var f = fiches[id];
-                if (f.getLoyer != null && f.joueurPossede != null && !joueur.equals(f.joueurPossede)) {
+			while(it.hasNext()){
+				var f = it.next();
+                if (f.getLoyer != null && f.joueurPossede != null && !joueur.equals(f.joueurPossede) && f.getLoyer() > max) {
                     montant += f.getLoyer();
                     nb++;
                 }
-            }
+			}
+            /*for (var id in fiches) {
+                var f = fiches[id];
+				if (f.getLoyer != null && f.joueurPossede != null && !joueur.equals(f.joueurPossede)) {
+                    montant += f.getLoyer();
+                    nb++;
+                }
+            }*/
             return {
                 montant: montant / nb,
                 nb: nb
@@ -425,7 +465,27 @@ function ParcGratuit(id) {
                     pourcent: 0
                 }
             };
-            for (var id in fiches) {
+			var it = GestionFiche.iteratorTerrains();
+			while(it.hasNext()){
+				var fiche = it.next();
+				if (fiche.statut != null) {
+                    stats.all.total++;
+                    if (fiche.statut == ETAT_LIBRE) {
+                        stats.all.libre++;
+                    } else {
+                        stats.all.achete++;
+                    }
+                    if (this.groups.contains(fiche.color)) {
+                        stats.color.total++;
+                        if (fiche.statut == ETAT_LIBRE) {
+                            stats.color.libre++;
+                        } else {
+                            stats.color.achete++;
+                        }
+                    }
+                }
+			}
+            /*for (var id in fiches) {
                 if (fiches[id].statut != null) {
                     stats.all.total++;
                     if (fiches[id].statut == ETAT_LIBRE) {
@@ -442,7 +502,7 @@ function ParcGratuit(id) {
                         }
                     }
                 }
-            }
+            }*/
             stats.color.pourcent = (stats.color.libre / stats.color.total) * 100;
             stats.all.pourcent = (stats.all.libre / stats.all.total) * 100;
             return stats;
@@ -2015,7 +2075,8 @@ var GestionEchange = {
             }
             maison.input = $('#idInputFiche' + maison.id);
             maison.input.click(function () {
-                openDetailFiche(fiches[maison.id], $(this));
+                openDetailFiche(GestionFiche.getById(maison.id), $(this));
+                //openDetailFiche(fiches[maison.id], $(this));
             });
         }
 
@@ -2146,6 +2207,7 @@ var GestionEchange = {
         /* Gestion de la defaite */
         this.doDefaite = function () {
             // On laisse juste le nom et on supprime le reste, on supprime le pion, on remet les fiches a la vente
+			// Le banquier peut mettre aux encheres les terrains
 			for(var f in this.fiches){
 				this.fiches[f].libere();
 			}
@@ -2186,7 +2248,8 @@ var GestionEchange = {
         }
 
         this.getFichePosition = function () {
-            return fiches[this.pion.etat + "-" + this.pion.position];
+			return GestionFiche.getById(this.pion.etat + "-" + this.pion.position);
+            //return fiches[this.pion.etat + "-" + this.pion.position];
         }
 
         /** Renvoie la liste des terrains hypothecables : sans construction sur le terrain et ceux de la famille, pas deja hypotheques
@@ -2400,7 +2463,8 @@ var GestionEchange = {
             tour: 0,
             prison: 0
         }; // stat du joueur
-        this.pion = new PionJoueur(color, fiches["2-0"].drawing.getCenter().x, fiches["2-0"].drawing.getCenter().y);
+        //this.pion = new PionJoueur(color, fiches["2-0"].drawing.getCenter().x, fiches["2-0"].drawing.getCenter().y);
+        this.pion = new PionJoueur(color, GestionFiche.getById("2-0").drawing.getCenter().x, GestionFiche.getById("2-0").drawing.getCenter().y);
         Drawer.addRealTime(this.pion);
 
         // Ca directement en prison, sans passer par la case depart, en coupant
@@ -2424,8 +2488,9 @@ var GestionEchange = {
 
         this.goto = function (etat, pos, call) {
             // decalage
-            var center = fiches[this.etat + "-" + this.position].
-            drawing.getCenter();
+            //var center = fiches[this.etat + "-" + this.position].
+            var center = GestionFiche.getById(this.etat + "-" + this.position).drawing.getCenter();
+            
             this.pion.x = center.x;
             this.pion.y = center.y;
             $.trigger("monopoly.debug", {
@@ -2447,9 +2512,10 @@ var GestionEchange = {
                 return;
             }
             // On calcule la fonction affine
-            var p1 = fiches[this.etat + "-" + this.position].drawing.getCenter()
-            var p2 = fiches[etat + "-" + pos].
-            drawing.getCenter()
+            //var p1 = fiches[this.etat + "-" + this.position].drawing.getCenter()
+            var p1 = GestionFiche.getById(this.etat + "-" + this.position).drawing.getCenter();
+            //var p2 = fiches[etat + "-" + pos].drawing.getCenter();
+            var p2 = GestionFiche.getById(etat + "-" + pos).drawing.getCenter();
             // Si meme colonne, (x constant), on ne fait varier que y
             if (p1.x == p2.x) {
                 var y = p1.y;
@@ -2500,8 +2566,8 @@ var GestionEchange = {
             // Cas de la fin
             if (this.etat == etatCible && this.position == posCible) {
                 // On decale le pion
-                var decalage = fiches[this.etat + "-" + this.position].
-                drawing.decalagePion();
+                //var decalage = fiches[this.etat + "-" + this.position].drawing.decalagePion();
+                var decalage = GestionFiche.getById(this.etat + "-" + this.position).drawing.decalagePion();
                 this.pion.x = decalage.x;
                 this.pion.y = decalage.y;
                 if (callback) {
@@ -2539,8 +2605,8 @@ var GestionEchange = {
                 this.etat = (this.etat + 1) % 4;
                 this.position = 0;
             }
-            return fiches[this.etat + "-" + this.position].
-            drawing.getCenter();
+            //return fiches[this.etat + "-" + this.position].
+            return GestionFiche.getById(this.etat + "-" + this.position).drawing.getCenter();
         }
     }
 
@@ -2559,6 +2625,7 @@ var GestionEchange = {
 
     /* Case speciale, comme la taxe de luxe */
     function CarteSpeciale(titre, montant, etat, pos, img) {
+		this.id = etat + "-" + pos;
         this.drawing = new Case(pos, etat, null, titre, CURRENCY + " " + montant, img);
         Drawer.add(this.drawing);
         this.action = function () {
@@ -3672,7 +3739,8 @@ var DrawerHelper = {
     // Cree le comportement lorsque le joueur arrive sur la carte
 
     function doActions() {
-		var fiche = fiches[joueurCourant.pion.etat + "-" + joueurCourant.pion.position];
+		//var fiche = fiches[joueurCourant.pion.etat + "-" + joueurCourant.pion.position];
+		var fiche = GestionFiche.getById(joueurCourant.pion.etat + "-" + joueurCourant.pion.position);
         if (fiche == null) {
             changeJoueur();
             return;
@@ -4038,7 +4106,7 @@ var DrawerHelper = {
 
     /* Charge les donnees du plateau */
     function loadPlateau(data) {
-        parcGratuit = new ParcGratuit();
+        parcGratuit = null;
         CURRENCY = data.currency;
         titles = data.titles;
         var colors = [];
@@ -4085,6 +4153,7 @@ var DrawerHelper = {
                 fiche = new CarteActionSpeciale(this.nom, function () {}, this.axe, this.pos);
                 break;
             case "parc":
+				parcGratuit = new ParcGratuit(this.axe,this.pos);
                 fiche = parcGratuit;
                 break;
             case "special-depart":
@@ -4139,10 +4208,14 @@ var DrawerHelper = {
         for (var i = 0; i < 42; i++) {
             var etat = Math.floor(i / 10) % 4;
             var pos = i % 40 - (etat * 10);
-            var fiche = getFiche({
+            var fiche = GestionFiche.get({
                 axe: etat,
                 pos: pos
             });
+			/*var fiche = getFiche({
+                axe: etat,
+                pos: pos
+            });*/
             if (fiche.groupe != null && fiche.constructible) {
                 if (currentGroupe == null) {
                     // initialisation
@@ -4509,17 +4582,19 @@ var GestionTerrains = {
             };
             var projects = [];
             for (var achat in this.table) {
+				var fiche = GestionFiche.getById(achat);
                 var project = {
                     from: {},
                     to: {},
-                    group: fiches[achat].color
+                    //group: fiches[achat].color
+					group: fiche.color
                 };
-                if (fiches[achat].hotel) {
+                if (fiche.hotel) {
                     project.from.type = "hotel";
                     project.from.nb = 1;
                 } else {
                     project.from.type = "maison";
-                    project.from.nb = parseInt(fiches[achat].nbMaison);
+                    project.from.nb = parseInt(fiche.nbMaison);
                 }
                 var data = this.table[achat];
                 totals.cout += data.cout;
@@ -4792,7 +4867,8 @@ var CommunicationDisplayer = {
 		// On recupere les informations
 		var proposition = {terrains:[],compensation:0};
 		$('.contreProposition:last :checkbox:checked',this.panel).each(function(){
-			var terrain = getFicheById($(this).val());
+			var terrain = GestionFiche.getById($(this).val());
+			//var terrain = getFicheById($(this).val());
 			if(terrain!=null){
 				proposition.terrains.push(terrain);
 			}
@@ -4943,7 +5019,8 @@ var EchangeDisplayer = {
     },
     propose: function () {
         var proprietaire = getJoueurById(EchangeDisplayer.selectJoueurs.val());
-        var terrain = getFicheById(this.listTerrainsAdversaire.val());
+        var terrain = GestionFiche.getById(this.listTerrainsAdversaire.val());
+		//var terrain = getFicheById(this.listTerrainsAdversaire.val());
         if (proprietaire == null || terrain == null) {
             return;
         }
@@ -4955,7 +5032,8 @@ var EchangeDisplayer = {
             compensation: 0
         };
         $(':checkbox:checked', this.listTerrainsJoueur).each(function () {
-            proposition.terrains.push(getFicheById($(this).val()));
+            proposition.terrains.push(GestionFiche.getById($(this).val()));
+			//proposition.terrains.push(getFicheById($(this).val()));
         });
         if ($('#idArgentProposition').val() != "") {
             proposition.compensation = parseInt($('#idArgentProposition').val());
@@ -5083,11 +5161,15 @@ var Sauvegarde = {
         }
         // On recupere la liste des fiches
         var saveFiches = [];
-        for (var f in fiches) {
+		var it = GestionFiche.iteratorTerrains();
+		while(it.hasNext()){
+			saveFiches.push(it.next().save());
+		}
+        /*for (var f in fiches) {
             if (fiches[f].save != null) {
                 saveFiches.push(fiches[f].save());
             }
-        }
+        }*/
         var data = {
             joueurs: saveJoueurs,
             fiches: saveFiches,
@@ -5110,7 +5192,8 @@ var Sauvegarde = {
             joueurs.push(joueur);
         }
         for (var i = 0; i < data.fiches.length; i++) {
-            fiches[data.fiches[i].id].load(data.fiches[i]);
+            GestionFiche.getById(data.fiches[i].id).load(data.fiches[i]);
+			//fiches[data.fiches[i].id].load(data.fiches[i]);
         }
         var joueur = joueurs[0];
         if (data.joueurCourant != null) {
@@ -5198,6 +5281,7 @@ var GestionEnchere = {
 	computeEncherisseurs:function(){
 		var encherisseurs = [];
 		var observers = [];
+		// exclure les joueurs qui ont perdus
 		for(var j in joueurs){
 			if(!joueurs[j].equals(this.terrain.joueurPossede) && !joueurs[j].equals(this.joueurLastEnchere) && this.joueursExit[joueurs[j].nom] == null){
 				encherisseurs.push(joueurs[j]);
@@ -5413,6 +5497,7 @@ var GestionEnchereDisplayer = {
 /* Achete des maisons pour le joueur courant, on passe les ids de fiche */
     function buy(maisons) {
         for (var i in maisons) {
-            joueurCourant.acheteMaison(fiches[maisons[i]]);
+            //joueurCourant.acheteMaison(fiches[maisons[i]]);
+            joueurCourant.acheteMaison(GestionFiche.getById(maisons[i]));
         }
     }

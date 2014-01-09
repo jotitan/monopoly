@@ -8,7 +8,7 @@
 /* TODO : Faire un ecran qui liste les terrains libres */
 /* BUG : continue de payer un loyer a un joueur qui a perdu */
 /* BUG : le joueur peut avoir plusieurs defaite (la premiere est la seule normalement) */
-/* BUG : pb graphique (pion qui se deplace mal). Surement plusieurs thread en meme temps. */
+/* BUG : pb graphique (pion qui se deplace mal). Surement plusieurs thread en meme temps. gotoDirect */
 /* BUG : trop de tune en jeu */
 /* BUG : sauver l'historique des propositions (uniquement la derniere pour chaque terrain)
 /* -- TODO : Virer le jeton d'un perdant */
@@ -59,6 +59,8 @@ $.trigger = function (eventName, params) {
 var DEBUG = false;
 var IA_TIMEOUT = 1000; // Temps d'attente pour les actions de l'ordinateur
 var CURRENT_ID_COMPONENT = 0;	// Permet de generer un numero de composant unique
+var temp_id = 0;
+
 /* Gestion des variantes, case depart (touche 40000) et parc gratuit (touche la somme des amendes) */
 var VARIANTES = {
     caseDepart: false,
@@ -2453,6 +2455,7 @@ var GestionEchange = {
         this.etat = 2;
         this.position = 0;
         this.joueur = joueur;
+		this.currentInterval = null;	// Empecher plusieurs deplacement en meme temps
         this.stats = {
             tour: 0,
             prison: 0
@@ -2510,6 +2513,10 @@ var GestionEchange = {
             if (etat == null || pos == null) {
                 return;
             }
+			console.log("Direct " + temp_id);
+			if(this.currentInterval!=null){
+				console.log("ERROR POSITION DIRECT " + etat + " " + pos + " " + this.joueur.nom);
+			}
             // On calcule la fonction affine
             var p1 = GestionFiche.getById(this.etat + "-" + this.position).drawing.getCenter();
             var p2 = GestionFiche.getById(etat + "-" + pos).drawing.getCenter();
@@ -2519,14 +2526,17 @@ var GestionEchange = {
                 var sens = (p1.y > p2.y) ? -1 : 1;
                 // On fait varier x et on calcule y. Le pas est 30
                 var _self = this;
-                var interval = setInterval(function () {
+				console.log("create D1 " + temp_id);
+                this.currentInterval = setInterval(function () {
                     if ((sens < 0 && _self.pion.y <= p2.y) || (sens > 0 && _self.pion.y >= p2.y)) {
                         _self.etat = etat;
                         _self.position = pos;
-                        clearInterval(interval);
+                        clearInterval(_self.currentInterval);
+						_self.currentInterval = null;
                         if (callback) {
                             callback();
                         }
+						console.log("End D1 " + temp_id++);
                         return;
                     }
                     _self.pion.y += 30 * ((sens < 0) ? -1 : 1);
@@ -2539,16 +2549,19 @@ var GestionEchange = {
 
                 // On fait varier x et on calcule y. Le pas est 30
                 var _self = this;
-                var interval = setInterval(function () {
+				console.log("create D2 " + temp_id);
+                this.currentInterval = setInterval(function () {
                     if ((sens < 0 && x <= p2.x) || (sens > 0 && x >= p2.x)) {
                         _self.pion.x = p2.x;
                         _self.pion.y = p2.y;
                         _self.etat = etat;
                         _self.position = pos;
-                        clearInterval(interval);
+                        clearInterval(_self.currentInterval);
+						_self.currentInterval = null;
                         if (callback) {
                             callback();
                         }
+						console.log("End D2 " + temp_id++);
                         return;
                     }
                     _self.pion.x = x;
@@ -2559,9 +2572,12 @@ var GestionEchange = {
         }
 
         // Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
-        this.gotoCell = function (etatCible, posCible, callback) {
+        this.gotoCell = function (etat, pos, callback) {
+			if(this.currentInterval!=null){
+				console.log("ERROR POSITION DIRECT " + etat + " " + pos + " " + this.joueur.nom);
+			}
             // Cas de la fin
-            if (this.etat == etatCible && this.position == posCible) {
+            if (this.etat == etat && this.position == pos) {
                 // On decale le pion
                 var decalage = GestionFiche.getById(this.etat + "-" + this.position).drawing.decalagePion();
                 this.pion.x = decalage.x;
@@ -2572,7 +2588,7 @@ var GestionEchange = {
                 return;
             }
             var caseFiche = this.toNextCase();
-            this.treatCaseDepart(etatCible, posCible);
+            this.treatCaseDepart(etat, pos);
             var pas = 5;
             var field = "x"; // On varie sur l'axe x
             if (this.pion.x == caseFiche.x) {
@@ -2581,7 +2597,7 @@ var GestionEchange = {
             var _self = this;
             var distance = Math.abs(caseFiche[field] - this.pion[field]);
             var sens = (caseFiche[field] > this.pion[field]) ? 1 : -1;
-            var interval = setInterval(function () {
+            this.currentInterval = setInterval(function () {
                 if (distance > 0) {
                     _self.pion[field] += pas * sens;
                     distance -= pas;
@@ -2589,8 +2605,9 @@ var GestionEchange = {
                     // Traitement fini
                     _self.pion.y = caseFiche.y;
                     _self.pion.x = caseFiche.x;
-                    clearInterval(interval);
-                    _self.gotoCell(etatCible, posCible, callback);
+                    clearInterval(_self.currentInterval);
+					_self.currentInterval = null;
+                    _self.gotoCell(etat, pos, callback);
                 }
             }, 30);
         }

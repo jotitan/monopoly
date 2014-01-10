@@ -185,22 +185,34 @@ function createMessage(titre, background, message, call, param) {
     $('#message').append(message);
     var button = {
         "Ok": function () {
-            $('#message').dialog('close');
+			closeMessage();			
         }
     };
     $('#message').bind('dialogclose.message', function () {
         if (call != null) {
-            call(param);
-        }
-        $('#message').unbind('dialogclose.message');
+			call(param);
+		}
+		$('#message').unbind('dialogclose.message');
     });
     if (call != null) {
         $('#message').dialog('option', 'buttons', button);
     }
-    $('#message').dialog('open');
+	/* On affiche pas le panneau si le timeout est à 0 (partie rapide) */
+	if(IA_TIMEOUT > 100){
+		$('#message').dialog('open');
+	}
     return button;
 }
 
+function closeMessage(){
+	if($('#message').dialog('isOpen')){
+		$('#message').dialog('close');
+	}else{
+		// Trigger de fermeture
+		$('#message').trigger('dialogclose.message');
+		$('#message').trigger('dialogclose.prison');
+	}	
+}
 
 function createPrisonMessage(nbTours, callback) {
     $('#message').prev().css("background-color", "red");
@@ -212,17 +224,17 @@ function createPrisonMessage(nbTours, callback) {
         "Payer": function () {
             joueurCourant.payer(5000);
             joueurCourant.exitPrison();
-            $('#message').dialog('close');
+            closeMessage();
         },
         "Attendre": function () {
-            $('#message').dialog('close');
+            closeMessage();
         }
     }
     if (joueurCourant.cartesSortiePrison.length > 0) {
         buttons["Utiliser carte"] = function () {
             joueurCourant.utiliseCarteSortiePrison();
             joueurCourant.exitPrison();
-            $('#message').dialog('close');
+            closeMessage();
         }
     }
     $('#message').dialog('option', 'buttons', buttons);
@@ -230,7 +242,9 @@ function createPrisonMessage(nbTours, callback) {
         $('#message').unbind('dialogclose.prison');
         callback();
     });
-    $('#message').dialog('open');
+	if(IA_TIMEOUT > 100){
+		$('#message').dialog('open');
+	}
     return buttons;
 }
 
@@ -838,7 +852,7 @@ var GestionEchange = {
             var current = this;
             setTimeout(function () {
 			    if (buttons.Acheter != null && propriete != null) {
-                    var interet = current.strategie.interetGlobal(propriete);
+			        var interet = current.strategie.interetGlobal(propriete);
                     var comportement = current.comportement.getRisqueTotal(current, propriete.achat);
                     $.trigger("monopoly.debug", {
                         message: "Strategie : " + interet + " " + comportement
@@ -847,14 +861,14 @@ var GestionEchange = {
                         $.trigger("monopoly.debug", {
                             message: "IA Achete"
                         });
-                        buttons.Acheter();
-                        return;
+						buttons.Acheter();
+						return;
                     }
                 }
                 for (var i in buttons) {
                     if (i != "Acheter") {
-                        buttons[i]();
-                        return;
+						buttons[i]();
+						return;
                     }
                 }
             }, IA_TIMEOUT);
@@ -2214,6 +2228,7 @@ var GestionEchange = {
 			$.trigger("monopoly.defaite", {
                 joueur: this
             });
+			this.setArgent(0);
             this.defaite = true;
         }
 
@@ -2513,9 +2528,10 @@ var GestionEchange = {
             if (etat == null || pos == null) {
                 return;
             }
-			console.log("Direct " + temp_id);
+			console.log("Direct " + temp_id + " (" + etat + "-" + pos + ")");
 			if(this.currentInterval!=null){
 				console.log("ERROR POSITION DIRECT " + etat + " " + pos + " " + this.joueur.nom);
+				throw "Impossible de realiser ce deplacement";
 			}
             // On calcule la fonction affine
             var p1 = GestionFiche.getById(this.etat + "-" + this.position).drawing.getCenter();
@@ -2533,11 +2549,11 @@ var GestionEchange = {
                         _self.position = pos;
                         clearInterval(_self.currentInterval);
 						_self.currentInterval = null;
+                        console.log("End D1 " + temp_id++);
                         if (callback) {
                             callback();
                         }
-						console.log("End D1 " + temp_id++);
-                        return;
+						return;
                     }
                     _self.pion.y += 30 * ((sens < 0) ? -1 : 1);
                 }, 30);
@@ -2558,11 +2574,11 @@ var GestionEchange = {
                         _self.position = pos;
                         clearInterval(_self.currentInterval);
 						_self.currentInterval = null;
+                        console.log("End D2 " + temp_id++);
                         if (callback) {
                             callback();
                         }
-						console.log("End D2 " + temp_id++);
-                        return;
+						return;
                     }
                     _self.pion.x = x;
                     _self.pion.y = pente * x + coef;
@@ -2802,6 +2818,7 @@ var Drawer = {
         Drawer.components.push(component);
     },
 	removeComponent: function (component) {
+		console.log("DELETE " + component.id);
 		// Boucle sur les composants et supprime si l'id est le meme
 		for(var i = 0 ; i < this.components.length ; i++){
 			if(this.components[i].id == component.id){
@@ -3659,7 +3676,9 @@ var DrawerHelper = {
             var buttons = this.getButtons();
             this.fiche.dialog('option', 'buttons', buttons);
             loadFiche(this);
-            this.fiche.dialog('open');
+			if(IA_TIMEOUT > 100){
+				this.fiche.dialog('open');
+			}
             return buttons;
         }
 
@@ -3668,7 +3687,8 @@ var DrawerHelper = {
                 if (joueurCourant.montant < this.achat) {
                     return {
                         "Pas assez d'argent": function () {
-                            current.fiche.dialog('close');
+							doCloseFiche();
+                            //current.fiche.dialog('close');
                         }
                     };
                 } else {
@@ -3676,17 +3696,20 @@ var DrawerHelper = {
                         "Acheter": function () {
                             var id = joueurCourant.pion.etat + "-" + joueurCourant.pion.position;
                             joueurCourant.acheteMaison(current);
-                            current.fiche.dialog('close');
-                        },
+                            //current.fiche.dialog('close');
+							doCloseFiche();
+						},
                         "Refuser": function () {
-                            current.fiche.dialog('close');
+							//current.fiche.dialog('close');							
+							doCloseFiche();
                         }
                     };
                 }
             } else {
                 return {
                     "Fermer": function () {
-                        current.fiche.dialog('close');
+                        //current.fiche.dialog('close');
+						doCloseFiche();						
                     }
                 };
             }
@@ -3807,6 +3830,7 @@ var DrawerHelper = {
             var pos = 0;
 			joueur = joueurs[(joueur.numero + 1) % (joueurs.length)];
             while (joueur.defaite == true & pos++ < joueurs.length) {
+				console.log(joueur.nom + " a perdu, ne joue pas");
                 joueur = joueurs[(joueur.numero + 1) % (joueurs.length)];
             }
 			// On incremente le nb de tours
@@ -4752,6 +4776,15 @@ function loadGenericFiche(fiche, div, color) {
     }
 }
 
+function doCloseFiche(){
+	if($('#fiche').dialog('isOpen')){
+		$('#fiche').dialog('close');
+	}else{
+		// Trigger de fermeture
+		closeFiche();
+	}	
+}
+
 function initFiches() {
     $('#fiche').dialog({
         autoOpen: false,
@@ -4761,7 +4794,7 @@ function initFiches() {
         modal: true,
         resizable: false,
         close: function () {
-            closeFiche();
+		    closeFiche();
         }
     });
     $('#fiche').prev().css("background", "url()");

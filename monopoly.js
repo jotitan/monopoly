@@ -2223,6 +2223,7 @@ var GestionEchange = {
 			$.trigger('refreshPlateau');	// Pour supprimer les terrains
 			this.fiches = [];
 			$('input',this.div).remove();
+            this.pion.remove();
             // On affiche un style sur la liste
             $('.joueurCourant', this.div).removeAttr('style').addClass('defaite');
 			$.trigger("monopoly.defaite", {
@@ -2818,7 +2819,6 @@ var Drawer = {
         Drawer.components.push(component);
     },
 	removeComponent: function (component) {
-		console.log("DELETE " + component.id);
 		// Boucle sur les composants et supprime si l'id est le meme
 		for(var i = 0 ; i < this.components.length ; i++){
 			if(this.components[i].id == component.id){

@@ -178,7 +178,7 @@ var GestionFiche = {
 }
 
 
-function createMessage(titre, background, message, call, param) {
+function createMessage(titre, background, message, call, param,forceshow) {
     $('#message').prev().css("background-color", background);
     $('#message').dialog('option', 'title', titre);
     $('#message').empty();
@@ -198,7 +198,7 @@ function createMessage(titre, background, message, call, param) {
         $('#message').dialog('option', 'buttons', button);
     }
 	/* On affiche pas le panneau si le timeout est à 0 (partie rapide) */
-	if(IA_TIMEOUT > 100){
+	if(IA_TIMEOUT > 100 || forceshow){
 		$('#message').dialog('open');
 	}
     return button;
@@ -2173,6 +2173,7 @@ var GestionEchange = {
             if (this.getStats().argentDispo < montant) {
               // Banqueroute, le joueur perd
                 this.doDefaite();
+				console.log("le joueur n'est pas solvable " + this.nom);
                 throw "Le joueur " + this.nom + " est insolvable";
             }
 
@@ -2214,23 +2215,22 @@ var GestionEchange = {
 
         /* Gestion de la defaite */
         this.doDefaite = function () {
-			console.log(this.nom + " a perdu");
-            // On laisse juste le nom et on supprime le reste, on supprime le pion, on remet les fiches a la vente
+			// On laisse juste le nom et on supprime le reste, on supprime le pion, on remet les maison a la vente
 			// Le banquier peut mettre aux encheres les terrains
-			for(var f in this.fiches){
-				this.fiches[f].libere();
+			for(var f in this.maisons){
+				this.maisons[f].libere();
 			}
 			$.trigger('refreshPlateau');	// Pour supprimer les terrains
-			this.fiches = [];
+			this.maisons = [];
 			$('input',this.div).remove();
             this.pion.remove();
             // On affiche un style sur la liste
             $('.joueurCourant', this.div).removeAttr('style').addClass('defaite');
-			$.trigger("monopoly.defaite", {
-                joueur: this
-            });
 			this.setArgent(0);
             this.defaite = true;
+			$.trigger("monopoly.defaite", {
+                joueur: this
+            });			
         }
 
         /* Resoud les problemes d'argent du joueur */
@@ -2591,7 +2591,8 @@ var GestionEchange = {
         // Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
         this.gotoCell = function (etat, pos, callback) {
 			if(this.currentInterval!=null){
-				console.log("ERROR POSITION DIRECT " + etat + " " + pos + " " + this.joueur.nom);
+				console.log("ERROR POSITION " + etat + " " + pos + " " + this.joueur.nom);
+				throw "Impossible de realiser ce deplacement primaire";
 			}
             // Cas de la fin
             if (this.etat == etat && this.position == pos) {
@@ -2614,6 +2615,7 @@ var GestionEchange = {
             var _self = this;
             var distance = Math.abs(caseFiche[field] - this.pion[field]);
             var sens = (caseFiche[field] > this.pion[field]) ? 1 : -1;
+			//console.log("create D0 " + temp_id);
             this.currentInterval = setInterval(function () {
                 if (distance > 0) {
                     _self.pion[field] += pas * sens;
@@ -2623,6 +2625,7 @@ var GestionEchange = {
                     _self.pion.y = caseFiche.y;
                     _self.pion.x = caseFiche.x;
                     clearInterval(_self.currentInterval);
+					//console.log("End D0 " + temp_id++);
 					_self.currentInterval = null;
                     _self.gotoCell(etat, pos, callback);
                 }
@@ -3654,11 +3657,11 @@ var DrawerHelper = {
 
         this.payerLoyer = function () {
             return createMessage("Vous etes " + this.nom, this.color, "Vous etes chez " + this.joueurPossede.nom + " vous devez payez la somme de " + this.getLoyer() + " " + CURRENCY, function (param) {
-                param.joueurPaye.payerTo(param.loyer, param.joueurLoyer);
                 $.trigger('monopoly.payerLoyer', {
                     joueur: param.joueurPaye,
                     maison: param.maison
                 });
+				param.joueurPaye.payerTo(param.loyer, param.joueurLoyer);                
             }, {
                 loyer: this.getLoyer(),
                 joueurPaye: joueurCourant,
@@ -3830,8 +3833,7 @@ var DrawerHelper = {
             var pos = 0;
 			joueur = joueurs[(joueur.numero + 1) % (joueurs.length)];
             while (joueur.defaite == true & pos++ < joueurs.length) {
-				console.log(joueur.nom + " a perdu, ne joue pas");
-                joueur = joueurs[(joueur.numero + 1) % (joueurs.length)];
+				joueur = joueurs[(joueur.numero + 1) % (joueurs.length)];
             }
 			// On incremente le nb de tours
 			if(joueur.numero < joueurCourant.numero){
@@ -3851,7 +3853,7 @@ var DrawerHelper = {
         try {
             joueur = getNextJoueur();
         } catch (gagnant) {
-            createMessage("Fin de partie", "green", "Le joueur " + gagnant.nom + " a gagné");
+            createMessage("Fin de partie", "green", "Le joueur " + gagnant.nom + " a gagné",null,null,true);
             return gagnant;
         }
         if (joueur == null) {
@@ -5197,7 +5199,7 @@ var MessageDisplayer = {
         }).bind("monopoly.echange.contrepropose", function (e, data) {
             MessageDisplayer.write(data.joueur, 'fait une contre-proposition : ' + MessageDisplayer._buildProposition(data.proposition));
         }).bind("monopoly.defaite", function (e, data) {
-            MessageDisplayer.write(data.joueur, 'est battu');
+            MessageDisplayer.write(data.joueur, 'a perdu et quitte la partie');
         }).bind("monopoly.debug", function (e, data) {
             if (DEBUG) {
                 MessageDisplayer.write({

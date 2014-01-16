@@ -11,12 +11,10 @@
 /* BUG : pb graphique (pion qui se deplace mal). Surement plusieurs thread en meme temps. gotoDirect */
 /* BUG : trop de tune en jeu */
 /* BUG : sauver l'historique des propositions (uniquement la derniere pour chaque terrain)
-/* -- TODO : Virer le jeton d'un perdant */
 /* GetBudget quand Cheap tres dur (evaluation du terrain le plus cher). Ponderer avec l'existance de constructions pour forcer a construire */
 /* -- TODO : sur le facteur quand oldProposition, decaller dans le comportement (+ ou - grand pour aller + ou - vite) */
 /* TODO : proposer tout de même un terrain si deja une oldProposition */
 /* -- TODO : mettre un plafond sur une proposition (fonction logarithmique : (14-ln(x)*x) => marche pas */
-/* TODO : si robot, supprimer affichage message, utiliser uniquement bouton */
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
@@ -2529,9 +2527,12 @@ var GestionEchange = {
             if (etat == null || pos == null) {
                 return;
             }
+			localHistos[posLocalHisto%10] = {etat:etat,pos:pos,joueur:this.joueur.nom,posLocal:posLocalHisto++};
 			console.log("Direct " + temp_id + " (" + etat + "-" + pos + ")");
 			if(this.currentInterval!=null){
 				console.log("ERROR POSITION DIRECT " + etat + " " + pos + " " + this.joueur.nom);
+				console.log("HISTO DIRECT : ",localHistos);
+				joueurs = null;
 				throw "Impossible de realiser ce deplacement";
 			}
             // On calcule la fonction affine
@@ -2588,10 +2589,16 @@ var GestionEchange = {
             }
         }
 
+		var localHistos = [];
+		var posLocalHisto = 0;
+		
         // Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
         this.gotoCell = function (etat, pos, callback) {
+			localHistos[posLocalHisto%10] = {etat:etat,pos:pos,joueur:this.joueur.nom,posLocal:posLocalHisto++};
 			if(this.currentInterval!=null){
 				console.log("ERROR POSITION " + etat + " " + pos + " " + this.joueur.nom);
+				console.log("HISTO : ",localHistos);
+				joueurs = null;
 				throw "Impossible de realiser ce deplacement primaire";
 			}
             // Cas de la fin

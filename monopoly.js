@@ -3,13 +3,10 @@
 /* * GestionConstructions.js */
 
 /* TODO : Permettre l'achat de terrain hors strategie quand on est blinde et qu'on a deja des groupes et des constructions dessus */
-/* TODO : Gerer la mise en vente de terrain (apres l'hypotheque) */
+/* TODO : Gerer la mise aux encheres d'un terrain quand un joueur ne l'achete pas (banque proprietaire) */
 /* TODO : Echange uniquement quand tous les terrains sont vendus. La banque vend (quand on achete pas) ou quand un joueur perd */
 /* TODO : Faire un ecran qui liste les terrains libres */
-/* BUG : continue de payer un loyer a un joueur qui a perdu */
-/* BUG : le joueur peut avoir plusieurs defaite (la premiere est la seule normalement) */
 /* BUG : pb graphique (pion qui se deplace mal). Surement plusieurs thread en meme temps. gotoDirect */
-/* BUG : trop de tune en jeu */
 /* BUG : sauver l'historique des propositions (uniquement la derniere pour chaque terrain)
 /* GetBudget quand Cheap tres dur (evaluation du terrain le plus cher). Ponderer avec l'existance de constructions pour forcer a construire */
 /* -- TODO : sur le facteur quand oldProposition, decaller dans le comportement (+ ou - grand pour aller + ou - vite) */
@@ -61,8 +58,9 @@ var temp_id = 0;
 
 /* Gestion des variantes, case depart (touche 40000) et parc gratuit (touche la somme des amendes) */
 var VARIANTES = {
-    caseDepart: false,
-    parcGratuit: false
+    caseDepart: false,	// Double la prime sur la case depart
+    parcGratuit: false,	// Toutes les taxes sont verses au parc gratuit
+	enchereAchat:false,	// Permet la mise aux encheres d'un terrain qu'un joueur ne veut pas acheter
 }
 /* Jets des des */
 var des1;
@@ -1205,12 +1203,12 @@ var GestionEchange = {
 			var budgetMax = this.comportement.getBudget(this,(interetTerrain!=null && interetTerrain > 2));
 			var budget = Math.min(budgetMax,maison.achat);
             if(oldProposition!=null && oldProposition.proposition.compensation>=budget){
-            	budget = Math.round(Math.min(this.montant,oldProposition.proposition.compensation*this.comportement.getFactorForProposition()));
+            	budget = Math.min(this.montant,oldProposition.proposition.compensation*this.comportement.getFactorForProposition());
 				// On plafonne le budget (4 fois le montant du terrain)
 				var plafondBudget = (14-Math.log(maison.achat))*maison.achat;
 				budget = Math.min(budget,plafondBudget);
 			}
-			return Math.max(0,budget);
+			return Math.round(Math.max(0,budget));
         }
 
         /* Evalue la dangerosite d'un joueur s'il recupere une maison supplementaire pour finir un groupe */
@@ -1863,6 +1861,7 @@ var GestionEchange = {
             this.setArgent(this.montant);
             this.enPrison = data.prison;
             this.loadMore(data);
+			// Position initiale, aucune action
             this.pion.goDirectToCell(data.etat, data.position);
             // Cas des cartes de prison
         }
@@ -2115,7 +2114,7 @@ var GestionEchange = {
             this.enPrison = true;
             this.div.addClass('jail');
             this.nbDouble = 0;
-            this.pion.goPrison();
+            this.pion.goPrison(changeJoueur);
             $.trigger("monopoly.goPrison", {
                 joueur: this
             });
@@ -2484,9 +2483,10 @@ var GestionEchange = {
 		}
 		
         // Ca directement en prison, sans passer par la case depart, en coupant
-        this.goPrison = function () {
+        this.goPrison = function (callback) {
             this.stats.prison++;
-            this.goDirectToCell(3, 0);
+			// Manque le callback
+            this.goDirectToCell(3, 0, callback);
         }
 
         this.deplaceValeursDes = function (des) {
@@ -2503,8 +2503,6 @@ var GestionEchange = {
         }
 
         this.goto = function (etat, pos, call) {
-            // decalage
-            //var center = fiches[this.etat + "-" + this.position].
             var center = GestionFiche.getById(this.etat + "-" + this.position).drawing.getCenter();
             
             this.pion.x = center.x;
@@ -2527,14 +2525,15 @@ var GestionEchange = {
             if (etat == null || pos == null) {
                 return;
             }
-			localHistos[posLocalHisto%10] = {etat:etat,pos:pos,joueur:this.joueur.nom,posLocal:posLocalHisto++};
+			localHistos[posLocalHisto%30] = {etat:etat,pos:pos,joueur:this.joueur.nom,posLocal:posLocalHisto%30};
 			console.log("Direct " + temp_id + " (" + etat + "-" + pos + ")");
 			if(this.currentInterval!=null){
-				console.log("ERROR POSITION DIRECT " + etat + " " + pos + " " + this.joueur.nom);
+				console.log("ERROR POSITION DIRECT " + etat + " " + pos + " " + this.joueur.nom + " " + (posLocalHisto%30));
 				console.log("HISTO DIRECT : ",localHistos);
 				joueurs = null;
 				throw "Impossible de realiser ce deplacement";
 			}
+			posLocalHisto++;
             // On calcule la fonction affine
             var p1 = GestionFiche.getById(this.etat + "-" + this.position).drawing.getCenter();
             var p2 = GestionFiche.getById(etat + "-" + pos).drawing.getCenter();
@@ -2594,13 +2593,15 @@ var GestionEchange = {
 		
         // Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
         this.gotoCell = function (etat, pos, callback) {
-			localHistos[posLocalHisto%10] = {etat:etat,pos:pos,joueur:this.joueur.nom,posLocal:posLocalHisto++};
+			//console.log("GOTO " + temp_id + " (" + etat + "-" + pos + ")");
+			localHistos[posLocalHisto%30] = {etat:etat,pos:pos,joueur:this.joueur.nom,posLocal:posLocalHisto%30};
 			if(this.currentInterval!=null){
-				console.log("ERROR POSITION " + etat + " " + pos + " " + this.joueur.nom);
+				console.log("ERROR POSITION " + etat + " " + pos + " " + this.joueur.nom + " " + (posLocalHisto%30));
 				console.log("HISTO : ",localHistos);
 				joueurs = null;
 				throw "Impossible de realiser ce deplacement primaire";
 			}
+			posLocalHisto++;
             // Cas de la fin
             if (this.etat == etat && this.position == pos) {
                 // On decale le pion
@@ -2622,7 +2623,7 @@ var GestionEchange = {
             var _self = this;
             var distance = Math.abs(caseFiche[field] - this.pion[field]);
             var sens = (caseFiche[field] > this.pion[field]) ? 1 : -1;
-			//console.log("create D0 " + temp_id);
+			console.log("create D0 " + temp_id);
             this.currentInterval = setInterval(function () {
                 if (distance > 0) {
                     _self.pion[field] += pas * sens;
@@ -2632,7 +2633,7 @@ var GestionEchange = {
                     _self.pion.y = caseFiche.y;
                     _self.pion.x = caseFiche.x;
                     clearInterval(_self.currentInterval);
-					//console.log("End D0 " + temp_id++);
+					console.log("End D0 " + pos + " : " + temp_id++);
 					_self.currentInterval = null;
                     _self.gotoCell(etat, pos, callback);
                 }
@@ -2658,7 +2659,6 @@ var GestionEchange = {
 
         this.action = function () {
             this.actionSpeciale();
-            changeJoueur();
         }
     }
 
@@ -2687,6 +2687,7 @@ var GestionEchange = {
             if (direct) {
                 joueurCourant.pion.goDirectToCell(axe, pos, doActions);
             } else {
+			console.log("Goto avec carte " + axe + "-" + pos);
                 joueurCourant.pion.goto(axe, pos, doActions);
             }
         }
@@ -2739,8 +2740,9 @@ var GestionEchange = {
     function CarteChance(libelle, carte) {
         this.carte = carte;
         this.action = function () {
-            return createMessage(titles.chance, "lightblue", libelle, function (param) {
-                carte.action();
+			return createMessage(titles.chance, "lightblue", libelle, function (param) {
+				$.trigger('monopoly.chance.message',{joueur:joueurCourant,message:libelle});
+            	carte.action();
             }, {});
         }
     }
@@ -2748,6 +2750,7 @@ var GestionEchange = {
     function CarteCaisseDeCommunaute(libelle, carte) {
         this.carte = carte;
         this.action = function () {
+			$.trigger('monopoly.caissecommunaute.message',{joueur:joueurCourant,message:libelle});
             return createMessage(titles.communaute, "pink", libelle, function (param) {
                 carte.action();
             }, {});
@@ -2881,7 +2884,6 @@ var Drawer = {
         return this;
     }
 };
-
 
 /* @param size : font-size */
 /* @param specificWidth : largeur specifique (plutet que la largeur habituelle, largeur */
@@ -3926,14 +3928,14 @@ var DrawerHelper = {
 
         if (joueurCourant.enPrison == true) {
             if (des1 == des2) {
-                message += " et sort de prison";
+                MessageDisplayer.write(joueurCourant, message + " et sort de prison");
                 var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", function () {
                     joueurCourant.exitPrison();
                 }, {});
                 joueurCourant.actionApresDes(buttons, null);
             } else {
                 if (joueurCourant.nbDouble == 2) {
-                    message += " et sort de prison en payant " + CURRENCY + " 5.000";
+					MessageDisplayer.write(joueurCourant, message + " et sort de prison en payant " + CURRENCY + " 5.000");
                     var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
                         joueurCourant.payerParcGratuit(5000, function () {
                             joueurCourant.exitPrison();
@@ -3942,7 +3944,7 @@ var DrawerHelper = {
                     }, {});
                     joueurCourant.actionApresDes(buttons, null);
                 } else {
-                    message + " et reste en prison";
+                    MessageDisplayer.write(joueurCourant, message + " et reste en prison");
                     joueurCourant.nbDouble++;
                     var buttons = createMessage("Tour " + joueurCourant.nbDouble, "red", "Vous restez en prison, vous n'avez pas fait de double.", function () {
                         changeJoueur();
@@ -3954,15 +3956,15 @@ var DrawerHelper = {
         } else {
             if (des1 == des2) {
                 if (nbDouble >= 2) {
-                    message += ", fait un double et va en prison";
+					MessageDisplayer.write(joueurCourant, message + ", fait un double et va en prison");
                     // prison
                     $('#informationsCentrale').text("3eme double, allez en PRISON");
-                    joueurCourant.goPrison();
-                    changeJoueur();
+                    // Le changement de joueur lorsque le deplacement est termine
+					joueurCourant.goPrison();
                     return;
                 } else {
                     nbDouble++;
-                    message += " et rejoue";
+                    MessageDisplayer.write(joueurCourant, message + " et rejoue");
                 }
             }
         }
@@ -3970,7 +3972,6 @@ var DrawerHelper = {
         if (des1 == des2) {
             $('#informationsCentrale').html("Relancez");
         }
-        MessageDisplayer.write(joueurCourant, message);
     }
 
     function init(plateau, debugValue) {
@@ -4205,7 +4206,7 @@ var DrawerHelper = {
                 }, this.axe, this.pos);
                 break;
             case "special":
-                fiche = new CarteActionSpeciale(this.nom, function () {}, this.axe, this.pos);
+                fiche = new CarteActionSpeciale(this.nom, function () {changeJoueur();}, this.axe, this.pos);
                 break;
             case "parc":
 				parcGratuit = new ParcGratuit(this.axe,this.pos);
@@ -4219,6 +4220,7 @@ var DrawerHelper = {
                         joueurCourant.gagner(20000)
                     }
 					$.trigger('monopoly.depart',{joueur:joueurCourant});
+					changeJoueur();
                 }, this.axe, this.pos);
                 break;
             }
@@ -5147,14 +5149,18 @@ var MessageDisplayer = {
                 nom: 'info'
             }, 'sauvegarde de la partie (' + data.name + ')');
         }).bind("monopoly.depart", function (e, data) {			
-            MessageDisplayer.write(data.joueur,'passe par la case départ');
+            MessageDisplayer.write(data.joueur,'s\'arrête sur la case départ');
         }).bind("monopoly.enchere.init", function (e, data) {			
             MessageDisplayer.write(data.joueur,'met aux enchères ' + MessageDisplayer._buildTerrain(data.maison));
         }).bind("monopoly.enchere.fail", function (e, data) {			
             MessageDisplayer.write({color:'red',nom:'Commissaire priseur'},
 				'le terrain ' + MessageDisplayer._buildTerrain(data.maison) + ' n\'a pas trouvé preneur');
         }).bind("monopoly.enchere.success", function (e, data) {
-            MessageDisplayer.write(data.joueur,'achète aux enchères le terrain ' + MessageDisplayer._buildTerrain(data.maison));
+            MessageDisplayer.write(data.joueur,'achète aux enchères le terrain ' + MessageDisplayer._buildTerrain(data.maison));        
+		}).bind("monopoly.caissecommunaute.message", function (e, data) {
+            MessageDisplayer.write(data.joueur, 'carte caisse de communauté : ' + data.message);
+        }).bind("monopoly.chance.message", function (e, data) {
+            MessageDisplayer.write(data.joueur, 'carte chance : ' + data.message);
         }).bind("monopoly.acheteMaison", function (e, data) {
             MessageDisplayer.write(data.joueur, 'achète ' + MessageDisplayer._buildTerrain(data.maison));
         }).bind("monopoly.vendMaison", function (e, data) {

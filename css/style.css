@@ -13,7 +13,7 @@
             height:22px;            
 }
 .joueurCourant > div { padding-left: 0px }
-.defaite { background-color: grey }
+.defaite { background-color: grey;padding-left:10px;color:lightgrey }
 .nbMaisons {
     text-decoration: underline;
     background-color: salmon;

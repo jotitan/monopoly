@@ -6,12 +6,14 @@
 /* TODO : Gerer la mise aux encheres d'un terrain quand un joueur ne l'achete pas (banque proprietaire) */
 /* TODO : Echange uniquement quand tous les terrains sont vendus. La banque vend (quand on achete pas) ou quand un joueur perd */
 /* TODO : Faire un ecran qui liste les terrains libres */
-/* BUG : pb graphique (pion qui se deplace mal). Surement plusieurs thread en meme temps. gotoDirect */
+/* TODO : permettre interet gare random sur strategie (et pas singleton) */
 /* BUG : sauver l'historique des propositions (uniquement la derniere pour chaque terrain)
 /* GetBudget quand Cheap tres dur (evaluation du terrain le plus cher). Ponderer avec l'existance de constructions pour forcer a construire */
-/* -- TODO : sur le facteur quand oldProposition, decaller dans le comportement (+ ou - grand pour aller + ou - vite) */
 /* TODO : proposer tout de même un terrain si deja une oldProposition */
 /* -- TODO : mettre un plafond sur une proposition (fonction logarithmique : (14-ln(x)*x) => marche pas */
+/* BUG : echange un terrain contre un terrain du meme groupe */
+/* TODO : changer strategie quand deux terrains du meme groupe */
+/* TODO : Gestion de la prison a gerer : sort des qu'il paye... */
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
@@ -54,7 +56,6 @@ $.trigger = function (eventName, params) {
 var DEBUG = false;
 var IA_TIMEOUT = 1000; // Temps d'attente pour les actions de l'ordinateur
 var CURRENT_ID_COMPONENT = 0;	// Permet de generer un numero de composant unique
-var temp_id = 0;
 
 /* Gestion des variantes, case depart (touche 40000) et parc gratuit (touche la somme des amendes) */
 var VARIANTES = {
@@ -142,24 +143,34 @@ var GestionFiche = {
 		// On calcule des cles
 		var keys = [];
 		for(var id in this.fiches){
-			if(this.fiches[id].constructible || this.fiches[id].type == 'gare' || this.fiches[id].type == 'compagnie'){
+			//if(this.fiches[id].constructible || this.fiches[id].type == 'gare' || this.fiches[id].type == 'compagnie'){
+            if(this.fiches[id].isTerrain){
 				keys.push(id);
 			}
 		}
-		return {
-			pointer:0,
-			keys:keys,
-			hasNext:function(){
-				return this.pointer<this.keys.length;
-			},
-			next:function(){
-				return GestionFiche.fiches[this.keys[this.pointer++]];
-			}
-		}	
+		return this._buildIterator(keys);	
 	},
 	getTerrainsLibres:function(){
-	
+        var keys = [];
+        for(var id in this.fiches){
+            if(this.fiches[id].isTerrain && this.fiches[id].statut == ETAT_LIBRE){
+                keys.push(id);
+            }
+        }
+        return this._buildIterator(keys);
 	},
+    _buildIterator:function(keys){
+      return {
+            pointer:0,
+            keys:keys,
+            hasNext:function(){
+                return this.pointer<this.keys.length;
+            },
+            next:function(){
+                return GestionFiche.fiches[this.keys[this.pointer++]];
+            }
+        }  
+    },
 	nextPos:function(etat, position) {
 		position++;
 		if (position == 10) {
@@ -175,6 +186,7 @@ var GestionFiche = {
 
 
 function createMessage(titre, background, message, call, param,forceshow) {
+    $.trigger('monopoly.debug',{message:message});
     $('#message').prev().css("background-color", background);
     $('#message').dialog('option', 'title', titre);
     $('#message').empty();
@@ -194,7 +206,7 @@ function createMessage(titre, background, message, call, param,forceshow) {
         $('#message').dialog('option', 'buttons', button);
     }
 	/* On affiche pas le panneau si le timeout est à 0 (partie rapide) */
-	if(IA_TIMEOUT > 100 || forceshow){
+	if(joueurCourant.canPlay || forceshow){
 		$('#message').dialog('open');
 	}
     return button;
@@ -238,7 +250,7 @@ function createPrisonMessage(nbTours, callback) {
         $('#message').unbind('dialogclose.prison');
         callback();
     });
-	if(IA_TIMEOUT > 100){
+	if(joueurCourant.canPlay){
 		$('#message').dialog('open');
 	}
     return buttons;
@@ -2170,8 +2182,7 @@ var GestionEchange = {
             if (this.getStats().argentDispo < montant) {
               // Banqueroute, le joueur perd
                 this.doDefaite();
-				console.log("le joueur n'est pas solvable " + this.nom);
-                throw "Le joueur " + this.nom + " est insolvable";
+				throw "Le joueur " + this.nom + " est insolvable";
             }
 
             /* Verifie si le joueur peut payer */
@@ -2198,7 +2209,6 @@ var GestionEchange = {
                 });
             } catch (insolvable) {
                 // Le joueur n'est pas solvable, on se sert sur le reste
-				console.log(insolvable);
 				if(joueur!=null){	// Pb quand amende ?
 					joueur.gagner(this.getStats().argentDispo);
 				}
@@ -2525,16 +2535,10 @@ var GestionEchange = {
             if (etat == null || pos == null) {
                 return;
             }
-			localHistos[posLocalHisto%30] = {etat:etat,pos:pos,joueur:this.joueur.nom,posLocal:posLocalHisto%30};
-			console.log("Direct " + temp_id + " (" + etat + "-" + pos + ")");
 			if(this.currentInterval!=null){
-				console.log("ERROR POSITION DIRECT " + etat + " " + pos + " " + this.joueur.nom + " " + (posLocalHisto%30));
-				console.log("HISTO DIRECT : ",localHistos);
-				joueurs = null;
-				throw "Impossible de realiser ce deplacement";
+				throw "Impossible de realiser ce deplacement direct";
 			}
-			posLocalHisto++;
-            // On calcule la fonction affine
+			// On calcule la fonction affine
             var p1 = GestionFiche.getById(this.etat + "-" + this.position).drawing.getCenter();
             var p2 = GestionFiche.getById(etat + "-" + pos).drawing.getCenter();
             // Si meme colonne, (x constant), on ne fait varier que y
@@ -2543,14 +2547,12 @@ var GestionEchange = {
                 var sens = (p1.y > p2.y) ? -1 : 1;
                 // On fait varier x et on calcule y. Le pas est 30
                 var _self = this;
-				console.log("create D1 " + temp_id);
-                this.currentInterval = setInterval(function () {
+				this.currentInterval = setInterval(function () {
                     if ((sens < 0 && _self.pion.y <= p2.y) || (sens > 0 && _self.pion.y >= p2.y)) {
                         _self.etat = etat;
                         _self.position = pos;
                         clearInterval(_self.currentInterval);
 						_self.currentInterval = null;
-                        console.log("End D1 " + temp_id++);
                         if (callback) {
                             callback();
                         }
@@ -2566,8 +2568,7 @@ var GestionEchange = {
 
                 // On fait varier x et on calcule y. Le pas est 30
                 var _self = this;
-				console.log("create D2 " + temp_id);
-                this.currentInterval = setInterval(function () {
+				this.currentInterval = setInterval(function () {
                     if ((sens < 0 && x <= p2.x) || (sens > 0 && x >= p2.x)) {
                         _self.pion.x = p2.x;
                         _self.pion.y = p2.y;
@@ -2575,7 +2576,6 @@ var GestionEchange = {
                         _self.position = pos;
                         clearInterval(_self.currentInterval);
 						_self.currentInterval = null;
-                        console.log("End D2 " + temp_id++);
                         if (callback) {
                             callback();
                         }
@@ -2588,21 +2588,13 @@ var GestionEchange = {
             }
         }
 
-		var localHistos = [];
-		var posLocalHisto = 0;
 		
         // Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
         this.gotoCell = function (etat, pos, callback) {
-			//console.log("GOTO " + temp_id + " (" + etat + "-" + pos + ")");
-			localHistos[posLocalHisto%30] = {etat:etat,pos:pos,joueur:this.joueur.nom,posLocal:posLocalHisto%30};
 			if(this.currentInterval!=null){
-				console.log("ERROR POSITION " + etat + " " + pos + " " + this.joueur.nom + " " + (posLocalHisto%30));
-				console.log("HISTO : ",localHistos);
-				joueurs = null;
 				throw "Impossible de realiser ce deplacement primaire";
 			}
-			posLocalHisto++;
-            // Cas de la fin
+			// Cas de la fin
             if (this.etat == etat && this.position == pos) {
                 // On decale le pion
                 var decalage = GestionFiche.getById(this.etat + "-" + this.position).drawing.decalagePion();
@@ -2623,8 +2615,7 @@ var GestionEchange = {
             var _self = this;
             var distance = Math.abs(caseFiche[field] - this.pion[field]);
             var sens = (caseFiche[field] > this.pion[field]) ? 1 : -1;
-			console.log("create D0 " + temp_id);
-            this.currentInterval = setInterval(function () {
+			this.currentInterval = setInterval(function () {
                 if (distance > 0) {
                     _self.pion[field] += pas * sens;
                     distance -= pas;
@@ -2633,7 +2624,6 @@ var GestionEchange = {
                     _self.pion.y = caseFiche.y;
                     _self.pion.x = caseFiche.x;
                     clearInterval(_self.currentInterval);
-					console.log("End D0 " + pos + " : " + temp_id++);
 					_self.currentInterval = null;
                     _self.gotoCell(etat, pos, callback);
                 }
@@ -2687,8 +2677,7 @@ var GestionEchange = {
             if (direct) {
                 joueurCourant.pion.goDirectToCell(axe, pos, doActions);
             } else {
-			console.log("Goto avec carte " + axe + "-" + pos);
-                joueurCourant.pion.goto(axe, pos, doActions);
+			    joueurCourant.pion.goto(axe, pos, doActions);
             }
         }
     }
@@ -3455,6 +3444,7 @@ var DrawerHelper = {
         this.hotel = false; // Si un hotel est present
         this.maisons = new Array();
         this.constructible = true;
+        this.isTerrain = true;
         this.etat = etat;
         this.pos = pos;
         var current = this;
@@ -3688,7 +3678,7 @@ var DrawerHelper = {
             var buttons = this.getButtons();
             this.fiche.dialog('option', 'buttons', buttons);
             loadFiche(this);
-			if(IA_TIMEOUT > 100){
+			if(joueurCourant.canPlay){
 				this.fiche.dialog('open');
 			}
             return buttons;
@@ -3943,6 +3933,7 @@ var DrawerHelper = {
                         });
                     }, {});
                     joueurCourant.actionApresDes(buttons, null);
+                    return;
                 } else {
                     MessageDisplayer.write(joueurCourant, message + " et reste en prison");
                     joueurCourant.nbDouble++;
@@ -5278,8 +5269,8 @@ var Sauvegarde = {
         }
         VARIANTES = data.variantes || VARIANTES;
 		nbTours = data.nbTours || 0;
-        selectJoueur(joueur);
         initToolTipJoueur();
+        selectJoueur(joueur);        
     },
     delete: function (name) {
         localStorage.removeItem(name);

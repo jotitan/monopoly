@@ -64,17 +64,17 @@ body { margin: 0 }
 .ui-widget { font-size: 0.9em }
 
 .info_box {
-            border:solid grey 2px;
-            background-color:#FFFFFF;
-            position:absolute;
-            top:360px;
-            left:170px;
-            width:460px;
-            height:300px;
-            overflow:auto;
-            font-size: 12px;
-            font-family: Helvetica;
-            padding-left:3px;
-            border-radius: 10px;
-            border:3px inset #A09A9A;
+    border:solid grey 2px;
+    background-color:#FFFFFF;
+    position:absolute;
+    top:350px;
+    left:130px;
+    width:540px;
+    height:330px;
+    overflow:auto;
+    font-size: 12px;
+    font-family: Helvetica;
+    padding-left:3px;
+    border-radius: 10px;
+    border:3px inset #A09A9A;
 }

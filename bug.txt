@@ -1,4 +1,2 @@
-1) Gestion des encheres (pour achat de terrains a partir d'un certain tour) => prevoir budget max a accorder, blocage du jeu en faisant monter les encheres
-6) Racheter les hypotheques
 7) Ajout de messages sympas lors de l'echange
 8) Module reseau

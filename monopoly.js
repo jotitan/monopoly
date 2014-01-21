@@ -1343,9 +1343,10 @@ var GestionEchange = {
                 return;
             }
             // On temporise la reponse de IA_TIMEOUT + random de ms
-            var timeout = IA_TIMEOUT * (Math.random + 1);
+            var timeout = IA_TIMEOUT * (Math.random() + 1);
             var joueur = this;
             setTimeout(function () {
+                console.log(joueur.currentEnchere);
                 if (montant > joueur.currentEnchere.budgetMax) {
                     // Exit enchere
                     GestionEnchere.exitEnchere(joueur);
@@ -1357,7 +1358,7 @@ var GestionEchange = {
                         // Si une enchere a deja ete faite et update, on arrete la demande (joueur trop lent)
                     }
                 }
-            })
+            },timeout);
         }
 
         this.notifyExitEnchere = function (joueurs) {}
@@ -2134,7 +2135,6 @@ var GestionEchange = {
 
         /* Refuse l'achat d'une propriete. La banque peut mettre aux encheres le terrain */
 		this.refuseMaison = function(maison,callback){
-			console.log("REFUSE");
 			if(VARIANTES.enchereAchat){
 				this._enchereByBanque(maison,callback);
 			}
@@ -2170,7 +2170,9 @@ var GestionEchange = {
                 this.div.append(maison.input);
             }
             // On supprime l'ancien proprio
-            maison.joueurPossede.removeMaison(maison);
+            if(maison.joueurPossede){
+                maison.joueurPossede.removeMaison(maison);
+            }
             maison.joueurPossede = this;
             this.maisons.push(maison);
         }
@@ -3766,8 +3768,8 @@ var DrawerHelper = {
                 if (joueurCourant.montant < this.achat) {
                     return {
                         "Pas assez d'argent": function () {
-                            joueurCourant.refuseMaison(current);
-                            doCloseFiche();
+                            joueurCourant.refuseMaison(current,doCloseFiche);
+                            //doCloseFiche();
                         }
                     };
                 } else {
@@ -5478,6 +5480,7 @@ var GestionEnchere = {
         for (var j in joueurs) {
             joueurs[j].notifyExitEnchere(joueur);
         }
+        console.log("STATUS",this);
         if (this.checkEndEnchere()) {
             this.manageEndEnchere();
         }
@@ -5521,7 +5524,7 @@ var GestionEnchere = {
     manageEndEnchere: function () {
         if (this.joueurLastEnchere == null) {
             // On relance les encheres en diminuant la mise de depart
-            if (this.nextMontantEnchere > this.miseDepart / 2) {
+            if (this.ventePerte && (this.nextMontantEnchere -  this.pasVente) > this.miseDepart / 2) {
                 this.nextMontantEnchere -= this.pasVente;
                 this.runEnchere();
             } else {
@@ -5535,8 +5538,14 @@ var GestionEnchere = {
         } else {
             // La mise aux encheres est terminee, on procede a l'echange
             // Correspond a un terrain
-            this.joueurLastEnchere.payerTo(this.lastEnchere, this.terrain.joueurPossede);
-            this.joueurLastEnchere.getSwapProperiete(this.terrain);
+            if(this.terrain.joueurPossede == null){
+                this.joueurLastEnchere.payer(this.lastEnchere);
+            }
+            else{
+                this.joueurLastEnchere.payerTo(this.lastEnchere, this.terrain.joueurPossede);
+                this.joueurLastEnchere.getSwapProperiete(this.terrain);
+            }
+            
             $.trigger('monopoly.enchere.success', {
                 joueur: this.joueurLastEnchere,
                 maison: this.terrain
@@ -5555,13 +5564,15 @@ var GestionEnchere = {
     /* Enregistre les joueurs qui accusent reception. Quand tous ont repondu, on lance le callback */
     checkEndNotify: function (joueur) {
         this.endAckJoueurs[joueur.numero] = true;
+        console.log("check end " + joueur.numero + " " + this.endAckJoueurs.size());
         if (this.endAckJoueurs.size() >= joueurs.length) {
             this.doCallback();
         }
     },
     doCallback: function () {
         if (this.callback) {
-            this.callback();
+            console.log("callback");
+            //this.callback();
         }
     }
 }
@@ -5615,7 +5626,7 @@ var GestionEnchereDisplayer = {
     },
     /* Affiche le depart d'un joueur des encheres */
     showJoueurExit: function (joueur) {
-        $('.list_exit', this.panel).append(joueur.nom + ' est sorti');
+        $('.list_exit', this.panel).append(joueur.nom + ' est sorti<br/>');
     },
     exitEnchere: function () {
         // On supprime les boutons
@@ -5631,8 +5642,8 @@ var GestionEnchereDisplayer = {
             throw "Impossible de gerer l'enchere";
         }
         if (this.currentMontant != null && this.currentEncherisseur != null) {
-            $('.list_encherisseurs', this.panel).prepend('<p>' + CURRENCY + ' ' + this.currentMontant + ' : ' + this.currentEncherisseur.nom + '</p>');
-            $('.list_encherisseurs > p:gt(2)', this.panel).remove();
+            $('.list_encherisseurs', this.panel).prepend(CURRENCY + ' ' + this.currentMontant + ' : ' + this.currentEncherisseur.nom + '<br/>');
+            $('.list_encherisseurs > p:gt(3)', this.panel).remove();
         }
         this.currentMontant = montant;
         this.currentEncherisseur = encherisseur;
@@ -5652,6 +5663,11 @@ var GestionEnchereDisplayer = {
                 text: 'Encherir',
                 click: function () {
                     GestionEnchere.doEnchere(GestionEnchereDisplayer.displayer, montant, contexte.jeton);
+                }
+            }, {
+                text: 'Trop cher', // +> TODO gerer deux cas differents
+                click: function () {
+                    GestionEnchere.exitEnchere(GestionEnchereDisplayer.displayer);
                 }
             }, {
                 text: 'Quitter',

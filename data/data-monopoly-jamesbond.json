@@ -3,7 +3,7 @@
 	"background-image":"",
 	"currency": "£",
 	"fiches": [
-		{"type": "special-depart","axe": 2,"pos": 0,"nom": "Départ"},
+		{"type": "depart","axe": 2,"pos": 0,"nom": "Départ"},
 		{"type": "propriete","groupe": "Violet","axe": 2,"pos": 1,"nom": "Docteur No","colors": ["#812B5C", "#DFA4C6"],"prix": 4000,"loyers": [200,1000,3000,9000,16000,25000],"prixMaison": 5000},
 		{"type": "communaute","axe": 2,"pos": 2},
 		{"type": "propriete","groupe": "Violet","axe": 2,"pos": 3,"nom": "Bons baisers de Russie","colors": ["#812B5C", "#DFA4C6"],"prix": 8000,"loyers": [400, 2000, 6000, 18000, 32000, 45000],"prixMaison": 5000},

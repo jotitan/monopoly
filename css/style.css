@@ -78,3 +78,12 @@ body { margin: 0 }
     border-radius: 10px;
     border:3px inset #A09A9A;
 }
+
+.list_encherisseurs > p {
+	margin-top:0px;
+	margin-bottom:0px;
+}
+
+div.ui-tooltip {
+    min-width: 180px;
+}

@@ -515,9 +515,15 @@ function Strategie(colors, agressif, name, id, interetGare) {
 
     /* Calcul l'interet global du joueur pour une propriete */
     /* Prend en compte l'interet propre (liste d'achat) ainsi que l'etat du groupe */
+	/* @param isEnchere : indique que la mesure est faite pour une enchere */
+	/* Cas des encheres, on ajoute un critere qui determine si le terrain est indispensable pour la strategie : autre groupe, autre terrain... */
 	this.interetGlobal = function (propriete, joueur, isEnchere) {
         var i1 = this.interetPropriete(propriete);
         var i2 = this.statutGroup(propriete, joueur, isEnchere);
+		var coeff = 1;
+		if(isEnchere){
+			coeff = this.interetProprieteInStrategie(propriete);	
+		}
         if (i1 == false && i2 == 0) {
             return 0.1;	// Permet en cas de situation tres confortable de continuer a investir
         }
@@ -531,6 +537,11 @@ function Strategie(colors, agressif, name, id, interetGare) {
         return 1;
     }
 
+	/* Determine l'interet de la propriete par rapport a l'etat de la strategie */
+	this.interetProprieteInStrategie = function(propriete){
+		var stats = this.getStatsProprietes();
+	}
+	
     /* Calcul l'interet pour la maison (a partir des groupes interessant) */
     this.interetPropriete = function (propriete) {
         for (var color in this.groups) {
@@ -1321,6 +1332,9 @@ var GestionEchange = {
             }
             var interet = this.strategie.interetGlobal(terrain, this, true);
             var budgetMax = this.comportement.getMaxBudgetForStrategie(this, interet);
+			// TODO : determiner si on fait du blocage ou non. Si oui, on ne bloque que si l'interesse encherit
+			// TODO : il ne faut pas monter au budget max, depend du moment du jeu (combien de terrain libre, combien libre dans la strategie
+			// Est ce qu'il reste des groupes..., utilise getStatsProprietes
             this.currentEnchere = {
                 transaction: transaction,
                 terrain: terrain,
@@ -3820,9 +3834,10 @@ var DrawerHelper = {
 
     function FicheGare(etat, pos, color, nom, achat, loyers, img) {
         Fiche.call(this, etat, pos, color, nom, achat, loyers, null, img || {
-            src: "img/train.png",
-            width: 40,
-            height: 50
+            src: "img/big_train.png",
+            width: 50,
+            height: 35,
+			margin: 5
         });
         this.type = "gare";
         this.constructible = false;

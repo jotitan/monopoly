@@ -1,5 +1,9 @@
 {
-	"background-color": "#",
+	"plateau":{
+		"subtitle":"Classique",
+		"backgroundColor": "#A7E9DB",
+		"textColor": "#000000"
+	},
 	"background-image":"",
 	"currency": "Fr.",
 	"fiches": [

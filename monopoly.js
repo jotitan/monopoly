@@ -324,8 +324,8 @@ function Comportement(risque, name, id) {
     /* Plafonne l'enchere max (comme les propositions ?) */
     this.getMaxBudgetForStrategie = function (joueur, strategieValue) {
         // Renvoie la valeur du cout pour que getRisqueTotal = strategieValue
-        var risque2 = this.calculRisque(joueur, joueur.montant);
-        var marge = strategieValue / (risque2 / 100 + 1);
+        var risque = this.calculRisque(joueur, joueur.montant);
+        var marge = strategieValue / (risque / 100 + 1);
         // On plafonne l'achat par rapport au prix de la maison ?
         return Math.min(this.findCoutFromFixMarge(joueur, marge), joueur.montant - 5000);
     }
@@ -444,6 +444,8 @@ function Comportement(risque, name, id) {
     }
 }
 
+var comportements = [CheapComportement,MediumComportement,HardComportement];
+
 function CheapComportement() {
     Comportement.call(this, 0.25, "Prudent", 0);
 }
@@ -523,22 +525,24 @@ function Strategie(colors, agressif, name, id, interetGare) {
 	/* Cas des encheres, on ajoute un critere qui determine si le terrain est indispensable pour la strategie : autre groupe, autre terrain... */
 	this.interetGlobal = function (propriete, joueur, isEnchere) {
         var i1 = this.interetPropriete(propriete);
-        var i2 = this.statutGroup(propriete, joueur, isEnchere);
+        var statutGroup = this.statutGroup(propriete, joueur, isEnchere);
+		var i2 = statutGroup.statut;
 		var coeff = 1;
 		if (i1 == false && i2 == 0) {
-            return 0.1;	// Permet en cas de situation tres confortable de continuer a investir
+            return {interet:0.1};	// Permet en cas de situation tres confortable de continuer a investir
         }
+		// Realise un blocage
         if (i1 == false && i2 == 2) {
-            return this.agressif;
+            return {interet:this.agressif,joueur:statutGroup.joueur};
         }
         if (i1 == true && i2 == 3) {
-            return 4;
+            return {interet:4};
         }
         if(isEnchere){
-            return this.interetProprieteInStrategie(propriete);   
+            return {interet:this.interetProprieteInStrategie(propriete)};
         }
         
-        return 1;
+        return {interet:1};
     }
 
 	/* Determine l'interet de la propriete par rapport a l'etat de la strategie */
@@ -590,20 +594,20 @@ function Strategie(colors, agressif, name, id, interetGare) {
             }
         }
         if (nbLibre == nbTotal) {
-            return 0;
+            return {statut:0};
         }
 
         if (nbLibre == 1 && nbEquals == nbTotal - 1) {
-            return 2;
+            return {statut:2,joueur:dernierJoueur};
         }
         /* Cas ou seul terrain manquant */
         if ((nbLibre == 1 || isEnchere) && nbPossede == nbTotal - 1) {
-            return 3;
+            return {statut:3};
         }
         if (nbLibre > 0) {
-            return 1;
+            return {statut:1};
         }
-        return 4;
+        return {statut:4};
     }
 
     /* Calcule le fait d'accepter un terrain d'un joueur.
@@ -651,7 +655,7 @@ function Strategie(colors, agressif, name, id, interetGare) {
 	}
 }
 
-var strategies = [CheapStrategie, MediumStrategie, HardStrategie]; // liste des strategies
+var strategies = [CheapStrategie, MediumStrategie, HardStrategie,SmartStrategie,CrazyStrategie]; // liste des strategies
 
 /* Achete en priorite les terrains les moins chers : bleu marine-812B5C, bleu clair-119AEB, violet-73316F et orange-D16E2D */
 function CheapStrategie() {
@@ -672,7 +676,6 @@ function HardStrategie() {
 function SmartStrategie() {
     Strategie.call(this, ["#D16E2D", "#D32C19", "#E6E018"], 2, "Futé", 3, true);
 }
-
 
 /* Achete tout */
 function CrazyStrategie() {
@@ -812,34 +815,13 @@ var GestionEchange = {
         /* Determine les caracteristiques d'un ordinateur*/
         this.init = function (idStrategie, idComportement) {
             if (idStrategie == null) {
-                idStrategie = Math.round(Math.random() * 1000) % 3;
+                idStrategie = Math.round(Math.random() * 1000) % strategies.length;
             }
-            if (idComportement == null) {
-                idComportement = Math.round(Math.random() * 1000) % 3;
+			if (idComportement == null) {
+                idComportement = Math.round(Math.random() * 1000) % comportements.length;
             }
-            // On choisit la strategie au hasard
-            switch (idStrategie) {
-            case 0:
-                this.strategie = new CheapStrategie();
-                break;
-            case 1:
-                this.strategie = new MediumStrategie();
-                break;
-            case 2:
-                this.strategie = new HardStrategie();
-                break;
-            }
-            switch (idComportement) {
-            case 0:
-                this.comportement = new CheapComportement();
-                break;
-            case 1:
-                this.comportement = new MediumComportement();
-                break;
-            case 2:
-                this.comportement = new HardComportement();
-                break;
-            }
+			this.strategie = new strategies[idStrategie]();
+            this.comportement = new comportements[idComportement]();
             //this.updateName(true);
         }
 
@@ -890,7 +872,7 @@ var GestionEchange = {
             var current = this;
             setTimeout(function () {
                 if (buttons.Acheter != null && propriete != null) {
-                    var interet = current.strategie.interetGlobal(propriete);
+                    var interet = current.strategie.interetGlobal(propriete).interet;
                     var comportement = current.comportement.getRisqueTotal(current, propriete.achat);
                     $.trigger("monopoly.debug", {
                         message: "Strategie : " + interet + " " + comportement
@@ -1338,14 +1320,12 @@ var GestionEchange = {
                 throw "Impossible de gerer une nouvelle enchere";
             }
             var interet = this.strategie.interetGlobal(terrain, this, true);
-            var budgetMax = this.comportement.getMaxBudgetForStrategie(this, interet);
-			// TODO : determiner si on fait du blocage ou non. Si oui, on ne bloque que si l'interesse encherit
-			// TODO : il ne faut pas monter au budget max, depend du moment du jeu (combien de terrain libre, combien libre dans la strategie
-			// Est ce qu'il reste des groupes..., utilise getStatsProprietes
-            this.currentEnchere = {
+            var budgetMax = this.comportement.getMaxBudgetForStrategie(this, interet.interet);
+			this.currentEnchere = {
                 transaction: transaction,
                 terrain: terrain,
-                budgetMax: budgetMax
+                budgetMax: budgetMax,
+				joueurInteresse:interet.joueur
             }
         }
 
@@ -1364,11 +1344,12 @@ var GestionEchange = {
             var joueur = this;
             setTimeout(function () {
                 console.log(joueur.currentEnchere);
-                if (montant > joueur.currentEnchere.budgetMax) {
+                if (montant > joueur.currentEnchere.budgetMax || 
+				(joueur.currentEnchere.joueurInteresse!=null && !joueur.currentEnchere.joueurInteresse.equals(lastEncherisseur))) {
                     // Exit enchere
                     GestionEnchere.exitEnchere(joueur);
                 } else {
-                    // Fait une enchere
+                    // Fait une enchere. Dans le cas d'un blocage, joueurInteresse est renseigne. Enchere uniquement s'il est le dernier
                     try {
                         GestionEnchere.doEnchere(joueur, montant, jeton);
                     } catch (e) {
@@ -1699,7 +1680,8 @@ var GestionEchange = {
             var seuil = 3; // Premier passage, ensuite passe a 4 ou 5
             var achats = {
                 maison: 0,
-                hotel: 0
+                hotel: 0,
+				terrains:[]
             };
             while (budget >= 5000 && !stopConstruct) {
                 // On choisit une maison
@@ -1742,6 +1724,7 @@ var GestionEchange = {
                         } else {
                             achats.maison++;
                         }
+						achats.terrains[group.proprietes[currentMaison].id] = group.proprietes[currentMaison];
                         maison.buyMaison(this, true);
                         budget -= maison.prixMaison;
                         this.payer(maison.prixMaison);
@@ -1765,6 +1748,7 @@ var GestionEchange = {
          * Si peu de propriete ont ete achetees (<3)
          * Si 60% des terrains qui l'interessent ont ete vendu
          * Si aucune famille n'est completable (dans la strategie choisie)
+		 * Si on possede deux terrains d'une strategie qui n'est pas la notre, on choisi cette strategie
          */
         this.changeStrategie = function () {
             var stats = this.strategie.getStatsProprietes();
@@ -3952,6 +3936,7 @@ var DrawerHelper = {
         try {
             joueur = getNextJoueur();
         } catch (gagnant) {
+			$.trigger('monopoly.victoire',{joueur:gagnant});
             createMessage("Fin de partie", "green", "Le joueur " + gagnant.nom + " a gagné", null, null, true);
             return gagnant;
         }
@@ -4240,19 +4225,21 @@ var DrawerHelper = {
 
     // Initialise le plateau
     function initPlateau(plateau, callback) {
-        Drawer.add(new SimpleRect(0, 0, 800, 800, '#A7E9DB'), true);
         // On charge le plateau
         $.ajax({
             url: 'data/' + plateau,
             dataType: 'json',
             success: function (data) {
-                loadPlateau(data);
+                Drawer.add(new SimpleRect(0, 0, 800, 800, data.plateau.backgroundColor), true); 
+				$('#idSubTitle').text(data.plateau.subtitle);
+				loadPlateau(data);
                 Drawer.init(800, 800);
                 if (callback) {
                     callback();
                 }
             },
             error: function (a, b, c) {
+				console.log(a,b,c);
                 alert("Le plateau " + plateau + " n'existe pas");
                 return;
             }
@@ -5310,6 +5297,13 @@ var MessageDisplayer = {
                     message += ((message != "") ? " et " : "") + "vend " + (achats.hotel * -1) + " hôtel(s) ";
                 }
             }
+			// On affiche la liste des terrains
+			if(achats.terrains.size() > 0){
+				message+=" sur ";
+				for(var id in achats.terrains){
+					message+=MessageDisplayer._buildTerrain(achats.terrains[id]) + ", ";
+				}
+			}
             if (message != "") {
                 MessageDisplayer.write(data.joueur, message);
             }
@@ -5326,6 +5320,8 @@ var MessageDisplayer = {
             MessageDisplayer.write(data.joueur, 'fait une contre-proposition : ' + MessageDisplayer._buildProposition(data.proposition));
         }).bind("monopoly.defaite", function (e, data) {
             MessageDisplayer.write(data.joueur, 'a perdu et quitte la partie');
+        }).bind("monopoly.victoire", function (e, data) {
+            MessageDisplayer.write(data.joueur, 'a gagné la partie');
         }).bind("monopoly.debug", function (e, data) {
             if (DEBUG) {
                 MessageDisplayer.write({

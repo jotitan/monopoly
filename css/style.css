@@ -96,9 +96,12 @@ div.ui-tooltip {
     padding-right:10px;
     font-weight:bold;
     text-shadow:-2px 2px #424242;
+	margin:0px;
 }
 
 .title h2 {
     font-size:25px;
     float:right;
+	margin:0px;
+	margin-top:10px;
 }

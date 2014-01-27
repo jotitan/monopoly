@@ -3,7 +3,8 @@
 		"subtitle":"James Bond Edition",
 		"textColor":"white",
 		"backgroundColor": "#999999",
-		"background-image":""
+		"background-image":"",
+		"nomsJoueurs":["Daniel Craig","Roger Moore","Sean Connery","Timothy Dalton","Pierce Brosnan","Georges Lazenby"]
 	},
 	"currency": "£",
 	"fiches": [

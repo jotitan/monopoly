@@ -10,9 +10,10 @@
 /* -- BUG : echange un terrain contre un terrain du meme groupe */
 /* TODO : changer strategie quand deux terrains du meme groupe */
 /* --TODO : plafonner argent a mettre dans une enchere (depend du prix de base). Pour terrain a 10000, enchere a 120000 */
-/* TODO : integrer les contres sur les encheres (n'encherie que si la personne vraiment interesse pose une enchere */
+/* --TODO : integrer les contres sur les encheres (n'encherie que si la personne vraiment interesse pose une enchere */
 /* TODO : accepter plus facilement les propositions vers la fin du jeu, surtout si on a rien */
 /* IDEE : Cassandra, Ring, Hash */
+/* TODO : permettre au joueur de renseigner son nom (et s'en rappeler dans le localStorage ?) */
 
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
@@ -67,6 +68,7 @@ var VARIANTES = {
 var des1Cube,des2Cube;
 var des1,des2;
 var nbDouble = 0;
+var stats = {nbTours:0,heureDebut:new Date()}	// Statistiques
 var nbTours = 0; // Nombre de tours de jeu depuis le depuis (nb de boucle de joueurs)
 var currentSauvegardeName = null; // Nom de la sauvegarde en cours
 
@@ -1525,7 +1527,7 @@ var GestionEchange = {
                 }
                 if (this.montant < montant) {
                     // Cas impossible car verification des fonds fait avant
-                    this.deDefaite();
+                    this.doDefaite();
                     if (callback) {
                         callback();
                     }
@@ -1883,6 +1885,7 @@ var GestionEchange = {
         this.nbDouble = 0;
         this.bloque = false; // Indique que le joueur est bloque. Il doit se debloquer pour que le jeu continue
         this.defaite = false;
+		this.tourDefaite = null;
         this.cartesSortiePrison = []; // Cartes sortie de prison
         this.canPlay = true;
         this.equals = function (joueur) {
@@ -2309,6 +2312,7 @@ var GestionEchange = {
             $('.joueurCourant', this.div).removeAttr('style').addClass('defaite');
             this.setArgent(0);
             this.defaite = true;
+			this.tourDefaite = nbTours;
             $.trigger("monopoly.defaite", {
                 joueur: this
             });
@@ -3936,8 +3940,7 @@ var DrawerHelper = {
         try {
             joueur = getNextJoueur();
         } catch (gagnant) {
-			$.trigger('monopoly.victoire',{joueur:gagnant});
-            createMessage("Fin de partie", "green", "Le joueur " + gagnant.nom + " a gagné", null, null, true);
+			showVainqueur(gagnant);
             return gagnant;
         }
         if (joueur == null) {
@@ -3950,6 +3953,30 @@ var DrawerHelper = {
         selectJoueur(joueur);
         return null;
     }
+	
+	function showVainqueur(gagnant){
+		$.trigger('monopoly.victoire',{joueur:gagnant});
+		// On affiche les resultats complets
+		var perdants = [];
+		for(var j in joueurs){
+			if(joueurs[j].defaite){
+				perdants.push({joueur:joueurs[j]});
+			}
+		}
+		perdants.sort(function(a,b){
+			if(a.tourDefaite == b.tourDefaite){
+				return a.numero - b.numero;
+			}
+			return a.tourDefaite - b.tourDefaite;
+		});
+		var message = "Le joueur " + gagnant.nom + " a gagné.<br/>";
+		message+="1 - " + gagnant.nom + "br/>";
+		
+		for(var i = 0 ; i < perdants.length ; i++){
+			message+= (i+2) + " - " + perdants[i].nom + "br/>";
+		}
+		createMessage("Fin de partie", "green", message, null, null, true);
+	}
 
     function closeFiche() {
         changeJoueur();
@@ -4146,7 +4173,8 @@ var DrawerHelper = {
                 VARIANTES[$(this).attr('name')] = $(this).is(':checked');
             });
             createGame(nb, firstPlayerIA, {
-                waitTimeIA: waitTimeIA
+                waitTimeIA: waitTimeIA,
+				joueur:$('#idNomJoueur').val()
             });
         }
         $('#idPanelCreatePartie').dialog('close');
@@ -4154,7 +4182,7 @@ var DrawerHelper = {
 
     function createGame(nbPlayers, firstPlayerIA, options) {
         for (var i = 0; i < nbPlayers; i++) {
-            var joueur = createJoueur(i > 0 || firstPlayerIA, i);
+            var joueur = createJoueur(i > 0 || firstPlayerIA, i,(i == 0 && !firstPlayerIA && options.joueur!="")?options.joueur:"Joueur " + (i + 1));
             joueurs[i] = joueur;
         }
         changeJoueur();
@@ -4181,14 +4209,14 @@ var DrawerHelper = {
         CommunicationDisplayer.init('idCommunicationEchange');
     }
 
-    function createJoueur(isRobot, i) {
+    function createJoueur(isRobot, i, nom) {
         var id = 'joueur' + i;
         var joueur = null;
         var color = colorsJoueurs[i];
         if (isRobot) {
-            joueur = new JoueurOrdinateur(i, "Joueur " + (i + 1), color);
+            joueur = new JoueurOrdinateur(i, nom, color);
         } else {
-            joueur = new Joueur(i, "Joueur " + (i + 1), color);
+            joueur = new Joueur(i, nom, color);
         }
         $('#informations').append('<div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div><hr/>');
         joueur.setDiv($('#' + id));

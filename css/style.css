@@ -87,3 +87,18 @@ body { margin: 0 }
 div.ui-tooltip {
     min-width: 180px;
 }
+
+.title h1 {
+    background-color:red;
+    color:white;
+    padding-left:10px;
+    font-size:40px;
+    padding-right:10px;
+    font-weight:bold;
+    text-shadow:-2px 2px #424242;
+}
+
+.title h2 {
+    font-size:25px;
+    float:right;
+}

@@ -9,9 +9,11 @@
 /* -- TODO : mettre un plafond sur une proposition (fonction logarithmique : (14-ln(x)*x) => marche pas */
 /* -- BUG : echange un terrain contre un terrain du meme groupe */
 /* TODO : changer strategie quand deux terrains du meme groupe */
-/* TODO : plafonner argent a mettre dans une enchere (depend du prix de base). Pour terrain a 10000, enchere a 120000 */
+/* --TODO : plafonner argent a mettre dans une enchere (depend du prix de base). Pour terrain a 10000, enchere a 120000 */
 /* TODO : integrer les contres sur les encheres (n'encherie que si la personne vraiment interesse pose une enchere */
 /* TODO : accepter plus facilement les propositions vers la fin du jeu, surtout si on a rien */
+/* IDEE : Cassandra, Ring, Hash */
+
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
@@ -319,10 +321,12 @@ function Comportement(risque, name, id) {
     }
 
     /* Determine le budget max pour un indicateur de strategie donne */
+    /* Plafonne l'enchere max (comme les propositions ?) */
     this.getMaxBudgetForStrategie = function (joueur, strategieValue) {
         // Renvoie la valeur du cout pour que getRisqueTotal = strategieValue
         var risque2 = this.calculRisque(joueur, joueur.montant);
         var marge = strategieValue / (risque2 / 100 + 1);
+        // On plafonne l'achat par rapport au prix de la maison ?
         return Math.min(this.findCoutFromFixMarge(joueur, marge), joueur.montant - 5000);
     }
 
@@ -521,10 +525,7 @@ function Strategie(colors, agressif, name, id, interetGare) {
         var i1 = this.interetPropriete(propriete);
         var i2 = this.statutGroup(propriete, joueur, isEnchere);
 		var coeff = 1;
-		if(isEnchere){
-			coeff = this.interetProprieteInStrategie(propriete);	
-		}
-        if (i1 == false && i2 == 0) {
+		if (i1 == false && i2 == 0) {
             return 0.1;	// Permet en cas de situation tres confortable de continuer a investir
         }
         if (i1 == false && i2 == 2) {
@@ -533,13 +534,19 @@ function Strategie(colors, agressif, name, id, interetGare) {
         if (i1 == true && i2 == 3) {
             return 4;
         }
-
+        if(isEnchere){
+            return this.interetProprieteInStrategie(propriete);   
+        }
+        
         return 1;
     }
 
 	/* Determine l'interet de la propriete par rapport a l'etat de la strategie */
+    /* @return : un nombre inférieur à 1 */
 	this.interetProprieteInStrategie = function(propriete){
 		var stats = this.getStatsProprietes();
+        /* Si les terrains sont presques tous libres, renvoie un calcul logarithmique (entre 67 et 100% de terrain libre) */
+        return 0.5 + parseFloat((Math.log(((Math.min(100-stats.color.pourcent,32.5))/50)+1)).toFixed(2));    
 	}
 	
     /* Calcul l'interet pour la maison (a partir des groupes interessant) */
@@ -4225,8 +4232,8 @@ var DrawerHelper = {
 
     // Initialise les des
     function initDes() {
-        des1Cube = new Des(200, 200, 50);
-        des2Cube = new Des(260, 200, 50);
+        des1Cube = new Des(150, 200, 50);
+        des2Cube = new Des(210, 200, 50);
         Drawer.addRealTime(des1Cube);
         Drawer.addRealTime(des2Cube);
     }

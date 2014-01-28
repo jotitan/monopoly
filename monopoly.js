@@ -9,11 +9,10 @@
 /* -- TODO : mettre un plafond sur une proposition (fonction logarithmique : (14-ln(x)*x) => marche pas */
 /* -- BUG : echange un terrain contre un terrain du meme groupe */
 /* TODO : changer strategie quand deux terrains du meme groupe */
-/* --TODO : plafonner argent a mettre dans une enchere (depend du prix de base). Pour terrain a 10000, enchere a 120000 */
+/* --TODO : plafonner argent a mettre dans une enchere (depend du prix de base). Encore trop cher (gare a 60K). Moins d'importance sur une gare */
 /* --TODO : integrer les contres sur les encheres (n'encherie que si la personne vraiment interesse pose une enchere */
 /* TODO : accepter plus facilement les propositions vers la fin du jeu, surtout si on a rien */
 /* IDEE : Cassandra, Ring, Hash */
-/* TODO : permettre au joueur de renseigner son nom (et s'en rappeler dans le localStorage ?) */
 
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
@@ -99,6 +98,7 @@ var largeurPion = (largeur - 5) / 3;
 
 // Parametrage des titres
 var titles = {};
+var nomsJoueurs = [];
 
 /* Permet de gerer les fiches */
 var GestionFiche = {
@@ -1345,7 +1345,7 @@ var GestionEchange = {
             var timeout = IA_TIMEOUT * (Math.random() + 1);
             var joueur = this;
             setTimeout(function () {
-                console.log(joueur.currentEnchere);
+				if(joueur.currentEnchere == null){return;}
                 if (montant > joueur.currentEnchere.budgetMax || 
 				(joueur.currentEnchere.joueurInteresse!=null && !joueur.currentEnchere.joueurInteresse.equals(lastEncherisseur))) {
                     // Exit enchere
@@ -4181,9 +4181,18 @@ var DrawerHelper = {
         $('#idPanelCreatePartie').dialog('close');
     }
 
+	
     function createGame(nbPlayers, firstPlayerIA, options) {
         for (var i = 0; i < nbPlayers; i++) {
-            var joueur = createJoueur(i > 0 || firstPlayerIA, i,(i == 0 && !firstPlayerIA && options.joueur!="")?options.joueur:"Joueur " + (i + 1));
+			var nom = "Joueur " + (i+1);
+			if(i == 0 && !firstPlayerIA && options.joueur!=""){
+				nom = options.joueur;
+			}else{
+				if(nomsJoueurs!=null && nomsJoueurs.length > 0){
+					nom = nomsJoueurs[i];
+				}
+			}
+			var joueur = createJoueur(i > 0 || firstPlayerIA, i,nom);
             joueurs[i] = joueur;
         }
         changeJoueur();
@@ -4259,8 +4268,7 @@ var DrawerHelper = {
             url: 'data/' + plateau,
             dataType: 'json',
             success: function (data) {
-                Drawer.add(new SimpleRect(0, 0, 800, 800, data.plateau.backgroundColor), true); 
-				$('#idSubTitle').text(data.plateau.subtitle);
+                Drawer.add(new SimpleRect(0, 0, 800, 800, data.plateau.backgroundColor), true); 				
 				loadPlateau(data);
                 Drawer.init(800, 800);
                 if (callback) {
@@ -4278,9 +4286,11 @@ var DrawerHelper = {
 
     /* Charge les donnees du plateau */
     function loadPlateau(data) {
-        parcGratuit = null;
+        $('#idSubTitle').text(data.plateau.subtitle);
+		parcGratuit = null;
         CURRENCY = data.currency;
         titles = data.titles;
+		nomsJoueurs = data.plateau.nomsJoueurs || [];
         var colors = [];
         var groups = [];
         $(data.fiches).each(function () {
@@ -5273,7 +5283,7 @@ var MessageDisplayer = {
         }).bind("monopoly.depart", function (e, data) {
             MessageDisplayer.write(data.joueur, 's\'arrête sur la case départ');
         }).bind("monopoly.enchere.init", function (e, data) {
-            MessageDisplayer.write(data.joueur != null ? data.joueur : {color:'black',nom:'banque'}, 'met aux enchères ' + MessageDisplayer._buildTerrain(data.maison));
+            MessageDisplayer.write(data.joueur != null ? data.joueur : {color:'black',nom:'La banque'}, 'met aux enchères ' + MessageDisplayer._buildTerrain(data.maison));
         }).bind("monopoly.enchere.fail", function (e, data) {
             MessageDisplayer.write({
                     color: 'red',
@@ -5281,7 +5291,7 @@ var MessageDisplayer = {
                 },
                 'le terrain ' + MessageDisplayer._buildTerrain(data.maison) + ' n\'a pas trouvé preneur');
         }).bind("monopoly.enchere.success", function (e, data) {
-            MessageDisplayer.write(data.joueur, 'achète aux enchères le terrain ' + MessageDisplayer._buildTerrain(data.maison));
+            MessageDisplayer.write(data.joueur, 'achète aux enchères le terrain ' + MessageDisplayer._buildTerrain(data.maison) + " pour " + CURRENCY + " " + data.montant);
         }).bind("monopoly.caissecommunaute.message", function (e, data) {
             MessageDisplayer.write(data.joueur, 'carte caisse de communauté : ' + data.message);
         }).bind("monopoly.chance.message", function (e, data) {
@@ -5605,7 +5615,8 @@ var GestionEnchere = {
             
             $.trigger('monopoly.enchere.success', {
                 joueur: this.joueurLastEnchere,
-                maison: this.terrain
+                maison: this.terrain,
+				montant:this.lastEnchere
             });
 
             this.endEnchere();

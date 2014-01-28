@@ -3960,7 +3960,7 @@ var DrawerHelper = {
 		var perdants = [];
 		for(var j in joueurs){
 			if(joueurs[j].defaite){
-				perdants.push({joueur:joueurs[j]});
+				perdants.push(joueurs[j]);
 			}
 		}
 		perdants.sort(function(a,b){
@@ -3969,11 +3969,12 @@ var DrawerHelper = {
 			}
 			return a.tourDefaite - b.tourDefaite;
 		});
+        
 		var message = "Le joueur " + gagnant.nom + " a gagné.<br/>";
-		message+="1 - " + gagnant.nom + "br/>";
+		message+="1 - " + gagnant.nom + "<br/>";
 		
 		for(var i = 0 ; i < perdants.length ; i++){
-			message+= (i+2) + " - " + perdants[i].nom + "br/>";
+            message+= (i+2) + " - " + perdants[i].nom + "<br/>";
 		}
 		createMessage("Fin de partie", "green", message, null, null, true);
 	}

@@ -11,9 +11,10 @@
 /* TODO : changer strategie quand deux terrains du meme groupe */
 /* --TODO : plafonner argent a mettre dans une enchere (depend du prix de base). Encore trop cher (gare a 60K). Moins d'importance sur une gare */
 /* --TODO : integrer les contres sur les encheres (n'encherie que si la personne vraiment interesse pose une enchere */
-/* TODO : accepter plus facilement les propositions vers la fin du jeu, surtout si on a rien */
 /* IDEE : Cassandra, Ring, Hash */
-
+/* TODO : implementation du des rapide */
+/* TODO : pour echange, si argent dispo et adversaire dans la deche, on propose une grosse somme (si old proposition presente) */
+/* TODO : refactorer le des */
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
@@ -58,10 +59,12 @@ var IA_TIMEOUT = 1000; // Temps d'attente pour les actions de l'ordinateur
 var CURRENT_ID_COMPONENT = 0; // Permet de generer un numero de composant unique
 
 /* Gestion des variantes, case depart (touche 40000) et parc gratuit (touche la somme des amendes) */
+/* Conf classique : false,false,true,true */
 var VARIANTES = {
-    caseDepart: false, // Double la prime sur la case depart
-    parcGratuit: false, // Toutes les taxes sont verses au parc gratuit
-    enchereAchat: false, // Permet la mise aux encheres d'un terrain qu'un joueur ne veut pas acheter
+    caseDepart: false, 		// Double la prime sur la case depart
+    parcGratuit: false, 	// Toutes les taxes sont verses au parc gratuit
+    enchereAchat: false, 	// Permet la mise aux encheres d'un terrain qu'un joueur ne veut pas acheter
+	echangeApresVente: false,	// Permet d'echanger des terrains meme quand ils ne sont pas vendus
 }
 /* Jets des des */
 var des1Cube,des2Cube;
@@ -240,6 +243,7 @@ var GestionFiche = {
         var buttons = {
             "Payer": function () {
                 joueurCourant.payer(5000);
+				// TODO : Ajouter message pour indiquer qu'il paye
                 joueurCourant.exitPrison();
                 closeMessage();
             },
@@ -250,6 +254,7 @@ var GestionFiche = {
         if (joueurCourant.cartesSortiePrison.length > 0) {
             buttons["Utiliser carte"] = function () {
                 joueurCourant.utiliseCarteSortiePrison();
+				// TODO : ajouter message pour dire qu'il utilise une carte
                 joueurCourant.exitPrison();
                 closeMessage();
             }
@@ -862,6 +867,7 @@ var GestionEchange = {
                 // rachete les hypotheques
                 joueur.rebuyHypotheque();
                 // on lance les des
+				$.trigger('monopoly.debug',{message:'joueur ' + joueur.nom + ' joue'});
                 lancerAnimerDes();
             });
         }
@@ -925,8 +931,8 @@ var GestionEchange = {
          * Il faut retenir les demandes rejetees pour proposer plus et ne pas demander a chaque tour
          */
         this.echangeProprietes = function (callback) {
-			// Dans variante avec enchere a chaque non achat, les encheres entre joueurs ne sont autorises que lorsque tous les terrains sont vendues
-			if(VARIANTES.enchereAchat && GestionFiche.isFreeFiches()){
+			// Quand echange uniquement apres la vente de tous les terrains
+			if(VARIANTES.echangeApresVente && GestionFiche.isFreeFiches()){
 				if(callback){
 					callback();
 				}
@@ -2130,10 +2136,10 @@ var GestionEchange = {
         // Achete une propriete
 		/* @param montant : montant a payer si different du prix d'achat (cas des encheres) */
         this.acheteMaison = function (maison,montant) {
-			montant = montant | maison.achat;
+			montant = montant || maison.achat;
             // On verifie l'argent
             if (maison == null || montant > this.montant) {
-                throw "Achat de la maison impossible";
+			    throw "Achat de la maison impossible";
             }
             if (maison.isLibre()) {
                 this._drawTitrePropriete(maison);
@@ -2598,7 +2604,7 @@ var GestionEchange = {
             this.pion.x = center.x;
             this.pion.y = center.y;
             $.trigger("monopoly.debug", {
-                message: joueurCourant.numero + " va en " + etat + "-" + pos
+                message: joueurCourant.nom + " est en " + this.etat + "-" + this.position + " et va en " + etat + "-" + pos
             });
             this.gotoCell(etat, pos, call);
         }
@@ -2672,6 +2678,8 @@ var GestionEchange = {
         // Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
         this.gotoCell = function (etat, pos, callback) {
             if (this.currentInterval != null) {
+			joueurs = null;
+			console.log("Joueur: " + this.joueur.nom);
                 throw "Impossible de realiser ce deplacement primaire";
             }
             // Cas de la fin
@@ -2680,6 +2688,7 @@ var GestionEchange = {
                 var decalage = GestionFiche.getById(this.etat + "-" + this.position).drawing.decalagePion();
                 this.pion.x = decalage.x;
                 this.pion.y = decalage.y;
+				$.trigger('monopoly.debug',{message:'Fin deplacement ' + this.joueur.nom + " en " + etat + "-" + pos});
                 if (callback) {
                     callback();
                 }
@@ -3954,6 +3963,16 @@ var DrawerHelper = {
         return null;
     }
 	
+	function formatTempsJeu(){		
+		var time = Math.round((new Date().getTime() - stats.heureDebut)/1000);
+		if(time < 60){
+			return sec + " sec";
+		}
+		var sec = time%60;
+		time = Math.round(time/60);
+		return time + " min et " + sec + " sec";
+	}
+	
 	function showVainqueur(gagnant){
 		$.trigger('monopoly.victoire',{joueur:gagnant});
 		// On affiche les resultats complets
@@ -3965,12 +3984,12 @@ var DrawerHelper = {
 		}
 		perdants.sort(function(a,b){
 			if(a.tourDefaite == b.tourDefaite){
-				return a.numero - b.numero;
+				return b.numero - a.numero;
 			}
-			return a.tourDefaite - b.tourDefaite;
+			return b.tourDefaite - a.tourDefaite;
 		});
         
-		var message = "Le joueur " + gagnant.nom + " a gagné.<br/>";
+		var message = "Le joueur " + gagnant.nom + " a gagné en " + formatTempsJeu() + ".<br/>";
 		message+="1 - " + gagnant.nom + "<br/>";
 		
 		for(var i = 0 ; i < perdants.length ; i++){
@@ -3986,11 +4005,25 @@ var DrawerHelper = {
     function rand() {
         return Math.round((Math.random() * 1000)) % 6 + 1;
     }
-
+	
+	/* Gere le fonctionnement du des */
+	var GestionDes = {
+		nbAnimation:8,
+		_rand:function(){
+			return Math.round((Math.random() * 1000)) % 6 + 1;
+		},
+		/* Action apres le lancement des des */
+		action:function(){
+		
+		}
+		
+	}
+	
     /* Fais tourner les des 8 fois */
     function animeDes() {
         // On desactive le bouton pour eviter double click
-        $('.action-joueur').attr('disabled', 'disabled');
+        $('.action-joueur').attr('disabled', 'disabled');	
+		$.trigger('monopoly.debug',{message:joueurCourant.nom + ' lance les des'});		
         var nb = 8;
         var interval = setInterval(function () {
             if (nb-- < 0) {
@@ -4034,20 +4067,22 @@ var DrawerHelper = {
                 MessageDisplayer.write(joueurCourant, message + " et sort de prison");
                 var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", function () {
                     joueurCourant.exitPrison();
+					_suiteJeu(des1,des2);
                 }, {});
                 joueurCourant.actionApresDes(buttons, null);
+				return;
             } else {
                 if (joueurCourant.nbDouble == 2) {
                     MessageDisplayer.write(joueurCourant, message + " et sort de prison en payant " + CURRENCY + " 5.000");
                     var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
                         joueurCourant.payerParcGratuit(5000, function () {
                             joueurCourant.exitPrison();
-                            changeJoueur();
+							$.trigger('monopoly.debut',{message:"SUITE JEU"});
+                            _suiteJeu(des1,des2);
                         });
                     }, {});
                     joueurCourant.actionApresDes(buttons, null);
-                    // On utilise ce lancer pour avancer
-					//return;
+					return;
                 } else {
                     MessageDisplayer.write(joueurCourant, message + " et reste en prison");
                     joueurCourant.nbDouble++;
@@ -4081,12 +4116,16 @@ var DrawerHelper = {
 				MessageDisplayer.write(joueurCourant, message);
 			}
         }
-        joueurCourant.joueDes(des1 + des2);
+        _suiteJeu(des1,des2);        
+    }
+
+	function _suiteJeu(des1,des2){
+		joueurCourant.joueDes(des1 + des2);
         if (des1 == des2) {
             $('#informationsCentrale').html("Relancez");
         }
-    }
-
+	}
+	
     function init(plateau, debugValue) {
         DEBUG = debugValue;
         MessageDisplayer.init('idInfoBox');
@@ -4957,6 +4996,9 @@ function selectJoueurCourant() {
 
 function selectJoueur(joueur) {
     $('.action-joueur').removeAttr('disabled');
+	if(VARIANTES.echangeApresVente && GestionFiche.isFreeFiches()){
+	
+	}
     if (!joueur.equals(joueurCourant)) {
         $('#informations > div > div').removeClass('joueurCourant');
     }
@@ -5606,7 +5648,7 @@ var GestionEnchere = {
             // La mise aux encheres est terminee, on procede a l'echange
             // Correspond a un terrain
             if(this.terrain.joueurPossede == null){
-                this.joueurLastEnchere.acheteMaison(this.terrain,this.lastEnchere);
+				this.joueurLastEnchere.acheteMaison(this.terrain,this.lastEnchere);
             }
             else{
                 this.joueurLastEnchere.payerTo(this.lastEnchere, this.terrain.joueurPossede);

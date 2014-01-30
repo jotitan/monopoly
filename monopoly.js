@@ -12,6 +12,7 @@
 /* --TODO : plafonner argent a mettre dans une enchere (depend du prix de base). Encore trop cher (gare a 60K). Moins d'importance sur une gare */
 /* TODO : pour contre propal, demander argent si besoin de construire */
 /* --TODO : integrer les contres sur les encheres (n'encherie que si la personne vraiment interesse pose une enchere */
+/* -- BUG : erreur cycle lors de la sauvegarde */
 /* IDEE : Cassandra, Ring, Hash */
 /* TODO : implementation du des rapide */
 /* TODO : pour echange, si argent dispo et adversaire dans la deche, on propose une grosse somme (si old proposition presente) */
@@ -839,19 +840,37 @@ var GestionEchange = {
             // Charge l'historique des propositions (derniere proposition du terrain)
             data.rejectedPropositions = [];
             for (var id in this.rejectedPropositions) {
-                var proposition = this.rejectedPropositions[id][this.rejectedPropositions[id].length -1];
-                data.rejectedPropositions.push({
+                var proposition = this.rejectedPropositions[id][this.rejectedPropositions[id].length -1].proposition;
+                var terrains = [];	// On ne garde que les ids des fiches pour eviter les cycles a la sauvegarde
+				for(var t in proposition.terrains){
+					terrains.push(proposition.terrains[t].id);
+				}
+				data.rejectedPropositions.push({
                     id: id,
-                    proposition: {proposition}
+                    proposition: {
+						compensation:proposition.compensation,
+						terrains:terrains
+					}
                 });
-            }
+            }			
         }
 
         this.loadMore = function (data) {
             this.init(data.strategie, data.comportement);
+			this.rejectedPropositions = [];
             if (data.rejectedPropositions != null) {
                 for (var id in data.rejectedPropositions) {
-                    this.rejectedPropositions[data.rejectedPropositions[id].id] = [data.rejectedPropositions[id].proposition];
+					var p = data.rejectedPropositions[id].proposition;
+					var terrains = [];
+					if(p.terrains!=null){
+						for(var t in p.terrains){
+							terrains.push(GestionFiche.getById(p.terrains[t]));
+						}
+					}
+                    this.rejectedPropositions[data.rejectedPropositions[id].id] = {
+						compensation:p.compensation,
+						terrains:terrains
+					};
                 }
             }
         }
@@ -1883,7 +1902,7 @@ var GestionEchange = {
     function Joueur(numero, nom, color) {
         this.numero = numero;
         this.id = numero;
-        this.nom = nom;
+        this.nom = nom || '';
         this.color = color;
         this.montant = 150000;
         this.maisons = new Array();
@@ -1906,12 +1925,12 @@ var GestionEchange = {
         this.save = function () {
             // On sauvegarde id, nom, color,montant, prison, bloque, defaite, cartes, son type (manuel). Pas besoin des maisons (auto)
             var data = {
-                robot: !this.canPlay,
+                canPlay: this.canPlay,
                 id: this.id,
                 nom: this.nom,
                 color: this.color,
                 montant: this.montant,
-                prison: this.enPrison,
+                enPrison: this.enPrison,
                 bloque: this.bloque,
                 defaite: this.defaite,
                 cartesPrison: this.cartesSortiePrison.length,
@@ -1928,8 +1947,8 @@ var GestionEchange = {
                     this[name] = data[name];
                 }
             }
-            this.setArgent(this.montant);
-            this.enPrison = data.prison;
+			$('.joueur-name',this.div).text(this.nom);
+            this.setArgent(this.montant);            
             this.loadMore(data);
             // Position initiale, aucune action
             this.pion.goDirectToCell(data.etat, data.position);
@@ -5456,7 +5475,7 @@ var Sauvegarde = {
         var data = this._getStorage(name);
         reset();
         for (var i = 0; i < data.joueurs.length; i++) {
-            var joueur = createJoueur(data.joueurs[i].robot, i);
+            var joueur = createJoueur(data.joueurs[i].robot, i,'temp ' + i);
             joueur.load(data.joueurs[i]);
             joueurs.push(joueur);
         }

@@ -8,8 +8,9 @@
 /* TODO : proposer tout de même un terrain si deja une oldProposition */
 /* -- TODO : mettre un plafond sur une proposition (fonction logarithmique : (14-ln(x)*x) => marche pas */
 /* -- BUG : echange un terrain contre un terrain du meme groupe */
-/* TODO : changer strategie quand deux terrains du meme groupe */
+/* TODO : changer strategie quand deux terrains du meme groupe. Ne pas les enchanger contre une merde */
 /* --TODO : plafonner argent a mettre dans une enchere (depend du prix de base). Encore trop cher (gare a 60K). Moins d'importance sur une gare */
+/* TODO : pour contre propal, demander argent si besoin de construire */
 /* --TODO : integrer les contres sur les encheres (n'encherie que si la personne vraiment interesse pose une enchere */
 /* IDEE : Cassandra, Ring, Hash */
 /* TODO : implementation du des rapide */
@@ -838,10 +839,10 @@ var GestionEchange = {
             // Charge l'historique des propositions (derniere proposition du terrain)
             data.rejectedPropositions = [];
             for (var id in this.rejectedPropositions) {
-                var propositions = this.rejectedPropositions[id];
+                var proposition = this.rejectedPropositions[id][this.rejectedPropositions[id].length -1];
                 data.rejectedPropositions.push({
                     id: id,
-                    proposition: propositions[propositions.length - 1]
+                    proposition: {proposition}
                 });
             }
         }

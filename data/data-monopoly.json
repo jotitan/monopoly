@@ -3,7 +3,8 @@
 		"subtitle":"Classique",
 		"backgroundColor": "#A7E9DB",
 		"textColor": "#000000",
-		"nomsJoueurs":["Chat","Voiture","Chapeau","Brouette","Dés à Coudre","Chien","Navire"]
+		"nomsJoueurs":["Chat","Voiture","Chapeau","Brouette","Dés à Coudre","Chien","Navire"],
+		"rollColor":"#999999"
 	},
 	"background-image":"",
 	"currency": "Fr.",

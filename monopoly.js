@@ -12,11 +12,11 @@
 /* --TODO : plafonner argent a mettre dans une enchere (depend du prix de base). Encore trop cher (gare a 60K). Moins d'importance sur une gare */
 /* TODO : pour contre propal, demander argent si besoin de construire */
 /* --TODO : integrer les contres sur les encheres (n'encherie que si la personne vraiment interesse pose une enchere */
-/* -- BUG : erreur cycle lors de la sauvegarde */
 /* IDEE : Cassandra, Ring, Hash */
 /* TODO : implementation du des rapide */
 /* TODO : pour echange, si argent dispo et adversaire dans la deche, on propose une grosse somme (si old proposition presente) */
-/* TODO : refactorer le des */
+/* Ajout d'une map statistiques des positions sur une partie */
+
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
@@ -68,13 +68,12 @@ var VARIANTES = {
     enchereAchat: false, 	// Permet la mise aux encheres d'un terrain qu'un joueur ne veut pas acheter
 	echangeApresVente: false,	// Permet d'echanger des terrains meme quand ils ne sont pas vendus
 }
-/* Jets des des */
-var des1Cube,des2Cube;
-var des1,des2;
-var nbDouble = 0;
-var stats = {nbTours:0,heureDebut:new Date()}	// Statistiques
+
+var stats = {nbTours:0,heureDebut:new Date(),positions:[]}	// Statistiques
 var nbTours = 0; // Nombre de tours de jeu depuis le depuis (nb de boucle de joueurs)
 var currentSauvegardeName = null; // Nom de la sauvegarde en cours
+var plateau = null;	// Info du plateau
+
 
 /* Liste des cases et des cartes */
 var cartesChance = new Array();
@@ -867,10 +866,11 @@ var GestionEchange = {
 							terrains.push(GestionFiche.getById(p.terrains[t]));
 						}
 					}
-                    this.rejectedPropositions[data.rejectedPropositions[id].id] = {
+					// On ajoute la proposition dans le tableau
+                    this.rejectedPropositions[data.rejectedPropositions[id].id] = [{
 						compensation:p.compensation,
 						terrains:terrains
-					};
+					}];
                 }
             }
         }
@@ -888,7 +888,8 @@ var GestionEchange = {
                 joueur.rebuyHypotheque();
                 // on lance les des
 				$.trigger('monopoly.debug',{message:'joueur ' + joueur.nom + ' joue'});
-                lancerAnimerDes();
+                GestionDes.lancer();
+				//lancerAnimerDes();
             });
         }
 
@@ -1747,15 +1748,15 @@ var GestionEchange = {
                 } else {
                     // On construit
                     try {
-                        if (maison.nbMaison == 4) { //hotel
+                        maison.buyMaison(this, true);
+                        budget -= maison.prixMaison;
+                        this.payer(maison.prixMaison);
+						if (maison.nbMaison == 4) { //hotel
                             achats.hotel++;
                         } else {
                             achats.maison++;
                         }
-						achats.terrains[group.proprietes[currentMaison].id] = group.proprietes[currentMaison];
-                        maison.buyMaison(this, true);
-                        budget -= maison.prixMaison;
-                        this.payer(maison.prixMaison);
+						achats.terrains[group.proprietes[currentMaison].id] = group.proprietes[currentMaison];                        
                         currentMaison = (currentMaison + 1) % group.proprietes.length;
                     } catch (e) {
                         // Plus de maison ou d'hotel (on peut potentiellement continuer en achetant des maisons ?)                  
@@ -1908,7 +1909,7 @@ var GestionEchange = {
         this.maisons = new Array();
         this.enPrison = false;
         this.pion = null;
-        this.nbDouble = 0;
+        this.nbDouble = 0;	// Nombre de tour en prison
         this.bloque = false; // Indique que le joueur est bloque. Il doit se debloquer pour que le jeu continue
         this.defaite = false;
 		this.tourDefaite = null;
@@ -1947,7 +1948,6 @@ var GestionEchange = {
                     this[name] = data[name];
                 }
             }
-			$('.joueur-name',this.div).text(this.nom);
             this.setArgent(this.montant);            
             this.loadMore(data);
             // Position initiale, aucune action
@@ -2620,11 +2620,17 @@ var GestionEchange = {
 
         this.goto = function (etat, pos, call) {
             var center = GestionFiche.getById(this.etat + "-" + this.position).drawing.getCenter();
-
+			var id = etat+"-"+pos;
+			if(stats.positions[id] == null){
+				stats.positions[id] = 1;
+			}
+			else{
+				stats.positions[id]++;
+			}
             this.pion.x = center.x;
             this.pion.y = center.y;
             $.trigger("monopoly.debug", {
-                message: joueurCourant.nom + " est en " + this.etat + "-" + this.position + " et va en " + etat + "-" + pos
+                message: joueurCourant.nom + " est en " + this.etat + "-" + this.position + " et va en " + id
             });
             this.gotoCell(etat, pos, call);
         }
@@ -2698,9 +2704,9 @@ var GestionEchange = {
         // Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
         this.gotoCell = function (etat, pos, callback) {
             if (this.currentInterval != null) {
-			joueurs = null;
-			console.log("Joueur: " + this.joueur.nom);
-                throw "Impossible de realiser ce deplacement primaire";
+				joueurs = null;
+				$.trigger('monopoly.debug',{message:'Throw ' + this.joueur.nom});
+				throw "Impossible de realiser ce deplacement primaire";
             }
             // Cas de la fin
             if (this.etat == etat && this.position == pos) {
@@ -3119,7 +3125,7 @@ var DrawerHelper = {
             this.value = value;
             this.color = color || '#000000';
         }
-        this.draw = function (canvas) {
+        this.draw = function (canvas) {		
             // Structure du des
             canvas.strokeStyle = '#000000';
             canvas.fillStyle = '#000000';
@@ -3138,7 +3144,7 @@ var DrawerHelper = {
             if (this.value == null) {
                 return;
             }
-            if (this.value % 2 == 1) {
+			if (this.value % 2 == 1) {
                 this.drawPoint(canvas, x + width / 2, y + width / 2, width / 5, this.color);
             }
             if (this.value != 1) {
@@ -3153,7 +3159,6 @@ var DrawerHelper = {
                 this.drawPoint(canvas, x + width * 0.75, y + width * 0.5, width / 5, this.color);
                 this.drawPoint(canvas, x + width * 0.25, y + width * 0.5, width / 5, this.color);
             }
-
         }
         // Dessine un point
         this.drawPoint = function (canvas, x, y, width, color) {
@@ -3886,7 +3891,7 @@ var DrawerHelper = {
         this.constructible = false;
 
         this.getLoyer = function () {
-            var loyer = des1 + des2;
+			var loyer = GestionDes.total();
             if (this.joueurPossede != null) {
                 var nb = -1;
                 for (var i = 0; i < this.joueurPossede.maisons.length; i++) {
@@ -3945,8 +3950,8 @@ var DrawerHelper = {
         }
         var joueur = joueurCourant;
         /* Changement de joueur */
-        if (des1 != des2) {
-            var pos = 0;
+        if(!GestionDes.isDouble()){
+		    var pos = 0;
             joueur = joueurs[(joueur.numero + 1) % (joueurs.length)];
             while (joueur.defaite == true & pos++ < joueurs.length) {
                 joueur = joueurs[(joueur.numero + 1) % (joueurs.length)];
@@ -3975,9 +3980,8 @@ var DrawerHelper = {
         if (joueur == null) {
             return null;
         }
-
-        if (des1 != des2) {
-            nbDouble = 0;
+		if(!GestionDes.isDouble()){
+            GestionDes.resetDouble();
         }
         selectJoueur(joueur);
         return null;
@@ -4016,6 +4020,7 @@ var DrawerHelper = {
             message+= (i+2) + " - " + perdants[i].nom + "<br/>";
 		}
 		createMessage("Fin de partie", "green", message, null, null, true);
+		console.log("stats terrains",stats.positions);
 	}
 
     function closeFiche() {
@@ -4029,131 +4034,155 @@ var DrawerHelper = {
 	/* Gere le fonctionnement du des */
 	var GestionDes = {
 		nbAnimation:8,
+		cube:{des1:null,des2:null},
+		des1:0,
+		des2:0,
+		nbDouble:0,	// Nombre de double de suite pour le joueur en cours
+		rollColor:'#000000',
+		init:function(rollColor){
+			this.cube.des1 = new Des(150, 200, 50);
+			this.cube.des2 = new Des(210, 200, 50);
+			Drawer.addRealTime(this.cube.des1);
+			Drawer.addRealTime(this.cube.des2);
+			this.rollColor = rollColor;
+		},
+		resetDouble:function(){
+			this.nbDouble = 0;
+		},
 		_rand:function(){
 			return Math.round((Math.random() * 1000)) % 6 + 1;
 		},
-		/* Action apres le lancement des des */
-		action:function(){
-		
-		}
-		
-	}
-	
-    /* Fais tourner les des 8 fois */
-    function animeDes() {
-        // On desactive le bouton pour eviter double click
-        $('.action-joueur').attr('disabled', 'disabled');	
-		$.trigger('monopoly.debug',{message:joueurCourant.nom + ' lance les des'});		
-        var nb = 8;
-        var interval = setInterval(function () {
-            if (nb-- < 0) {
-                clearInterval(interval);
-                return gestionDes();
-            }
-            des1Cube.setValue(rand(), '#999999');
-            des2Cube.setValue(rand(), '#999999');
-        }, 100);
-    }
-
-    /* Lance et anime les des */
-    function lancerAnimerDes() {
-        $('#informationsCentrale').html("");
-        if (joueurCourant.enPrison) {
-            // Propose au joueur de payer ou utiliser une carte
-            var buttons = createPrisonMessage(joueurCourant.nbDouble, function () {
-                animeDes();
-            });
-            joueurCourant.actionAvantDesPrison(buttons);
-        } else {
-            animeDes();
-        }
-    }
-    /* Regle de gestion pour la batterie 
-     * 1 - Le joueur peut payer 5000 Frs ou utiliser une carte sortie de prison avant de lancer les des
-     * 2 : Le joueur fait un double ou a payer, il sort
-     * 3 - Le joueur atteint sont 3eme lancer, il paie
-     * 4 - Pas de double, il reste en prison
-     * */
-    function gestionDes() {
-        // Lancement des des
-        des1 = rand();
-        des2 = rand();
-        des1Cube.setValue(des1);
-        des2Cube.setValue(des2);
-        var message = "lance les dés et fait " + (des1 + des2) + " (" + des1 + " et " + des2 + ") ";
-
-        if (joueurCourant.enPrison == true) {
-            if (des1 == des2) {
-                MessageDisplayer.write(joueurCourant, message + " et sort de prison");
-                var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", function () {
-                    joueurCourant.exitPrison();
-					_suiteJeu(des1,des2);
-                }, {});
-                joueurCourant.actionApresDes(buttons, null);
-				return;
-            } else {
-                if (joueurCourant.nbDouble == 2) {
-                    MessageDisplayer.write(joueurCourant, message + " et sort de prison en payant " + CURRENCY + " 5.000");
-                    var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
-                        joueurCourant.payerParcGratuit(5000, function () {
-                            joueurCourant.exitPrison();
-							$.trigger('monopoly.debut',{message:"SUITE JEU"});
-                            _suiteJeu(des1,des2);
-                        });
-                    }, {});
-                    joueurCourant.actionApresDes(buttons, null);
-					return;
-                } else {
-                    MessageDisplayer.write(joueurCourant, message + " et reste en prison");
-                    joueurCourant.nbDouble++;
-                    var buttons = createMessage("Tour " + joueurCourant.nbDouble, "red", "Vous restez en prison, vous n'avez pas fait de double.", function () {
-                        changeJoueur();
-                    }, {});
-                    joueurCourant.actionApresDes(buttons, null);
-                    return;
-                }
-            }
-        } else {
-            if (des1 == des2) {
-                if (nbDouble >= 2) {
-                    // Creer un message
-                    var buttons = createMessage("Allez en prison", "red", "Vous avez fait 3 doubles, vous allez en prison", function () {
-                        MessageDisplayer.write(joueurCourant, message + ", a fait 3 doubles et va en prison");
-                        // prison
-                        $('#informationsCentrale').text("3eme double, allez en PRISON");
-                        // On met des valeurs differentes pour les des pour que le joueur ne rejoue pas
-                        des2++;
-                        // Le changement de joueur lorsque le deplacement est termine
-                        joueurCourant.goPrison();
-                    }, {});
-                    joueurCourant.actionApresDes(buttons, null);
-                    return;
-                } else {
-                    nbDouble++;
-                    MessageDisplayer.write(joueurCourant, message + " et rejoue");
-                }
-            }else{
-				MessageDisplayer.write(joueurCourant, message);
+		/* Action avant le lancement du des */
+		before:function(callback){
+			if (joueurCourant.enPrison) {
+				// Propose au joueur de payer ou utiliser une carte
+				var buttons = createPrisonMessage(joueurCourant.nbDouble, function () {
+					callback();
+				});
+				joueurCourant.actionAvantDesPrison(buttons);
+			} else {
+				callback();
 			}
-        }
-        _suiteJeu(des1,des2);        
-    }
+		},
+		/* Cas lorsque le joueur est en prison */
+		treatPrison:function(message){
+			if (this.isDouble()) {
+				MessageDisplayer.write(joueurCourant, message + " et sort de prison");
+				var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", function () {
+					joueurCourant.exitPrison();
+					GestionDes.endLancer();
+				}, {});
+				joueurCourant.actionApresDes(buttons, null);
+				return;
+			} else {
+				if (joueurCourant.nbDouble == 2) {
+					MessageDisplayer.write(joueurCourant, message + " et sort de prison en payant " + CURRENCY + " 5.000");
+					var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
+						joueurCourant.payerParcGratuit(5000, function () {
+							joueurCourant.exitPrison();
+							GestionDes.endLancer();
+						});
+					}, {});
+					joueurCourant.actionApresDes(buttons, null);
+					return;
+				} else {
+					MessageDisplayer.write(joueurCourant, message + " et reste en prison");
+					joueurCourant.nbDouble++;
+					var buttons = createMessage("Tour " + joueurCourant.nbDouble, "red", "Vous restez en prison, vous n'avez pas fait de double.", function () {
+						changeJoueur();
+					}, {});
+					joueurCourant.actionApresDes(buttons, null);
+					return;
+				}
+			}
+		},
+		/* Action apres le lancement des des */
+		/* Regle de gestion 
+		 * 1 - Le joueur peut payer 5000 Frs ou utiliser une carte sortie de prison avant de lancer les des
+		 * 2 : Le joueur fait un double ou a payer, il sort
+		 * 3 - Le joueur atteint sont 3eme lancer, il paie
+		 * 4 - Pas de double, il reste en prison
+		 * */
+		after:function(){
+			var message = "lance les dés et fait " + (this.total()) + " (" + this.des1 + " et " + this.des2 + ") ";
 
-	function _suiteJeu(des1,des2){
-		joueurCourant.joueDes(des1 + des2);
-        if (des1 == des2) {
-            $('#informationsCentrale').html("Relancez");
-        }
+			// Separer le code
+			if (joueurCourant.enPrison == true) {
+				this.treatPrison(message);
+				return;
+			} else {
+				if (this.isDouble()) {
+					if (this.nbDouble >= 2) {
+						// Creer un message
+						var buttons = createMessage("Allez en prison", "red", "Vous avez fait 3 doubles, vous allez en prison", function () {
+							MessageDisplayer.write(joueurCourant, message + ", a fait 3 doubles et va en prison");
+							$('#informationsCentrale').text("3eme double, allez en PRISON");
+							// On met des valeurs differentes pour les des pour que le joueur ne rejoue pas
+							GestionDes.des2++;
+							// Le changement de joueur lorsque le deplacement est termine
+							joueurCourant.goPrison();
+						}, {});
+						joueurCourant.actionApresDes(buttons, null);
+						return;
+					} else {
+						this.nbDouble++;
+						MessageDisplayer.write(joueurCourant, message + " et rejoue");
+					}
+				}else{
+					MessageDisplayer.write(joueurCourant, message);
+				}
+			}
+			GestionDes.endLancer();
+		},
+		endLancer:function(){
+			joueurCourant.joueDes(this.total());
+			if (this.isDouble()) {
+				$('#informationsCentrale').html("Relancez");
+			}else{
+				$('#informationsCentrale').html("");
+			}
+		},
+		isDouble:function(){
+			return this.des1 == this.des2;
+		},
+		/* lancement du des */
+		lancer:function(){
+			this.before(function(){
+				GestionDes.des1 = GestionDes._rand();
+				GestionDes.des2 = GestionDes._rand();
+				GestionDes._anime();
+			});			
+		},
+		_anime:function(){
+			$('.action-joueur').attr('disabled', 'disabled');	
+			var nb = this.nbAnimation;
+			var interval = setInterval(function () {
+				if (nb-- < 0) {
+					clearInterval(interval);
+					GestionDes._drawCubes(GestionDes.des1,GestionDes.des2);
+					GestionDes.after();
+					return;
+				}
+				GestionDes._drawCubes(GestionDes._rand(),GestionDes._rand(),GestionDes.rollColor);
+			}, 100);
+		},
+		_drawCubes:function(val1,val2,color){
+			GestionDes.cube.des1.setValue(val1, color);
+			GestionDes.cube.des2.setValue(val2, color);
+		},
+		/* Renvoie le total des dés */
+		total:function(){
+			return this.des1 + this.des2;
+		}		
 	}
 	
-    function init(plateau, debugValue) {
+    function init(nomPlateau, debugValue) {
         DEBUG = debugValue;
         MessageDisplayer.init('idInfoBox');
         initDetailFiche();
         initFiches();
         initPanels();
-        initPlateau(plateau, initJoueurs);
-        initDes();
+        initPlateau(nomPlateau, initJoueurs);
         GestionTerrains.init();
     }
 
@@ -4312,22 +4341,16 @@ var DrawerHelper = {
 
     }
 
-    // Initialise les des
-    function initDes() {
-        des1Cube = new Des(150, 200, 50);
-        des2Cube = new Des(210, 200, 50);
-        Drawer.addRealTime(des1Cube);
-        Drawer.addRealTime(des2Cube);
-    }
-
     // Initialise le plateau
-    function initPlateau(plateau, callback) {
+    function initPlateau(nomPlateau, callback) {
         // On charge le plateau
         $.ajax({
-            url: 'data/' + plateau,
+            url: 'data/' + nomPlateau,
             dataType: 'json',
             success: function (data) {
-                Drawer.add(new SimpleRect(0, 0, 800, 800, data.plateau.backgroundColor), true); 				
+				plateau = data.plateau;
+				GestionDes.init(plateau.rollColor);
+                Drawer.add(new SimpleRect(0, 0, 800, 800, plateau.backgroundColor), true); 				
 				loadPlateau(data);
                 Drawer.init(800, 800);
                 if (callback) {
@@ -4336,7 +4359,7 @@ var DrawerHelper = {
             },
             error: function (a, b, c) {
 				console.log(a,b,c);
-                alert("Le plateau " + plateau + " n'existe pas");
+                alert("Le plateau " + nomPlateau + " n'existe pas");
                 return;
             }
         });
@@ -4345,11 +4368,11 @@ var DrawerHelper = {
 
     /* Charge les donnees du plateau */
     function loadPlateau(data) {
-        $('#idSubTitle').text(data.plateau.subtitle);
+        $('#idSubTitle').text(plateau.subtitle);
 		parcGratuit = null;
         CURRENCY = data.currency;
         titles = data.titles;
-		nomsJoueurs = data.plateau.nomsJoueurs || [];
+		nomsJoueurs = plateau.nomsJoueurs || [];
         var colors = [];
         var groups = [];
         $(data.fiches).each(function () {
@@ -5475,7 +5498,7 @@ var Sauvegarde = {
         var data = this._getStorage(name);
         reset();
         for (var i = 0; i < data.joueurs.length; i++) {
-            var joueur = createJoueur(data.joueurs[i].robot, i,'temp ' + i);
+            var joueur = createJoueur(data.joueurs[i].robot, i,data.joueurs[i].nom);
             joueur.load(data.joueurs[i]);
             joueurs.push(joueur);
         }

@@ -69,7 +69,11 @@ var VARIANTES = {
 	echangeApresVente: false,	// Permet d'echanger des terrains meme quand ils ne sont pas vendus
 }
 
-var stats = {nbTours:0,heureDebut:new Date(),positions:[]}	// Statistiques
+var stats = {	// Statistiques
+	nbTours:0,
+	heureDebut:new Date(),
+	positions:[]
+}	
 var nbTours = 0; // Nombre de tours de jeu depuis le depuis (nb de boucle de joueurs)
 var currentSauvegardeName = null; // Nom de la sauvegarde en cours
 var plateau = null;	// Info du plateau
@@ -959,6 +963,7 @@ var GestionEchange = {
 				}
 				return;
 			}
+			// Proprietes qui interessent le joueur
             var proprietes = this.findOthersInterestProprietes();
             if (proprietes.length == 0) {
                 callback();
@@ -968,7 +973,7 @@ var GestionEchange = {
             /* On calcule l'importance d'echanger (si des groupes sont presents ou non) */
             var interetEchange = Math.pow(1 / (1 + nbGroupesPossedes), 2);
 
-            /* On cherche les monnaies d'echanges. Prendre en compte les gares ? */
+            /* On cherche les monnaies d'echanges. */
             var proprietesFiltrees = [];
             for (var p in proprietes) {
                 var prop = proprietes[p];
@@ -978,7 +983,8 @@ var GestionEchange = {
                     var last = this._getLastProposition(maison);
                     var joueur = maison.joueurPossede;
                     prop.compensation = 0;
-                    prop.deals = maison.joueurPossede.findOthersInterestProprietes(this);
+					// Calcule les monnaies d'echange
+                    prop.deals = maison.joueurPossede.findOthersInterestProprietes(this,proprietes);
                     if (prop.deals.length == 0) {
                         // On ajoute les terrains non importants (gare seule, compagnie)
                         var othersProprietes = this.findUnterestsProprietes();
@@ -988,6 +994,7 @@ var GestionEchange = {
                             for (var i = 0; i < othersProprietes.proprietes.length && montant / maison.achat < 0.7; i++) {
                                 var terrain = othersProprietes.proprietes[i];
                                 // Il ne faut pas proposer un terrain du meme groupe que le terrain demande car pas forcement de la strategie
+								// Deux terrains qui ne sont pas de la strategie sont potentiellement interessant a garder
                                 if (!this.strategie.interetPropriete(terrain) && (terrain.groupe == null || !terrain.groupe.equals(maison.groupe))) {
                                     // On le refourgue
                                     prop.deals.push(terrain);
@@ -2450,7 +2457,8 @@ var GestionEchange = {
         /* Les terrains sont tries par interet.
          * Les criteres : la rentabilite, le nombre de terrain a acheter (1 ou 2), le fait de faire une ligne avec un groupe possede */
         /* @param joueur : ne recherche que les proprietes de ce joueur */
-        this.findOthersInterestProprietes = function (joueur) {
+		/* @param excludes : terrain exclu, a ne pas renvoyer */
+        this.findOthersInterestProprietes = function (joueur,excludes) {
             var interests = [];
             var treatGroups = []; // groupes traites
             // On parcourt les terrains du joueur. Pour chaque, on etudie le groupe
@@ -2486,8 +2494,6 @@ var GestionEchange = {
                 /* Second critere : rentabilite du terrain */
                 var critere2 = a.maison.getRentabiliteBrute() / b.maison.getRentabiliteBrute();
 
-                //var critere3 = _self.strategie.interetProprieteinteretPropriete
-                /* Troisieme critere : fait une ligne avec un autre groupe du joueur*/
                 var voisinA = 1,
                     voisinB = 1;
                 for (var g in groups) {
@@ -2499,7 +2505,20 @@ var GestionEchange = {
                     }
                 }
                 var critere3 = voisinA / voisinB;
-                var criteres = critere1 * critere2 * critere3;
+				/* Quatrieme critere : fait une ligne avec un autre groupe du joueur */
+				var critere4 = 1;
+				if(_self.strategie!=null){
+					var interetA = _self.strategie.interetPropriete(a.maison);
+					var interetB = _self.strategie.interetPropriete(b.maison);
+					if(interetA!=interetB){
+						critere4 = (interetA)?0.5:2;
+					}
+				}
+				var critere5 = 1;
+				if(a.maison.constructible!=b.maison.constructible){
+					critere5 = (a.maison.constructible)?0.5:2;
+				}
+				var criteres = critere1 * critere2 * critere3 * critere4 * critere5;
                 return criteres - 1;
             });
             return interests;
@@ -3964,6 +3983,7 @@ var DrawerHelper = {
             // On incremente le nb de tours
             if (joueur.numero < joueurCourant.numero) {
                 nbTours++;
+				stats.nbTours++;
             }
         }
         return joueur;
@@ -4025,9 +4045,17 @@ var DrawerHelper = {
             message+= (i+2) + " - " + perdants[i].nom + "<br/>";
 		}
 		createMessage("Fin de partie", "green", message, null, null, true);
-		console.log("stats terrains",stats.positions);
+		console.log("stats terrains",writePositions(stats.positions));
 	}
 
+	function writePositions(){
+		var str = "position;nb";
+		for(var p in stats.positions){
+			str += "\n" + p + ";" + stats.positions[p];
+		}
+		return str;
+	}
+	
     function closeFiche() {
         changeJoueur();
     }

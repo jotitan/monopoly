@@ -2476,12 +2476,17 @@ var GestionEchange = {
 
             var groups = this.findGroupes();
 
+            var _self = this;
+
             // On trie la liste selon rapport (argent de 3 maison / achat terrain + 3 maisons), le nombre de terrains a acheter
+            // on rajoute le fait que ca appartient a la strategie et que c'est constructible
             interests.sort(function (a, b) {
                 /* Premier critere : nombre de terrain a acheter pour finir le groupe */
                 var critere1 = a.nb / b.nb;
                 /* Second critere : rentabilite du terrain */
                 var critere2 = a.maison.getRentabiliteBrute() / b.maison.getRentabiliteBrute();
+
+                //var critere3 = _self.strategie.interetProprieteinteretPropriete
                 /* Troisieme critere : fait une ligne avec un autre groupe du joueur*/
                 var voisinA = 1,
                     voisinB = 1;

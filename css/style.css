@@ -19,9 +19,10 @@
     background-color: salmon;
 }
 .jail {
-    background-image: url("../img/jail.jpg");
+    background-image: url("../img/prison.png");
     background-repeat: no-repeat;
     background-size: 25px 25px;
+    background-position : 0px -3px;
     padding-left: 25px;
 }
 #informations > div {
@@ -97,6 +98,7 @@ div.ui-tooltip {
     font-weight:bold;
     text-shadow:-2px 2px #424242;
 	margin:0px;
+    cursor:pointer;
 }
 
 .title h2 {

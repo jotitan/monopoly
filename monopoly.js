@@ -13,8 +13,11 @@
 /* TODO : pour contre propal, demander argent si besoin de construire */
 /* --TODO : integrer les contres sur les encheres (n'encherie que si la personne vraiment interesse pose une enchere */
 /* IDEE : Cassandra, Ring, Hash */
-/* TODO : implementation du des rapide */
+/* BIG TODO : implementation du des rapide */
+/* BIG TODO : super monopoly ? */
 /* TODO : pour echange, si argent dispo et adversaire dans la deche, on propose une grosse somme (si old proposition presente) */
+/* TODO : permettre le packaging */
+/* Permettre la modification des icones a partir du fichier de data */
 /* Ajout d'une map statistiques des positions sur une partie */
 
 
@@ -338,8 +341,10 @@ function Comportement(risque, name, id) {
         // Renvoie la valeur du cout pour que getRisqueTotal = strategieValue
         var risque = this.calculRisque(joueur, joueur.montant);
         var marge = strategieValue / (risque / 100 + 1);
-        // On plafonne l'achat par rapport au prix de la maison ?
-        return Math.min(this.findCoutFromFixMarge(joueur, marge), joueur.montant - 5000);
+        // On ajoute un random sur 10% du prix => moins previsible
+        var montant = this.findCoutFromFixMarge(joueur, marge);
+        montant+=Math.round((montant*0.1)*(((Math.random()*1000)%10 -5)/10));
+        return Math.min(montant, joueur.montant - 5000);
     }
 
     /* Appele lorsqu'une proposition a deja ete faite et qu'elle etait insuffisante */
@@ -2892,9 +2897,9 @@ var GestionEchange = {
         }
     }
 
-    function Chance(etat, pos) {
+    function Chance(etat, pos,img) {
         this.id = etat + "-" + pos;
-        this.drawing = new Case(pos, etat, null, titles.chance, null, {
+        this.drawing = new Case(pos, etat, null, titles.chance, null, img || {
             src: "img/interrogation.png",
             width: 50,
             height: 60
@@ -2915,9 +2920,9 @@ var GestionEchange = {
         }
     }
 
-    function CaisseDeCommunaute(etat, pos) {
+    function CaisseDeCommunaute(etat, pos, img) {
         this.id = etat + "-" + pos;
-        this.drawing = new Case(pos, etat, null, titles.communaute, null, {
+        this.drawing = new Case(pos, etat, null, titles.communaute, null, img || {
             src: "img/banque2.png",
             width: 60,
             height: 60
@@ -4429,10 +4434,10 @@ var DrawerHelper = {
                 groups[this.colors[0]].add(fiche);
                 break;
             case "chance":
-                fiche = new Chance(this.axe, this.pos);
+                fiche = new Chance(this.axe, this.pos,data.images.chance);
                 break;
             case "communaute":
-                fiche = new CaisseDeCommunaute(this.axe, this.pos);
+                fiche = new CaisseDeCommunaute(this.axe, this.pos,data.images.caisseDeCommunaute);
                 break;
             case "taxe":
                 fiche = new CarteSpeciale(this.nom, this.prix, this.axe, this.pos, {

@@ -56,6 +56,18 @@
 			"width":60,
 			"height":20,
 			"margin":15
+		},
+		"chance":{
+			"src" : "img/jamesbond/gadget.png",
+			"width":32,
+			"height":70,
+			"margin":-5
+		},
+		"caisseDeCommunaute":{
+			"src" : "img/jamesbond/woman.png",
+			"width":50,
+			"height":60,
+			"margin":0
 		}
 	},
 	"titles":{

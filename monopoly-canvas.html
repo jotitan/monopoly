@@ -31,13 +31,8 @@
 	   case : <input type="text" size="3" id="nb"/><input type="button" onclick="joueurCourant.joueDes(parseInt($('#nb').val()))" value="click"/><br/>
 	   Goto : <input type="text" size="3" id="ide"/><input type="text" size="3" id="idp"/><input type="button" onclick="joueurCourant.pion.goto($('#ide').val(),$('#idp').val(),doActions)" value="goto"/><br/>
    </div>
-   <div>
-	<h2 style="margin-top: 5px">
-	  MONOPOLY - 
-	  <img src="img/save.png" style="width:24px;height: 24px;cursor: pointer" id="idSavePanel"/>
-	</h2>
-   </div>
-   <div id="informations"></div>
+   
+   <div id="informations"><hr/></div>
  
    </td></tr></table>
  
@@ -81,7 +76,7 @@
 		   Parc Gratuit : Frs <span></span>
      </div>
    <div id="idTitle" class="title" style="position: absolute; left: 400px; top: 180px;">
-		<h1>MONOPOLY</h1>
+		<h1 id="idSavePanel" title="Cliquez pour sauvegarder">MONOPOLY</h1>
 		<h2 id="idSubTitle"></h2>
 	</div>
    <div class="info_box" id="idInfoBox"></div>

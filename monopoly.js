@@ -15,11 +15,9 @@
 /* IDEE : Cassandra, Ring, Hash */
 /* BIG TODO : implementation du des rapide */
 /* BIG TODO : super monopoly ? */
+/* BIG TODO : faire une version ronde ? */
 /* TODO : pour echange, si argent dispo et adversaire dans la deche, on propose une grosse somme (si old proposition presente) */
 /* TODO : permettre le packaging */
-/* Permettre la modification des icones a partir du fichier de data */
-/* Ajout d'une map statistiques des positions sur une partie */
-
 
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
@@ -91,7 +89,7 @@ var currentFiche = null;
 /* Liste des joueurs */
 var joueurs = new Array();
 var joueurCourant = null;
-var colorsJoueurs = ["#383C89", "#A6193E", "#C58F01", "#086B3D", "#B9B29B"];
+var colorsJoueurs = ["#383C89", "#A6193E", "#C58F01", "#086B3D", "#B9B29B","#663300"];
 var constructions = {
     maison: 32,
     hotel: 12
@@ -3135,15 +3133,27 @@ var DrawerHelper = {
         this.x = x;
         this.y = y;
         this.color = color;
+		this.isSelected = false;
         this.largeur = largeurPion; // Largeur du pion
         this.draw = function (canvas) {
-            canvas.fillStyle = this.color;
-            canvas.strokeStyle = "#FF0000"; //"rgba(255, 255, 255, 0)"
+            if(this.isSelected){
+				canvas.fillStyle = "#FFFFFF";
+				canvas.strokeStyle = "#FF0000";
+				canvas.beginPath();
+				canvas.arc(this.x, this.y, (this.largeur+6) / 2, 0, 2 * Math.PI);
+				canvas.fill();
+				canvas.closePath();
+			}
+			canvas.fillStyle = this.color;
+            canvas.strokeStyle = "#FF0000";
             canvas.beginPath();
             canvas.arc(this.x, this.y, this.largeur / 2, 0, 2 * Math.PI);
             canvas.fill();
             canvas.closePath();
         }
+		this.setSelected = function(value){
+			this.isSelected = value;
+		}
     }
 
     function Des(x, y, width, value, color) {
@@ -3913,8 +3923,13 @@ var DrawerHelper = {
         }
     }
 
-    function FicheCompagnie(etat, pos, color, nom, achat, loyers) {
-        Fiche.call(this, etat, pos, color, nom, achat, loyers);
+    function FicheCompagnie(etat, pos, color, nom, achat, loyers,img) {
+        Fiche.call(this, etat, pos, color, nom, achat, loyers, null,img || {
+            src: "img/light.png",
+            width: 50,
+            height: 35,
+			margin: 5
+        });
         this.fiche = $('#ficheCompagnie');
         this.type = "compagnie";
         this.constructible = false;
@@ -4388,6 +4403,9 @@ var DrawerHelper = {
             success: function (data) {
 				plateau = data.plateau;
 				GestionDes.init(plateau.rollColor);
+				$('#idLancerDes').click(function(){
+					GestionDes.lancer();
+				});
                 Drawer.add(new SimpleRect(0, 0, 800, 800, plateau.backgroundColor), true); 				
 				loadPlateau(data);
                 Drawer.init(800, 800);
@@ -4424,7 +4442,7 @@ var DrawerHelper = {
                 groups[this.colors[0]].add(fiche);
                 break;
             case "compagnie":
-                fiche = new FicheCompagnie(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers);
+				fiche = new FicheCompagnie(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers,data.images[this.img]);
                 groups[this.colors[0]].nom = 'Compagnie';
                 groups[this.colors[0]].add(fiche);
                 break;
@@ -4440,7 +4458,7 @@ var DrawerHelper = {
                 fiche = new CaisseDeCommunaute(this.axe, this.pos,data.images.caisseDeCommunaute);
                 break;
             case "taxe":
-                fiche = new CarteSpeciale(this.nom, this.prix, this.axe, this.pos, {
+                fiche = new CarteSpeciale(this.nom, this.prix, this.axe, this.pos, data.images.taxe || {
                     src: "img/bijou.png",
                     width: 40,
                     height: 50
@@ -5082,9 +5100,13 @@ function selectJoueur(joueur) {
 	}
     if (!joueur.equals(joueurCourant)) {
         $('#informations > div > div').removeClass('joueurCourant');
+		if(joueurCourant!=null){
+			joueurCourant.pion.pion.setSelected(false);
+		}
     }
 
     joueurCourant = joueur;
+	joueurCourant.pion.pion.setSelected(true);
     joueur.select();
 }
 

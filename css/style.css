@@ -8,9 +8,10 @@
     padding-top: 3px;
     padding-bottom: 3px;
     font-weight: bold;
+	font-variant:small-caps;
 }
 .joueur-bloc{
-            height:22px;            
+    height:22px;            
 }
 .joueurCourant > div { padding-left: 0px }
 .defaite { background-color: grey;padding-left:10px;color:lightgrey }

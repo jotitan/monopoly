@@ -1080,7 +1080,7 @@ var GestionEchange = {
             // On prend le dernier
             var last = this._getLastProposition(terrain);
             if (last != null) {
-                var pas = 3 + (Math.round((Math.random() * 1000) % 2));
+                var pas = 3 + (Math.round((Math.random() * 1000) % 3));
                 return last.nbTours + pas < nbTours;
             }
 

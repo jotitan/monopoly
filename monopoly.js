@@ -3,7 +3,6 @@
 /* * GestionConstructions.js */
 /* TODO : Permettre l'achat de terrain hors strategie quand on est blinde et qu'on a deja des groupes et des constructions dessus */
 /* -- TODO : Echange uniquement quand tous les terrains sont vendus. La banque vend (quand on achete pas) ou quand un joueur perd */
-/* TODO : Faire un ecran qui liste les terrains libres */
 /* GetBudget quand Cheap tres dur (evaluation du terrain le plus cher). Ponderer avec l'existance de constructions pour forcer a construire */
 /* TODO : proposer tout de même un terrain si deja une oldProposition */
 /* -- TODO : mettre un plafond sur une proposition (fonction logarithmique : (14-ln(x)*x) => marche pas */
@@ -705,6 +704,7 @@ var GestionEchange = {
     proprietaire: null,
     terrain: null,
     proposition: null,
+	initialProposition: null,
     /* Derniere proposition faite. */
     endCallback: null,
     /* Methode appelee a la fin de la transaction */
@@ -739,6 +739,7 @@ var GestionEchange = {
     propose: function (proposition) {
         // On transmet la demande au proprietaire
         this.proposition = proposition;
+		this.initialProposition = proposition;
         $.trigger('monopoly.echange.propose', {
             joueur: GestionEchange.demandeur,
             proposition: proposition
@@ -797,10 +798,14 @@ var GestionEchange = {
             joueur: joueurReject
         });
         // On notifie le joueur et on lui donne le callback(end) pour lancer la suite du traitement
+		// Cas de la contreproposition
         if (joueurReject.equals(this.demandeur)) {
-            this.proprietaire.notifyRejectProposition(function () {
+            /*this.proprietaire.notifyRejectProposition(function () {
                 GestionEchange.end();
-            }, this.terrain, this.proposition);
+            }, this.terrain, this.proposition);	*/
+			this.demandeur.notifyRejectProposition(function () {
+                GestionEchange.end();
+            }, this.terrain, this.initialProposition);			
         } else {
             this.demandeur.notifyRejectProposition(function () {
                 GestionEchange.end();
@@ -1813,8 +1818,7 @@ var GestionEchange = {
                 // On garde la meme si aucune n'est interessante
             }
         }
-        var current = this;
-
+       
         /* Compte le nombre de maison possedee correspondant a la strategie */
         this.countInterestProperties = function () {
             var count = 0;
@@ -2741,7 +2745,7 @@ var GestionEchange = {
                 var decalage = GestionFiche.getById(this.etat + "-" + this.position).drawing.decalagePion();
                 this.pion.x = decalage.x;
                 this.pion.y = decalage.y;
-				$.trigger('monopoly.debug',{message:'Fin deplacement ' + this.joueur.nom + " en " + etat + "-" + pos});
+				//$.trigger('monopoly.debug',{message:'Fin deplacement ' + this.joueur.nom + " en " + etat + "-" + pos});
                 if (callback) {
                     callback();
                 }
@@ -4264,8 +4268,25 @@ var DrawerHelper = {
         });
         // Panneau d'enchere
         GestionEnchereDisplayer.init('idEncherePanel');
-
+		
+		$('#idTerrainsLibres').dialog({
+			autoOpen:false,
+			title:"Liste des terrains libre",
+			width:350,
+			height:300,
+			buttons:[{text:'Fermer',click:function(){$('#idTerrainsLibres').dialog('close');}}],
+			open:function(){showFreeTerrains();}
+		});
     }
+	
+	function showFreeTerrains(){
+		$('#idTerrainsLibres').empty();
+		var it = GestionFiche.getTerrainsLibres();
+		while(it.hasNext()){
+			var t = it.next();
+			$('#idTerrainsLibres').append('<div style="font-weight:bold;color:' + t.color + '">' + t.nom + '</div>');
+		}
+	}
 
     function showCreatePanel() {
         var sauvegardes = Sauvegarde.findSauvegardes();

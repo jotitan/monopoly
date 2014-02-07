@@ -108,3 +108,12 @@ div.ui-tooltip {
 	margin:0px;
 	margin-top:10px;
 }
+
+.disabled > img {
+    opacity: 0.2;
+}
+
+.hypotheque {
+    background-color: lightgrey;
+    color:black;
+}

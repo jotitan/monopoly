@@ -18,6 +18,7 @@
 /* TODO : pour echange, si argent dispo et adversaire dans la deche, on propose une grosse somme (si old proposition presente) */
 /* TODO : permettre le packaging */
 
+
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
     value: function () {
@@ -3647,6 +3648,15 @@ var DrawerHelper = {
             this.id = data.id;
             this.statut = data.statut;
             this.setNbMaison(data.nb, true);
+            // On deduit les quantites du gestionnaire
+            if(data.nb > 0){
+                if(data.nb == 5){
+                    GestionConstructions.buyHotels(1);
+                }
+                else{
+                    GestionConstructions.buyHouses(data.nb);
+                }
+            }
             this.statutHypotheque = data.hypotheque;
             if (this.statutHypotheque == true) {
                 this.input.addClass('hypotheque');
@@ -4211,7 +4221,7 @@ var DrawerHelper = {
 			});			
 		},
 		_anime:function(){
-			$('.action-joueur').attr('disabled', 'disabled');	
+			$('.action-joueur').attr('disabled', 'disabled').addClass('disabled');   
 			var nb = this.nbAnimation;
 			var interval = setInterval(function () {
 				if (nb-- < 0) {
@@ -4893,14 +4903,15 @@ var GestionTerrains = {
                 joueurCourant.payer(data.cout);
             }
             // On modifie les quantites de maisons / hotels
-            if (this.simulation != null) {
+            if (this.simulation != null && (this.simulation.achat.maison!=0 || this.simulation.achat.hotel!=0)) {
                 GestionConstructions.buyHouses(this.simulation.achat.maison);
                 GestionConstructions.buyHotels(this.simulation.achat.hotel);
+                 $.trigger('monopoly.acheteConstructions', {
+                    joueur: joueurCourant,
+                    achats: this.simulation.achat
+                });
             }
-            $.trigger('monopoly.acheteConstructions', {
-                joueur: joueurCourant,
-                achats: this.simulation.achat
-            });
+           
 
         },
         reset: function () {
@@ -5115,7 +5126,7 @@ function selectJoueurCourant() {
 }
 
 function selectJoueur(joueur) {
-    $('.action-joueur').removeAttr('disabled');
+    $('.action-joueur').removeAttr('disabled').removeClass('disabled');
 	if(VARIANTES.echangeApresVente && GestionFiche.isFreeFiches()){
 	
 	}
@@ -5503,7 +5514,7 @@ var MessageDisplayer = {
                 }
             }
 			// On affiche la liste des terrains
-			if(achats.terrains.size() > 0){
+			if(achats.terrains!=null && achats.terrains.size() > 0){
 				message+=" sur ";
 				for(var id in achats.terrains){
 					message+=MessageDisplayer._buildTerrain(achats.terrains[id]) + ", ";
@@ -5579,13 +5590,14 @@ var Sauvegarde = {
         var data = this._getStorage(name);
         reset();
         for (var i = 0; i < data.joueurs.length; i++) {
-            var joueur = createJoueur(data.joueurs[i].robot, i,data.joueurs[i].nom);
+            var joueur = createJoueur(!data.joueurs[i].canPlay, i,data.joueurs[i].nom);
             joueur.load(data.joueurs[i]);
             joueurs.push(joueur);
         }
         for (var i = 0; i < data.fiches.length; i++) {
             GestionFiche.getById(data.fiches[i].id).load(data.fiches[i]);
         }
+        $.trigger('refreshPlateau');
         var joueur = joueurs[0];
         if (data.joueurCourant != null) {
             joueur = getJoueurById(data.joueurCourant);

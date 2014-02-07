@@ -1,4 +1,27 @@
 .info-joueur > img { padding-right: 10px }
+.fiche {
+	display:block;
+	height:27px;
+	width:240px;
+}
+
+#fiche > table {
+	width:250px;
+}
+
+#idDetailFiche {
+	width:240px;
+}
+
+#idDetailFiche > table{
+	width:240px;
+}
+
+.panneau_joueur > div{
+    font-size: 14px;
+    width: 240px;
+}
+
 .joueurCourant > .joueur-name {
     padding-left: 35px;
     background-image: url("../img/dice.png");
@@ -26,10 +49,14 @@
     background-position : 0px -3px;
     padding-left: 25px;
 }
-#informations > div {
-    font-size: 14px;
-    width: 280px;
+.jail > div {
+	width:215px
 }
+
+.jail > .fiche {
+	margin-left:-25px;
+}
+
 span.info-label {
     display: inline-block;
     width: 55px;

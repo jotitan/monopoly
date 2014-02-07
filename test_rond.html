@@ -1,0 +1,106 @@
+<html>
+
+<head><title>test</title></head>
+
+<body>
+
+
+<div>
+	<canvas width="1200" height="1200" id="canvas"></canvas>
+</div>
+
+
+<script>
+var width = 800;
+var widthCase = 300;
+var canvas = document.getElementById('canvas').getContext("2d")
+
+
+function drawCircle(color,rayon){
+	canvas.fillStyle=color;
+	canvas.beginPath();
+	canvas.arc(width/2,width/2,rayon,0,2*Math.PI);
+	canvas.fill();
+	canvas.closePath();
+}
+
+
+function drawCircle1(){
+	drawCircle('#000000',width/2);
+	drawCircle('#FFFFFF',width/2-2);
+}
+
+function drawCircle2(){
+	drawCircle('#000000',width/2-widthCase);
+	drawCircle('#FFFFFF',width/2-widthCase - 2);
+}
+
+function getCoords(angle,rayon){
+	return {
+		x:(Math.sin(angle))*rayon,
+		y:(Math.cos(angle))*rayon
+	}
+}
+
+
+var colors = ["#FFFFFF","#812B5C","#FFFFFF","#812B5C","#FFFFFF","#000000","#119AEB","#FFFFFF","#119AEB","#119AEB","#FFFFFF","#73316F","#FFFFFF","#73316F","#73316F","#000000","#D16E2D","#FFFFFF","#D16E2D","#D16E2D","#FFFFFF","#D32C19","#FFFFFF","#D32C19","#D32C19","#000000","#E6E018","#E6E018","#FFFFFF","#E6E018","#FFFFFF","#11862E","#11862E","#FFFFFF","#11862E","#000000","#FFFFFF","#132450","#FFFFFF","#132450"];	
+
+function buildColor(i){
+	return colors[i];
+}
+
+function drawTitles(){
+	var pasAngle = (2 * Math.PI)/40;
+	for(var i = 0 ; i < 40 ; i++){
+		canvas.beginPath();
+		canvas.fillStyle=buildColor(i);
+		canvas.moveTo(width/2,width/2);
+		canvas.arc(width/2,width/2,width/2-2,(i)*pasAngle,(i+1)*pasAngle);
+		canvas.fill();
+		canvas.closePath();
+		canvas.beginPath();
+		canvas.fillStyle='#FFFFFF';
+		canvas.moveTo(width/2,width/2);
+		canvas.arc(width/2,width/2,width/2-25,(i)*pasAngle,(i+1)*pasAngle);
+		canvas.fill();
+		canvas.closePath();
+	}
+}
+
+
+function drawFiches(){
+	var pasAngle = (2 * Math.PI)/40;
+	for(var i = 0 ; i < 40 ; i++){
+		var pA = getCoords(i*pasAngle,width/2);
+		var pB = getCoords(i*pasAngle,width/2-widthCase);
+		canvas.fillStyle='#000000';
+		canvas.lineWidth=0.5;
+		canvas.moveTo(width/2 - pA.x,width/2 - pA.y);
+		canvas.lineTo(width/2 - pB.x,width/2 - pB.y);
+		canvas.stroke();
+		canvas.save();
+		canvas.translate(width/2,width/2);
+		canvas.rotate(i*pasAngle);
+		if(i > 10 && i < 30){	
+			canvas.translate(widthCase/2+100,10);
+			canvas.rotate(Math.PI);
+			canvas.fillText("test " + i, 0, 0);
+		}else{
+			canvas.fillText("test " + i, widthCase/2 +50, 10);
+		}
+		canvas.restore();
+		
+	}
+}
+
+drawCircle1();
+drawTitles();
+drawFiches();
+drawCircle2();
+
+</script>
+
+</body>
+
+
+</html>

@@ -2201,7 +2201,7 @@ var GestionEchange = {
 
         this._drawTitrePropriete = function (maison) {
             var m = this.cherchePlacement(maison);
-            var input = '<input type=\"button\" id=\"idInputFiche' + maison.id + '\" class=\"ui-corner-all color_' + maison.color.substring(1) + '\" style=\"display:block;height:27px;width:280px;\" value=\"' + maison.nom + '\" id=\"fiche_' + maison.id + '\"/>';
+            var input = '<input type=\"button\" id=\"idInputFiche' + maison.id + '\" class=\"ui-corner-all fiche color_' + maison.color.substring(1) + '\" value=\"' + maison.nom + '\" id=\"fiche_' + maison.id + '\"/>';
             if (m != null) {
                 m.after(input);
             } else {
@@ -4400,7 +4400,14 @@ var DrawerHelper = {
         } else {
             joueur = new Joueur(i, nom, color);
         }
-        $('#informations').append('<div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div><hr/>');
+		var div = $('<div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div><hr/>');
+		if(i%2 == 0 && window.innerWidth > 1350){
+			$('#informations-left').append(div);;
+		}
+		else{
+			$('#informations').append(div);
+		}
+		
         joueur.setDiv($('#' + id));
         joueur.setPion(color);
         // On defini la couleurs
@@ -4412,6 +4419,7 @@ var DrawerHelper = {
     }
 
     function reset() {
+        $('#informations-left').empty();
         $('#informations').empty();
         joueurs = [];
     }
@@ -4630,7 +4638,7 @@ var DrawerHelper = {
             });
             return;
         }
-        $('#idDetailFiche').width(280);
+        //$('#idDetailFiche').width(280);
         loadDetailFiche(fiche);
         input.after($('#idDetailFiche'));
         $('#idDetailFiche').slideDown();
@@ -5131,7 +5139,7 @@ function selectJoueur(joueur) {
 	
 	}
     if (!joueur.equals(joueurCourant)) {
-        $('#informations > div > div').removeClass('joueurCourant');
+        $('.joueurCourant').removeClass('joueurCourant');
 		if(joueurCourant!=null){
 			joueurCourant.pion.pion.setSelected(false);
 		}

@@ -129,6 +129,24 @@ div.ui-tooltip {
     cursor:pointer;
 }
 
+.circle > h1{
+	margin-left:-115px;
+	margin-top:100px;
+	font-size:35px;
+	background-color:transparent;
+}
+
+.title.circle > h2{
+	position:relative;
+	left:-100px;
+	margin-top:130px;
+}
+
+.action-circle .action-joueur{
+	margin-left:158px;
+	margin-top:155px;
+}
+
 .title h2 {
     font-size:25px;
     float:right;

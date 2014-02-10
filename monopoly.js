@@ -1,6 +1,9 @@
 /* Gestion du Monopoly */
 /* Dependances a charger : */
 /* * GestionConstructions.js */
+/* * Graphics.js */
+/* * SquareGraphics.js */
+
 /* TODO : Permettre l'achat de terrain hors strategie quand on est blinde et qu'on a deja des groupes et des constructions dessus */
 /* -- TODO : Echange uniquement quand tous les terrains sont vendus. La banque vend (quand on achete pas) ou quand un joueur perd */
 /* GetBudget quand Cheap tres dur (evaluation du terrain le plus cher). Ponderer avec l'existance de constructions pour forcer a construire */
@@ -59,7 +62,6 @@ $.trigger = function (eventName, params) {
 
 var DEBUG = false;
 var IA_TIMEOUT = 1000; // Temps d'attente pour les actions de l'ordinateur
-var CURRENT_ID_COMPONENT = 0; // Permet de generer un numero de composant unique
 
 /* Gestion des variantes, case depart (touche 40000) et parc gratuit (touche la somme des amendes) */
 /* Conf classique : false,false,true,true */
@@ -283,7 +285,6 @@ function ParcGratuit(axe, pos) {
     this.id = axe + "-" + pos;
     this.montant = null;
 
-    //this.drawing = new CaseSpeciale(0, "Parc Gratuit");
     this.drawing = DrawerFactory.getCaseSpeciale(0, "Parc Gratuit");
     Drawer.add(this.drawing);
 
@@ -2156,7 +2157,7 @@ var GestionEchange = {
         }
 
         this.joueDes = function (sommeDes) {
-            var nextCase = this.pion.deplaceValeursDes(sommeDes);
+		    var nextCase = this.pion.deplaceValeursDes(sommeDes);
             this.pion.goto(nextCase.axe, nextCase.pos, doActions);
         }
 
@@ -2618,12 +2619,11 @@ var GestionEchange = {
         this.etat = 2;
         this.position = 0;
         this.joueur = joueur;
-        this.currentInterval = null; // Empecher plusieurs deplacement en meme temps
         this.stats = {
             tour: 0,
             prison: 0
-        }; // stat du joueur
-        this.pion = new PionJoueur(color, GestionFiche.getById("2-0").drawing.getCenter().x, GestionFiche.getById("2-0").drawing.getCenter().y);
+        }; // stat du joueur		
+        this.pion = DrawerFactory.getPionJoueur(color);
         Drawer.addRealTime(this.pion);
 
         /* Supprime le pion en cas de defaite */
@@ -2652,7 +2652,6 @@ var GestionEchange = {
         }
 
         this.goto = function (etat, pos, call) {
-            var center = GestionFiche.getById(this.etat + "-" + this.position).drawing.getCenter();
 			var id = etat+"-"+pos;
 			if(stats.positions[id] == null){
 				stats.positions[id] = 1;
@@ -2660,131 +2659,28 @@ var GestionEchange = {
 			else{
 				stats.positions[id]++;
 			}
-            this.pion.x = center.x;
-            this.pion.y = center.y;
             $.trigger("monopoly.debug", {
                 message: joueurCourant.nom + " est en " + this.etat + "-" + this.position + " et va en " + id
             });
-            this.gotoCell(etat, pos, call);
+			// On gere le cas de la case depart (si elle est sur le trajet)
+			var depart = this.etat*10 + this.position;
+			var cible = etat*10 + pos;
+			if((depart < 20 && cible > 20) || (depart > cible && (depart < 20 || cible > 20))){
+				this.treatCaseDepart();
+			}
+			this.etat = etat;
+			this.position = pos;
+			this.pion.goto(etat, pos, call,true);
         }
 
-        // Si on passe par la case depart, on prend 20000 Francs
-        this.treatCaseDepart = function (etatCible, posCible) {
-            if (!this.joueur.isEnPrison() && this.position == 0 && this.etat == 2 && this.position != posCible && this.etatCible != this.etat) {
-                this.stats.tour++;
-                this.joueur.gagner(20000);
-            }
-        }
+		// Si on passe par la case depart, on prend 20000 Francs
+        this.treatCaseDepart = function () {
+			this.stats.tour++;
+			this.joueur.gagner(20000);            
+        }    
 
         this.goDirectToCell = function (etat, pos, callback) {
-            if (etat == null || pos == null) {
-                return;
-            }
-            if (this.currentInterval != null) {
-                throw "Impossible de realiser ce deplacement direct";
-            }
-            // On calcule la fonction affine
-            var p1 = GestionFiche.getById(this.etat + "-" + this.position).drawing.getCenter();
-            var p2 = GestionFiche.getById(etat + "-" + pos).drawing.getCenter();
-            // Si meme colonne, (x constant), on ne fait varier que y
-            if (p1.x == p2.x) {
-                var y = p1.y;
-                var sens = (p1.y > p2.y) ? -1 : 1;
-                // On fait varier x et on calcule y. Le pas est 30
-                var _self = this;
-                this.currentInterval = setInterval(function () {
-                    if ((sens < 0 && _self.pion.y <= p2.y) || (sens > 0 && _self.pion.y >= p2.y)) {
-                        _self.etat = etat;
-                        _self.position = pos;
-                        clearInterval(_self.currentInterval);
-                        _self.currentInterval = null;
-                        if (callback) {
-                            callback();
-                        }
-                        return;
-                    }
-                    _self.pion.y += 30 * ((sens < 0) ? -1 : 1);
-                }, 30);
-            } else {
-                var pente = (p1.y - p2.y) / (p1.x - p2.x);
-                var coef = p2.y - pente * p2.x;
-                var x = p1.x;
-                var sens = (p1.x > p2.x) ? -1 : 1;
-
-                // On fait varier x et on calcule y. Le pas est 30
-                var _self = this;
-                this.currentInterval = setInterval(function () {
-                    if ((sens < 0 && x <= p2.x) || (sens > 0 && x >= p2.x)) {
-                        _self.pion.x = p2.x;
-                        _self.pion.y = p2.y;
-                        _self.etat = etat;
-                        _self.position = pos;
-                        clearInterval(_self.currentInterval);
-                        _self.currentInterval = null;
-                        if (callback) {
-                            callback();
-                        }
-                        return;
-                    }
-                    _self.pion.x = x;
-                    _self.pion.y = pente * x + coef;
-                    x += 30 * ((sens < 0) ? -1 : 1);
-                }, 30);
-            }
-        }
-
-
-        // Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
-        this.gotoCell = function (etat, pos, callback) {
-            if (this.currentInterval != null) {
-				joueurs = null;
-				$.trigger('monopoly.debug',{message:'Throw ' + this.joueur.nom});
-				throw "Impossible de realiser ce deplacement primaire";
-            }
-            // Cas de la fin
-            if (this.etat == etat && this.position == pos) {
-                // On decale le pion
-                var decalage = GestionFiche.getById(this.etat + "-" + this.position).drawing.decalagePion();
-                this.pion.x = decalage.x;
-                this.pion.y = decalage.y;
-				//$.trigger('monopoly.debug',{message:'Fin deplacement ' + this.joueur.nom + " en " + etat + "-" + pos});
-                if (callback) {
-                    callback();
-                }
-                return;
-            }
-            var caseFiche = this.toNextCase();
-            this.treatCaseDepart(etat, pos);
-            var pas = 5;
-            var field = "x"; // On varie sur l'axe x
-            if (this.pion.x == caseFiche.x) {
-                field = "y"; // On varie sur l'axe y
-            }
-            var _self = this;
-            var distance = Math.abs(caseFiche[field] - this.pion[field]);
-            var sens = (caseFiche[field] > this.pion[field]) ? 1 : -1;
-            this.currentInterval = setInterval(function () {
-                if (distance > 0) {
-                    _self.pion[field] += pas * sens;
-                    distance -= pas;
-                } else {
-                    // Traitement fini
-                    _self.pion.y = caseFiche.y;
-                    _self.pion.x = caseFiche.x;
-                    clearInterval(_self.currentInterval);
-                    _self.currentInterval = null;
-                    _self.gotoCell(etat, pos, callback);
-                }
-            }, 30);
-        }
-
-        this.toNextCase = function () {
-            this.position++;
-            if (this.position >= 10) {
-                this.etat = (this.etat + 1) % 4;
-                this.position = 0;
-            }
-            return GestionFiche.getById(this.etat + "-" + this.position).drawing.getCenter();
+			this.pion.gotoDirect(etat,pos,callback);           
         }
     }
 
@@ -2792,7 +2688,6 @@ var GestionEchange = {
         this.titre = titre;
         this.actionSpeciale = actionSpeciale;
         this.id = etat + "-" + pos;
-        //this.drawing = new CaseSpeciale(etat, titre);
         this.drawing = DrawerFactory.getCaseSpeciale(etat,titre);
         Drawer.add(this.drawing);
 
@@ -2805,7 +2700,6 @@ var GestionEchange = {
     /* Case speciale, comme la taxe de luxe */
     function CarteSpeciale(titre, montant, etat, pos, img) {
         this.id = etat + "-" + pos;
-        //this.drawing = new Case(pos, etat, null, titre, CURRENCY + " " + montant, img);
         this.drawing = DrawerFactory.getCase(pos, etat, null, titre, CURRENCY + " " + montant, img);
         Drawer.add(this.drawing);
         this.action = function () {
@@ -2910,7 +2804,6 @@ var GestionEchange = {
             width: 50,
             height: 60
         };
-        //this.drawing = new Case(pos, etat, null, titles.chance, null, img);
         this.drawing = DrawerFactory.getCase(pos, etat, null, titles.chance, null, img);
         Drawer.add(this.drawing);
         this.action = function () {
@@ -2935,7 +2828,6 @@ var GestionEchange = {
             width: 60,
             height: 60
         };
-        //this.drawing = new Case(pos, etat, null, titles.communaute, null, img);
         this.drawing = DrawerFactory.getCase(pos, etat, null, titles.communaute, null, img );
         Drawer.add(this.drawing);
         this.action = function () {
@@ -3036,398 +2928,9 @@ var Drawer = {
 };
 
 
-/* Fournit des methodes de dessins */
-var DrawerHelper = {
-    drawImage: function (canvas, img, x, y, width, height, rotate) {
-        canvas.save();
-        canvas.translate(x, y);
-        canvas.rotate(rotate);
-        canvas.drawImage(img, 0, 0, width, height);
-        canvas.restore();
-    },
-    writeText: function (text, x, y, rotate, canvas, size, specificWidth) {
-        var width = specificWidth || largeur;
-        canvas.font = ((size != null) ? size : "7") + "pt Times news roman";
-        // Mesure la longueur du mot
-        var mots = [text];
-        if (canvas.measureText(text).width > width - 5) {
-            // On split les mots intelligement (on regroupe)
-            var splitMots = text.split(" ");
-            var pos = 0;
-            for (var i = 0; i < splitMots.length; i++) {
-                if (pos > 0 && (canvas.measureText(mots[pos - 1]).width + canvas.measureText(splitMots[i]).width) < width - 5) {
-                    // on concatene
-                    mots[pos - 1] = mots[pos - 1] + " " + splitMots[i];
-                } else {
-                    mots[pos++] = splitMots[i];
-                }
-            }
-        }
-        canvas.save();
-        canvas.translate(x, y);
-        canvas.rotate(rotate);
-        var pas = 12;
-        for (var i = 0; i < mots.length; i++) {
-            var lng = (width - canvas.measureText(mots[i]).width) / 2;
-            canvas.strokeText(mots[i], lng, i * pas);
-        }
-        canvas.font = "6pt Times news roman";
-        canvas.restore();
-    }
-}
+
     
-
-    function Component() {
-        // Genere un id unique
-        this.id = CURRENT_ID_COMPONENT++;
-        this.draw = function (canvas) {
-            console.log("Not implemented");
-        }
-    }
-
-    function SimpleRect(x, y, height, width, color) {
-        Component.apply();
-        this.data = {
-            x: x,
-            y: y,
-            width: width,
-            height: height
-        };
-
-        this.draw = function (canvas) {
-            canvas.fillStyle = color;
-            canvas.fillRect(this.data.x, this.data.y, this.data.width, this.data.height);
-        }
-    }
-
-    // Represente un pion d'un joueur
-    function PionJoueur(color, x, y) {
-        Component.apply(this);
-        this.x = x;
-        this.y = y;
-        this.color = color;
-		this.isSelected = false;
-        this.largeur = largeurPion; // Largeur du pion
-        this.draw = function (canvas) {
-            if(this.isSelected){
-				canvas.fillStyle = "#FFFFFF";
-				canvas.strokeStyle = "#FF0000";
-				canvas.beginPath();
-				canvas.arc(this.x, this.y, (this.largeur+6) / 2, 0, 2 * Math.PI);
-				canvas.fill();
-				canvas.closePath();
-			}
-			canvas.fillStyle = this.color;
-            canvas.strokeStyle = "#FF0000";
-            canvas.beginPath();
-            canvas.arc(this.x, this.y, this.largeur / 2, 0, 2 * Math.PI);
-            canvas.fill();
-            canvas.closePath();
-        }
-		this.setSelected = function(value){
-			this.isSelected = value;
-		}
-    }
-
-    function Des(x, y, width, value, color) {
-        this.value = value;
-        this.coin = 15;
-        this.width = width - 2 * this.coin;
-        this.setValue = function (value, color) {
-            this.value = value;
-            this.color = color || '#000000';
-        }
-        this.draw = function (canvas) {		
-            // Structure du des
-            canvas.strokeStyle = '#000000';
-            canvas.fillStyle = '#000000';
-            canvas.beginPath();
-            canvas.moveTo(x + this.coin, y);
-            canvas.lineTo(x + this.coin + this.width, y);
-            canvas.bezierCurveTo(x + this.coin * 2 + this.width, y, x + this.coin * 2 + this.width, y + this.coin, x + this.coin * 2 + this.width, y + this.coin);
-            canvas.lineTo(x + this.coin * 2 + this.width, y + this.coin + this.width);
-            canvas.bezierCurveTo(x + this.coin * 2 + this.width, y + this.coin * 2 + this.width, x + this.width + this.coin, y + this.coin * 2 + this.width, x + this.width + this.coin, y + this.coin * 2 + this.width);
-            canvas.lineTo(x + this.coin, y + this.coin * 2 + this.width);
-            canvas.bezierCurveTo(x, y + this.coin * 2 + this.width, x, y + this.coin + this.width, x, y + this.coin + this.width);
-            canvas.lineTo(x, y + this.coin);
-            canvas.bezierCurveTo(x, y, x + this.coin, y, x + this.coin, y);
-            canvas.stroke();
-            canvas.closePath();
-            if (this.value == null) {
-                return;
-            }
-			if (this.value % 2 == 1) {
-                this.drawPoint(canvas, x + width / 2, y + width / 2, width / 5, this.color);
-            }
-            if (this.value != 1) {
-                this.drawPoint(canvas, x + width * 0.25, y + width * 0.75, width / 5, this.color);
-                this.drawPoint(canvas, x + width * 0.75, y + width * 0.25, width / 5, this.color);
-            }
-            if (this.value >= 4) {
-                this.drawPoint(canvas, x + width * 0.75, y + width * 0.75, width / 5, this.color);
-                this.drawPoint(canvas, x + width * 0.25, y + width * 0.25, width / 5, this.color);
-            }
-            if (this.value == 6) {
-                this.drawPoint(canvas, x + width * 0.75, y + width * 0.5, width / 5, this.color);
-                this.drawPoint(canvas, x + width * 0.25, y + width * 0.5, width / 5, this.color);
-            }
-        }
-        // Dessine un point
-        this.drawPoint = function (canvas, x, y, width, color) {
-            canvas.strokeStyle = color || '#000000';
-            canvas.fillStyle = color || '#000000';
-            canvas.beginPath();
-            canvas.arc(x, y, width / 2, 0, 2 * Math.PI);
-            canvas.fill();
-            canvas.closePath();
-        }
-    }
-
-    function CaseSpeciale(axe, titre) {
-        Case.call(this, 0, axe, null, titre);
-        this.titre = titre;
-        this.data = {};
-        this.init = function () {
-            if (axe % 2 == 1) { // E et 0
-                // height et width inverse
-                if (axe == 1) {
-                    this.data.x = centre + total;
-                    this.data.y = centre + -4.5 * largeur - hauteur;
-                } else {
-                    this.data.x = centre - total - hauteur;
-                    this.data.y = centre + 4.5 * largeur;
-                }
-            } else { // N et S
-                if (axe == 2) {
-                    this.data.y = centre + total;
-                    this.data.x = centre + 4.5 * largeur;
-                } else {
-                    this.data.y = centre - total - hauteur;
-                    this.data.x = centre - 4.5 * largeur - hauteur;
-                }
-            }
-            this.data.height = this.data.width = hauteur;
-        }
-        this.getCenter = function () {
-            return {
-                x: this.data.x + this.data.height / 2,
-                y: this.data.y + this.data.height / 2
-            };
-        }
-        this.draw = function (canvas) {
-            canvas.strokeStyle = '#000000';
-            canvas.strokeRect(this.data.x, this.data.y, this.data.width, this.data.height);
-            DrawerHelper.writeText(this.titre, this.data.x, this.data.y + hauteur / 2, 0, canvas, 9, this.data.width);
-        }
-
-
-        this.init();
-    }
-
-
-    /* Representation graphique d'une fiche */
-    /* Image contient src, height et width */
-
-    function Case(pos, axe, color, title, prix, img) {
-        Component.apply(this);
-        this.data = {};
-        this.pos = pos;
-        this.axe = axe;
-        this.nbMaison = 0; // Maisons a afficher sur la propriete
-        this.imgMaison = new Image();
-        this.imgHotel = new Image();
-        this.init = function () {
-            this.imgMaison.src = "img/maison.png";
-            this.imgHotel.src = "img/hotel.png";
-            if (axe % 2 == 1) { // E et 0
-                // height et width inverse
-                this.data.height = largeur;
-                this.data.width = hauteur;
-                if (axe == 1) {
-                    this.data.x = centre + total;
-                    this.data.y = centre + (pos - 5.5) * largeur;
-                } else {
-                    this.data.x = centre - total - hauteur;
-                    this.data.y = centre + (4.5 - pos) * largeur;
-                }
-            } else { // N et S
-                this.data.height = hauteur;
-                this.data.width = largeur;
-                if (axe == 2) {
-                    this.data.y = centre + total;
-                    this.data.x = centre + (4.5 - pos) * largeur;
-                } else {
-                    this.data.y = centre - total - hauteur;
-                    this.data.x = centre + (pos - 5.5) * largeur;
-                }
-            }
-            if (img != null) {
-                var image = new Image();
-                image.src = img.src;
-                image.height = img.height;
-                image.width = img.width;
-                image.margin = img.margin;
-                this.data.image = image;
-            }
-        }
-
-        /* Recupere les coordonnees du centre de la case */
-        this.getCenter = function () {
-            return {
-                x: this.data.x + this.data.width / 2,
-                y: this.data.y + this.data.height / 2
-            };
-        }
-
-        this.draw = function (canvas) {
-            canvas.strokeStyle = '#000000';
-            canvas.strokeRect(this.data.x, this.data.y, this.data.width, this.data.height);
-            if (color != null) {
-                canvas.fillStyle = color;
-                switch (axe) {
-                case 0:
-                    canvas.fillRect(this.data.x, this.data.y + hauteur - bordure, this.data.width, bordure);
-                    break
-                case 1:
-                    canvas.fillRect(this.data.x, this.data.y, bordure, largeur);
-                    break
-                case 2:
-                    canvas.fillRect(this.data.x, this.data.y, this.data.width, bordure);
-                    break;
-                case 3:
-                    canvas.fillRect(this.data.x + hauteur - bordure, this.data.y, bordure, largeur);
-                    break
-                }
-            }
-            if (title != null) {
-                var mots = [title];
-                var dec = 10 + ((color != null) ? bordure : 0); // Uniquement si couleur
-                switch (axe) {
-                case 0:
-                    DrawerHelper.writeText(title, this.data.x + largeur, this.data.y + hauteur - dec, Math.PI, canvas);
-                    break
-                case 1:
-                    DrawerHelper.writeText(title, this.data.x + dec, this.data.y + largeur, -Math.PI / 2, canvas);
-                    break
-                case 2:
-                    DrawerHelper.writeText(title, this.data.x, this.data.y + dec, 0, canvas);
-                    break;
-                case 3:
-                    DrawerHelper.writeText(title, this.data.x + hauteur - dec, this.data.y, Math.PI / 2, canvas);;
-                    break
-
-                }
-            }
-            if (prix != null) {
-                var dec = 5
-                switch (axe) {
-                case 0:
-                    DrawerHelper.writeText(prix, this.data.x + largeur, this.data.y + dec, Math.PI, canvas);
-                    break
-                case 1:
-                    DrawerHelper.writeText(prix, this.data.x + hauteur - dec, this.data.y + largeur, -Math.PI / 2, canvas);
-                    break
-                case 2:
-                    DrawerHelper.writeText(prix, this.data.x, this.data.y + hauteur - dec, 0, canvas);
-                    break;
-                case 3:
-                    DrawerHelper.writeText(prix, this.data.x + dec, this.data.y, Math.PI / 2, canvas);
-                    break;
-                }
-            }
-            if (this.data.image != null) {
-                var rotate = (Math.PI / 2) * ((this.axe + 2) % 4);
-                var lng = (largeur - this.data.image.width) / 2;
-                var dec = 10 + ((color != null) ? bordure : 10) + ((title != null) ? 10 : 0) + (this.data.image.margin || 0);
-                switch (axe) {
-                case 0:
-                    DrawerHelper.drawImage(canvas, this.data.image, this.data.x + largeur - lng, this.data.y + hauteur - dec, this.data.image.width, this.data.image.height, rotate);
-                    break
-                case 1:
-                    DrawerHelper.drawImage(canvas, this.data.image, this.data.x + dec, this.data.y + largeur - lng, this.data.image.width, this.data.image.height, rotate);
-                    break
-                case 2:
-                    DrawerHelper.drawImage(canvas, this.data.image, this.data.x + lng, this.data.y + dec, this.data.image.width, this.data.image.height, rotate);
-                    break;
-                case 3:
-                    DrawerHelper.drawImage(canvas, this.data.image, this.data.x + hauteur - dec, this.data.y + lng, this.data.image.width, this.data.image.height, rotate);
-                    break;
-                }
-            }
-            // Cas des maisons
-            if (this.nbMaison <= 4) {
-                // On ecrit de droite a gauche dans le cartouche
-                canvas.fillStyle = '#00FF00';
-                for (var i = 0; i < this.nbMaison; i++) {
-                    switch (axe) {
-                    case 0:
-                        DrawerHelper.drawImage(canvas, this.imgMaison, this.data.x + largeur - 15 * (i) - 3, this.data.y + hauteur - 2, 15, 15, -Math.PI);
-                        break
-                    case 1:
-                        DrawerHelper.drawImage(canvas, this.imgMaison, this.data.x + 3, this.data.y + largeur - 2 - 15 * i, 15, 15, -Math.PI / 2);
-                        break
-                    case 2:
-                        DrawerHelper.drawImage(canvas, this.imgMaison, this.data.x + 3 + 15 * i, this.data.y + 2, 15, 15, 0);
-                        break;
-                    case 3:
-                        DrawerHelper.drawImage(canvas, this.imgMaison, this.data.x + hauteur - 3, this.data.y + 2 + 15 * i, 15, 15, Math.PI / 2);
-                        break;
-                    }
-                }
-            } else {
-                // Cas de l'hotel, 5 maisons
-                var pad = (largeur - 18) / 2;
-                switch (axe) {
-                case 0:
-                    DrawerHelper.drawImage(canvas, this.imgHotel, this.data.x + largeur - pad, this.data.y + hauteur, 18, 18, -Math.PI);
-                    break
-                case 1:
-                    DrawerHelper.drawImage(canvas, this.imgHotel, this.data.x, this.data.y + largeur - pad, 18, 18, -Math.PI / 2);
-                    break
-                case 2:
-                    DrawerHelper.drawImage(canvas, this.imgHotel, this.data.x + pad, this.data.y, 18, 18, 0);
-                    break;
-                case 3:
-                    DrawerHelper.drawImage(canvas, this.imgHotel, this.data.x + hauteur, this.data.y + pad, 18, 18, Math.PI / 2);
-                    break;
-                }
-            }
-        }
-        // Nombre de joueur sur la case
-        this.getNbJoueurs = function () {
-            var count = 0;
-            for (var i = 0; i < joueurs.length; i++) {
-                if (joueurs[i].pion.etat == this.axe && joueurs[i].pion.position == this.pos) {
-                    count++;
-                }
-            }
-            return count;
-        }
-        // Retourne le decalage d'un pion sur la case
-        /* @param inverse : decalage inverse (remise en place) */
-        this.decalagePion = function () {
-            var dec = 20 + ((color != null) ? bordure : 0) + largeurPion / 2;
-            var center = this.getCenter();
-            center.x += 5;
-            var pas = {
-                x: largeurPion,
-                y: (this.data.height - dec) / 3
-            }
-            var nb = this.getNbJoueurs() - 1;
-            if (this.axe % 2 == 0) {
-                return {
-                    x: (center.x + ((nb % 3) - 1) * pas.y),
-                    y: ((nb < 3) ? center.y - pas.x : center.y + pas.x)
-                };
-            }
-            return {
-                x: ((nb < 3) ? center.x - pas.x : center.x + pas.x),
-                y: (center.y + ((nb % 3) - 1) * pas.y)
-            };
-        }
-        this.init();
-
-    }
+    
 
     /* Represente un groupe de terrain */
     function Groupe(nom, color) {
@@ -3585,8 +3088,6 @@ var DrawerHelper = {
         this.input = null; // Bouton 
 
         this.drawing = DrawerFactory.getCase(pos, etat, this.color, this.nom, CURRENCY + " " + achat, img);
-
-        //this.drawing = new Case(pos, etat, this.color, this.nom, CURRENCY + " " + achat, img);
         Drawer.add(this.drawing);
 
         this.equals = function (fiche) {
@@ -3718,7 +3219,7 @@ var DrawerHelper = {
         /* Modifie le nombre de maison sur le terrain */
         this.setNbMaison = function (nb, noRefresh) {
             this.nbMaison = nb;
-            this.drawing.nbMaison = nb;
+            this.drawing.setNbMaison(nb);
             if (this.nbMaison == 5) {
                 this.hotel = true;
             } else {
@@ -4077,8 +3578,8 @@ var DrawerHelper = {
 		nbDouble:0,	// Nombre de double de suite pour le joueur en cours
 		rollColor:'#000000',
 		init:function(rollColor){
-			this.cube.des1 = new Des(150, 200, 50);
-			this.cube.des2 = new Des(210, 200, 50);
+			this.cube.des1 = DrawerFactory.getDes(150, 200, 50);
+			this.cube.des2 = DrawerFactory.getDes(210, 200, 50);
 			Drawer.addRealTime(this.cube.des1);
 			Drawer.addRealTime(this.cube.des2);
 			this.rollColor = rollColor;
@@ -4142,7 +3643,6 @@ var DrawerHelper = {
 		 * */
 		after:function(){
 			var message = "lance les dés et fait " + (this.total()) + " (" + this.des1 + " et " + this.des2 + ") ";
-
 			// Separer le code
 			if (joueurCourant.enPrison == true) {
 				this.treatPrison(message);
@@ -4403,47 +3903,6 @@ var DrawerHelper = {
 
     }
 
-    /* En fonction du type de plateau (square, circle), fournit les objets permettant de le construire */
-    var DrawerFactory = {
-        instances:[],
-        type:null,
-
-        init:function(){
-            var instance = {
-                type:'square',
-                standardCase:Case,
-                specialCase:CaseSpeciale
-            }
-            this.addInstance(instance);
-            this.type = instance.type;
-            return this;
-        },
-        /* Configure la factory */
-        setType:function(type){
-            this.type = type;
-        },
-        /* Ajoute une nouvelle implementation */
-        /* A implementer : type, standardCase, specialCase */
-        addInstance:function(instance){
-            this.instances[instance.type] = instance;
-        },
-        getPlateau:function(){
-            return;
-        },
-        getCase:function(pos,axe,color,nom,prix,img){
-            if(this.instances[this.type] == null){
-                throw "Creation case, type : " + this.type + " inconnu";    
-            }
-            return new this.instances[this.type].standardCase(pos, axe, color, nom, prix, img);            
-        },
-        getCaseSpeciale:function(axe,titre){
-            if(this.instances[this.type] == null){
-                throw "Creation case speciale, type : " + this.type + " inconnu";    
-            }
-            return new this.instances[this.type].specialCase(axe,titre);                        
-        }        
-    }.init();
-
     // Initialise le plateau
     function initPlateau(nomPlateau, callback) {
         // On charge le plateau
@@ -4456,9 +3915,10 @@ var DrawerHelper = {
 				$('#idLancerDes').click(function(){
 					GestionDes.lancer();
 				});
-                Drawer.add(new SimpleRect(0, 0, 800, 800, plateau.backgroundColor), true); 				
+                Drawer.add(DrawerFactory.getPlateau(0, 0, 800, 800, plateau.backgroundColor), true); 				
 				loadPlateau(data);
                 Drawer.init(800, 800);
+				DrawerFactory.endPlateau(Drawer.canvas);
                 if (callback) {
                     callback();
                 }
@@ -4570,8 +4030,7 @@ var DrawerHelper = {
                     cartesCaisseCommunaute.push(new CarteCaisseDeCommunaute(this.nom, carte));
                 }
             });
-        }
-
+        }		
     }
 
     /* Calcule les deux voisins (precedent / suivant) de chaque groupe. (utilisation : calcul de ligne) */

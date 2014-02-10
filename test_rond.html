@@ -27,7 +27,6 @@ function drawCircle(color,rayon){
 	canvas.closePath();
 }
 
-
 function drawCircle1(){
 	drawCircle('#000000',width/2);
 	drawCircle('#FFFFFF',width/2-2);
@@ -44,9 +43,6 @@ function getCoords(angle,rayon){
 		x:(Math.cos(angle))*rayon
 	}
 }
-
-
-
 
 function drawTitles(){
 	var pasAngle = (2 * Math.PI)/40;
@@ -110,6 +106,43 @@ var DrawerHelper = {
         canvas.font = "6pt Times news roman";
         canvas.restore();
     }
+}
+
+// Represente un pion d'un joueur
+function CirclePionJoueur(color,largeur) {
+	Component.apply(this);
+	this.pos = 0;
+	this.color = color;
+	this.isSelected = false;
+	this.largeur = largeur; // Largeur du pion
+	this.draw = function (canvas) {
+		if(this.isSelected){
+			canvas.fillStyle = "#FFFFFF";
+			canvas.strokeStyle = "#FF0000";
+			canvas.beginPath();
+			canvas.arc(this.x, this.y, (this.largeur+6) / 2, 0, 2 * Math.PI);
+			canvas.fill();
+			canvas.closePath();
+		}
+		canvas.fillStyle = this.color;
+		canvas.strokeStyle = "#FF0000";
+		canvas.beginPath();
+		canvas.arc(this.x, this.y, this.largeur / 2, 0, 2 * Math.PI);
+		canvas.fill();
+		canvas.closePath();
+		
+		
+		/* */
+		var centre = getCoords((pos+0.5)*pasAngle,width/2-100);
+		canvas2.beginPath();
+		canvas2.fillStyle = '#0000FF';
+		canvas2.arc(centre.x+width/2,centre.y+width/2,10,0,2*Math.PI);
+		canvas2.fill();
+		canvas2.closePath();	
+	}
+	this.setSelected = function(value){
+		this.isSelected = value;
+	}
 }
 
 function CircleCaseSpeciale(axe, title){
@@ -182,27 +215,7 @@ function CircleCase(pos, axe, color, title, prix, img){
 				var length = canvas.measureText(this.title).width + 30;
 				var p = getCoords((this.pos+0.3)*pasAngle,width/2 - length);
 				DrawerHelper.writeText(this.title, p.x + width/2,p.y + width/2, (this.pos + 0.2)*pasAngle, canvas,9,300,true);
-			}
-			/*canvas.save();
-			canvas.fillStyle = '#000000';
-			canvas.translate(width/2,width/2);			
-			canvas.rotate(this.pos*pasAngle);
-			if(this.pos > 10 && this.pos < 30){	
-				canvas.translate(width/2-30,10);
-				canvas.rotate(Math.PI+0.13);
-				canvas.fillText(this.title, 0, -30);
-				if(this.prix!=null){
-					canvas.fillText(this.prix, 0, -15);
-				}
-			}else{				
-				var length = canvas.measureText(this.title).width;
-				canvas.fillText(this.title, width/2-30-length,10);
-				if(this.prix!=null){
-					var length = canvas.measureText(this.prix).width;
-					canvas.fillText(this.prix, width/2-30-length,25);
-				}
-			}
-			canvas.restore();	*/
+			}			
 		}
 		if(this.prix!=null){
 			if(this.pos > 10 && this.pos < 30){
@@ -290,8 +303,78 @@ function drawPion(pos){
 	canvas2.closePath();	
 }
 
-var pas = 0.2;
-var currentPos = 0;
+// Represente un pion d'un joueur
+function CirclePionJoueur(color, largeur) {
+	Component.apply(this);
+	this.pos;
+	this.color = color;
+	this.isSelected = false;
+	this.largeur = largeur; // Largeur du pion
+	
+	this.init = function(etat,pos){
+		this.pos = convertAxePos(axe,pos);
+	}
+	
+	this.draw = function (canvas) {
+		var centre = getCoords((pos+0.5)*pasAngle,width/2-100);
+		if(this.isSelected){
+			canvas.beginPath();
+			canvas.fillStyle = '#FFFFFF';
+			canvas.arc(centre.x+width/2,centre.y+width/2,12,0,2*Math.PI);
+			canvas.fill();
+			canvas.closePath();	
+		}		
+		canvas.beginPath();
+		canvas.fillStyle = this.color;
+		canvas.arc(centre.x+width/2,centre.y+width/2,10,0,2*Math.PI);
+		canvas.fill();
+		canvas.closePath();				
+	}
+	this.setSelected = function(value){
+		this.isSelected = value;
+	}
+	
+	this._moveTo = function(ciblePos,callback,pas){			
+		var currentPos = this.pos;
+		var limit = 0 ;	
+		if(currentPos!=ciblePos){
+			setTimeout(function(){
+				reset();
+				currentPos=parseFloat((currentPos + pas).toFixed(1));
+				if(currentPos>=40){
+					currentPos = 0;
+				}
+				drawPion(currentPos);
+				moveTo(ciblePos,callback,pas);
+			},10);
+		}
+		else{
+			// Fin
+			this.pos = ciblePos;
+			if(callback){
+				callback();
+			}
+		}
+	}
+	
+	// Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
+	this.goto = function (etat, pos, callback) {
+		var ciblePos = convertAxePos(axe,pos);
+		this._moveTo(ciblePos,callback,0.2);			
+	}
+	
+	this.gotoDirect = function(etat, pos, callback){
+		if (etat == null || pos == null) {
+			return;
+		}
+		var ciblePos = convertAxePos(axe,pos);
+		this._moveTo(ciblePos,callback,1);	       
+	}
+	
+	this.init(2,0);
+}
+
+
 
 function reset(){	
 	canvas2.clearRect(0,0,width,width);

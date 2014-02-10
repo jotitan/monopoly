@@ -283,7 +283,8 @@ function ParcGratuit(axe, pos) {
     this.id = axe + "-" + pos;
     this.montant = null;
 
-    this.drawing = new CaseSpeciale(0, "Parc Gratuit");
+    //this.drawing = new CaseSpeciale(0, "Parc Gratuit");
+    this.drawing = DrawerFactory.getCaseSpeciale(0, "Parc Gratuit");
     Drawer.add(this.drawing);
 
     this.setMontant = function (montant) {
@@ -2791,7 +2792,8 @@ var GestionEchange = {
         this.titre = titre;
         this.actionSpeciale = actionSpeciale;
         this.id = etat + "-" + pos;
-        this.drawing = new CaseSpeciale(etat, titre);
+        //this.drawing = new CaseSpeciale(etat, titre);
+        this.drawing = DrawerFactory.getCaseSpeciale(etat,titre);
         Drawer.add(this.drawing);
 
         this.action = function () {
@@ -2803,7 +2805,8 @@ var GestionEchange = {
     /* Case speciale, comme la taxe de luxe */
     function CarteSpeciale(titre, montant, etat, pos, img) {
         this.id = etat + "-" + pos;
-        this.drawing = new Case(pos, etat, null, titre, CURRENCY + " " + montant, img);
+        //this.drawing = new Case(pos, etat, null, titre, CURRENCY + " " + montant, img);
+        this.drawing = DrawerFactory.getCase(pos, etat, null, titre, CURRENCY + " " + montant, img);
         Drawer.add(this.drawing);
         this.action = function () {
             return createMessage(titre, "lightblue", "Vous devez payer la somme de " + montant + " " + CURRENCY, function (param) {
@@ -2902,11 +2905,13 @@ var GestionEchange = {
 
     function Chance(etat, pos,img) {
         this.id = etat + "-" + pos;
-        this.drawing = new Case(pos, etat, null, titles.chance, null, img || {
+        img = img || {
             src: "img/interrogation.png",
             width: 50,
             height: 60
-        });
+        };
+        //this.drawing = new Case(pos, etat, null, titles.chance, null, img);
+        this.drawing = DrawerFactory.getCase(pos, etat, null, titles.chance, null, img);
         Drawer.add(this.drawing);
         this.action = function () {
             if (cartesChance.length == 0) {
@@ -2925,11 +2930,13 @@ var GestionEchange = {
 
     function CaisseDeCommunaute(etat, pos, img) {
         this.id = etat + "-" + pos;
-        this.drawing = new Case(pos, etat, null, titles.communaute, null, img || {
+        img = img || {
             src: "img/banque2.png",
             width: 60,
             height: 60
-        });
+        };
+        //this.drawing = new Case(pos, etat, null, titles.communaute, null, img);
+        this.drawing = DrawerFactory.getCase(pos, etat, null, titles.communaute, null, img );
         Drawer.add(this.drawing);
         this.action = function () {
             if (cartesCaisseCommunaute.length == 0) {
@@ -3028,39 +3035,7 @@ var Drawer = {
     }
 };
 
-/* @param size : font-size */
-/* @param specificWidth : largeur specifique (plutet que la largeur habituelle, largeur */
 
-function writeText(text, x, y, rotate, canvas, size, specificWidth) {
-    var width = specificWidth || largeur;
-    canvas.font = ((size != null) ? size : "7") + "pt Times news roman";
-    // Mesure la longueur du mot
-    var mots = [text];
-    if (canvas.measureText(text).width > width - 5) {
-        // On split les mots intelligement (on regroupe)
-        var splitMots = text.split(" ");
-        var pos = 0;
-        for (var i = 0; i < splitMots.length; i++) {
-            if (pos > 0 && (canvas.measureText(mots[pos - 1]).width + canvas.measureText(splitMots[i]).width) < width - 5) {
-                // on concatene
-                mots[pos - 1] = mots[pos - 1] + " " + splitMots[i];
-            } else {
-                mots[pos++] = splitMots[i];
-            }
-        }
-    }
-    canvas.save();
-    canvas.translate(x, y);
-    canvas.rotate(rotate);
-    var pas = 12;
-    for (var i = 0; i < mots.length; i++) {
-        var lng = (width - canvas.measureText(mots[i]).width) / 2;
-        canvas.strokeText(mots[i], lng, i * pas);
-    }
-
-    canvas.font = "6pt Times news roman";
-    canvas.restore();
-}
 /* Fournit des methodes de dessins */
 var DrawerHelper = {
     drawImage: function (canvas, img, x, y, width, height, rotate) {
@@ -3100,14 +3075,7 @@ var DrawerHelper = {
         canvas.restore();
     }
 }
-
-    function drawImage(canvas, img, x, y, width, height, rotate) {
-        canvas.save();
-        canvas.translate(x, y);
-        canvas.rotate(rotate);
-        canvas.drawImage(img, 0, 0, width, height);
-        canvas.restore();
-    }
+    
 
     function Component() {
         // Genere un id unique
@@ -3249,7 +3217,7 @@ var DrawerHelper = {
         this.draw = function (canvas) {
             canvas.strokeStyle = '#000000';
             canvas.strokeRect(this.data.x, this.data.y, this.data.width, this.data.height);
-            writeText(this.titre, this.data.x, this.data.y + hauteur / 2, 0, canvas, 9, this.data.width);
+            DrawerHelper.writeText(this.titre, this.data.x, this.data.y + hauteur / 2, 0, canvas, 9, this.data.width);
         }
 
 
@@ -3336,16 +3304,16 @@ var DrawerHelper = {
                 var dec = 10 + ((color != null) ? bordure : 0); // Uniquement si couleur
                 switch (axe) {
                 case 0:
-                    writeText(title, this.data.x + largeur, this.data.y + hauteur - dec, Math.PI, canvas);
+                    DrawerHelper.writeText(title, this.data.x + largeur, this.data.y + hauteur - dec, Math.PI, canvas);
                     break
                 case 1:
-                    writeText(title, this.data.x + dec, this.data.y + largeur, -Math.PI / 2, canvas);
+                    DrawerHelper.writeText(title, this.data.x + dec, this.data.y + largeur, -Math.PI / 2, canvas);
                     break
                 case 2:
-                    writeText(title, this.data.x, this.data.y + dec, 0, canvas);
+                    DrawerHelper.writeText(title, this.data.x, this.data.y + dec, 0, canvas);
                     break;
                 case 3:
-                    writeText(title, this.data.x + hauteur - dec, this.data.y, Math.PI / 2, canvas);;
+                    DrawerHelper.writeText(title, this.data.x + hauteur - dec, this.data.y, Math.PI / 2, canvas);;
                     break
 
                 }
@@ -3354,16 +3322,16 @@ var DrawerHelper = {
                 var dec = 5
                 switch (axe) {
                 case 0:
-                    writeText(prix, this.data.x + largeur, this.data.y + dec, Math.PI, canvas);
+                    DrawerHelper.writeText(prix, this.data.x + largeur, this.data.y + dec, Math.PI, canvas);
                     break
                 case 1:
-                    writeText(prix, this.data.x + hauteur - dec, this.data.y + largeur, -Math.PI / 2, canvas);
+                    DrawerHelper.writeText(prix, this.data.x + hauteur - dec, this.data.y + largeur, -Math.PI / 2, canvas);
                     break
                 case 2:
-                    writeText(prix, this.data.x, this.data.y + hauteur - dec, 0, canvas);
+                    DrawerHelper.writeText(prix, this.data.x, this.data.y + hauteur - dec, 0, canvas);
                     break;
                 case 3:
-                    writeText(prix, this.data.x + dec, this.data.y, Math.PI / 2, canvas);
+                    DrawerHelper.writeText(prix, this.data.x + dec, this.data.y, Math.PI / 2, canvas);
                     break;
                 }
             }
@@ -3373,16 +3341,16 @@ var DrawerHelper = {
                 var dec = 10 + ((color != null) ? bordure : 10) + ((title != null) ? 10 : 0) + (this.data.image.margin || 0);
                 switch (axe) {
                 case 0:
-                    drawImage(canvas, this.data.image, this.data.x + largeur - lng, this.data.y + hauteur - dec, this.data.image.width, this.data.image.height, rotate);
+                    DrawerHelper.drawImage(canvas, this.data.image, this.data.x + largeur - lng, this.data.y + hauteur - dec, this.data.image.width, this.data.image.height, rotate);
                     break
                 case 1:
-                    drawImage(canvas, this.data.image, this.data.x + dec, this.data.y + largeur - lng, this.data.image.width, this.data.image.height, rotate);
+                    DrawerHelper.drawImage(canvas, this.data.image, this.data.x + dec, this.data.y + largeur - lng, this.data.image.width, this.data.image.height, rotate);
                     break
                 case 2:
-                    drawImage(canvas, this.data.image, this.data.x + lng, this.data.y + dec, this.data.image.width, this.data.image.height, rotate);
+                    DrawerHelper.drawImage(canvas, this.data.image, this.data.x + lng, this.data.y + dec, this.data.image.width, this.data.image.height, rotate);
                     break;
                 case 3:
-                    drawImage(canvas, this.data.image, this.data.x + hauteur - dec, this.data.y + lng, this.data.image.width, this.data.image.height, rotate);
+                    DrawerHelper.drawImage(canvas, this.data.image, this.data.x + hauteur - dec, this.data.y + lng, this.data.image.width, this.data.image.height, rotate);
                     break;
                 }
             }
@@ -3393,16 +3361,16 @@ var DrawerHelper = {
                 for (var i = 0; i < this.nbMaison; i++) {
                     switch (axe) {
                     case 0:
-                        drawImage(canvas, this.imgMaison, this.data.x + largeur - 15 * (i) - 3, this.data.y + hauteur - 2, 15, 15, -Math.PI);
+                        DrawerHelper.drawImage(canvas, this.imgMaison, this.data.x + largeur - 15 * (i) - 3, this.data.y + hauteur - 2, 15, 15, -Math.PI);
                         break
                     case 1:
-                        drawImage(canvas, this.imgMaison, this.data.x + 3, this.data.y + largeur - 2 - 15 * i, 15, 15, -Math.PI / 2);
+                        DrawerHelper.drawImage(canvas, this.imgMaison, this.data.x + 3, this.data.y + largeur - 2 - 15 * i, 15, 15, -Math.PI / 2);
                         break
                     case 2:
-                        drawImage(canvas, this.imgMaison, this.data.x + 3 + 15 * i, this.data.y + 2, 15, 15, 0);
+                        DrawerHelper.drawImage(canvas, this.imgMaison, this.data.x + 3 + 15 * i, this.data.y + 2, 15, 15, 0);
                         break;
                     case 3:
-                        drawImage(canvas, this.imgMaison, this.data.x + hauteur - 3, this.data.y + 2 + 15 * i, 15, 15, Math.PI / 2);
+                        DrawerHelper.drawImage(canvas, this.imgMaison, this.data.x + hauteur - 3, this.data.y + 2 + 15 * i, 15, 15, Math.PI / 2);
                         break;
                     }
                 }
@@ -3411,16 +3379,16 @@ var DrawerHelper = {
                 var pad = (largeur - 18) / 2;
                 switch (axe) {
                 case 0:
-                    drawImage(canvas, this.imgHotel, this.data.x + largeur - pad, this.data.y + hauteur, 18, 18, -Math.PI);
+                    DrawerHelper.drawImage(canvas, this.imgHotel, this.data.x + largeur - pad, this.data.y + hauteur, 18, 18, -Math.PI);
                     break
                 case 1:
-                    drawImage(canvas, this.imgHotel, this.data.x, this.data.y + largeur - pad, 18, 18, -Math.PI / 2);
+                    DrawerHelper.drawImage(canvas, this.imgHotel, this.data.x, this.data.y + largeur - pad, 18, 18, -Math.PI / 2);
                     break
                 case 2:
-                    drawImage(canvas, this.imgHotel, this.data.x + pad, this.data.y, 18, 18, 0);
+                    DrawerHelper.drawImage(canvas, this.imgHotel, this.data.x + pad, this.data.y, 18, 18, 0);
                     break;
                 case 3:
-                    drawImage(canvas, this.imgHotel, this.data.x + hauteur, this.data.y + pad, 18, 18, Math.PI / 2);
+                    DrawerHelper.drawImage(canvas, this.imgHotel, this.data.x + hauteur, this.data.y + pad, 18, 18, Math.PI / 2);
                     break;
                 }
             }
@@ -3616,7 +3584,9 @@ var DrawerHelper = {
         this.id = etat + "-" + pos;
         this.input = null; // Bouton 
 
-        this.drawing = new Case(pos, etat, this.color, this.nom, CURRENCY + " " + achat, img);
+        this.drawing = DrawerFactory.getCase(pos, etat, this.color, this.nom, CURRENCY + " " + achat, img);
+
+        //this.drawing = new Case(pos, etat, this.color, this.nom, CURRENCY + " " + achat, img);
         Drawer.add(this.drawing);
 
         this.equals = function (fiche) {
@@ -4432,6 +4402,47 @@ var DrawerHelper = {
         }
 
     }
+
+    /* En fonction du type de plateau (square, circle), fournit les objets permettant de le construire */
+    var DrawerFactory = {
+        instances:[],
+        type:null,
+
+        init:function(){
+            var instance = {
+                type:'square',
+                standardCase:Case,
+                specialCase:CaseSpeciale
+            }
+            this.addInstance(instance);
+            this.type = instance.type;
+            return this;
+        },
+        /* Configure la factory */
+        setType:function(type){
+            this.type = type;
+        },
+        /* Ajoute une nouvelle implementation */
+        /* A implementer : type, standardCase, specialCase */
+        addInstance:function(instance){
+            this.instances[instance.type] = instance;
+        },
+        getPlateau:function(){
+            return;
+        },
+        getCase:function(pos,axe,color,nom,prix,img){
+            if(this.instances[this.type] == null){
+                throw "Creation case, type : " + this.type + " inconnu";    
+            }
+            return new this.instances[this.type].standardCase(pos, axe, color, nom, prix, img);            
+        },
+        getCaseSpeciale:function(axe,titre){
+            if(this.instances[this.type] == null){
+                throw "Creation case speciale, type : " + this.type + " inconnu";    
+            }
+            return new this.instances[this.type].specialCase(axe,titre);                        
+        }        
+    }.init();
 
     // Initialise le plateau
     function initPlateau(nomPlateau, callback) {

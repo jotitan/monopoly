@@ -28,7 +28,8 @@ var DrawerHelper = {
 		}catch(e){}
 		canvas.restore();
     },
-    writeText: function (text, x, y, rotate, canvas, size, specificWidth, notCenter) {
+    /* @param align : si null, center, sinon 'left' ou 'right' */
+    writeText: function (text, x, y, rotate, canvas, size, specificWidth, align) {
         var width = specificWidth || largeur;
 		canvas.strokeStyle='#000000';
         canvas.font = ((size != null) ? size : "7") + "pt Times news roman";
@@ -52,7 +53,13 @@ var DrawerHelper = {
         canvas.rotate(rotate);
         var pas = 12;
         for (var i = 0; i < mots.length; i++) {
-            var lng = (notCenter)?0:(width - canvas.measureText(mots[i]).width) / 2;
+            var lng;
+            switch(align){
+            	case 'left':lng=0;break;
+            	case 'right':lng = width - canvas.measureText(mots[i]).width;break;
+            	default : lng = width - (canvas.measureText(mots[i]).width) / 2;
+            }
+            //console.log(mots[i],width,lng,align,rotate)
             canvas.strokeText(mots[i], lng, i * pas);
         }
         canvas.font = "6pt Times news roman";

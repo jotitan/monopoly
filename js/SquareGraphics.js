@@ -483,7 +483,7 @@ function initSquareInstance(){
 		pionJoueur:PionJoueur,
 		des:Des,
 		plateau:Plateau,
-		endPlateau:function(){}
+		endPlateau:null
 	}
 	DrawerFactory.addInstance(instance);
 	DrawerFactory.type = instance.type;

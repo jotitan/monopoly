@@ -99,39 +99,32 @@ var DrawerFactory = {
 		return;
 	},
 	getDes:function(x, y, width){
-		if(this.instances[this.type] == null){
-			throw "Creation des, type : " + this.type + " inconnu";    
-		}
-		return new this.instances[this.type].des(x, y, width);   
+		return this._instantiate('des',arguments);		
 	},
 	getCase:function(pos,axe,color,nom,prix,img){
-		if(this.instances[this.type] == null){
-			throw "Creation case, type : " + this.type + " inconnu";    
-		}
-		return new this.instances[this.type].standardCase(pos, axe, color, nom, prix, img);            
+		return this._instantiate('standardCase',arguments);	
 	},
 	getCaseSpeciale:function(axe,titre){
-		if(this.instances[this.type] == null){
-			throw "Creation case speciale, type : " + this.type + " inconnu";    
-		}
-		return new this.instances[this.type].specialCase(axe,titre);                        
+		return this._instantiate('specialCase',arguments);	
 	},
 	getPionJoueur:function(color){
-		if(this.instances[this.type] == null){
-			throw "Creation pion, type : " + this.type + " inconnu";    
-		}
-		return new this.instances[this.type].pionJoueur(color,largeurPion);
+		return this._instantiate('pionJoueur',arguments);	
 	},
 	getPlateau:function(x,y,width,height,color){
-		if(this.instances[this.type] == null){
-			throw "Creation plateau, type : " + this.type + " inconnu";    
-		}
-		return new this.instances[this.type].plateau(x,y,width,height,color);
+		return this._instantiate('plateau',arguments);	
 	},
-	endPlateau:function(canvas){
+	endPlateau:function(){
+		return this._instantiate('endPlateau',arguments);		
+	},
+	_instantiate:function(method,params){
 		if(this.instances[this.type] == null){
-			throw "Creation plateau, type : " + this.type + " inconnu";    
+			throw "Creation, type : " + this.type + " inconnu";    
 		}
-		return new this.instances[this.type].endPlateau(canvas);
+		if(this.instances[this.type][method] == null){
+			return null;
+		}
+		var o = {};
+		this.instances[this.type][method].apply(o,params);
+		return o;
 	}
 }.init();

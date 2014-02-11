@@ -108,6 +108,20 @@ body { margin: 0 }
     border:3px inset #A09A9A;
 }
 
+.info_box.circle {
+	border-radius:10px 10px 300px 300px;
+	height:175px;
+	width:350px;
+	top:400px;
+	left:220px;
+	overflow:hidden;
+}
+
+.info_box.circle  > div{
+	text-align:center;
+	font-size:9px;
+}
+
 .list_encherisseurs > p {
 	margin-top:0px;
 	margin-bottom:0px;
@@ -143,8 +157,8 @@ div.ui-tooltip {
 }
 
 .action-circle .action-joueur{
-	margin-left:158px;
-	margin-top:155px;
+	margin-left:159px;
+	margin-top:100px;
 }
 
 .title h2 {

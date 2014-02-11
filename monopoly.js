@@ -2847,8 +2847,7 @@ var GestionEchange = {
 
     // Gere les dessins
 var Drawer = {
-    components: new Array(),
-    firstComponents: new Array(),
+    components: new Array(),	// Un ordre est ajoute lors de l'insertion
     height: 0,
     width: 0,
     interval: null,
@@ -2857,15 +2856,14 @@ var Drawer = {
     intervals: [], // Stocke les flags d'arret du refresh
     canvasRT: null, //Canvas de temps reel
     // ajoute un composant. On indique le canvas sur lequel il s'affiche
-    add: function (component, first) {
+	/* @param order : Si present, indique l'ordre d'affichage. Le plus petit en premier */
+    add: function (component, order) {
+		if(component == null){return;}
         component.getId = function () {
             return Drawer.canvas.canvas.id
         };
-        if (first) {
-            Drawer.firstComponents.push(component);
-        } else {
-            Drawer.components.push(component);
-        }
+		component.order = (order==null)?0:order;
+        Drawer.components.push(component);        
     },
     addRealTime: function (component) {
         component.getId = function () {
@@ -2888,14 +2886,9 @@ var Drawer = {
     /* Rafraichit un seul canvas */
     refresh: function (canvas) {
         Drawer.clear(canvas);
-        for (var i = 0; i < Drawer.firstComponents.length; i++) {
-            if (Drawer.firstComponents[i].getId() === canvas.canvas.id) {
-                Drawer.firstComponents[i].draw(canvas);
-            }
-        }
         for (var i = 0; i < Drawer.components.length; i++) {
             if (Drawer.components[i].getId() === canvas.canvas.id) {
-                Drawer.components[i].draw(canvas);
+				Drawer.components[i].draw(canvas);
             }
         }
     },
@@ -2909,13 +2902,17 @@ var Drawer = {
         }, time);
     },
     init: function (width, height) {
+		// On tri les composants qui ont ete ajoutes
+		this.components.sort(function(a,b){
+			return a.order - b.order;
+		});
         this.width = width;
         this.height = height;
         this.canvas = document.getElementById("canvas").getContext("2d");
         this.canvasRT = document.getElementById("canvas_rt").getContext("2d");
         this.canvas.strokeStyle = '#AA0000';
         this.canvasRT.strokeStyle = '#AA0000';
-        // On ne recharge pas le plateau, il n'est chargee qu'une seule fois (ou rechargement a la main)
+        // On ne recharge pas le plateau, il n'est charge qu'une seule fois (ou rechargement a la main)
         this.refresh(this.canvas);
         //this.setFrequency(2000, this.canvas);
         this.setFrequency(50, this.canvasRT);
@@ -3915,10 +3912,11 @@ var Drawer = {
 				$('#idLancerDes').click(function(){
 					GestionDes.lancer();
 				});
-                Drawer.add(DrawerFactory.getPlateau(0, 0, 800, 800, plateau.backgroundColor), true); 				
+                Drawer.add(DrawerFactory.getPlateau(0, 0, 800, 800, plateau.backgroundColor), 0); 				
 				loadPlateau(data);
-                Drawer.init(800, 800);
-				DrawerFactory.endPlateau(Drawer.canvas);
+				Drawer.add(DrawerFactory.endPlateau(),2);
+				Drawer.init(800, 800);
+
                 if (callback) {
                     callback();
                 }

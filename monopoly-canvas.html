@@ -7,6 +7,7 @@
    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
    <script type="text/javascript" src="lib/jquery-1.9.1.js"></script>
    <script type="text/javascript" src="lib/jquery-ui-1.10.3.custom.min.js"></script>
+   <script type="text/javascript" src="lib/jquery.mousewheel.js"></script>
    <script type="text/javascript" src="lib/jquery.arctext.js"></script>
    <script type="text/javascript" src="js/GestionConstructions.js"></script>
    <script type="text/javascript" src="js/Graphics.js"></script>
@@ -51,7 +52,9 @@
 						<h1 id="idSavePanel" title="Cliquez pour sauvegarder">MONOPOLY</h1>
 						<h2 id="idSubTitle"></h2>
 					</div>	
-				   <div class="info_box" id="idInfoBox"></div>
+				   <div class="info_box" id="idInfoBox">
+					<div></div><div></div><div></div><div></div>
+				   </div>
 			   </div>			  
 			</div>
 		</td>
@@ -255,7 +258,13 @@
 		$('.title').addClass('circle');
 		$('#plateau').addClass('action-circle');
 		$('#idSavePanel').arctext({radius: 80,dir:1})
-		$('#idInfoBox').hide();		
+		$('#idInfoBox').addClass('circle');
+		$('#idInfoBox').unbind('mousewheel').bind('mousewheel',function(e,sens){
+			var scroll=$('#idInfoBox').scrollTop() + (sens * e.deltaFactor * -0.7);
+			$('#idInfoBox').scrollTop(scroll)
+			e.preventDefault();
+		});
+		
 		$('#idMontantParc').hide();
 	  init(nomPlateau,debug);
 	});

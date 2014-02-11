@@ -90,6 +90,7 @@ function CirclePionJoueur(color, largeur) {
 }
 
 function CircleCase(pos, axe, color, title, prix, img){
+	Component.apply(this);
 	this.pos = convertAxePos(axe,pos);
 	this.color = color;
 	this.title = title;
@@ -99,6 +100,10 @@ function CircleCase(pos, axe, color, title, prix, img){
 	this.imageMaison = new Image();
 	this.imageHotel = new Image();
 
+	this.setNbMaison = function(nbMaison){
+		this.nbMaison = nbMaison;
+	}
+	
 	this.init = function(){
         this.imageMaison.src = "img/maison.png";
         this.imageHotel.src = "img/hotel.png";
@@ -163,6 +168,7 @@ function CircleCase(pos, axe, color, title, prix, img){
 }
 
 function CircleCaseSpeciale(axe, title){
+	Component.apply(this);
 	this.pos = convertAxePos(axe,0);
 	this.title = title;
 	this.draw = function(canvas){
@@ -191,63 +197,11 @@ function CircleCaseSpeciale(axe, title){
 
 /* Represente un dé physique */
 function CircleDes(x, y, width) {
-	x+=195;
-	y+=160;
-	this.value;
-	this.coin = 15;
-	this.width = width - 2 * this.coin;
-	this.setValue = function (value, color) {
-		this.value = value;
-		this.color = color || '#000000';
-	}
-	this.draw = function (canvas) {		
-		// Structure du des
-		canvas.strokeStyle = '#000000';
-		canvas.fillStyle = '#000000';
-		canvas.beginPath();
-		canvas.moveTo(x + this.coin, y);
-		canvas.lineTo(x + this.coin + this.width, y);
-		canvas.bezierCurveTo(x + this.coin * 2 + this.width, y, x + this.coin * 2 + this.width, y + this.coin, x + this.coin * 2 + this.width, y + this.coin);
-		canvas.lineTo(x + this.coin * 2 + this.width, y + this.coin + this.width);
-		canvas.bezierCurveTo(x + this.coin * 2 + this.width, y + this.coin * 2 + this.width, x + this.width + this.coin, y + this.coin * 2 + this.width, x + this.width + this.coin, y + this.coin * 2 + this.width);
-		canvas.lineTo(x + this.coin, y + this.coin * 2 + this.width);
-		canvas.bezierCurveTo(x, y + this.coin * 2 + this.width, x, y + this.coin + this.width, x, y + this.coin + this.width);
-		canvas.lineTo(x, y + this.coin);
-		canvas.bezierCurveTo(x, y, x + this.coin, y, x + this.coin, y);
-		canvas.stroke();
-		canvas.closePath();
-		if (this.value == null) {
-			return;
-		}
-		if (this.value % 2 == 1) {
-			this.drawPoint(canvas, x + width / 2, y + width / 2, width / 5, this.color);
-		}
-		if (this.value != 1) {
-			this.drawPoint(canvas, x + width * 0.25, y + width * 0.75, width / 5, this.color);
-			this.drawPoint(canvas, x + width * 0.75, y + width * 0.25, width / 5, this.color);
-		}
-		if (this.value >= 4) {
-			this.drawPoint(canvas, x + width * 0.75, y + width * 0.75, width / 5, this.color);
-			this.drawPoint(canvas, x + width * 0.25, y + width * 0.25, width / 5, this.color);
-		}
-		if (this.value == 6) {
-			this.drawPoint(canvas, x + width * 0.75, y + width * 0.5, width / 5, this.color);
-			this.drawPoint(canvas, x + width * 0.25, y + width * 0.5, width / 5, this.color);
-		}
-	}
-	// Dessine un point
-	this.drawPoint = function (canvas, x, y, width, color) {
-		canvas.strokeStyle = color || '#000000';
-		canvas.fillStyle = color || '#000000';
-		canvas.beginPath();
-		canvas.arc(x, y, width / 2, 0, 2 * Math.PI);
-		canvas.fill();
-		canvas.closePath();
-	}
+	Des.call(this,x+195,y+100,width);	
 }
 
 function CirclePlateau(x,y,width,height,color){
-	Component.apply();
+	Component.apply(this);
 	this.data = {
 		x: x,
 		y: y,
@@ -260,11 +214,16 @@ function CirclePlateau(x,y,width,height,color){
 	}
 }
 
-function finishCirclePlateau(canvas){
-	DrawerHelper.drawCircle(canvas,'#000000',width/2-widthCase,{x:width/2,y:width/2});
-	DrawerHelper.drawCircle(canvas,'#FFFFFF',width/2-widthCase - 2,{x:width/2,y:width/2});
-	DrawerHelper.drawArcCircle(canvas,'#FF0000',width/2-widthCase -2,{x:width/2,y:width/2},-Math.PI,0);	
-	DrawerHelper.drawCircle(canvas,'#FFFFFF',width/2-widthCase - 50,{x:width/2,y:width/2});
+/* Dessiné en dernier sur le plateau */
+function EndCirclePlateau(){
+	Component.apply(this);
+	
+	this.draw = function(canvas){
+		DrawerHelper.drawCircle(canvas,'#000000',width/2-widthCase,{x:width/2,y:width/2});
+		DrawerHelper.drawCircle(canvas,'#FFFFFF',width/2-widthCase - 2,{x:width/2,y:width/2});
+		DrawerHelper.drawArcCircle(canvas,'#FF0000',width/2-widthCase -2,{x:width/2,y:width/2},-Math.PI,0);	
+		DrawerHelper.drawCircle(canvas,'#FFFFFF',width/2-widthCase - 50,{x:width/2,y:width/2});
+	}
 }
 
 function initSquareInstance(){
@@ -275,7 +234,7 @@ function initSquareInstance(){
 		pionJoueur:CirclePionJoueur,
 		des:CircleDes,
 		plateau:CirclePlateau,
-		endPlateau:finishCirclePlateau
+		endPlateau:EndCirclePlateau
 	}
 	DrawerFactory.addInstance(instance);
 }

@@ -2278,7 +2278,9 @@ var GestionEchange = {
         this.payerParcGratuit = function (montant, callback) {
             this.payer(montant, function () {
                 if (VARIANTES.parcGratuit) {
-                    parcGratuit.payer(montant);
+                    try{
+						parcGratuit.payer(montant);
+					}catch(insolvable){}
                 }
                 if (callback) {
                     callback();

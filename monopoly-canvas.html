@@ -165,6 +165,10 @@
  
 	<div style="display:none" id="idPanelCreatePartie">
 	  <fieldset>
+		<legend style="font-weight:bold">Plateau</legend>
+		Choisir : <select id="idSelectPlateau"></select>
+	  </fieldset>
+	  <fieldset>
 	    <legend style="font-weight:bold">Créer une partie</legend>
 	    <fieldset><legend>Joueurs</legend>
 		<input type="text" id="idNomJoueur" placeholder="Nom"/><br/>
@@ -254,19 +258,8 @@
 	  debug = true;
 	}
 	$(function(){
-		DrawerFactory.setType('circle');
-		$('.title').addClass('circle');
-		$('#plateau').addClass('action-circle');
-		$('#idSavePanel').arctext({radius: 80,dir:1})
-		$('#idInfoBox').addClass('circle');
-		$('#idInfoBox').unbind('mousewheel').bind('mousewheel',function(e,sens){
-			var scroll=$('#idInfoBox').scrollTop() + (sens * e.deltaFactor * -0.7);
-			$('#idInfoBox').scrollTop(scroll)
-			e.preventDefault();
-		});
-		
 		$('#idMontantParc').hide();
-	  init(nomPlateau,debug);
+		init(nomPlateau,debug);
 	});
 	
 	

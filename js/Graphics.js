@@ -57,10 +57,9 @@ var DrawerHelper = {
             switch(align){
             	case 'left':lng=0;break;
             	case 'right':lng = width - canvas.measureText(mots[i]).width;break;
-            	default : lng = width - (canvas.measureText(mots[i]).width) / 2;
+            	default : lng = (width - canvas.measureText(mots[i]).width) / 2;
             }
-            //console.log(mots[i],width,lng,align,rotate)
-            canvas.strokeText(mots[i], lng, i * pas);
+			canvas.strokeText(mots[i], lng, i * pas);
         }
         canvas.font = "6pt Times news roman";
         canvas.restore();

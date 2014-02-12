@@ -1,0 +1,21 @@
+{
+    "comment": "Remplace le futur service listant dynamiquement les fichiers de configuration",
+    "plateaux": [
+        {
+            "name": "Classique",
+            "url": "data-monopoly.json"
+        },
+        {
+            "name": "Classique Circle",
+            "url": "data-monopoly-circle.json"
+        },
+        {
+            "name": "James Bond",
+            "url": "data-monopoly-jamesbond.json"
+        },
+        {
+            "name": "James Bond Circle",
+            "url": "data-monopoly-circle-bond.json"
+        }
+    ]
+}

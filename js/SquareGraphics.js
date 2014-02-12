@@ -248,7 +248,7 @@ function Case(pos, axe, color, title, prix, img) {
 				DrawerHelper.writeText(title, this.data.x, this.data.y + dec, 0, canvas);
 				break;
 			case 3:
-				DrawerHelper.writeText(title, this.data.x + hauteur - dec, this.data.y, Math.PI / 2, canvas);;
+				DrawerHelper.writeText(title, this.data.x + hauteur - dec, this.data.y, Math.PI / 2, canvas);
 				break
 
 			}

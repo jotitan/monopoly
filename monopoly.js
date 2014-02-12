@@ -17,7 +17,6 @@
 /* IDEE : Cassandra, Ring, Hash */
 /* BIG TODO : implementation du des rapide */
 /* BIG TODO : super monopoly ? */
-/* BIG TODO : faire une version ronde ? */
 /* TODO : pour echange, si argent dispo et adversaire dans la deche, on propose une grosse somme (si old proposition presente) */
 /* TODO : permettre le packaging */
 
@@ -80,7 +79,7 @@ var stats = {	// Statistiques
 var nbTours = 0; // Nombre de tours de jeu depuis le depuis (nb de boucle de joueurs)
 var currentSauvegardeName = null; // Nom de la sauvegarde en cours
 var plateau = null;	// Info du plateau
-
+var plateauName = null;	// Plateau charge
 
 /* Liste des cases et des cartes */
 var cartesChance = new Array();
@@ -3564,10 +3563,6 @@ var Drawer = {
         changeJoueur();
     }
 
-    function rand() {
-        return Math.round((Math.random() * 1000)) % 6 + 1;
-    }
-	
 	/* Gere le fonctionnement du des */
 	var GestionDes = {
 		nbAnimation:8,
@@ -3718,11 +3713,13 @@ var Drawer = {
         initDetailFiche();
         initFiches();
         initPanels();
-        initPlateau(nomPlateau, initJoueurs);
+		initJoueurs();
+        //initPlateau(nomPlateau);
         GestionTerrains.init();
     }
 
     function initPanels() {
+		loadListPlateaux(showListPlateaux);
         $('#message').dialog({
             autoOpen: false
         });
@@ -3757,6 +3754,24 @@ var Drawer = {
 			open:function(){showFreeTerrains();}
 		});
     }
+	
+	/* Recupere la liste des plateaux disponibles */
+	function loadListPlateaux(callback){
+		$.ajax({
+			url:'data/plateaux.json',
+			dataType:'json',
+			success:function(data){
+				if(data == null || data.plateaux == null){return;}
+				callback(data.plateaux);
+			}
+		});
+	}
+	
+	function showListPlateaux(plateaux){
+		for(var i = 0 ; i < plateaux.length ; i++){
+			$('#idSelectPlateau').append('<option value="' + plateaux[i].url + '">' + plateaux[i].name + '</option>');
+		}
+	}
 	
 	function showFreeTerrains(){
 		$('#idTerrainsLibres').empty();
@@ -3806,22 +3821,24 @@ var Drawer = {
         /* Chargement d'une partie */
         if ($('#idSauvegardes').val() != "") {
             Sauvegarde.load($('#idSauvegardes').val());
+			$('#idPanelCreatePartie').dialog('close');
         } else {
-            var nb = $('select[name="nbPlayers"]', '#idPanelCreatePartie').val();
-            var firstPlayerIA = $(':checkbox[name="firstIA"]:checked', '#idPanelCreatePartie').length > 0;
-            var waitTimeIA = $('select[name="waitTimeIA"]', '#idPanelCreatePartie').val();
-            /* Variantes */
-            $(':checkbox[name]', '#idVariantes').each(function () {
-                VARIANTES[$(this).attr('name')] = $(this).is(':checked');
-            });
-            createGame(nb, firstPlayerIA, {
-                waitTimeIA: waitTimeIA,
-				joueur:$('#idNomJoueur').val()
-            });
-        }
-        $('#idPanelCreatePartie').dialog('close');
+			initPlateau($('#idSelectPlateau').val(),function(){
+				var nb = $('select[name="nbPlayers"]', '#idPanelCreatePartie').val();
+				var firstPlayerIA = $(':checkbox[name="firstIA"]:checked', '#idPanelCreatePartie').length > 0;
+				var waitTimeIA = $('select[name="waitTimeIA"]', '#idPanelCreatePartie').val();
+				/* Variantes */
+				$(':checkbox[name]', '#idVariantes').each(function () {
+					VARIANTES[$(this).attr('name')] = $(this).is(':checked');
+				});
+				createGame(nb, firstPlayerIA, {
+					waitTimeIA: waitTimeIA,
+					joueur:$('#idNomJoueur').val()
+				});
+			});
+            $('#idPanelCreatePartie').dialog('close');
+        }        
     }
-
 	
     function createGame(nbPlayers, firstPlayerIA, options) {
         for (var i = 0; i < nbPlayers; i++) {
@@ -3902,38 +3919,73 @@ var Drawer = {
 
     }
 
-    // Initialise le plateau
+    // Initialise le plateau en chargeant les donnees dans le fichier
     function initPlateau(nomPlateau, callback) {
         // On charge le plateau
         $.ajax({
             url: 'data/' + nomPlateau,
             dataType: 'json',
             success: function (data) {
-				plateau = data.plateau;
-				GestionDes.init(plateau.rollColor);
-				$('#idLancerDes').click(function(){
-					GestionDes.lancer();
-				});
-                Drawer.add(DrawerFactory.getPlateau(0, 0, 800, 800, plateau.backgroundColor), 0); 				
-				loadPlateau(data);
-				Drawer.add(DrawerFactory.endPlateau(),2);
-				Drawer.init(800, 800);
-
-                if (callback) {
-                    callback();
-                }
+				if(data.plateau == null){
+					throw "Erreur avec le plateau " + nomPlateau;
+				}
+				// Gestion de l'heritage
+				if(data.extend){
+					// On charge l'autre plateau et on en etend
+					$.ajax({
+						url:'data/' + data.extend,
+						dataType:'json',
+						success:function(dataExtend){
+							var extendedData = $.extend(true,{},dataExtend,data);							
+							loadPlateau(extendedData,callback);
+						}
+					});
+				}
+				else{
+					loadPlateau(data,callback);				
+				}
             },
             error: function (a, b, c) {
 				console.log(a,b,c);
-                alert("Le plateau " + nomPlateau + " n'existe pas");
+                alert("Le plateau " + nomPlateau + " n'existe pas (" + 'data/' + nomPlateau + ")");
                 return;
             }
         });
 
     }
 
-    /* Charge les donnees du plateau */
-    function loadPlateau(data) {
+	/* Charge les donnees du plateau */
+	function loadPlateau(data,callback){
+		plateau = data.plateau;
+		if(plateau.type == 'circle'){
+			DrawerFactory.setType('circle');
+			$('.title').addClass('circle');
+			$('#plateau').addClass('action-circle');
+			$('#idSavePanel').arctext({radius: 80,dir:1})
+			$('#idInfoBox').addClass('circle');
+			$('#idInfoBox').unbind('mousewheel').bind('mousewheel',function(e,sens){
+				var scroll=$('#idInfoBox').scrollTop() + (sens * e.deltaFactor * -0.7);
+				$('#idInfoBox').scrollTop(scroll)
+				e.preventDefault();
+			});
+		}
+		
+		GestionDes.init(plateau.rollColor);
+		$('#idLancerDes').click(function(){
+			GestionDes.lancer();
+		});
+		Drawer.add(DrawerFactory.getPlateau(0, 0, 800, 800, plateau.backgroundColor), 0); 				
+		buildPlateau(data);
+		Drawer.add(DrawerFactory.endPlateau(),2);
+		Drawer.init(800, 800);
+
+		if (callback) {
+			callback();
+		}
+	}
+	
+    /* Construit le plateau a partir des donnees */
+    function buildPlateau(data) {
         $('#idSubTitle').text(plateau.subtitle);
 		parcGratuit = null;
         CURRENCY = data.currency;
@@ -4526,7 +4578,6 @@ var GestionTerrains = {
     }
 };
 
-
 function loadFiche(fiche) {
     loadGenericFiche(fiche, $('#fiche'), 'FFFFFF');
     fiche.fiche.prev().css("background-color", fiche.color);
@@ -5056,7 +5107,8 @@ var Sauvegarde = {
             fiches: saveFiches,
             joueurCourant: joueurCourant.id,
             variantes: VARIANTES,
-            nbTours: nbTours
+            nbTours: nbTours,
+			plateau:plateauName
         };
         this._putStorage(name, data);
         $.trigger("monopoly.save", {
@@ -5067,23 +5119,26 @@ var Sauvegarde = {
         currentSauvegardeName = name;
         var data = this._getStorage(name);
         reset();
-        for (var i = 0; i < data.joueurs.length; i++) {
-            var joueur = createJoueur(!data.joueurs[i].canPlay, i,data.joueurs[i].nom);
-            joueur.load(data.joueurs[i]);
-            joueurs.push(joueur);
-        }
-        for (var i = 0; i < data.fiches.length; i++) {
-            GestionFiche.getById(data.fiches[i].id).load(data.fiches[i]);
-        }
-        $.trigger('refreshPlateau');
-        var joueur = joueurs[0];
-        if (data.joueurCourant != null) {
-            joueur = getJoueurById(data.joueurCourant);
-        }
-        VARIANTES = data.variantes || VARIANTES;
-        nbTours = data.nbTours || 0;
-        initToolTipJoueur();
-        selectJoueur(joueur);
+		// On charge le plateau
+		initPlateau(data.plateau || "data-monopoly.json",function(){
+			for (var i = 0; i < data.joueurs.length; i++) {
+				var joueur = createJoueur(!data.joueurs[i].canPlay, i,data.joueurs[i].nom);
+				joueur.load(data.joueurs[i]);
+				joueurs.push(joueur);
+			}
+			for (var i = 0; i < data.fiches.length; i++) {
+				GestionFiche.getById(data.fiches[i].id).load(data.fiches[i]);
+			}
+			$.trigger('refreshPlateau');
+			var joueur = joueurs[0];
+			if (data.joueurCourant != null) {
+				joueur = getJoueurById(data.joueurCourant);
+			}
+			VARIANTES = data.variantes || VARIANTES;
+			nbTours = data.nbTours || 0;
+			initToolTipJoueur();
+			selectJoueur(joueur);
+		});       
     },
     delete: function (name) {
         localStorage.removeItem(name);
@@ -5120,7 +5175,6 @@ var Sauvegarde = {
     }
 
 }
-
 
 /* Gestion d'une mise aux enchere d'un terrain */
 /* Empecher un joueur d'acquerir un terrain ? */

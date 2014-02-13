@@ -97,6 +97,7 @@ function CircleCase(pos, axe, color, title, prix, img){
 	this.prix = prix;
 	this.img = img;
 	this.nbMaison = 0;
+	this.data = {};
 	this.imageMaison = new Image();
 	this.imageHotel = new Image();
 
@@ -107,6 +108,15 @@ function CircleCase(pos, axe, color, title, prix, img){
 	this.init = function(){
         this.imageMaison.src = "img/maison.png";
         this.imageHotel.src = "img/hotel.png";
+		if (img != null) {
+			var image = new Image();
+			image.src = img.src;
+			image.height = img.height;
+			image.width = img.width;
+			image.margin = img.margin;
+			image.rotate = img.rotate || 0;
+			this.data.image = image;
+		}
 	}
 
 	this.draw = function(canvas){
@@ -153,6 +163,11 @@ function CircleCase(pos, axe, color, title, prix, img){
 			}
 		}
 		// Image
+		if (this.data.image != null) {
+			var coords = getCoords((this.pos + 0.25)*pasAngle,width/2-30 - this.data.image.margin);
+			var angle = DrawerHelper.fromDegresToRad(this.data.image.rotate) + this.pos*pasAngle + Math.PI/2;
+			DrawerHelper.drawImage(canvas, this.data.image, width/2+coords.x, width/2+coords.y, this.data.image.width,this.data.image.height, angle);
+		}
 		if(this.nbMaison <= 4){
 			for(var i = 0 ; i < this.nbMaison ; i++){
 				var coords = getCoords((this.pos + 0.25*i)*pasAngle,width/2-4);

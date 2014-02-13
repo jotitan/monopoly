@@ -4,6 +4,9 @@ var CURRENT_ID_COMPONENT = 0; // Permet de generer un numero de composant unique
 
 /* Fournit des methodes de dessins */
 var DrawerHelper = {
+	fromDegresToRad:function(angle){
+		return (angle/180)*Math.PI;
+	},
 	drawCircle:function(canvas,color,rayon,center){
 		canvas.fillStyle=color;
 		canvas.beginPath();

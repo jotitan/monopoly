@@ -2,7 +2,15 @@
 	"extend":"data-monopoly.json",
 	"plateau":{
 		"subtitle":"Round",
-		"type":"circle"
-		
+		"type":"circle"		
+	},
+	"images":{
+		"gare":{
+			"src" : "img/big_train.png",
+			"width":30,
+			"height":15,
+			"margin":55,
+			"rotate":-90
+		}
 	}
 }

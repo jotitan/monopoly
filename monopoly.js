@@ -79,7 +79,7 @@ var stats = {	// Statistiques
 var nbTours = 0; // Nombre de tours de jeu depuis le depuis (nb de boucle de joueurs)
 var currentSauvegardeName = null; // Nom de la sauvegarde en cours
 var plateau = null;	// Info du plateau
-var plateauName = null;	// Plateau charge
+var currentPlateauName = null;	// Plateau charge
 
 /* Liste des cases et des cartes */
 var cartesChance = new Array();
@@ -3714,7 +3714,6 @@ var Drawer = {
         initFiches();
         initPanels();
 		initJoueurs();
-        //initPlateau(nomPlateau);
         GestionTerrains.init();
     }
 
@@ -3926,6 +3925,7 @@ var Drawer = {
             url: 'data/' + nomPlateau,
             dataType: 'json',
             success: function (data) {
+                currentPlateauName = nomPlateau;
 				if(data.plateau == null){
 					throw "Erreur avec le plateau " + nomPlateau;
 				}
@@ -4595,7 +4595,14 @@ function loadGenericFiche(fiche, div, color) {
         $(this).html(fiche[$(this).attr('name')]);
     });
     $(div).css('backgroundColor', color);
-    $('#loyer0', div).text((fiche.isGroupee() == true) ? parseInt(fiche.loyer[0]) * 2 : fiche.loyer[0]);
+
+    // Cas des gare
+    if(fiche.type == 'gare'){
+        $('#loyer0', div).text(parseInt(fiche.getLoyer()));
+    }
+    else{
+        $('#loyer0', div).text((fiche.isGroupee() == true) ? parseInt(fiche.loyer[0]) * 2 : fiche.loyer[0]);
+    }
 
     $('tr', div).removeClass("nbMaisons");
     $('.infos-group', div).removeClass("nbMaisons");
@@ -5108,7 +5115,7 @@ var Sauvegarde = {
             joueurCourant: joueurCourant.id,
             variantes: VARIANTES,
             nbTours: nbTours,
-			plateau:plateauName
+			plateau:currentPlateauName
         };
         this._putStorage(name, data);
         $.trigger("monopoly.save", {

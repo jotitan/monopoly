@@ -10,3 +10,7 @@ h2. Todo
 h2. Capture d'une version intermédiaire : 
 
 !https://raw.github.com/jotitan/monopoly-js/gh-pages/screenshots/screenshot2.png!
+
+h2. Version en cercle du Monopoly
+
+!https://raw.github.com/jotitan/monopoly-js/gh-pages/screenshots/screenshot-circle.png!

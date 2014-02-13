@@ -3925,10 +3925,10 @@ var Drawer = {
             url: 'data/' + nomPlateau,
             dataType: 'json',
             success: function (data) {
-                currentPlateauName = nomPlateau;
-				if(data.plateau == null){
+                if(data.plateau == null){
 					throw "Erreur avec le plateau " + nomPlateau;
 				}
+				currentPlateauName = nomPlateau;
 				// Gestion de l'heritage
 				if(data.extend){
 					// On charge l'autre plateau et on en etend

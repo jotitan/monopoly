@@ -2624,7 +2624,7 @@ var GestionEchange = {
             tour: 0,
             prison: 0
         }; // stat du joueur		
-        this.pion = DrawerFactory.getPionJoueur(color);
+        this.pion = DrawerFactory.getPionJoueur(color,largeurPion);
         Drawer.addRealTime(this.pion);
 
         /* Supprime le pion en cas de defaite */

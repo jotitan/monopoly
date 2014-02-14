@@ -14,7 +14,6 @@ function PionJoueur(color, largeur) {
 	this.currentInterval = null;
 	
 	this.init = function(etat,pos){
-		console.log(this.largeur)
 		var id = etat + "-" + pos;
 		this.etat = etat;
 		this.pos = pos;

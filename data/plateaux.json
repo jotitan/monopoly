@@ -10,6 +10,10 @@
             "url": "data-monopoly-circle.json"
         },
         {
+            "name": "Couleur",
+            "url": "data-monopoly-couleur.json"
+        },
+        {
             "name": "James Bond",
             "url": "data-monopoly-jamesbond.json"
         },

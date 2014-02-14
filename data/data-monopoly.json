@@ -64,13 +64,12 @@
 			{"nom":"Votre immeuble et votre prêt rapportent. Vous devez toucher F 15.000","type":"prime","montant":15000},
 			{"nom":"Amande pour ivresse : F 2.000","type":"taxe","montant":2000},
 			{"nom":"Rendez vous à l'avenue Henri-Martin. Si vous passez par la case Départ, recevez F 20.000","type":"goto","axe":0,"pos":4},
-			{"nom":"Reculez de 3 cases","type":"move","nb":-3},
 			{"nom":"Rendez vous à la Rue de la Paix","type":"goto","axe":1,"pos":9},
+			{"nom":"Reculez de 3 cases","type":"move","nb":-3},
 			{"nom":"Avancez jusqu'à la case Départ","type":"goto","axe":2,"pos":0},
 			{"nom":"Rendez vous à la gare de Lyon. Si vous passez par la case Départ, recevez F 20.000","type":"goto","axe":3,"pos":5},
 			{"nom":"Avancez au Boulevard de la Villette. Si vous passez par la case Départ, recevez F 20.000","type":"goto","axe":3,"pos":1},
 			{"nom":"Allez en prison. Rendez vous directement à la prison. Ne franchissez par la case Départ. Ne touchez pas F 20.000","type":"goto","axe":1,"pos":0,"direct":true}
-			
 		]
 	},
 	"communaute":{

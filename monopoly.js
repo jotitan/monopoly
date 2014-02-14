@@ -2642,6 +2642,10 @@ var GestionEchange = {
         this.deplaceValeursDes = function (des) {
             var pos = this.position + des;
             var axe = this.etat;
+			while(pos<0){
+				pos+=10;
+				axe= (axe - 1)%4;
+			}
             while (pos >= 10) {
                 pos -= 10;
                 axe = (axe + 1) % 4;
@@ -2681,6 +2685,8 @@ var GestionEchange = {
         }    
 
         this.goDirectToCell = function (etat, pos, callback) {
+			this.etat = etat;
+			this.position = pos;
 			this.pion.gotoDirect(etat,pos,callback);           
         }
     }
@@ -2746,7 +2752,7 @@ var GestionEchange = {
     function MoveNbCarte(nb) {
         this.type = "move";
         this.action = function () {
-            var pos = joueurCourant.pion.deplaceValeursDes(nb + 40); // On ajoute 40 pour les cases négatives
+            var pos = joueurCourant.pion.deplaceValeursDes(nb); // On ajoute 40 pour les cases négatives
             joueurCourant.pion.goDirectToCell(pos.axe, pos.pos, doActions);
         }
     }
@@ -2924,11 +2930,6 @@ var Drawer = {
         return this;
     }
 };
-
-
-
-    
-    
 
     /* Represente un groupe de terrain */
     function Groupe(nom, color) {

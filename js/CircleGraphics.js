@@ -27,6 +27,7 @@ function CirclePionJoueur(color, largeur) {
 	
 	this.init = function(axe,pos){
 		this.pos = convertAxePos(axe,pos);
+		/* Gere le decalage de chaque joueur lors de la creation */
 		this._rayon = width/2- (70 + (nbJoueurs%3)*25);
 		this._angle = 0.5 + ((nbJoueurs%2)?1:-1) * 0.25;
 		nbJoueurs++;

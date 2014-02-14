@@ -9,7 +9,8 @@
 			"src" : "img/big_train.png",
 			"width":30,
 			"height":15,
-			"margin":55,
+			"margin-left":55,
+			"margin-top":55,
 			"rotate":-90
 		}
 	}

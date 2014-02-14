@@ -1,0 +1,6 @@
+{
+	"extend":"data-monopoly.json",
+	"plateau":{
+		"nomsJoueurs":["Bleu","Rouge","Orange","Vert","Gris","Marron","Violet"]
+	}
+}

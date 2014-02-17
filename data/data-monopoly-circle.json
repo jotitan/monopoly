@@ -5,13 +5,23 @@
 		"type":"circle"		
 	},
 	"images":{
-		"gare":{
-			"src" : "img/big_train.png",
-			"width":40,
-			"height":20,
-			"marginLeft":0.25,
+		"default":{
 			"marginTop":140,
+			"marginLeft":0.25,
 			"rotate":-90
+		},
+		"gare":{
+			"width":40,
+			"height":20		
+		},
+		"chance":{
+			"width":25,
+			"height":30
+		},
+		"caisseDeCommunaute":{
+			"height":30,
+			"width":25,
+			"marginLeft":0.15
 		}
 	}
 }

@@ -50,7 +50,35 @@
 		{"type": "taxe","axe": 1,"pos": 8,"nom": "Taxe de luxe","prix": 10000},		
 		{"type": "propriete","groupe": "Bleu","axe": 1,"pos": 9,"nom": "Rue de la Paix","colors": ["#132450", "#808EB0"],"prix": 40000,"loyers": [5000, 20000, 60000, 140000, 170000, 200000],"prixMaison": 20000}						
 	],
-	"images":{},
+	"images":{
+		"taxe": {
+			"src": "img/bijou.png",
+            "width": 40,
+            "height": 50
+		},
+		"chance":{
+		    "src": "img/interrogation.png",
+            "width": 50,
+            "height": 60
+        },
+		"caisseDeCommunaute":{
+			"src": "img/banque2.png",
+            "width": 60,
+            "height": 60
+		},
+		"compagnie":{
+			"src": "img/light.png",
+            "width": 50,
+            "height": 35,
+			"margin": 5
+		},
+		"gare":{
+			"src": "img/big_train.png",
+            "width": 50,
+            "height": 35,
+			"margin": 5
+		}
+	},
 	"titles":{
 		"chance":"Chance",
 		"communaute":"Caisse de Communauté"

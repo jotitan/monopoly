@@ -84,6 +84,7 @@ function Component() {
 var DrawerFactory = {
 	instances:[],
 	type:null,
+	infos:{},	// Infos communes
 
 	init:function(){
 		return this;
@@ -92,10 +93,13 @@ var DrawerFactory = {
 	setType:function(type){
 		this.type = type;
 	},
+	addInfo:function(name,info){
+		this.infos[name] = info;
+	},
 	/* Ajoute une nouvelle implementation */
 	/* A implementer : type, standardCase, specialCase */
 	addInstance:function(instance){
-		this.instances[instance.type] = instance;
+		this.instances[instance.type] = instance;		
 	},
 	getPlateau:function(){
 		return;

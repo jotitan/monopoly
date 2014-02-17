@@ -3,6 +3,7 @@
 /* * GestionConstructions.js */
 /* * Graphics.js */
 /* * SquareGraphics.js */
+/* * CircleGraphics.js */
 
 /* TODO : Permettre l'achat de terrain hors strategie quand on est blinde et qu'on a deja des groupes et des constructions dessus */
 /* -- TODO : Echange uniquement quand tous les terrains sont vendus. La banque vend (quand on achete pas) ou quand un joueur perd */
@@ -91,12 +92,11 @@ var currentFiche = null;
 var joueurs = new Array();
 var joueurCourant = null;
 var colorsJoueurs = ["#383C89", "#A6193E", "#C58F01", "#086B3D", "#B9B29B","#663300"];
-var constructions = {
-    maison: 32,
-    hotel: 12
-};
 
 var CURRENCY = "F.";
+
+var ETAT_LIBRE = 0;
+var ETAT_ACHETE = 1;
 
 /* Dimensions du plateau */
 var largeur = 65;
@@ -202,6 +202,82 @@ var GestionFiche = {
 }
 
 
+var InfoMessage = {
+	div:$('#message'),
+	create:function(joueur,titre, background, message, call, param, forceshow){
+		$.trigger('monopoly.debug', {
+            message: message
+        });
+        this.div.prev().css("background-color", background);
+        this.div.dialog('option', 'title', titre);
+        this.div.empty();
+        this.div.append(message);
+        var button = {
+            "Ok": function () {
+                closeMessage();
+            }
+        };
+        this.div.bind('dialogclose.message', function () {
+            if (call != null) {
+                call(param);
+            }
+            this.div.unbind('dialogclose.message');
+        });
+        if (call != null) {
+            this.div.dialog('option', 'buttons', button);
+        }
+        /* On affiche pas le panneau si le timeout est à 0 (partie rapide) */
+        if (joueur.canPlay || forceshow) {
+            this.div.dialog('open');
+        }
+        return button;
+	},
+	close:function(){
+		if (this.div.dialog('isOpen')) {
+            this.div.dialog('close');
+        } else {
+            // Trigger de fermeture
+            this.div.trigger('dialogclose.message');
+            this.div.trigger('dialogclose.prison');
+        }
+	},
+	createPrison:function(joueur,nbTours, callback){
+		this.div.prev().css("background-color", "red");
+        this.div.dialog('option', 'title', "Vous êtes en prison depuis " + nbTours + " tours.");
+        this.div.empty();
+        this.div.append("Vous êtes en prison, que voulez vous faire");
+
+        var buttons = {
+            "Payer": function () {
+                joueur.payer(5000);
+				// TODO : Ajouter message pour indiquer qu'il paye
+                joueur.exitPrison();
+                closeMessage();
+            },
+            "Attendre": function () {
+                closeMessage();
+            }
+        }
+        if (joueur.cartesSortiePrison.length > 0) {
+            buttons["Utiliser carte"] = function () {
+                joueur.utiliseCarteSortiePrison();
+				// TODO : ajouter message pour dire qu'il utilise une carte
+                joueur.exitPrison();
+                closeMessage();
+            }
+        }
+        this.div.dialog('option', 'buttons', buttons);
+        this.div.bind('dialogclose.prison', function () {
+            this.div.unbind('dialogclose.prison');
+            callback();
+        });
+        if (joueur.canPlay) {
+            this.div.dialog('open');
+        }
+        return buttons;
+	}
+}
+	// TODELETE
     function createMessage(titre, background, message, call, param, forceshow) {
         $.trigger('monopoly.debug', {
             message: message
@@ -231,6 +307,7 @@ var GestionFiche = {
         return button;
     }
 
+	// TODELETE
     function closeMessage() {
         if ($('#message').dialog('isOpen')) {
             $('#message').dialog('close');
@@ -241,6 +318,7 @@ var GestionFiche = {
         }
     }
 
+	// TODELETE
     function createPrisonMessage(nbTours, callback) {
         $('#message').prev().css("background-color", "red");
         $('#message').dialog('option', 'title', "Vous êtes en prison depuis " + nbTours + " tours.");
@@ -277,9 +355,6 @@ var GestionFiche = {
         return buttons;
     }
 
-var ETAT_LIBRE = 0;
-var ETAT_ACHETE = 1;
-
 function ParcGratuit(axe, pos) {
     this.id = axe + "-" + pos;
     this.montant = null;
@@ -297,9 +372,10 @@ function ParcGratuit(axe, pos) {
     }
 
     this.action = function () {
+		var _self = this;
         return createMessage("Parc gratuit", "lightblue", "Vous gagnez " + this.montant + " " + CURRENCY, function (param) {
             param.joueur.gagner(param.montant);
-            parcGratuit.setMontant(0);
+            _self.setMontant(0);
             changeJoueur();
         }, {
             joueur: joueurCourant,
@@ -308,394 +384,6 @@ function ParcGratuit(axe, pos) {
     }
 
     this.setMontant(0);
-
-}
-
-/* Objet qui gere le comportement (rapport a l'argent). Integre la prise de risque (position du jour) */
-/* @risque : prise de risque entre 0 et 1 */
-
-function Comportement(risque, name, id) {
-    this.risque = risque;
-    this.probaDes = [0, 2.77, 5.55, 8.33, 11.1, 13.8, 16.7, 13.8, 11.1, 8.33, 5.55, 2.77];
-    this.name = name;
-    this.id = id;
-
-    /* Indique le risque global a depenser cette somme pour le joueur */
-    /* Se base sur 3 informations : 
-      1 : le montant a depenser par rapport a l'argent disponible.
-      2 : le risque de tomber prochainement sur un loyer eleve 
-      3 : le cout du plus fort loyer du plateau 
-          Plus le risque est grand, plus il est important
-      */
-    this.getRisqueTotal = function (joueur, cout) {
-        var risque1 = this.calculMargeMontant(joueur, cout);
-        var risque2 = this.calculRisque(joueur, joueur.montant);
-
-        return risque1 * (risque2 / 100 + 1);
-    }
-
-    /* Determine le budget max pour un indicateur de strategie donne */
-    /* Plafonne l'enchere max (comme les propositions ?) */
-    this.getMaxBudgetForStrategie = function (joueur, strategieValue) {
-        // Renvoie la valeur du cout pour que getRisqueTotal = strategieValue
-        var risque = this.calculRisque(joueur, joueur.montant);
-        var marge = strategieValue / (risque / 100 + 1);
-        // On ajoute un random sur 10% du prix => moins previsible
-        var montant = this.findCoutFromFixMarge(joueur, marge);
-        montant+=Math.round((montant*0.1)*(((Math.random()*1000)%10 -5)/10));
-        return Math.min(montant, joueur.montant - 5000);
-    }
-
-    /* Appele lorsqu'une proposition a deja ete faite et qu'elle etait insuffisante */
-    this.getFactorForProposition = function () {
-        return 1 + this.risque;
-    }
-
-    /* Calcul le budget depensable pour la construction de maison / hotel */
-    /* Prendre en compte l'achat potentiel de nouveau terrain. Pour la strategie, on calcule les terrains qui interessent */
-    /* @param forceHypotheque : si vrai, on force l'usage de l'argent dispo apres hypotheque */
-    this.getBudget = function (joueur, forceHypotheque) {
-        var assiette = joueur.montant; // Utilise pour calculer les risques
-        // Si le joueur est une charogne, on utilise l'argent dispo avec les possibles hypotheques (tous les terrains sauf les groupes). 
-        // Utilise uniquement pour le calcul de risque, pas pour l'achat (pour ne pas hypothequer lors de l'achat).
-        if (forceHypotheque == true || this.risque > 0.6) {
-            assiette = joueur.getStats().argentDispoHypo;
-        }
-        // On prend le plus fort loyer du plateau
-        var maxLoyer = this.plusFortLoyer(joueur);
-        // On prend l'argent pondere par le risque
-        var risque = this.calculRisque(joueur, assiette);
-        // On pondere le loyer max par le carre du risque afin d'augmenter exponentiellement son importance
-        return Math.round((joueur.montant - maxLoyer * (1 - this.risque * this.risque)) * (1 - risque / 100));
-    }
-
-    /* Calcul le terrain du joueur sur lesquels les adversaires peuvent tomber */
-    /* @param seuil : seuil a partir duquel on renvoie les maisons */
-    this.getNextProprietesVisitees = function (joueur) { //,seuil){
-        var maisons = [];
-        for (var idJoueur in joueurs) {
-            var j = joueurs[idJoueur];
-            if (!j.equals(joueur)) {
-                // On parcours toutes les statistiques et on mesure le risque de tomber sur une propriete du joueur
-                var posActuel = j.getPosition();
-                for (var i = 1; i < 12; i++) {
-                    var fiche = GestionFiche.get(j.pion.deplaceValeursDes(i));
-                    if (fiche.constructible && fiche.joueurPossede != null && fiche.joueurPossede.equals(joueur)) {
-                        //maison visitable, on ajoute la maison avec la proba
-                        if (maisons[fiche.id] != null) {
-                            maisons[fiche.id].proba += this.probaDes[i] / 100;
-                        } else {
-                            maisons[fiche.id] = ({
-                                proba: this.probaDes[i] / 100,
-                                maison: fiche
-                            });
-                        }
-                    }
-                }
-            }
-        }
-        return maisons;
-    }
-
-    /* Calcule la marge d'achat par rapport au montant et le pondere par rapport a la prise de risque */
-    this.calculMargeMontant = function (joueur, cout) {
-        var marge = cout / joueur.montant; // inferieur a 1
-        return marge / this.risque;
-    }
-
-    /* Calcul le cout pour une marge donnee */
-    this.findCoutFromFixMarge = function (joueur, marge) {
-        var cout = (marge * this.risque) * joueur.montant;
-        return cout;
-    }
-
-    /* Se base sur les prochaines cases a risque qui arrive, renvoi un pourcentage */
-    this.calculRisque = function (joueur, argent) {
-        // On calcul le risque de tomber sur une case cher.
-        // On considere un risque quand on est au dessus de risque * montant d'amande)
-        var position = joueur.pion.position;
-        var etat = joueur.pion.etat;
-        var stats = 0;
-        for (var i = 1; i <= 12; i++) {
-            var pos = GestionFiche.nextPos(etat, position);
-            etat = pos.etat;
-            position = pos.position;
-            var fiche = GestionFiche.getById(etat + "-" + position);
-            if (fiche != null && fiche.getLoyer != null && fiche.joueurPossede != null && !fiche.joueurPossede.equals(joueur) && (fiche.getLoyer() > (argent * this.risque))) {
-                stats += this.probaDes[i - 1];
-            }
-        }
-        return stats;
-    }
-
-    // calcul le loyer le plus fort du joueur (et n'appartenant pas au joueur). Permet de connaitre la treso max que le joueur peut posseder sur lui
-    this.plusFortLoyer = function (joueur) {
-        var max = 20000; // Prix de la taxe de luxe
-        var it = GestionFiche.iteratorTerrains();
-        while (it.hasNext()) {
-            var f = it.next();
-            if (f.getLoyer != null && f.joueurPossede != null && !joueur.equals(f.joueurPossede) && f.getLoyer() > max) {
-                max = f.getLoyer();
-            }
-        }
-        return max;
-    }
-
-    // calcul le loyer moyen que peut rencontrer le joueur
-    this.getLoyerMoyen = function (joueur) {
-        var montant = 20000; // Prix de la taxe de luxe
-        var nb = 1;
-        var it = GestionFiche.iteratorTerrains();
-        while (it.hasNext()) {
-            var f = it.next();
-            if (f.getLoyer != null && f.joueurPossede != null && !joueur.equals(f.joueurPossede)) {
-                montant += f.getLoyer();
-                nb++;
-            }
-        }
-        return {
-            montant: montant / nb,
-            nb: nb
-        };
-    }
-}
-
-var comportements = [CheapComportement,MediumComportement,HardComportement];
-
-function CheapComportement() {
-    Comportement.call(this, 0.25, "Prudent", 0);
-}
-
-function MediumComportement() {
-    Comportement.call(this, 0.5, "Normal", 1);
-}
-
-function HardComportement() {
-    Comportement.call(this, 0.8, "Fou", 2);
-}
-
-/* Objet qui gere la strategie. IL y a differentes implementations */
-/* @colors : liste des groupes qui interessent le joueur */
-/* @param agressif : plus il est eleve, plus le joueur fait de l'antijeu (achat des terrains recherches par les adversaires) */
-
-function Strategie(colors, agressif, name, id, interetGare) {
-    this.groups = colors;
-    this.agressif = agressif;
-    this.interetGare = (interetGare == null) ? ((Math.round(Math.random() * 1000) % 3 == 0) ? true : false) : interetGare; // Interet pour gare
-    this.name = name;
-    this.id = id;
-
-    this.groups.contains = function (value) {
-        for (var val in this) {
-            if (this[val] == value) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /* Renvoie des stats sur les proprietes concernees par cette strategie : nombre de propriete, nombre de libre... */
-    this.getStatsProprietes = function () {
-        var stats = {
-            color: {
-                total: 0,
-                libre: 0,
-                achete: 0,
-                pourcent: 0
-            },
-            all: {
-                total: 0,
-                libre: 0,
-                achete: 0,
-                pourcent: 0
-            }
-        };
-        var it = GestionFiche.iteratorTerrains();
-        while (it.hasNext()) {
-            var fiche = it.next();
-            if (fiche.statut != null) {
-                stats.all.total++;
-                if (fiche.statut == ETAT_LIBRE) {
-                    stats.all.libre++;
-                } else {
-                    stats.all.achete++;
-                }
-                if (this.groups.contains(fiche.color)) {
-                    stats.color.total++;
-                    if (fiche.statut == ETAT_LIBRE) {
-                        stats.color.libre++;
-                    } else {
-                        stats.color.achete++;
-                    }
-                }
-            }
-        }
-        stats.color.pourcent = (stats.color.libre / stats.color.total) * 100;
-        stats.all.pourcent = (stats.all.libre / stats.all.total) * 100;
-        return stats;
-    }
-
-    /* Calcul l'interet global du joueur pour une propriete */
-    /* Prend en compte l'interet propre (liste d'achat) ainsi que l'etat du groupe */
-	/* @param isEnchere : indique que la mesure est faite pour une enchere */
-	/* Cas des encheres, on ajoute un critere qui determine si le terrain est indispensable pour la strategie : autre groupe, autre terrain... */
-	this.interetGlobal = function (propriete, joueur, isEnchere) {
-        var i1 = this.interetPropriete(propriete);
-        var statutGroup = this.statutGroup(propriete, joueur, isEnchere);
-		var i2 = statutGroup.statut;
-		var coeff = 1;
-		if (i1 == false && i2 == 0) {
-            return {interet:0.1};	// Permet en cas de situation tres confortable de continuer a investir
-        }
-		// Realise un blocage
-        if (i1 == false && i2 == 2) {
-            return {interet:this.agressif,joueur:statutGroup.joueur};
-        }
-        if (i1 == true && i2 == 3) {
-            return {interet:4};
-        }
-        if(isEnchere){
-            return {interet:this.interetProprieteInStrategie(propriete)};
-        }
-        
-        return {interet:1};
-    }
-
-	/* Determine l'interet de la propriete par rapport a l'etat de la strategie */
-    /* @return : un nombre inférieur à 1 */
-	this.interetProprieteInStrategie = function(propriete){
-		var stats = this.getStatsProprietes();
-        /* Si les terrains sont presques tous libres, renvoie un calcul logarithmique (entre 67 et 100% de terrain libre) */
-        return 0.5 + parseFloat((Math.log(((Math.min(100-stats.color.pourcent,32.5))/50)+1)).toFixed(2));    
-	}
-	
-    /* Calcul l'interet pour la maison (a partir des groupes interessant) */
-    this.interetPropriete = function (propriete) {
-        for (var color in this.groups) {
-            if (this.groups[color] == propriete.color || (propriete.type == 'gare' && this.interetGare)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /* Renvoie le statut de la famille : 
-          0 : toutes les proprietes sont libres
-          1 : s'il reste des libres apres celle ci
-          2 : si toutes appartiennent a une meme personne sauf celle-ci
-          3 : si toutes appartiennent au joueur sauf celle-ci
-          4 : autres */
-    /* @param isEnchere : achat du terrain a un autre joueur, on ne prend pas en compte le statut libre */
-    // Prendre en compte si j'ai la famille, que c'est la derniere carte. Il faut passer les autres options de risques, prix. Il faut absolument acheter
-    this.statutGroup = function (propriete, joueur, isEnchere) {
-        var nbTotal = 0;
-        var nbLibre = 0;
-        var dernierJoueur = null;
-        var nbEquals = 0;
-        var nbPossede = 0;
-        for (var id in propriete.groupe.fiches) {
-            var fiche = propriete.groupe.fiches[id];
-            nbTotal++;
-            if (fiche.statut == ETAT_LIBRE) {
-                nbLibre++;
-            } else {
-                if (fiche.joueurPossede.equals(joueur)) {
-                    nbPossede++;
-                } else {
-                    if (dernierJoueur == null || fiche.joueurPossede.equals(dernierJoueur)) {
-                        nbEquals++;
-                    }
-                }
-                dernierJoueur = fiche.joueurPossede;
-            }
-        }
-        if (nbLibre == nbTotal) {
-            return {statut:0};
-        }
-
-        if (nbLibre == 1 && nbEquals == nbTotal - 1) {
-            return {statut:2,joueur:dernierJoueur};
-        }
-        /* Cas ou seul terrain manquant */
-        if ((nbLibre == 1 || isEnchere) && nbPossede == nbTotal - 1) {
-            return {statut:3};
-        }
-        if (nbLibre > 0) {
-            return {statut:1};
-        }
-        return {statut:4};
-    }
-
-    /* Calcule le fait d'accepter un terrain d'un joueur.
-     * Se base sur le fait que le joueur a un deja un groupe, qu'il n'en a aucun.
-     * Renvoie un facteur jouant sur le calcul final. 0 est bloquant, 1 est neutre...
-     * @param otherInteresets : autres terrains qui interesent le joueur
-     * @param interestGroupe : indique que le groupe interesse aussi le joueur
-     */
-    this.acceptSwapTerrain = function (terrain, joueur, otherInterests, interestGroupe) {
-        /* Calcule si le proprio est le seul fournisseur */
-        var alone = joueurs.length > 2; // Faux si seulement 2 joueurs
-        /* Seul groupe qui m'interesse, on refuse */
-        if ((interestGroupe == true && otherInterests.length == 1) || terrain.isGroupee()) {
-            return 0;
-        }
-        for (var idx in otherInterests) {
-            if (!otherInterests[idx].maison.joueurPossede.equals(terrain.joueurPossede)) {
-                alone = false;
-            }
-        }
-        var nbGroups = joueur.findGroupes().size();
-        /* Le proprio est le seul a pouvoir aider le demandeur et il n'a pas encore de groupe */
-        if (nbGroups == 0 && otherInterests.length == 0 && alone) {
-            return this.agressif == 2 ? 0.5 : 1;
-        }
-        /* Beaucoup de groupe et seul fournisseur, on bloque si on est vicieux, on monte sinon */
-        if (nbGroups >= 2 && alone) {
-            return this.agressif > 0 ? 0 : 0.5;
-        }
-
-        /* Personne n'a de groupe et pas seul fournisseur */
-        if (nbGroups == 0) {
-            return 1.5;
-        }
-
-        /* Beaucoup de groupe mais pas le seul fournisseur, on ne bloque pas */
-        if (nbGroups >= 2) {
-            return this.agressif > 0 ? 0.5 : 1;
-        }
-        return 1;
-    }
-	
-	this.toString = function(){
-		return this.name + ((this.interetGare)?' <img src="img/little_train.png" style="width:20px;height:16px;"/>':'');
-	}
-}
-
-var strategies = [CheapStrategie, MediumStrategie, HardStrategie,SmartStrategie,CrazyStrategie]; // liste des strategies
-
-/* Achete en priorite les terrains les moins chers : bleu marine-812B5C, bleu clair-119AEB, violet-73316F et orange-D16E2D */
-function CheapStrategie() {
-    Strategie.call(this, ["#812B5C", "#119AEB", "#73316F", "#D16E2D"], 0, "Radin", 0);
-}
-
-/* Achete en priorite les terrains moyennement chers : violet-73316F, orange-D16E2D, rouge-D32C19 et jaune-E6E018 */
-function MediumStrategie() {
-    Strategie.call(this, ["#73316F", "#D16E2D", "#D32C19", "#E6E018"], 1, "Normal", 1);
-}
-
-/* Achete en priorite les terrains les plus chers : rouge-D32C19, jaune-E6E018, vert-11862E et bleu fonce-132450 */
-function HardStrategie() {
-    Strategie.call(this, ["#D32C19", "#E6E018", "#11862E", "#132450"], 2, "Luxe", 2);
-}
-
-/* Achete en priorite les terrains les meilleurs (gare, orange-D16E2D, rouge-D32C19, jaune-E6E018) */
-function SmartStrategie() {
-    Strategie.call(this, ["#D16E2D", "#D32C19", "#E6E018"], 2, "Futé", 3, true);
-}
-
-/* Achete tout */
-function CrazyStrategie() {
-    Strategie.call(this, ["#812B5C", "#119AEB", "#73316F", "#D16E2D", "#D32C19", "#E6E018", "#11862E", "#132450"], 4, "Dingue", 3,true);
 }
 
 /* Gere l'echange d'une propriete entre deux joueurs */
@@ -836,15 +524,8 @@ var GestionEchange = {
 
         /* Determine les caracteristiques d'un ordinateur*/
         this.init = function (idStrategie, idComportement) {
-            if (idStrategie == null) {
-                idStrategie = Math.round(Math.random() * 1000) % strategies.length;
-            }
-			if (idComportement == null) {
-                idComportement = Math.round(Math.random() * 1000) % comportements.length;
-            }
-			this.strategie = new strategies[idStrategie]();
-            this.comportement = new comportements[idComportement]();
-            //this.updateName(true);
+            this.strategie = (idStrategie == null) ? GestionStrategie.createRandom() : GestionStrategie.create(idStrategie);
+            this.comportement = (idComportement == null) ? GestionComportement.createRandom() : GestionComportement.create(idStrategie);
         }
 
         this.saveMore = function (data) {
@@ -1803,8 +1484,8 @@ var GestionEchange = {
                     message: this.nom + " cherche une nouvelle strategie"
                 });
                 // On change de strategie. Une nouvelle strategie doit posseder au moins 60% de ses terrains de libre
-                for (var i in strategies) {
-                    var s = new strategies[i]();
+                for (var i in GestionStrategie.get()) {
+                    var s = GestionStrategie.create(i);
                     if (s.name != this.strategie.name) {
                         var strategieStats = s.getStatsProprietes();
                         if (strategieStats.color.pourcent > 50) {
@@ -2810,11 +2491,6 @@ var GestionEchange = {
 
     function Chance(etat, pos,img) {
         this.id = etat + "-" + pos;
-        img = img || {
-            src: "img/interrogation.png",
-            width: 50,
-            height: 60
-        };
         this.drawing = DrawerFactory.getCase(pos, etat, null, titles.chance, null, img);
         Drawer.add(this.drawing);
         this.action = function () {
@@ -2834,11 +2510,6 @@ var GestionEchange = {
 
     function CaisseDeCommunaute(etat, pos, img) {
         this.id = etat + "-" + pos;
-        img = img || {
-            src: "img/banque2.png",
-            width: 60,
-            height: 60
-        };
         this.drawing = DrawerFactory.getCase(pos, etat, null, titles.communaute, null, img );
         Drawer.add(this.drawing);
         this.action = function () {
@@ -3389,12 +3060,7 @@ var Drawer = {
     }
 
     function FicheGare(etat, pos, color, nom, achat, loyers, img) {
-        Fiche.call(this, etat, pos, color, nom, achat, loyers, null, img || {
-            src: "img/big_train.png",
-            width: 50,
-            height: 35,
-			margin: 5
-        });
+        Fiche.call(this, etat, pos, color, nom, achat, loyers, null, img);
         this.type = "gare";
         this.constructible = false;
         this.getLoyer = function () {
@@ -3412,12 +3078,7 @@ var Drawer = {
     }
 
     function FicheCompagnie(etat, pos, color, nom, achat, loyers,img) {
-        Fiche.call(this, etat, pos, color, nom, achat, loyers, null,img || {
-            src: "img/light.png",
-            width: 50,
-            height: 35,
-			margin: 5
-        });
+        Fiche.call(this, etat, pos, color, nom, achat, loyers, null,img);
         this.fiche = $('#ficheCompagnie');
         this.type = "compagnie";
         this.constructible = false;
@@ -3943,6 +3604,9 @@ var Drawer = {
 						success:function(dataExtend){
 							var extendedData = $.extend(true,{},dataExtend,data);							
 							loadPlateau(extendedData,callback);
+						},
+						error:function(a,b,c){
+							console.log(a,b,c);
 						}
 					});
 				}
@@ -3962,6 +3626,7 @@ var Drawer = {
 	/* Charge les donnees du plateau */
 	function loadPlateau(data,callback){
 		plateau = data.plateau;
+		DrawerFactory.addInfo('defaultImage',data.images.default || {});
 		if(plateau.type == 'circle'){
 			DrawerFactory.setType('circle');
 			$('.title').addClass('circle');
@@ -4009,7 +3674,7 @@ var Drawer = {
                 groups[this.colors[0]].add(fiche);
                 break;
             case "compagnie":
-				fiche = new FicheCompagnie(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers,data.images[this.img]);
+				fiche = new FicheCompagnie(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers,data.images[this.img] || data.images.compagnie);
                 groups[this.colors[0]].nom = 'Compagnie';
                 groups[this.colors[0]].add(fiche);
                 break;
@@ -4025,11 +3690,7 @@ var Drawer = {
                 fiche = new CaisseDeCommunaute(this.axe, this.pos,data.images.caisseDeCommunaute);
                 break;
             case "taxe":
-                fiche = new CarteSpeciale(this.nom, this.prix, this.axe, this.pos, data.images.taxe || {
-                    src: "img/bijou.png",
-                    width: 40,
-                    height: 50
-                });
+                fiche = new CarteSpeciale(this.nom, this.prix, this.axe, this.pos, data.images.taxe);
                 break;
             case "prison":
                 fiche = new CarteActionSpeciale(this.nom, function () {
@@ -4582,6 +4243,8 @@ var GestionTerrains = {
         }
     }
 };
+
+// Sortie le code
 
 function loadFiche(fiche) {
     loadGenericFiche(fiche, $('#fiche'), 'FFFFFF');

@@ -2,19 +2,27 @@
 <html>
  <head>
    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-   <title>Monopoly</title>
+   <title>Monopoly JS</title>
    <link type="text/css" href="css/sunny/jquery-ui-1.10.3.custom.min.css" rel="stylesheet" />
    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
-   <script type="text/javascript" src="lib/jquery-1.9.1.js"></script>
+   <script type="text/javascript" src="lib/jquery-1.11.0.min.js"></script>
    <script type="text/javascript" src="lib/jquery-ui-1.10.3.custom.min.js"></script>
    <script type="text/javascript" src="lib/jquery.mousewheel.js"></script>
    <script type="text/javascript" src="lib/jquery.arctext.js"></script>
+   
+   
+   <!--(if target dev)><!-->
    <script type="text/javascript" src="js/GestionConstructions.js"></script>
    <script type="text/javascript" src="js/Graphics.js"></script>
    <script type="text/javascript" src="js/SquareGraphics.js"></script>
    <script type="text/javascript" src="js/CircleGraphics.js"></script>
-   
    <script type="text/javascript" src="monopoly.js"></script>
+   <!--<!(endif)-->
+
+   <!--(if target prod)><!-->
+   	<script type="text/javascript" src="monopoly-min.js"></script>
+   <!--<!(endif)-->
+   
    <style>
 					
    </style>

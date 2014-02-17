@@ -489,4 +489,4 @@ function initSquareInstance(){
 	DrawerFactory.type = instance.type;
 }
 
-initSquareInstance();
+$(function(){initSquareInstance();});

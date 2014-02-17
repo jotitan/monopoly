@@ -109,13 +109,20 @@ function CircleCase(pos, axe, color, title, prix, img){
 	this.init = function(){
         this.imageMaison.src = "img/maison.png";
         this.imageHotel.src = "img/hotel.png";
-		if (img != null) {
+		
+		if (this.img != null) {		
+		console.log(img);	
 			var image = new Image();
 			image.src = img.src;
-			image.height = img.height;
-			image.width = img.width;
-			image.margin = img.margin;
+			image.height = Math.min(img.height,20);
+			image.width = Math.min(img.width,40);
+			image.margin = img.marginTop || 0;
+			image.marginLeft = img.marginLeft || 0;
 			image.rotate = img.rotate || 0;
+			if(this.pos > 10 && this.pos < 30){
+				image.rotate = (image.rotate+180)%360;
+				image.marginLeft = img.marginLeft +0.5;			
+			}
 			this.data.image = image;
 		}
 	}
@@ -165,7 +172,10 @@ function CircleCase(pos, axe, color, title, prix, img){
 		}
 		// Image
 		if (this.data.image != null) {
-			var coords = getCoords((this.pos + 0.25)*pasAngle,width/2-30 - this.data.image.margin);
+			// Margin left est defini en portion d'angle (1 correspond a la largeur de la case)
+			// Margin top joue sur la longueur du rayon
+			var coords = getCoords((this.pos + this.data.image.marginLeft)*pasAngle,width/2-30 - this.data.image.margin);
+			console.log(coords);
 			var angle = DrawerHelper.fromDegresToRad(this.data.image.rotate) + this.pos*pasAngle + Math.PI/2;
 			DrawerHelper.drawImage(canvas, this.data.image, width/2+coords.x, width/2+coords.y, this.data.image.width,this.data.image.height, angle);
 		}
@@ -242,7 +252,7 @@ function EndCirclePlateau(){
 	}
 }
 
-function initSquareInstance(){
+function initCircleInstance(){
 	var instance = {
 		type:'circle',
 		standardCase:CircleCase,
@@ -255,4 +265,4 @@ function initSquareInstance(){
 	DrawerFactory.addInstance(instance);
 }
 
-initSquareInstance();
+$(function(){initCircleInstance();});

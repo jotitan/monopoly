@@ -2275,16 +2275,20 @@ var GestionEchange = {
         }
 
         this.payerParcGratuit = function (montant, callback) {
-            this.payer(montant, function () {
-                if (VARIANTES.parcGratuit) {
-                    try{
-						parcGratuit.payer(montant);
-					}catch(insolvable){}
-                }
+            try{
+                this.payer(montant, function () {
+                    if (VARIANTES.parcGratuit) {
+                    	parcGratuit.payer(montant);        					
+                    }
+                    if (callback) {
+                        callback();
+                    }
+                });
+            }catch(insolvable){
                 if (callback) {
                     callback();
                 }
-            });
+            }
         }
 
         this.setPion = function (color) {

@@ -7,10 +7,10 @@
 	"images":{
 		"gare":{
 			"src" : "img/big_train.png",
-			"width":30,
-			"height":15,
-			"margin-left":55,
-			"margin-top":55,
+			"width":40,
+			"height":20,
+			"marginLeft":0.25,
+			"marginTop":140,
 			"rotate":-90
 		}
 	}

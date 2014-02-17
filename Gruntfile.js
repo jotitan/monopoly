@@ -8,15 +8,15 @@ module.exports = function(grunt){
   		},
   		copy: {
 			target:{
-				src:['monopoly.js','lib/**','css/**','img/**','data/**','favicon.ico','js/**','monopoly-canvas.html'],
+				src:['lib/**','css/**','img/**','data/**','favicon.ico'],
 				dest:'build/'
 			}
 		},
 		zip:{
-			'build.zip':['build/**']
+			'build/monopoly.zip':['build/**']
 			
 		},
-		ftp-deploy:{
+		'ftp-deploy':{
 			build:{
 				auth:{
 					host:'ftpperso.free.fr',
@@ -25,7 +25,37 @@ module.exports = function(grunt){
 					authKey:'default'
 				},
 				src:'build',
-				desc:'monopoly/'
+				dest:'monopoly/'
+			}
+		},
+		targethtml:{
+			dev:{
+				files:{
+					'monopoly.html':'monopoly-template.html'
+				}
+			},
+			prod:{
+				files:{
+					'build/index.html':'monopoly-template.html'
+				}
+			}
+		},
+		uglify:{
+			build:{
+				options:{
+					mangle:true,
+					compress:true,
+					report:'min'
+				},
+				files:{
+					'build/monopoly-min.js':['js/Graphics.js','js/SquareGraphics.js','js/CircleGraphics.js','js/GestionConstructions.js','monopoly.js']
+				}
+			}
+		},
+		watch:{
+			scripts:{
+				files:'monopoly-template.html',
+				tasks:['targethtml:dev']
 			}
 		}
 	})
@@ -34,8 +64,10 @@ module.exports = function(grunt){
 	grunt.loadNpmTasks('grunt-contrib-copy')
 	grunt.loadNpmTasks('grunt-zip')
 	grunt.loadNpmTasks('grunt-ftp-deploy')
+	grunt.loadNpmTasks('grunt-targethtml')
+	grunt.loadNpmTasks('grunt-contrib-uglify')
+	grunt.loadNpmTasks('grunt-contrib-watch')
 
-	grunt.registerTask('package','package application',['clean','copy','zip'])
-	grunt.registerTask('deploy','deploie application sur serveur ftp',['ftp-deploy'])	
-	grunt.registerTask('clean','nettoie les repertoires',['clean'])	
+	grunt.registerTask('package','package application',['clean','uglify','copy','targethtml:prod','zip'])
+	grunt.registerTask('deploy','deploie application sur serveur ftp',['ftp-deploy'])			
 }

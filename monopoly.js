@@ -21,73 +21,6 @@
 /* TODO : pour echange, si argent dispo et adversaire dans la deche, on propose une grosse somme (si old proposition presente) */
 /* TODO : permettre le packaging */
 
-
-// Defini la methode size. Cette methode evite d'etre enumere dans les boucles
-Object.defineProperty(Array.prototype, "size", {
-    value: function () {
-        var count = 0;
-        for (var i in this) {
-            count++;
-        }
-        return count;
-    },
-    writable: false,
-    enumerable: false,
-    configurable: false
-});
-
-Object.defineProperty(Array.prototype, "contains", {
-    value: function (value) {
-        for (var i in this) {
-            if (this[i] == value) {
-                return true;
-            }
-        }
-        return false;
-    },
-    writable: false,
-    enumerable: false,
-    configurable: false
-});
-
-Object.defineProperty(Array.prototype, "filter", {
-    value: function (callback) {
-        var list = [];
-        for (var i in this) {
-            if (callback(this[i])) {
-                list.push(this[i]);
-            }
-        }
-        return list;
-    },
-    writable: false,
-    enumerable: false,
-    configurable: false
-});
-
-Object.defineProperty(Array.prototype, "find", {
-    value: function (callback) {
-        for (var i in this) {
-            if (callback(this[i])) {
-                return true;
-            }
-        }
-        return false;
-    },
-    writable: false,
-    enumerable: false,
-    configurable: false
-});
-
-$.bind = function (eventName, fct) {
-    $('body').bind(eventName, fct);
-    return $('body');
-}
-
-$.trigger = function (eventName, params) {
-    $('body').trigger(eventName, params);
-}
-
 var DEBUG = false;
 var IA_TIMEOUT = 1000; // Temps d'attente pour les actions de l'ordinateur
 
@@ -142,15 +75,26 @@ var nomsJoueurs = [];
 var GestionFiche = {
     fiches: [],
     keys: [], // Cles des fiches
+	_calculateStrId:function(id){
+		return parseInt(id.substr(0,1))*10 + parseInt(id.substr(2,3));
+	},
+	_calculateId:function(info){
+		return info.axe*10 + info.pos;
+	},
     getById: function (id) {
-        return this.fiches[id];
+		return this.fiches[this._calculateStrId(id)];
+        //return this.fiches[id];
     },
     get: function (info) {
-        return this.fiches[info.axe + "-" + info.pos];
+		return this.fiches[this._calculateId(info)];
+        //return this.fiches[info.axe + "-" + info.pos];
     },
     add: function (fiche) {
-        this.fiches[fiche.id] = fiche;
-        this.keys.push(fiche.id);
+		var intId = this._calculateStrId(fiche.id);
+		this.fiches[intId] = fiche;
+		this.keys.push(intId);
+        //this.fiches[fiche.id] = fiche;
+        //this.keys.push(fiche.id);
     },
     /* Renvoie les terrains libres */
     getFreeFiches: function () {
@@ -158,13 +102,7 @@ var GestionFiche = {
     },
 	/* Renvoie vrai s'il reste des terrains libres */
 	isFreeFiches:function(){
-        return this.fiches.find(function(f){return f.statut == ETAT_LIBRE;});
-		/*for (var id in this.fiches) {
-            if (this.fiches[id].statut == ETAT_LIBRE) {
-                return true;
-            }
-        }
-		return false;*/
+        return this.fiches.some(function(f){return f.statut == ETAT_LIBRE;});		
 	},
     /* iterateur pour parcourir les fiches */
     iterator: function () {
@@ -182,8 +120,7 @@ var GestionFiche = {
     iteratorTerrains: function () {
         // On calcule des cles
         var keys = [];
-        for (var id in this.fiches) {
-            //if(this.fiches[id].constructible || this.fiches[id].type == 'gare' || this.fiches[id].type == 'compagnie'){
+		for (var id in this.fiches) {
             if (this.fiches[id].isTerrain) {
                 keys.push(id);
             }
@@ -223,161 +160,7 @@ var GestionFiche = {
         };
     }
 }
-
-
-var InfoMessage = {
-	div:$('#message'),
-	create:function(joueur,titre, background, message, call, param, forceshow){
-		$.trigger('monopoly.debug', {
-            message: message
-        });
-        this.div.prev().css("background-color", background);
-        this.div.dialog('option', 'title', titre);
-        this.div.empty();
-        this.div.append(message);
-        var button = {
-            "Ok": function () {
-                closeMessage();
-            }
-        };
-        this.div.bind('dialogclose.message', function () {
-            if (call != null) {
-                call(param);
-            }
-            this.div.unbind('dialogclose.message');
-        });
-        if (call != null) {
-            this.div.dialog('option', 'buttons', button);
-        }
-        /* On affiche pas le panneau si le timeout est à 0 (partie rapide) */
-        if (joueur.canPlay || forceshow) {
-            this.div.dialog('open');
-        }
-        return button;
-	},
-	close:function(){
-		if (this.div.dialog('isOpen')) {
-            this.div.dialog('close');
-        } else {
-            // Trigger de fermeture
-            this.div.trigger('dialogclose.message');
-            this.div.trigger('dialogclose.prison');
-        }
-	},
-	createPrison:function(joueur,nbTours, callback){
-		this.div.prev().css("background-color", "red");
-        this.div.dialog('option', 'title', "Vous êtes en prison depuis " + nbTours + " tours.");
-        this.div.empty();
-        this.div.append("Vous êtes en prison, que voulez vous faire");
-
-        var buttons = {
-            "Payer": function () {
-                joueur.payer(5000);
-				// TODO : Ajouter message pour indiquer qu'il paye
-                joueur.exitPrison();
-                closeMessage();
-            },
-            "Attendre": function () {
-                closeMessage();
-            }
-        }
-        if (joueur.cartesSortiePrison.length > 0) {
-            buttons["Utiliser carte"] = function () {
-                joueur.utiliseCarteSortiePrison();
-				// TODO : ajouter message pour dire qu'il utilise une carte
-                joueur.exitPrison();
-                closeMessage();
-            }
-        }
-        this.div.dialog('option', 'buttons', buttons);
-        this.div.bind('dialogclose.prison', function () {
-            this.div.unbind('dialogclose.prison');
-            callback();
-        });
-        if (joueur.canPlay) {
-            this.div.dialog('open');
-        }
-        return buttons;
-	}
-}
-	// TODELETE
-    function createMessage(titre, background, message, call, param, forceshow) {
-        $.trigger('monopoly.debug', {
-            message: message
-        });
-        $('#message').prev().css("background-color", background);
-        $('#message').dialog('option', 'title', titre);
-        $('#message').empty();
-        $('#message').append(message);
-        var button = {
-            "Ok": function () {
-                closeMessage();
-            }
-        };
-        $('#message').bind('dialogclose.message', function () {
-            if (call != null) {
-                call(param);
-            }
-            $('#message').unbind('dialogclose.message');
-        });
-        if (call != null) {
-            $('#message').dialog('option', 'buttons', button);
-        }
-        /* On affiche pas le panneau si le timeout est à 0 (partie rapide) */
-        if (joueurCourant.canPlay || forceshow) {
-            $('#message').dialog('open');
-        }
-        return button;
-    }
-
-	// TODELETE
-    function closeMessage() {
-        if ($('#message').dialog('isOpen')) {
-            $('#message').dialog('close');
-        } else {
-            // Trigger de fermeture
-            $('#message').trigger('dialogclose.message');
-            $('#message').trigger('dialogclose.prison');
-        }
-    }
-
-	// TODELETE
-    function createPrisonMessage(nbTours, callback) {
-        $('#message').prev().css("background-color", "red");
-        $('#message').dialog('option', 'title', "Vous êtes en prison depuis " + nbTours + " tours.");
-        $('#message').empty();
-        $('#message').append("Vous êtes en prison, que voulez vous faire");
-
-        var buttons = {
-            "Payer": function () {
-                joueurCourant.payer(5000);
-				// TODO : Ajouter message pour indiquer qu'il paye
-                joueurCourant.exitPrison();
-                closeMessage();
-            },
-            "Attendre": function () {
-                closeMessage();
-            }
-        }
-        if (joueurCourant.cartesSortiePrison.length > 0) {
-            buttons["Utiliser carte"] = function () {
-                joueurCourant.utiliseCarteSortiePrison();
-				// TODO : ajouter message pour dire qu'il utilise une carte
-                joueurCourant.exitPrison();
-                closeMessage();
-            }
-        }
-        $('#message').dialog('option', 'buttons', buttons);
-        $('#message').bind('dialogclose.prison', function () {
-            $('#message').unbind('dialogclose.prison');
-            callback();
-        });
-        if (joueurCourant.canPlay) {
-            $('#message').dialog('open');
-        }
-        return buttons;
-    }
-
+	
 function ParcGratuit(axe, pos) {
     this.id = axe + "-" + pos;
     this.montant = null;
@@ -396,7 +179,7 @@ function ParcGratuit(axe, pos) {
 
     this.action = function () {
 		var _self = this;
-        return createMessage("Parc gratuit", "lightblue", "Vous gagnez " + this.montant + " " + CURRENCY, function (param) {
+        return InfoMessage.create(joueurCourant,"Parc gratuit", "lightblue", "Vous gagnez " + this.montant + " " + CURRENCY, function (param) {
             param.joueur.gagner(param.montant);
             _self.setMontant(0);
             changeJoueur();
@@ -1507,7 +1290,7 @@ var GestionEchange = {
                     message: this.nom + " cherche une nouvelle strategie"
                 });
                 // On change de strategie. Une nouvelle strategie doit posseder au moins 60% de ses terrains de libre
-                for (var i in GestionStrategie.get()) {
+                for (var i in GestionStrategie.getAll()) {
                     var s = GestionStrategie.create(i);
                     if (s.name != this.strategie.name) {
                         var strategieStats = s.getStatsProprietes();
@@ -2076,12 +1859,12 @@ var GestionEchange = {
         this.resolveProblemeArgent = function (montant, callback) {
             // On ouvre le panneau de resolution en empechant la fermeture
             this.montant -= montant;
-            var button = createMessage("Attention", "red", "Vous n'avez pas les fonds necessaires, il faut trouver de l'argent", function () {
+            var button = InfoMessage.create(joueurCourant,"Attention", "red", "Vous n'avez pas les fonds necessaires, il faut trouver de l'argent", function () {
                 // On attache un evenement a la fermeture
                 var onclose = function (e) {
                     if (joueurCourant.montant < 0) {
                         // Message d'erreur pas possible
-                        createMessage("Attention", "red", "Impossible, il faut trouver les fonds avant de fermer");
+                        InfoMessage.create(joueurCourant,"Attention", "red", "Impossible, il faut trouver les fonds avant de fermer");
                         e.preventDefault();
                     } else {
                         joueurCourant.bloque = false;
@@ -2399,11 +2182,11 @@ var GestionEchange = {
         }
     }
 
-    function CarteActionSpeciale(titre, actionSpeciale, etat, pos) {
+    function CaseActionSpeciale(titre, actionSpeciale, etat, pos) {
         this.titre = titre;
         this.actionSpeciale = actionSpeciale;
         this.id = etat + "-" + pos;
-        this.drawing = DrawerFactory.getCaseSpeciale(etat,titre);
+		this.drawing = DrawerFactory.getCaseSpeciale(etat,titre);
         Drawer.add(this.drawing);
 
         this.action = function () {
@@ -2413,12 +2196,12 @@ var GestionEchange = {
     }
 
     /* Case speciale, comme la taxe de luxe */
-    function CarteSpeciale(titre, montant, etat, pos, img) {
+    function SimpleCaseSpeciale(titre, montant, etat, pos, img) {
         this.id = etat + "-" + pos;
-        this.drawing = DrawerFactory.getCase(pos, etat, null, titre, CURRENCY + " " + montant, img);
+		this.drawing = DrawerFactory.getCase(pos, etat, null, titre, CURRENCY + " " + montant, img);
         Drawer.add(this.drawing);
         this.action = function () {
-            return createMessage(titre, "lightblue", "Vous devez payer la somme de " + montant + " " + CURRENCY, function (param) {
+            return InfoMessage.create(joueurCourant,titre, "lightblue", "Vous devez payer la somme de " + montant + " " + CURRENCY, function (param) {
                 param.joueur.payerParcGratuit(param.montant, function () {
                     changeJoueur();
                 });
@@ -2429,90 +2212,33 @@ var GestionEchange = {
         }
     }
 
-    /* Action de déplacement vers une case */
-    /* @param direct : si renseigné a vrai, le pion est deplacé directement vers la case, sans passer par la case depart */
-    function GotoCarte(axe, pos, direct) {
-        this.type = "goto";
-        this.action = function () {
-            if (direct) {
-                joueurCourant.pion.goDirectToCell(axe, pos, doActions);
-            } else {
-                joueurCourant.pion.goto(axe, pos, doActions);
-            }
-        }
-    }
-
-    /* Carte sortie de prison */
-    function PrisonCarte() {
-        this.type = "prison";
-        this.joueurPossede = null;
-        this.action = function () {
-            joueurCourant.cartesSortiePrison.push(this);
-            this.joueurPossede = joueurCourant;
-            changeJoueur();
-        }
-        this.isLibre = function () {
-            return this.joueurPossede == null;
-        }
-    }
-
-    /* Action de déplacement d'un certain nombre de case */
-    function MoveNbCarte(nb) {
-        this.type = "move";
-        this.action = function () {
-            var pos = joueurCourant.pion.deplaceValeursDes(nb); // On ajoute 40 pour les cases négatives
-            joueurCourant.pion.goDirectToCell(pos.axe, pos.pos, doActions);
-        }
-    }
-
-    /* Action de gain d'argent pour une carte */
-    function PayerCarte(montant) {
-        this.type = "taxe";
-        this.montant = montant;
-        this.action = function () {
-            joueurCourant.payerParcGratuit(this.montant, function () {
-                changeJoueur();
-            });
-        }
-    }
-
-    /* Action de perte d'argent pour une carte */
-    function GagnerCarte(montant) {
-        this.type = "prime";
-        this.montant = montant;
-        this.action = function () {
-            joueurCourant.gagner(this.montant);
-            changeJoueur();
-        }
-    }
-
     function CarteChance(libelle, carte) {
         this.carte = carte;
-        this.action = function () {
-            return createMessage(titles.chance, "lightblue", libelle, function (param) {
+        this.action = function (joueur) {
+            return InfoMessage.create(joueurCourant,titles.chance, "lightblue", libelle, function (param) {
                 $.trigger('monopoly.chance.message', {
                     joueur: joueurCourant,
                     message: libelle
                 });
-                carte.action();
+                carte.action(joueurCourant);
             }, {});
         }
     }
 
     function CarteCaisseDeCommunaute(libelle, carte) {
         this.carte = carte;
-        this.action = function () {
+        this.action = function (joueur) {
             $.trigger('monopoly.caissecommunaute.message', {
                 joueur: joueurCourant,
                 message: libelle
             });
-            return createMessage(titles.communaute, "pink", libelle, function (param) {
-                carte.action();
+            return InfoMessage.create(joueurCourant,titles.communaute, "pink", libelle, function (param) {
+                carte.action(joueurCourant);
             }, {});
         }
     }
 
-    function Chance(etat, pos,img) {
+    function CaseChance(etat, pos,img) {
         this.id = etat + "-" + pos;
         this.drawing = DrawerFactory.getCase(pos, etat, null, titles.chance, null, img);
         Drawer.add(this.drawing);
@@ -2531,7 +2257,7 @@ var GestionEchange = {
         }
     }
 
-    function CaisseDeCommunaute(etat, pos, img) {
+    function CaseCaisseDeCommunaute(etat, pos, img) {
         this.id = etat + "-" + pos;
         this.drawing = DrawerFactory.getCase(pos, etat, null, titles.communaute, null, img );
         Drawer.add(this.drawing);
@@ -2619,7 +2345,6 @@ var Drawer = {
         this.canvasRT.strokeStyle = '#AA0000';
         // On ne recharge pas le plateau, il n'est charge qu'une seule fois (ou rechargement a la main)
         this.refresh(this.canvas);
-        //this.setFrequency(2000, this.canvas);
         this.setFrequency(50, this.canvasRT);
 
         $.bind('refreshPlateau', function () {
@@ -2943,7 +2668,7 @@ var Drawer = {
 
         this.chezSoi = function () {
 			$.trigger('monopoly.chezsoi',{joueur:this.joueurPossede,maison:this});
-            return createMessage("Vous etes " + this.nom, this.color, "Vous etes chez vous", changeJoueur);
+            return InfoMessage.create(joueurCourant,"Vous etes " + this.nom, this.color, "Vous etes chez vous", changeJoueur);
         }
 
         this.sellMaison = function (joueur, noRefresh) {
@@ -3001,7 +2726,7 @@ var Drawer = {
         }
 
         this.payerLoyer = function () {
-            return createMessage("Vous etes " + this.nom, this.color, "Vous etes chez " + this.joueurPossede.nom + " vous devez payez la somme de " + this.getLoyer() + " " + CURRENCY, function (param) {
+            return InfoMessage.create(joueurCourant,"Vous etes " + this.nom, this.color, "Vous etes chez " + this.joueurPossede.nom + " vous devez payez la somme de " + this.getLoyer() + " " + CURRENCY, function (param) {
                 $.trigger('monopoly.payerLoyer', {
                     joueur: param.joueurPaye,
                     maison: param.maison
@@ -3217,12 +2942,13 @@ var Drawer = {
 	function showVainqueur(gagnant){
 		$.trigger('monopoly.victoire',{joueur:gagnant});
 		// On affiche les resultats complets
-		var perdants = [];
-		for(var j in joueurs){
+		//var perdants = [];
+		var perdants = joueurs.filter(function(j){return j.defaite;});
+		/*for(var j in joueurs){
 			if(joueurs[j].defaite){
 				perdants.push(joueurs[j]);
 			}
-		}
+		}*/
 		perdants.sort(function(a,b){
 			if(a.tourDefaite == b.tourDefaite){
 				return b.numero - a.numero;
@@ -3236,7 +2962,7 @@ var Drawer = {
 		for(var i = 0 ; i < perdants.length ; i++){
             message+= (i+2) + " - " + perdants[i].nom + "<br/>";
 		}
-		createMessage("Fin de partie", "green", message, null, null, true);
+		InfoMessage.create(joueurCourant,"Fin de partie", "green", message, null, null, true);
 		console.log("stats terrains",writePositions(stats.positions));
 	}
 
@@ -3277,7 +3003,7 @@ var Drawer = {
 		before:function(callback){
 			if (joueurCourant.enPrison) {
 				// Propose au joueur de payer ou utiliser une carte
-				var buttons = createPrisonMessage(joueurCourant.nbDouble, function () {
+				var buttons = InfoMessage.createPrison(joueurCourant,joueurCourant.nbDouble, function () {
 					callback();
 				});
 				joueurCourant.actionAvantDesPrison(buttons);
@@ -3289,7 +3015,7 @@ var Drawer = {
 		treatPrison:function(message){
 			if (this.isDouble()) {
 				MessageDisplayer.write(joueurCourant, message + " et sort de prison");
-				var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", function () {
+				var buttons = InfoMessage.create(joueurCourant,"Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", function () {
 					joueurCourant.exitPrison();
 					GestionDes.endLancer();
 				}, {});
@@ -3298,7 +3024,7 @@ var Drawer = {
 			} else {
 				if (joueurCourant.nbDouble == 2) {
 					MessageDisplayer.write(joueurCourant, message + " et sort de prison en payant " + CURRENCY + " 5.000");
-					var buttons = createMessage("Libere de prison", "lightblue", "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
+					var buttons = InfoMessage.create(joueurCourant,"Libere de prison", "lightblue", "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
 						joueurCourant.payerParcGratuit(5000, function () {
 							joueurCourant.exitPrison();
 							GestionDes.endLancer();
@@ -3309,7 +3035,7 @@ var Drawer = {
 				} else {
 					MessageDisplayer.write(joueurCourant, message + " et reste en prison");
 					joueurCourant.nbDouble++;
-					var buttons = createMessage("Tour " + joueurCourant.nbDouble, "red", "Vous restez en prison, vous n'avez pas fait de double.", function () {
+					var buttons = InfoMessage.create(joueurCourant,"Tour " + joueurCourant.nbDouble, "red", "Vous restez en prison, vous n'avez pas fait de double.", function () {
 						changeJoueur();
 					}, {});
 					joueurCourant.actionApresDes(buttons, null);
@@ -3334,7 +3060,7 @@ var Drawer = {
 				if (this.isDouble()) {
 					if (this.nbDouble >= 2) {
 						// Creer un message
-						var buttons = createMessage("Allez en prison", "red", "Vous avez fait 3 doubles, vous allez en prison", function () {
+						var buttons = InfoMessage.create(joueurCourant,"Allez en prison", "red", "Vous avez fait 3 doubles, vous allez en prison", function () {
 							MessageDisplayer.write(joueurCourant, message + ", a fait 3 doubles et va en prison");
 							$('#informationsCentrale').text("3eme double, allez en PRISON");
 							// On met des valeurs differentes pour les des pour que le joueur ne rejoue pas
@@ -3399,6 +3125,7 @@ var Drawer = {
     function init(nomPlateau, debugValue) {
         DEBUG = debugValue;
         MessageDisplayer.init('idInfoBox');
+		InfoMessage.init('message');
         initDetailFiche();
         initFiches();
         initPanels();
@@ -3707,21 +3434,21 @@ var Drawer = {
                 groups[this.colors[0]].add(fiche);
                 break;
             case "chance":
-                fiche = new Chance(this.axe, this.pos,data.images.chance);
+                fiche = new CaseChance(this.axe, this.pos,data.images.chance);
                 break;
             case "communaute":
-                fiche = new CaisseDeCommunaute(this.axe, this.pos,data.images.caisseDeCommunaute);
+                fiche = new CaseCaisseDeCommunaute(this.axe, this.pos,data.images.caisseDeCommunaute);
                 break;
             case "taxe":
-                fiche = new CarteSpeciale(this.nom, this.prix, this.axe, this.pos, data.images.taxe);
+                fiche = new SimpleCaseSpeciale(this.nom, this.prix, this.axe, this.pos, data.images.taxe);
                 break;
             case "prison":
-                fiche = new CarteActionSpeciale(this.nom, function () {
+                fiche = new CaseActionSpeciale(this.nom, function () {
                     joueurCourant.goPrison();
                 }, this.axe, this.pos);
                 break;
             case "special":
-                fiche = new CarteActionSpeciale(this.nom, function () {
+                fiche = new CaseActionSpeciale(this.nom, function () {
                     changeJoueur();
                 }, this.axe, this.pos);
                 break;
@@ -3730,7 +3457,7 @@ var Drawer = {
                 fiche = parcGratuit;
                 break;
             case "depart":
-                fiche = new CarteActionSpeciale(this.nom, function () {
+                fiche = new CaseActionSpeciale(this.nom, function () {
                     if (VARIANTES.caseDepart) {
                         joueurCourant.gagner(40000)
                     } else {
@@ -3743,14 +3470,16 @@ var Drawer = {
                 }, this.axe, this.pos);
                 break;
             }
-            GestionFiche.add(fiche);
-            if (fiche.color != null) {
-                if (colors[fiche.color] == null) {
-                    // On genere un style
-                    $('style', 'head').prepend('.color_' + fiche.color.substring(1) + '{color:white;font-weight:bold;background-color:' + fiche.color + ';}\n');
-                    colors[fiche.color] = 1;
-                }
-            }
+            if(fiche!=null){
+			GestionFiche.add(fiche);
+				if (fiche.color != null) {
+					if (colors[fiche.color] == null) {
+						// On genere un style
+						$('style', 'head').prepend('.color_' + fiche.color.substring(1) + '{color:white;font-weight:bold;background-color:' + fiche.color + ';}\n');
+						colors[fiche.color] = 1;
+					}
+				}
+			}
         });
         // On calcule les voisins de chaque groupe
         calculeVoisinsGroupes();
@@ -3758,17 +3487,17 @@ var Drawer = {
         // On charge les cartes chances et caisse de communaute
         if (data.chance) {
             $(data.chance.cartes).each(function () {
-                var carte = buildCarteAction(this);
-                if (carte != null) {
-                    cartesChance.push(new CarteChance(this.nom, carte));
+                var actionCarte = CarteActionFactory.get(this);
+                if (actionCarte != null) {
+                    cartesChance.push(new CarteChance(this.nom, actionCarte));
                 }
             });
         }
         if (data.communaute) {
             $(data.communaute.cartes).each(function () {
-                var carte = buildCarteAction(this);
-                if (carte != null) {
-                    cartesCaisseCommunaute.push(new CarteCaisseDeCommunaute(this.nom, carte));
+                var actionCarte = CarteActionFactory.get(this);
+                if (actionCarte != null) {
+                    cartesCaisseCommunaute.push(new CarteCaisseDeCommunaute(this.nom, actionCarte));
                 }
             });
         }		
@@ -3798,33 +3527,6 @@ var Drawer = {
                 }
             }
         }
-    }
-
-    function buildCarteAction(data) {
-        var carte = null;
-        switch (data.type) {
-            /* Amande a payer */
-        case "taxe":
-            carte = new PayerCarte(data.montant);
-            break;
-            /* Argent a toucher */
-        case "prime":
-            carte = new GagnerCarte(data.montant);
-            break;
-            /* Endroit ou aller */
-        case "goto":
-            carte = new GotoCarte(data.axe, data.pos, data.direct);
-            break;
-            /* Deplacement a effectuer */
-        case "move":
-            carte = new MoveNbCarte(data.nb);
-            break;
-            /* Carte prison */
-        case "prison":
-            carte = new PrisonCarte();
-            break;
-        }
-        return carte;
     }
 
     function initDetailFiche() {
@@ -3947,7 +3649,7 @@ var GestionTerrains = {
             }
             GestionTerrains.Constructions.verify();
         } catch (e) {
-            createMessage("Attention", "red", e);
+            InfoMessage.create(joueurCourant,"Attention", "red", e);
             return false;
         }
         return true;

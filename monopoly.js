@@ -50,6 +50,34 @@ Object.defineProperty(Array.prototype, "contains", {
     configurable: false
 });
 
+Object.defineProperty(Array.prototype, "filter", {
+    value: function (callback) {
+        var list = [];
+        for (var i in this) {
+            if (callback(this[i])) {
+                list.push(this[i]);
+            }
+        }
+        return list;
+    },
+    writable: false,
+    enumerable: false,
+    configurable: false
+});
+
+Object.defineProperty(Array.prototype, "find", {
+    value: function (callback) {
+        for (var i in this) {
+            if (callback(this[i])) {
+                return true;
+            }
+        }
+        return false;
+    },
+    writable: false,
+    enumerable: false,
+    configurable: false
+});
 
 $.bind = function (eventName, fct) {
     $('body').bind(eventName, fct);
@@ -126,22 +154,17 @@ var GestionFiche = {
     },
     /* Renvoie les terrains libres */
     getFreeFiches: function () {
-        var frees = [];
-        for (var id in this.fiches) {
-            if (this.fiches[id].statut == ETAT_LIBRE) {
-                frees.push(this.fiches[id]);
-            }
-        }
-        return frees;
+        return this.fiches.filter(function(f){return f.statut == ETAT_LIBRE;});
     },
 	/* Renvoie vrai s'il reste des terrains libres */
 	isFreeFiches:function(){
-		for (var id in this.fiches) {
+        return this.fiches.find(function(f){return f.statut == ETAT_LIBRE;});
+		/*for (var id in this.fiches) {
             if (this.fiches[id].statut == ETAT_LIBRE) {
                 return true;
             }
         }
-		return false;
+		return false;*/
 	},
     /* iterateur pour parcourir les fiches */
     iterator: function () {

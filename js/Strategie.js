@@ -230,7 +230,7 @@ var GestionStrategie = {
 	},
 	createRandom:function(){
 		return this.create(Math.round(Math.random() * 1000)%this.strategies.length);
-	}
+	},
 	getAll:function(){
 		return this.strategies;
 	},

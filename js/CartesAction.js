@@ -45,11 +45,12 @@ function MoveNbCarte(nb) {
 }
 
 /* Action de gain d'argent pour une carte */
-function PayerCarte(montant) {
+function PayerCarte(montant,parc) {
 	CarteAction.call(this,"taxe");
+	this.parc = parc;
 	this.montant = montant;
 	this.action = function (joueur) {
-		joueur.payerParcGratuit(this.montant, function () {
+		joueur.payerParcGratuit(this.parc,this.montant, function () {
 			GestionJoueur.change();
 		});
 	}
@@ -70,7 +71,7 @@ var CarteActionFactory = {
 		switch (data.type) {
 		/* Amande a payer */
 		case "taxe":
-			return new PayerCarte(data.montant);
+			return new PayerCarte(data.montant,parcGratuit);
 		/* Argent a toucher */
 		case "prime":
 			return new GagnerCarte(data.montant);

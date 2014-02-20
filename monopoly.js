@@ -1530,8 +1530,8 @@ var Drawer = {
     function createGame(nbPlayers, firstPlayerIA, options) {
         for (var i = 0; i < nbPlayers; i++) {
 			var nom = "Joueur " + (i+1);
-			if(i == 0 && !firstPlayerIA && options.joueur!=""){
-				nom = options.joueur;
+			if(i == 0 && !firstPlayerIA && options.joueur!=null && options.joueur!=""){
+				nom = options.joueur;				
 			}else{
 				if(nomsJoueurs!=null && nomsJoueurs.length > 0){
 					nom = nomsJoueurs[i];
@@ -1599,7 +1599,7 @@ var Drawer = {
         if (!DEBUG) {
             showCreatePanel();
         } else {
-            createGame(2, false, {});
+            initPlateau('data-monopoly.json',function(){createGame(2, false, {});});
         }
 
     }

@@ -53,7 +53,7 @@
 				   <button style="position:absolute;top:260px;left:190px;" title="Achat maisons" class="action-joueur" onclick="GestionTerrains.open()" disabled="disabled">
 						<img src="img/house.png" style="width:24px;padding:0px;"/>
 					</button>
-				   <button style="position:absolute;top:260px;left:245px;" title="Echange terrains" class="action-joueur" onclick="EchangeDisplayer.open(joueurCourant)" disabled="disabled">
+				   <button style="position:absolute;top:260px;left:245px;" title="Echange terrains" class="action-joueur" onclick="EchangeDisplayer.open(GestionJoueur.getJoueurCourant())" disabled="disabled">
 						<img src="img/swap.png" style="width:24px;padding:0px;"/>
 					</button>
 				   <button style="position:absolute;top:260px;left:300px;" title="Terrains libres" class="action-joueur" onclick="$('#idTerrainsLibres').dialog('open');" disabled="disabled">
@@ -75,8 +75,8 @@
 		</td>
 		<td style="vertical-align:top">    
 			<div id="idDebug" style="display:none">
-			   case : <input type="text" size="3" id="nb"/><input type="button" onclick="joueurCourant.joueDes(parseInt($('#nb').val()))" value="click"/><br/>
-			   Goto : <input type="text" size="3" id="ide"/><input type="text" size="3" id="idp"/><input type="button" onclick="joueurCourant.pion.goto($('#ide').val(),$('#idp').val(),doActions)" value="goto"/><br/>
+			   case : <input type="text" size="3" id="nb"/><input type="button" onclick="GestionJoueur.getJoueurCourant().joueDes(parseInt($('#nb').val()))" value="click"/><br/>
+			   Goto : <input type="text" size="3" id="ide"/><input type="text" size="3" id="idp"/><input type="button" onclick="GestionJoueur.getJoueurCourant().pion.goto($('#ide').val(),$('#idp').val(),doActions)" value="goto"/><br/>
 			</div>	   
 			<div id="informations" class="panneau_joueur"><hr/></div>
 		</td>

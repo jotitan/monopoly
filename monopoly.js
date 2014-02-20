@@ -1114,10 +1114,6 @@ var Drawer = {
 					return this._select(joueur);
 				}
 			}
-			if(this.joueurCourant == null){
-				// On prend le premier
-				this._select(this.joueurs[0]);
-			}
 			// Si un echange est en cours, on ne change pas de joueur
 			if (GestionEchange.running) {
 				return;
@@ -1198,7 +1194,7 @@ var Drawer = {
 			if (this.joueurCourant.bloque) {
 				return null;
 			}
-			var gagnant = getWinner();
+			var gagnant = this.getWinner();
 			if (gagnant != null) {
 				// On a un vainqueur
 				throw gagnant;
@@ -1548,7 +1544,6 @@ var Drawer = {
 
         /* Gestion des options */
         IA_TIMEOUT = options.waitTimeIA || IA_TIMEOUT;
-
     }
 
     function initToolTipJoueur() {

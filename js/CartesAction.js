@@ -14,9 +14,9 @@ function GotoCarte(axe, pos, direct) {
 	CarteAction.call(this,"goto");
 	this.action = function (joueur) {
 		if (direct) {
-			joueurCourant.pion.goDirectToCell(axe, pos, doActions);
+			joueur.pion.goDirectToCell(axe, pos, doActions);
 		} else {
-			joueurCourant.pion.goto(axe, pos, doActions);
+			joueur.pion.goto(axe, pos, doActions);
 		}
 	}
 }
@@ -26,9 +26,9 @@ function PrisonCarte() {
 	CarteAction.call(this,"prison");
 	this.joueurPossede = null;
 	this.action = function (joueur) {
-		joueurCourant.cartesSortiePrison.push(this);
-		this.joueurPossede = joueurCourant;
-		changeJoueur();
+		joueur.cartesSortiePrison.push(this);
+		this.joueurPossede = joueur;
+		GestionJoueur.change();
 	}
 	this.isLibre = function () {
 		return this.joueurPossede == null;
@@ -39,8 +39,8 @@ function PrisonCarte() {
 function MoveNbCarte(nb) {
 	CarteAction.call(this,"move");
 	this.action = function (joueur) {
-		var pos = joueurCourant.pion.deplaceValeursDes(nb); // On ajoute 40 pour les cases négatives
-		joueurCourant.pion.goDirectToCell(pos.axe, pos.pos, doActions);
+		var pos = joueur.pion.deplaceValeursDes(nb); // On ajoute 40 pour les cases négatives
+		joueur.pion.goDirectToCell(pos.axe, pos.pos, doActions);
 	}
 }
 
@@ -49,8 +49,8 @@ function PayerCarte(montant) {
 	CarteAction.call(this,"taxe");
 	this.montant = montant;
 	this.action = function (joueur) {
-		joueurCourant.payerParcGratuit(this.montant, function () {
-			changeJoueur();
+		joueur.payerParcGratuit(this.montant, function () {
+			GestionJoueur.change();
 		});
 	}
 }
@@ -60,8 +60,8 @@ function GagnerCarte(montant) {
 	CarteAction.call(this,"prime");
 	this.montant = montant;
 	this.action = function (joueur) {
-		joueurCourant.gagner(this.montant);
-		changeJoueur();
+		joueur.gagner(this.montant);
+		GestionJoueur.change();
 	}
 }
 

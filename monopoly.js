@@ -1,9 +1,4 @@
 /* Gestion du Monopoly */
-/* Dependances a charger : */
-/* * GestionConstructions.js */
-/* * Graphics.js */
-/* * SquareGraphics.js */
-/* * CircleGraphics.js */
 
 /* TODO : Permettre l'achat de terrain hors strategie quand on est blinde et qu'on a deja des groupes et des constructions dessus */
 /* -- TODO : Echange uniquement quand tous les terrains sont vendus. La banque vend (quand on achete pas) ou quand un joueur perd */
@@ -17,9 +12,7 @@
 /* --TODO : integrer les contres sur les encheres (n'encherie que si la personne vraiment interesse pose une enchere */
 /* IDEE : Cassandra, Ring, Hash */
 /* BIG TODO : implementation du des rapide */
-/* BIG TODO : super monopoly ? */
 /* TODO : pour echange, si argent dispo et adversaire dans la deche, on propose une grosse somme (si old proposition presente) */
-/* TODO : permettre le packaging */
 
 var DEBUG = false;
 var IA_TIMEOUT = 1000; // Temps d'attente pour les actions de l'ordinateur
@@ -49,14 +42,9 @@ var cartesCaisseCommunaute = new Array();
 var parcGratuit = null;
 var currentFiche = null;
 
-/* Liste des joueurs */
-var joueurs = new Array();
-var colorsJoueurs = ["#383C89", "#A6193E", "#C58F01", "#086B3D", "#B9B29B","#663300"];
-
 var CURRENCY = "F.";
 
-var ETAT_LIBRE = 0;
-var ETAT_ACHETE = 1;
+
 
 /* Dimensions du plateau */
 var largeur = 65;
@@ -70,95 +58,7 @@ var largeurPion = (largeur - 5) / 3;
 var titles = {};
 var nomsJoueurs = [];
 
-/* Permet de gerer les fiches */
-var GestionFiche = {
-    fiches: [],
-    keys: [], // Cles des fiches
-	_calculateStrId:function(id){
-		return parseInt(id.substr(0,1))*10 + parseInt(id.substr(2,3));
-	},
-	_calculateId:function(info){
-		return info.axe*10 + info.pos;
-	},
-    getById: function (id) {
-		return this.fiches[this._calculateStrId(id)];
-        //return this.fiches[id];
-    },
-    get: function (info) {
-		return this.fiches[this._calculateId(info)];
-        //return this.fiches[info.axe + "-" + info.pos];
-    },
-    add: function (fiche) {
-		var intId = this._calculateStrId(fiche.id);
-		this.fiches[intId] = fiche;
-		this.keys.push(intId);
-        //this.fiches[fiche.id] = fiche;
-        //this.keys.push(fiche.id);
-    },
-    /* Renvoie les terrains libres */
-    getFreeFiches: function () {
-        return this.fiches.filter(function(f){return f.statut == ETAT_LIBRE;});
-    },
-	/* Renvoie vrai s'il reste des terrains libres */
-	isFreeFiches:function(){
-        return this.fiches.some(function(f){return f.statut == ETAT_LIBRE;});		
-	},
-    /* iterateur pour parcourir les fiches */
-    iterator: function () {
-        return {
-            pointer: 0,
-            hasNext: function () {
-                return this.pointer < GestionFiche.keys.length;
-            },
-            next: function () {
-                return GestionFiche.fiches[GestionFiche.keys[this.pointer++]];
-            }
-        }
-    },
-    /* iterateur pour parcourir les terrains (pas de carte chance, taxe...) */
-    iteratorTerrains: function () {
-        // On calcule des cles
-        var keys = [];
-		for (var id in this.fiches) {
-            if (this.fiches[id].isTerrain) {
-                keys.push(id);
-            }
-        }
-        return this._buildIterator(keys);
-    },
-    getTerrainsLibres: function () {
-        var keys = [];
-        for (var id in this.fiches) {
-            if (this.fiches[id].isTerrain && this.fiches[id].statut == ETAT_LIBRE) {
-                keys.push(id);
-            }
-        }
-        return this._buildIterator(keys);
-    },
-    _buildIterator: function (keys) {
-        return {
-            pointer: 0,
-            keys: keys,
-            hasNext: function () {
-                return this.pointer < this.keys.length;
-            },
-            next: function () {
-                return GestionFiche.fiches[this.keys[this.pointer++]];
-            }
-        }
-    },
-    nextPos: function (etat, position) {
-        position++;
-        if (position == 10) {
-            etat = (etat + 1) % 4;
-            position = 0;
-        }
-        return {
-            "position": position,
-            "etat": etat
-        };
-    }
-}
+
 	
 function ParcGratuit(axe, pos) {
     this.id = axe + "-" + pos;
@@ -187,7 +87,6 @@ function ParcGratuit(axe, pos) {
             montant: this.montant
         });
     }
-
     this.setMontant(0);
 }
 
@@ -294,10 +193,7 @@ var GestionEchange = {
         });
         // On notifie le joueur et on lui donne le callback(end) pour lancer la suite du traitement
 		// Cas de la contreproposition
-        if (joueurReject.equals(this.demandeur)) {
-            /*this.proprietaire.notifyRejectProposition(function () {
-                GestionEchange.end();
-            }, this.terrain, this.proposition);	*/
+        if (joueurReject.equals(this.demandeur)) {            
 			this.demandeur.notifyRejectProposition(function () {
                 GestionEchange.end();
             }, this.terrain, this.initialProposition);			
@@ -308,10 +204,6 @@ var GestionEchange = {
         }
     }
 }
-
-
-
-
     
     function Pion(color, joueur) {
         this.etat = 2;
@@ -341,7 +233,7 @@ var GestionEchange = {
             var axe = this.etat;
 			while(pos<0){
 				pos+=10;
-				axe= (axe - 1)%4;
+				axe= (axe + 3)%4;
 			}
             while (pos >= 10) {
                 pos -= 10;
@@ -388,98 +280,25 @@ var GestionEchange = {
         }
     }
 
-    function CaseActionSpeciale(titre, actionSpeciale, etat, pos) {
-        this.titre = titre;
-        this.actionSpeciale = actionSpeciale;
-        this.id = etat + "-" + pos;
-		this.drawing = DrawerFactory.getCaseSpeciale(etat,titre);
-        Drawer.add(this.drawing);
-
-        this.action = function () {
-			$.trigger('monopoly.visiteTerrain',{joueur:GestionJoueur.getJoueurCourant(),maison:{color:'black',nom:this.titre}});
-            this.actionSpeciale();
-        }
-    }
-
-    /* Case speciale, comme la taxe de luxe */
-    function SimpleCaseSpeciale(titre, montant, etat, pos, img) {
-        this.id = etat + "-" + pos;
-		this.drawing = DrawerFactory.getCase(pos, etat, null, titre, CURRENCY + " " + montant, img);
-        Drawer.add(this.drawing);
-        this.action = function () {
-            return InfoMessage.create(GestionJoueur.getJoueurCourant(),titre, "lightblue", "Vous devez payer la somme de " + montant + " " + CURRENCY, function (param) {
-                param.joueur.payerParcGratuit(parcGratuit,param.montant, function () {
-                    GestionJoueur.change();
-                });
-            }, {
-                joueur: GestionJoueur.getJoueurCourant(),
-                montant: montant
-            });
-        }
-    }
-
-    function CarteChance(libelle, carte) {
-        this.carte = carte;
-        this.action = function (joueur) {
-            return InfoMessage.create(GestionJoueur.getJoueurCourant(),titles.chance, "lightblue", libelle, function (param) {
-                $.trigger('monopoly.chance.message', {
+   	function CarteAction(libelle,carte,title,color,triggerLabel){
+		this.carte = carte;
+		this.action = function(){
+			return InfoMessage.create(GestionJoueur.getJoueurCourant(),title, color, libelle, function (param) {
+                $.trigger('monopoly.' + triggerLabel + '.message', {
                     joueur: GestionJoueur.getJoueurCourant(),
                     message: libelle
                 });
                 carte.action(GestionJoueur.getJoueurCourant());
             }, {});
-        }
+		}
+	}
+   
+    function CarteChance(libelle, carte) {
+		CarteAction.call(this,libelle,carte,titles.chance,"lightblue","chance");	   
     }
 
     function CarteCaisseDeCommunaute(libelle, carte) {
-        this.carte = carte;
-        this.action = function (joueur) {
-            $.trigger('monopoly.caissecommunaute.message', {
-                joueur: GestionJoueur.getJoueurCourant(),
-                message: libelle
-            });
-            return InfoMessage.create(GestionJoueur.getJoueurCourant(),titles.communaute, "pink", libelle, function (param) {
-                carte.action(GestionJoueur.getJoueurCourant());
-            }, {});
-        }
-    }
-
-    function CaseChance(etat, pos,img) {
-        this.id = etat + "-" + pos;
-        this.drawing = DrawerFactory.getCase(pos, etat, null, titles.chance, null, img);
-        Drawer.add(this.drawing);
-        this.action = function () {
-            if (cartesChance.length == 0) {
-                throw "Aucune carte chance";
-            }
-            var randomValue = Math.round((Math.random() * 1000)) % (cartesChance.length);
-            var c = cartesChance[randomValue];
-            // On test si la carte est une carte sortie de prison est possedee par un joueur
-            if (c.carte.type == "prison" && !c.carte.isLibre()) {
-                // on prend la carte suivante
-                c = cartesChance[randomValue + 1 % (cartesChance.length)];
-            }
-            return c.action();
-        }
-    }
-
-    function CaseCaisseDeCommunaute(etat, pos, img) {
-        this.id = etat + "-" + pos;
-        this.drawing = DrawerFactory.getCase(pos, etat, null, titles.communaute, null, img );
-        Drawer.add(this.drawing);
-        this.action = function () {
-            if (cartesCaisseCommunaute.length == 0) {
-                throw "Aucune carte caisse de communaute";
-            }
-            var randomValue = Math.round((Math.random() * 1000)) % (cartesCaisseCommunaute.length);
-            var c = cartesCaisseCommunaute[randomValue];
-            // On test si la carte est une carte sortie de prison est possedee par un joueur
-            if (c.carte.type == "prison" && !c.carte.isLibre()) {
-                // on prend la carte suivante
-                c = cartesCaisseCommunaute[(randomValue + 1) % (cartesCaisseCommunaute.length)];
-            }
-            return c.action();
-        }
+		CarteAction.call(this,libelle,carte,titles.communaute,"pink","caissecommunaute");	           
     }
 
     // Gere les dessins
@@ -620,7 +439,6 @@ var Drawer = {
                     return true;
                 }
             }
-
             return false;
         }
 
@@ -683,379 +501,11 @@ var Drawer = {
         /* Renvoie le nombre de fiche dans le groupe */
         this.getNb = function () {
             return (this.fiches == null) ? 0 : this.fiches.length;
-        }
-
-    }
-
-    /* Represente un terrain */
-    function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
-        this.nom = nom;
-        this.groupe = null;
-        this.color = colors[0];
-        this.secondColor = (colors.length == 2) ? colors[1] : colors[0];
-        this.achat = achat;
-        this.montantHypotheque = achat / 2;
-        this.achatHypotheque = this.montantHypotheque * 1.1;
-        this.loyer = loyers;
-        this.loyerHotel = (loyers != null && loyers.length == 6) ? loyers[5] : 0;
-        this.prixMaison = prixMaison;
-
-        this.statut = ETAT_LIBRE;
-        this.joueurPossede = null;
-        this.statutHypotheque = false;
-        this.fiche = $('#fiche');
-        this.nbMaison = 0; // Nombre de maison construite sur le terrain par le proprietaire
-        this.hotel = false; // Si un hotel est present
-        this.maisons = new Array();
-        this.constructible = true;
-        this.isTerrain = true;
-        this.etat = etat;
-        this.pos = pos;
-        var current = this;
-        this.id = etat + "-" + pos;
-        this.input = null; // Bouton 
-
-        this.drawing = DrawerFactory.getCase(pos, etat, this.color, this.nom, CURRENCY + " " + achat, img);
-        Drawer.add(this.drawing);
-
-        this.equals = function (fiche) {
-            if (fiche == null) {
-                return false;
-            }
-            return this.id == fiche.id;
-        }
-
-        /* Renvoie l'etat courant du terrain (JSON) */
-        this.save = function () {
-            // On renvoie le statut, le proprio, le nombre de maison, le statut hypotheque
-            return {
-                id: this.id,
-                statut: this.statut,
-                joueur: ((this.joueurPossede != null) ? this.joueurPossede.id : null),
-                nb: this.nbMaison,
-                hypotheque: this.statutHypotheque
-            };
-        }
-
-        this.load = function (data) {
-            var joueur = data.joueur != null ? getJoueurById(data.joueur) : null;
-            this.joueurPossede = joueur;
-            if (joueur != null) {
-                joueur.maisons.push(this); // Ajoute a la liste de ses maisons
-                joueur._drawTitrePropriete(this);
-            }
-            this.id = data.id;
-            this.statut = data.statut;
-            this.setNbMaison(data.nb, true);
-            // On deduit les quantites du gestionnaire
-            if(data.nb > 0){
-                if(data.nb == 5){
-                    GestionConstructions.buyHotels(1);
-                }
-                else{
-                    GestionConstructions.buyHouses(data.nb);
-                }
-            }
-            this.statutHypotheque = data.hypotheque;
-            if (this.statutHypotheque == true) {
-                this.input.addClass('hypotheque');
-            }
-        }
-
-        this.vendu = function (joueur) {
-            this.statut = ETAT_ACHETE;
-            this.joueurPossede = joueur;
-            this.joueurPossede.maisons.push(this);
-            $.trigger("monopoly.acheteMaison", {
-                joueur: joueur,
-                maison: this
-            });
-        }
-
-        /* Le terrain est rendu (manque d'argent) */
-        this.libere = function () {
-            this.statut = ETAT_LIBRE;
-			this.statutHypotheque = false;
-            this.joueurPossede = null;
-            this.setNbMaison(0, true);
-            this.hotel = false;
-        }
-
-        /* Renvoie la rentabilite de la propriete. Se base sur le rapport entre le loyer de trois maisons et le prix d'achat d'une maison */
-        this.getRentabilite = function () {
-            var ponderation = 10; // Facteur pour nivelle le taux
-            if (!this.constructible || this.nbMaison >= 3) {
-                return 0;
-            } else {
-                // Maison du groupe
-                var proprietes = this.groupe.fiches;
-                var nbMaisonsConstruites = 0;
-                for (var i = 0; i < proprietes.length; i++) {
-                    nbMaisonsConstruites += proprietes[i].nbMaison;
-                }
-                return (this.loyer[3] / Math.max((proprietes.length * 3 - nbMaisonsConstruites) * this.prixMaison, 1)) / ponderation;
-            }
-        }
-
-        /* Renvoie la rentabilite brute, sans prise en compte des maisons achetees */
-        this.getRentabiliteBrute = function () {
-            if (!this.constructible) {
-                return 0;
-            }
-            return this.loyer[3] / (this.achat + 3 * this.prixMaison);
-        }
-
-        /* Hypotheque le terrain */
-        this.hypotheque = function () {
-            if (this.input == null || this.statut != ETAT_ACHETE || this.nbMaison > 0) {
-                throw "Impossible d'hypothequer ce terrain";
-            }
-            this.statutHypotheque = true;
-            this.input.addClass('hypotheque');
-            this.joueurPossede.gagner(this.montantHypotheque);
-            $.trigger('monopoly.hypothequeMaison', {
-                joueur: this.joueurPossede,
-                maison: this
-            });
-        }
-
-        this.leveHypotheque = function () {
-            if (this.input == null || this.statut != ETAT_ACHETE || this.statutHypotheque == false) {
-                return;
-            }
-            var cout = Math.round(this.achatHypotheque);
-            if (this.joueurPossede.montant < cout) {
-                throw "Impossible de lever l'hypotheque";
-            }
-            this.statutHypotheque = false;
-            this.joueurPossede.payer(cout);
-            this.input.removeClass('hypotheque');
-            $.trigger('monopoly.leveHypothequeMaison', {
-                joueur: this.joueurPossede,
-                maison: this
-            });
-        }
-
-        this.isLibre = function () {
-            return this.statut == ETAT_LIBRE;
-        }
-
-        this.isConstructed = function () {
-            return this.nbMaison > 0;
-        }
-
-        /* Modifie le nombre de maison sur le terrain */
-        this.setNbMaison = function (nb, noRefresh) {
-            this.nbMaison = nb;
-            this.drawing.setNbMaison(nb);
-            if (this.nbMaison == 5) {
-                this.hotel = true;
-            } else {
-                this.hotel = false;
-            }
-            // Lancer un evenement pour rafraichir le plateau
-            if (!noRefresh) {
-                $.trigger('refreshPlateau');
-            }
-        }
-
-        this.action = function () {
-            this.fiche.dialog('option', 'title', nom);
-            // si on est chez soi, on affiche pas
-            if (this.joueurPossede != null && this.joueurPossede.equals(GestionJoueur.getJoueurCourant())) {
-                return this.chezSoi();
-            }
-            if (this.joueurPossede != null && this.statutHypotheque == false) { // on doit payer un loyer
-                return this.payerLoyer();
-            }
-
-            return this.openFiche();
-        }
-
-        this.chezSoi = function () {
-			$.trigger('monopoly.chezsoi',{joueur:this.joueurPossede,maison:this});
-            return InfoMessage.create(GestionJoueur.getJoueurCourant(),"Vous etes " + this.nom, this.color, "Vous etes chez vous", changeJoueur);
-        }
-
-        this.sellMaison = function (joueur, noRefresh) {
-            if (joueur == null || !this.joueurPossede.equals(joueur) || this.nbMaison <= 0) {
-                return false;
-            }
-            if (this.nbMaison == 5) {
-                // On verifie qu'il reste assez de maison (4)
-                if (GestionConstructions.getRestHouse() >= 4) {
-                    GestionConstructions.buyHouses(4);
-                    GestionConstructions.sellHotel();
-                    this.hotel = false;
-                } else {
-                    return; // Pas assez de maison
-                }
-            } else {
-                GestionConstructions.sellHouse();
-            }
-            this.setNbMaison(this.nbMaison - 1, noRefresh);
-            return true;
-        }
-
-
-        /* Utilise principalement par un joueur ordi qui achete les maisons une par une. */
-        /* Un joueur humain utilise des methodes de modifications directes */
-        this.buyMaison = function (joueur, noRefresh) {
-            if (joueur == null || !this.joueurPossede.equals(joueur) || this.nbMaison >= 5) {
-                return;
-            }
-            // On verifie la dispo
-            if ((this.nbMaison == 4 && !GestionConstructions.isFreeHotel()) || (this.nbMaison < 4 && !GestionConstructions.isFreeHouse())) {
-                throw "Pas de construction disponible";
-
-            }
-            this.setNbMaison(this.nbMaison + 1, noRefresh);
-            if (this.nbMaison == 5) {
-                this.hotel = true;
-                GestionConstructions.buyHotel();
-            } else {
-                GestionConstructions.buyHouse();
-            }
-        }
-
-        this.getLoyer = function () {
-            if (this.statutHypotheque) {
-                return 0;
-            }
-            if (this.hotel == true) {
-                return this.loyerHotel;
-            }
-            if (this.nbMaison == 0 && this.isGroupee()) {
-                return this.loyer[0] * 2;
-            }
-            return this.loyer[this.nbMaison];
-        }
-
-        this.payerLoyer = function () {
-            return InfoMessage.create(GestionJoueur.getJoueurCourant(),"Vous etes " + this.nom, this.color, "Vous etes chez " + this.joueurPossede.nom + " vous devez payez la somme de " + this.getLoyer() + " " + CURRENCY, function (param) {
-                $.trigger('monopoly.payerLoyer', {
-                    joueur: param.joueurPaye,
-                    maison: param.maison
-                });
-                param.joueurPaye.payerTo(param.loyer, param.joueurLoyer);
-            }, {
-                loyer: this.getLoyer(),
-                joueurPaye: GestionJoueur.getJoueurCourant(),
-                joueurLoyer: this.joueurPossede,
-                maison: this
-            });
-        }
-
-        this.noArgent = function () {
-            //construireMaisons(true);
-        }
-
-        // Ouvre la fiche d'une propriete
-        this.openFiche = function () {
-            var buttons = this.getButtons();
-            this.fiche.dialog('option', 'buttons', buttons);
-            loadFiche(this);
-            if (GestionJoueur.getJoueurCourant().canPlay) {
-                this.fiche.dialog('open');
-            }
-            return buttons;
-        }
-
-        this.getButtons = function () {
-            if (this.statut == ETAT_LIBRE) {
-                if (GestionJoueur.getJoueurCourant().montant < this.achat) {
-                    return {
-                        "Pas assez d'argent": function () {
-                            GestionJoueur.getJoueurCourant().refuseMaison(current,doCloseFiche);
-                        }
-                    };
-                } else {
-                    return {
-                        "Acheter": function () {
-							var j = GestionJoueur.getJoueurCourant();
-                            var id = j.pion.etat + "-" + j.pion.position;
-                            j.acheteMaison(current);
-                            doCloseFiche();
-                        },
-                        "Refuser": function () {
-                            GestionJoueur.getJoueurCourant().refuseMaison(current,doCloseFiche);
-                        }
-                    };
-                }
-            } else {
-                return {
-                    "Fermer": function () {
-                        doCloseFiche();
-                    }
-                };
-            }
-        }
-
-        /* Renvoie vrai si le reste du groupe appartient au meme joueur.*/
-        this.isGroupee = function () {
-            return (this.groupe == null) ? false : this.groupe.isGroupee();
-        }
-
-        /* Renvoie vrai si le groupe est complet et construit */
-        /* Renvoie vrai si le reste du groupe appartient au meme joueur.*/
-        this.isGroupeeAndBuild = function () {
-            if (this.joueurPossede == null) {
-                return false;
-            }
-            // Renvoie les maisons constructibles (lorsque le groupe est complet)
-            var l = this.joueurPossede.findMaisonsConstructibles();
-            for (var i = 0; i < l.length; i++) {
-                // Si la couleur apparait dans une propriete, le groupe est complet
-                if (l[i].color == this.color && l[i].nbMaison > 0) {
-                    return true;
-                }
-            }
-            return false;
-        }
-    }
-
-    function FicheGare(etat, pos, color, nom, achat, loyers, img) {
-        Fiche.call(this, etat, pos, color, nom, achat, loyers, null, img);
-        this.type = "gare";
-        this.constructible = false;
-        this.getLoyer = function () {
-            if (this.joueurPossede != null) {
-                var nb = -1;
-                for (var i = 0; i < this.joueurPossede.maisons.length; i++) {
-                    if (this.joueurPossede.maisons[i].type == "gare") {
-                        nb++;
-                    }
-                }
-                return this.loyer[nb];
-            }
-            return 0;
-        }
-    }
-
-    function FicheCompagnie(etat, pos, color, nom, achat, loyers,img) {
-        Fiche.call(this, etat, pos, color, nom, achat, loyers, null,img);
-        this.fiche = $('#ficheCompagnie');
-        this.type = "compagnie";
-        this.constructible = false;
-
-        this.getLoyer = function () {
-			var loyer = GestionDes.total();
-            if (this.joueurPossede != null) {
-                var nb = -1;
-                for (var i = 0; i < this.joueurPossede.maisons.length; i++) {
-                    if (this.joueurPossede.maisons[i].type == "compagnie") {
-                        nb++;
-                    }
-                }
-                return this.loyer[nb] * loyer;
-            }
-            return this.loyer[0] * loyer;
-        }
+        }		
     }
 
 
     // Cree le comportement lorsque le joueur arrive sur la carte
-
     function doActions() {
         var fiche = GestionFiche.getById(GestionJoueur.getJoueurCourant().pion.etat + "-" + GestionJoueur.getJoueurCourant().pion.position);
         if (fiche == null) {
@@ -1067,9 +517,6 @@ var Drawer = {
         GestionJoueur.getJoueurCourant().actionApresDes(buttons, fiche);
     }
 
-    
-   
-	
 	function formatTempsJeu(){		
 		var time = Math.round((new Date().getTime() - stats.heureDebut)/1000);
 		if(time < 60){
@@ -1400,10 +847,9 @@ var Drawer = {
     }
 
     function initToolTipJoueur() {
-
         $('.info-joueur').tooltip({
             content: function () {
-                var stats = getJoueurById($(this).data('idjoueur')).getStats();
+                var stats = GestionJoueur.getById($(this).data('idjoueur')).getStats();
                 $('span[name]', '#infoJoueur').each(function () {
                     $(this).html(stats[$(this).attr('name')]);
                 });
@@ -1413,33 +859,6 @@ var Drawer = {
         // Panneau d'echange
         EchangeDisplayer.init('idPanelEchange', 'idSelectJoueurs', 'idListTerrainsJoueur', 'idListTerrainsAdversaire');
         CommunicationDisplayer.init('idCommunicationEchange');
-    }
-
-    function createJoueur(isRobot, i, nom) {
-        var id = 'joueur' + i;
-        var joueur = null;
-        var color = colorsJoueurs[i];
-        if (isRobot) {
-            joueur = new JoueurOrdinateur(i, nom, color);
-        } else {
-            joueur = new Joueur(i, nom, color);
-        }
-		var div = $('<div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div><hr/>');
-		if(i%2 == 0 && window.innerWidth > 1350){
-			$('#informations-left').append(div);;
-		}
-		else{
-			$('#informations').append(div);
-		}
-		
-        joueur.setDiv($('#' + id));
-        joueur.setPion(color);
-        // On defini la couleurs
-        $('#' + id + ' > div.joueur-bloc').css('backgroundImage', 'linear-gradient(to right,white 50%,' + color + ')');
-        $.trigger('monopoly.newPlayer', {
-            joueur: joueur
-        });
-        return joueur;
     }
 
     function reset() {
@@ -1454,7 +873,6 @@ var Drawer = {
         } else {
             initPlateau('data-monopoly.json',function(){createGame(2, false, {});});
         }
-
     }
 
     // Initialise le plateau en chargeant les donnees dans le fichier
@@ -1493,7 +911,6 @@ var Drawer = {
                 return;
             }
         });
-
     }
 
 	/* Charge les donnees du plateau */
@@ -1685,7 +1102,6 @@ var Drawer = {
         $('#idDetailFiche').slideUp();
     }
 
-
 function loadFiche(fiche) {
     loadGenericFiche(fiche, $('#fiche'), 'FFFFFF');
     fiche.fiche.prev().css("background-color", fiche.color);
@@ -1763,17 +1179,6 @@ function initFiches() {
         }
     });
     $('#ficheCompagnie').prev().css("background", "url()");
-}
-
-
-function getJoueurById(numero) {
-    numero = parseInt(numero);
-    for (var joueur in joueurs) {
-        if (joueurs[joueur].numero == numero) {
-            return joueurs[joueur];
-        }
-    }
-    return null;
 }
 
 /* Affiche les echanges entre les joueurs */
@@ -1943,105 +1348,6 @@ var CommunicationDisplayer = {
     close: function () {
         this.panel.dialog('close');
     }
-
-}
-
-var EchangeDisplayer = {
-    panel: null,
-    selectJoueurs: null,
-    listTerrainsJoueur: null,
-    listTerrainsAdversaire: null,
-    joueur: null,
-    init: function (id, idSelectJoueurs, idListTerrainsJoueur, idListTerrainsAdversaire) {
-        this.panel = $('#' + id);
-        this.selectJoueurs = $('#' + idSelectJoueurs);
-        this.listTerrainsJoueur = $('#' + idListTerrainsJoueur);
-        this.listTerrainsAdversaire = $('#' + idListTerrainsAdversaire);
-
-        this.panel.dialog({
-            title: "Echange de terrains",
-            autoOpen: false,
-            width: 400,
-            buttons: {
-                "Annuler": function () {
-                    EchangeDisplayer.close();
-                },
-                "Proposer": function () {
-                    EchangeDisplayer.propose();
-                }
-            }
-        });
-        // On charge les joueurs
-        for (var j in joueurs) {
-            this.selectJoueurs.append('<option value="' + joueurs[j].id + '">' + joueurs[j].nom + '</option>');
-        }
-        this.selectJoueurs.change(function () {
-            $('option:not(:first),optgroup', EchangeDisplayer.listTerrainsAdversaire).remove();
-            var joueur = getJoueurById(EchangeDisplayer.selectJoueurs.val());
-            if (joueur != null) {
-                var groups = joueur.getMaisonsGrouped();
-                for (var g in groups) {
-                    var group = groups[g];
-                    var optionGroup = $('<optgroup label="Groupe ' + group.groupe + '" style="color:' + group.color + '"></optGroup>');
-                    for (var f in group.terrains) {
-                        var fiche = group.terrains[f];
-                        optionGroup.append('<option value="' + fiche.id + '">' + fiche.nom + '</option>');
-                    }
-                    EchangeDisplayer.listTerrainsAdversaire.append(optionGroup);
-                }
-            }
-        });
-    },
-    open: function (joueur) {
-        this.joueur = joueur;
-        // On cache le joueur qui a ouvert le panneau
-        this.selectJoueurs.find('option:not(:visible)').show();
-        this.selectJoueurs.find('option[value="' + joueur.id + '"]').hide();
-
-        // Affichage des terrains du joueur
-        this.listTerrainsJoueur.empty();
-        var groups = joueur.getMaisonsGrouped();
-        for (var g in groups) {
-            // ne pas affiche si construit )groups[g].isConstructed()
-            var group = groups[g];
-            var div = $('<div style="font-weight:bold;color:' + group.color + '">Groupe ' + group.groupe + '<br/></div>');
-            for (var f in group.terrains) {
-                var fiche = group.terrains[f];
-                div.append('<input type="checkbox" value="' + fiche.id + '" id="chk_id_' + fiche.id + '"/><label for="chk_id_' + fiche.id + '">' + fiche.nom + '</label><br/>');
-            }
-            EchangeDisplayer.listTerrainsJoueur.append(div);
-        }
-        this.panel.dialog('open');
-    },
-    propose: function () {
-        var proprietaire = getJoueurById(EchangeDisplayer.selectJoueurs.val());
-        var terrain = GestionFiche.getById(this.listTerrainsAdversaire.val());
-        //var terrain = getFicheById(this.listTerrainsAdversaire.val());
-        if (proprietaire == null || terrain == null) {
-            return;
-        }
-        // L'action de fin, c'est la reprise du jeu par le joueur (donc rien)
-        GestionEchange.init(this.joueur, proprietaire, terrain, null);
-        // On recupere la proposition
-        var proposition = {
-            terrains: [],
-            compensation: 0
-        };
-        $(':checkbox:checked', this.listTerrainsJoueur).each(function () {
-            proposition.terrains.push(GestionFiche.getById($(this).val()));
-            //proposition.terrains.push(getFicheById($(this).val()));
-        });
-        if ($('#idArgentProposition').val() != "") {
-            proposition.compensation = parseInt($('#idArgentProposition').val());
-        }
-        this.close();
-        CommunicationDisplayer.showPropose(this.joueur, proprietaire, terrain, proposition, this.joueur);
-        GestionEchange.propose(proposition);
-    },
-    close: function () {
-        this.panel.dialog('close');
-        $('option', this.selectJoueurs).removeAttr('selected');
-    }
 }
 
 var MessageDisplayer = {
@@ -2051,7 +1357,6 @@ var MessageDisplayer = {
         this.div = $('#' + id);
         this.bindEvents();
     },
-
     write: function (joueur, message) {
         MessageDisplayer.order++;
         var orderMessage = (DEBUG) ? (' (' + MessageDisplayer.order + ')') : '';
@@ -2174,390 +1479,7 @@ var MessageDisplayer = {
     }
 
 }
-
-/* Gere la sauvegarde */
-var Sauvegarde = {
-    prefix: "monopoly.",
-    suffix: ".save",
-    save: function (name) {
-        if (name == null) {
-            name = this.getSauvegardeName();
-        }
-        // On recupere la liste des joueurs
-        var saveJoueurs = [];
-        for (var j in joueurs) {
-            if (joueurs[j].save != null) {
-                saveJoueurs.push(joueurs[j].save());
-                // On retient la position du joueur
-            }
-        }
-        // On recupere la liste des fiches
-        var saveFiches = [];
-        var it = GestionFiche.iteratorTerrains();
-        while (it.hasNext()) {
-            saveFiches.push(it.next().save());
-        }
-        var data = {
-            joueurs: saveJoueurs,
-            fiches: saveFiches,
-            joueurCourant: GestionJoueur.getJoueurCourant().id,
-            variantes: VARIANTES,
-            nbTours: nbTours,
-			plateau:currentPlateauName
-        };
-        this._putStorage(name, data);
-        $.trigger("monopoly.save", {
-            name: name
-        });
-    },
-    load: function (name) {
-        currentSauvegardeName = name;
-        var data = this._getStorage(name);
-        reset();
-		// On charge le plateau
-		initPlateau(data.plateau || "data-monopoly.json",function(){
-			for (var i = 0; i < data.joueurs.length; i++) {
-				var joueur = GestionJoueur.create(!data.joueurs[i].canPlay, i,data.joueurs[i].nom);
-				joueur.load(data.joueurs[i]);
-				//joueurs.push(joueur);
-			}
-			for (var i = 0; i < data.fiches.length; i++) {
-				GestionFiche.getById(data.fiches[i].id).load(data.fiches[i]);
-			}
-			$.trigger('refreshPlateau');
-			VARIANTES = data.variantes || VARIANTES;
-			nbTours = data.nbTours || 0;
-			initToolTipJoueur();
-			
-			GestionJoueur.change(data.joueurCourant);			
-		});       
-    },
-    delete: function (name) {
-        localStorage.removeItem(name);
-    },
-    _putStorage: function (name, data) {
-        localStorage[name] = JSON.stringify(data);
-    },
-    _getStorage: function (name) {
-        if (localStorage[name] == null) {
-            throw "Aucune sauvegarde";
-        }
-        var data = localStorage[name];
-        return JSON.parse(data);
-    },
-    autoSave: function () {
-
-    },
-    findSauvegardes: function () {
-        var exp = "^" + this.prefix + "(.*)" + this.suffix + "$";
-        var list = [];
-        for (var name in localStorage) {
-            var label = new RegExp(exp, "g").exec(name);
-            if (label != null) {
-                list.push({
-                    value: name,
-                    label: label[1]
-                });
-            }
-        }
-        return list;
-    },
-    getSauvegardeName: function (name) {
-        return this.prefix + ((name == null) ? new Date().getTime() : name) + this.suffix;
-    }
-
-}
-
-/* Gestion d'une mise aux enchere d'un terrain */
-/* Empecher un joueur d'acquerir un terrain ? */
-var GestionEnchere = {
-    terrain: null,
-    callback: null,
-    miseDepart: 0,
-    ventePerte: false,
-    pasVente: 1000,
-    joueurLastEnchere: null,
-    lastEnchere: 0,
-    nextMontantEnchere: 0,
-    currentJeton: 0,
-    joueursExit: [],
-    endAckJoueurs: [], // Liste des joueurs ayant accuse de la fin des encheres
-    transaction: 0, // Permet d'authentifier la transaction
-
-    /* Initialise une mise aux enchere */
-    /* @param miseDepart : prix de depart */
-    /* @param ventePerte : si vrai, permet de baisser la mise de depart (cas d'une vente obligee pour payer une dette) */
-    init: function (terrain, miseDepart, ventePerte, callback) {
-        this.terrain = terrain;
-        this.callback = callback;
-        this.miseDepart = miseDepart;
-        this.lastEnchere = 0;
-        this.endAckJoueurs = [];
-        this.nextMontantEnchere = miseDepart;
-        this.ventePerte = ventePerte;
-        this.joueurLastEnchere = null;
-        this.currentJeton = 0;
-        this.joueursExit = [];
-        this.transaction++;
-        $.trigger('monopoly.enchere.init', {
-            maison: this.terrain,
-            joueur: this.terrain.joueurPossede
-        });
-
-        var _self = this;
-        GestionJoueur.forEach(function(j){j.initEnchere(_self.transaction, _self.terrain, _self.miseDepart)});
-        /*for (var j in joueurs) {            
-            joueurs[j].initEnchere(this.transaction, this.terrain, this.miseDepart);
-        }*/
-        this.runEnchere();
-    },
-    computeEncherisseurs: function () {
-        var encherisseurs = [];
-        var observers = [];
-        // exclure les joueurs qui ont perdus
-        for (var j in joueurs) {
-            if (!joueurs[j].equals(this.terrain.joueurPossede) && !joueurs[j].equals(this.joueurLastEnchere) && this.joueursExit[joueurs[j].nom] == null) {
-                encherisseurs.push(joueurs[j]);
-            } else {
-                observers.push(joueurs[j]);
-            }
-        }
-        return {
-            encherisseurs: encherisseurs,
-            observers: observers
-        };
-    },
-    /* On lance aux joueurs les encheres, le premier qui repond prend la main, on relance a chaque fois (et on invalide le resultat des autres) */
-	/* @param newEnchere : quand l'enchere, on notifie les joueurs (ca peut les interesse) */
-    runEnchere: function (newEnchere) {
-        var joueurs = this.computeEncherisseurs();
-        for (var i = 0; i < joueurs.encherisseurs.length; i++) {
-            joueurs.encherisseurs[i].updateEnchere(this.transaction, this.currentJeton, this.nextMontantEnchere, this.joueurLastEnchere,newEnchere);
-        }
-        for (var i = 0; i < joueurs.observers.length; i++) {
-            joueurs.observers[i].updateInfoEnchere(this.nextMontantEnchere, this.joueurLastEnchere);
-        }
-    },
-    /* Appele par un joueur  */
-    exitEnchere: function (joueur) {
-		if(this.joueursExit[joueur.nom] != null){return;}
-        this.joueursExit[joueur.nom] = joueur;
-        GestionJoueur.forEach(function(j){j.notifyExitEnchere(joueur)});
-        /*for (var j in joueurs) {
-            joueurs[j].notifyExitEnchere(joueur);
-        }*/
-        if (this.checkEndEnchere()) {
-            this.manageEndEnchere();
-        }
-    },
-	/* Verifie si l'enchere est terminee */
-    checkEndEnchere: function () {
-        // 1) Vente par banque, pas d'enchere
-		// 2) Vente par joueur, pas d'enchere ou vente par banque avec une enchere
-		// 3) Vente par joueur avec enchere
-        if (this.joueursExit.size() >= joueurs.length || 
-			(this.joueursExit.size() >= joueurs.length - 1 && (this.terrain.joueurPossede != null ||this.joueurLastEnchere !=null)) || 
-			(this.joueursExit.size() >= joueurs.length - 2 && this.joueurLastEnchere != null && this.terrain.joueurPossede != null)
-			) {
-            return true;
-        }
-        return false;
-    },
-    /* Methode appelee par un joueur pour valider une enchere, le premier invalide les autres */
-    doEnchere: function (joueur, montant, jeton) {
-        if (jeton < this.currentJeton) {
-            // Demande non prise en compte
-            throw "Trop lent, une enchere a deja ete faite";
-        }
-        // On empeche un meme joueur d'encherir sur son offre
-        if (joueur.equals(this.joueurLastEnchere)) {
-            return;
-        }
-        this.currentJeton++;
-        this.joueurLastEnchere = joueur;
-        this.lastEnchere = montant;
-        this.nextMontantEnchere = this.lastEnchere + this.pasVente;
-        // Si c'est le dernier joueur qui fait une enchere, on doit arreter le joueur
-        if (this.checkEndEnchere()) {
-            this.manageEndEnchere();
-        } else {
-            this.runEnchere();
-        }
-    },
-    checkEnchere: function (jeton) {
-        if (jeton >= this.currentJeton) {
-            // Pas d'enchere, la derniere est la bonne
-            this.manageEndEnchere();
-        } else {
-            // Rien, gestion autonome
-        }
-    },
-    manageEndEnchere: function () {
-        if (this.joueurLastEnchere == null) {
-            // On relance les encheres en diminuant la mise de depart
-            if (this.ventePerte && (this.nextMontantEnchere -  this.pasVente) > this.miseDepart / 2) {
-                this.nextMontantEnchere -= this.pasVente;
-				// On force les joueurs a reparticiper (le nouveau tarif peut interesser)
-				this.joueursExit = [];
-                this.runEnchere(true);
-            } else {
-                //pas de vente
-                $.trigger('monopoly.enchere.fail', {
-                    maison: this.terrain
-                });
-                this.endEnchere();
-            }
-
-        } else {
-            // La mise aux encheres est terminee, on procede a l'echange
-            // Correspond a un terrain
-            if(this.terrain.joueurPossede == null){
-				this.joueurLastEnchere.acheteMaison(this.terrain,this.lastEnchere);
-            }
-            else{
-                this.joueurLastEnchere.payerTo(this.lastEnchere, this.terrain.joueurPossede);
-                this.joueurLastEnchere.getSwapProperiete(this.terrain);
-            }
-            
-            $.trigger('monopoly.enchere.success', {
-                joueur: this.joueurLastEnchere,
-                maison: this.terrain,
-				montant:this.lastEnchere
-            });
-
-            this.endEnchere();
-        }
-    },
-    endEnchere: function () {
-        this.terrain = null;
-        // On notifie les joueurs que c'est termine
-        var _self = this;
-        GestionJoueur.forEach(function(j){j.endEnchere(_self.lastEnchere, _self.joueurLastEnchere)});
-        for (var j in joueurs) {
-            joueurs[j].endEnchere(this.lastEnchere, this.joueurLastEnchere);
-        }
-    },
-    /* Enregistre les joueurs qui accusent reception. Quand tous ont repondu, on lance le callback */
-    checkEndNotify: function (joueur) {
-        this.endAckJoueurs[joueur.numero] = true;
-        if (this.endAckJoueurs.size() >= joueurs.length) {
-            this.doCallback();
-        }
-    },
-    doCallback: function () {
-        if (this.callback) {
-            this.callback();
-        }
-    }
-}
-
-var GestionEnchereDisplayer = {
-    panel: null,
-    currentMontant: 0,
-    currentEncherisseur: null,
-    terrain: null,
-    displayer: null, // Joueur qui affiche le panneau
-    init: function (id) {
-        this.panel = $('#' + id);
-        this.panel.dialog({
-            title: 'Mise au enchere',
-            autoOpen: false
-        });
-    },
-    display: function (terrain, joueur) {
-        this.terrain = terrain;
-        this.displayer = joueur;
-        $('.proprietaire', this.panel).text(terrain.joueurPossede !=null ? terrain.joueurPossede.nom : 'Banque');
-        $('.terrain', this.panel).text(terrain.nom).css('color', terrain.color);
-        $('.list_exit', this.panel).empty();
-        $('.list_encherisseurs', this.panel).empty();
-		$('.messages', this.panel).empty();
-        this.panel.dialog('open');
-    },
-    /* Affiche l'option pour fermer le panneau */
-    displayCloseOption: function (montant, joueur) {
-        if (joueur != null) {
-            // On affiche la victoire du joueur (derniere enchere faite)
-            $('.montant', this.panel).text(montant);
-            $('.montant', this.panel).css('color', 'green');
-            $('.last_encherisseur', this.panel).text(joueur.nom);
-
-            if (joueur.equals(this.displayer)) {
-                // Message pour le joueur qui a remporte
-                $('.messages', this.panel).append('Vous avez remporté l\'enchère');
-            } else {
-                $('.messages', this.panel).append(joueur.nom + ' a remporté l\'enchère');
-            }
-        } else {
-            $('.montant', this.panel).css('color', 'red');
-        }
-        this.panel.dialog('option', 'buttons', [{
-            text: 'Fermer',
-            click: function () {
-                GestionEnchereDisplayer.close();
-            }
-        }]);
-
-    },
-	/* Nettoie l'affichage */
-	clean:function(){
-		$('.list_exit', this.panel).empty();
-	},
-    /* Affiche le depart d'un joueur des encheres */
-    showJoueurExit: function (joueur) {
-        $('.list_exit', this.panel).append(joueur.nom + ' est sorti<br/>');
-    },
-    exitEnchere: function () {
-        // On supprime les boutons
-        this.panel.dialog('option', 'buttons', []);
-    },
-    close: function () {
-        GestionEnchere.doCallback();
-        this.panel.dialog('close');
-    },
-    /* Si canDoEnchere est vrai, le contexte doit etre present */
-    updateInfo: function (montant, encherisseur, canDoEnchere, contexte) {
-	    if (canDoEnchere && contexte == null) {
-            throw "Impossible de gerer l'enchere";
-        }
-        if (this.currentMontant != null && this.currentEncherisseur != null) {
-            $('.list_encherisseurs', this.panel).prepend('<p>' + CURRENCY + ' ' + this.currentMontant + ' : ' + this.currentEncherisseur.nom + '</p>');
-            $('.list_encherisseurs > p:gt(3)', this.panel).remove();
-        }
-        this.currentMontant = montant;
-        this.currentEncherisseur = encherisseur;
-
-        $('.montant', this.panel).text(montant);
-        $('.montant', this.panel).animate({
-            color: 'red'
-        }, 200).animate({
-            color: 'black'
-        }, 2000);
-        if (encherisseur != null) {
-            $('.last_encherisseur', this.panel).text(encherisseur.nom);
-        }
-        if (canDoEnchere) {
-            // On affiche les boutons pour encherir ou quitter
-            var buttons = [{
-                text: 'Encherir',
-                click: function () {
-                    GestionEnchere.doEnchere(GestionEnchereDisplayer.displayer, montant, contexte.jeton);
-                }
-            }, {
-                text: 'Quitter',
-                click: function () {
-                    GestionEnchere.exitEnchere(GestionEnchereDisplayer.displayer);
-                }
-            }];
-            this.panel.dialog('option', 'buttons', buttons);
-        } else {
-            this.panel.dialog('option', 'buttons', []);
-        }
-    }
-}
-
-/*  Fonction utilitaire pour le debug */
-
+/*  DEBUG */
 /* Achete des maisons pour le joueur courant, on passe les ids de fiche */
 function buy(maisons) {
 	for (var i in maisons) {

@@ -166,6 +166,8 @@ function Case(pos, axe, color, title, prix, img) {
 	this.nbMaison = 0; // Maisons a afficher sur la propriete
 	this.imgMaison = new Image();
 	this.imgHotel = new Image();
+	this.colorPossede = null;	// Permet d'afficher une information sur le fait que le terrain est possede
+	this.rayon = 10;
 	
 	this.setNbMaison = function(nbMaison){
 		this.nbMaison = nbMaison;
@@ -234,6 +236,7 @@ function Case(pos, axe, color, title, prix, img) {
 				break
 			}
 		}
+		
 		if (title != null) {
 			var mots = [title];
 			var dec = 10 + ((color != null) ? bordure : 0); // Uniquement si couleur
@@ -326,17 +329,38 @@ function Case(pos, axe, color, title, prix, img) {
 				DrawerHelper.drawImage(canvas, this.imgHotel, this.data.x + hauteur, this.data.y + pad, 18, 18, Math.PI / 2);
 				break;
 			}
+		}		
+		if (this.colorPossede != null) {
+			switch (axe) {
+			case 0:
+				DrawerHelper.drawArcCircle(canvas,this.colorPossede,this.rayon,{x:this.data.x+largeur, y:this.data.y},Math.PI/2,Math.PI);
+				break
+			case 1:
+				DrawerHelper.drawArcCircle(canvas,this.colorPossede,this.rayon,{x:this.data.x+hauteur, y:this.data.y+largeur},Math.PI,3*Math.PI/2);
+				break
+			case 2:
+				DrawerHelper.drawArcCircle(canvas,this.colorPossede,this.rayon,{x:this.data.x, y:this.data.y+hauteur},3*Math.PI/2,2*Math.PI);
+				break;
+			case 3:
+				DrawerHelper.drawArcCircle(canvas,this.colorPossede,this.rayon,{x:this.data.x, y:this.data.y},2*Math.PI,Math.PI/2);
+				break
+			}
 		}
 	}
-        
+       
+	this.setJoueur = function(joueur){
+		this.colorPossede = null;
+		if(joueur!=null){
+			this.colorPossede = joueur.color;
+		}
+	}
+	   
 	// Nombre de joueur sur la case
 	this.getNbJoueurs = function () {
 		var count = 0;
-		for (var i = 0; i < joueurs.length; i++) {
-			if (joueurs[i].pion.etat == this.axe && joueurs[i].pion.position == this.pos) {
-				count++;
-			}
-		}
+		GestionJoueur.forEach(function(j){
+			count+=(j.pion.etat == this.axe && j.pion.position == this.pos)?1:0;
+		},this);
 		return count;
 	}
         

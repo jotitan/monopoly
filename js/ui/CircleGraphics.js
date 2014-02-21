@@ -101,7 +101,12 @@ function CircleCase(pos, axe, color, title, prix, img){
 	this.data = {};
 	this.imageMaison = new Image();
 	this.imageHotel = new Image();
-
+	this.joueurPossede = null;
+	
+	this.setJoueur = function(joueur){
+		this.joueurPossede = joueur;
+	}
+	
 	this.setNbMaison = function(nbMaison){
 		this.nbMaison = nbMaison;
 	}

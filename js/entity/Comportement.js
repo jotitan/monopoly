@@ -64,8 +64,9 @@ function Comportement(risque, name, id) {
     /* @param seuil : seuil a partir duquel on renvoie les maisons */
     this.getNextProprietesVisitees = function (joueur) { //,seuil){
         var maisons = [];
-        for (var idJoueur in joueurs) {
-            var j = joueurs[idJoueur];
+		GestionJoueur.forEach(function(j){
+        //for (var idJoueur in joueurs) {
+        //    var j = joueurs[idJoueur];
             if (!j.equals(joueur)) {
                 // On parcours toutes les statistiques et on mesure le risque de tomber sur une propriete du joueur
                 var posActuel = j.getPosition();
@@ -84,7 +85,7 @@ function Comportement(risque, name, id) {
                     }
                 }
             }
-        }
+        },this);
         return maisons;
     }
 

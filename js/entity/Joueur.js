@@ -20,7 +20,7 @@ function JoueurOrdinateur(numero, nom, color) {
 	/* Determine les caracteristiques d'un ordinateur*/
 	this.init = function (idStrategie, idComportement) {
 		this.strategie = (idStrategie == null) ? GestionStrategie.createRandom() : GestionStrategie.create(idStrategie);
-		this.comportement = (idComportement == null) ? GestionComportement.createRandom() : GestionComportement.create(idStrategie);
+		this.comportement = (idComportement == null) ? GestionComportement.createRandom() : GestionComportement.create(idComportement);
 	}
 
 	this.saveMore = function (data) {
@@ -44,7 +44,7 @@ function JoueurOrdinateur(numero, nom, color) {
 		}			
 	}
 
-	this.loadMore = function (data) {
+	this.loadMore = function (data) {	
 		this.init(data.strategie, data.comportement);
 		this.rejectedPropositions = [];
 		if (data.rejectedPropositions != null) {
@@ -596,11 +596,11 @@ function JoueurOrdinateur(numero, nom, color) {
 	 */
 	this.doBlocage = function () {
 		// On compte le nombre joueurs qui peuvent construire
-		for (var index in joueurs) {
-			var joueur = joueurs[index];
+		GestionJoueur.forEach(function(joueur){
+		//for (var index in joueurs) {
+			//var joueur = joueurs[index];
 			if (!this.equals(this)) {
-				var groups =
-					joueur.findGroupes();
+				var groups = joueur.findGroupes();
 				if (groups.size() > 0) {
 					// On verifie si le budget est important ()
 					// On compte le potentiel de maison achetables
@@ -622,7 +622,7 @@ function JoueurOrdinateur(numero, nom, color) {
 					}
 				}
 			}
-		}
+		},this);
 		return false;
 	}
 
@@ -1402,8 +1402,7 @@ function Joueur(numero, nom, color) {
 		if(maison.joueurPossede){
 			maison.joueurPossede.removeMaison(maison);
 		}
-		maison.joueurPossede = this;
-		this.maisons.push(maison);
+		maison.setJoueurPossede(this);		
 	}
 
 	/* Supprime la maison de la liste */
@@ -1421,7 +1420,7 @@ function Joueur(numero, nom, color) {
 		this.enPrison = true;
 		this.div.addClass('jail');
 		this.nbDouble = 0;
-		this.pion.goPrison(changeJoueur);
+		this.pion.goPrison(function(){GestionJoueur.change()});
 		$.trigger("monopoly.goPrison", {
 			joueur: this
 		});
@@ -1800,14 +1799,23 @@ function Joueur(numero, nom, color) {
 
 /* Gere les joueurs : creation, changement... */
 var GestionJoueur = {
+	colorsJoueurs : ["#383C89", "#A6193E", "#C58F01", "#086B3D", "#B9B29B","#663300"],
 	joueurs:[],
 	joueurCourant:null,
 	getJoueurCourant:function(){
 		return this.joueurCourant;
 	},
+	getNb:function(){
+		return this.joueurs.length;
+	},
+	createAndLoad:function(isRobot,i,nom,data){
+		var joueur = this.create(isRobot,i,nom);
+		joueur.load(data);
+		return joueur;
+	},
 	create:function(isRobot, i, nom){
 		var id = 'joueur' + i;			
-		var color = colorsJoueurs[i];
+		var color = this.colorsJoueurs[i];
 		var joueur = isRobot ? new JoueurOrdinateur(i, nom, color) : joueur = new Joueur(i, nom, color);
 		var div = $('<div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div><hr/>');
 		if(i%2 == 0 && window.innerWidth > 1350){
@@ -1824,7 +1832,6 @@ var GestionJoueur = {
 			joueur: joueur
 		});
 		this.joueurs.push(joueur);
-		joueurs.push(joueur);// TODO supprimer
 		return joueur;    
 	},
 	getById:function(id){
@@ -1945,7 +1952,8 @@ var GestionJoueur = {
 		}
 		return joueur;
 	},
-	forEach:function(callback){
-		this.joueurs.forEach(callback);
+	/* @param element : sera represente par "this" dans la methode callback */
+	forEach:function(callback,element){
+		this.joueurs.forEach(callback,element);
 	}
 }

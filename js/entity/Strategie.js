@@ -161,7 +161,7 @@ function Strategie(colors, agressif, name, id, interetGare) {
      */
     this.acceptSwapTerrain = function (terrain, joueur, otherInterests, interestGroupe) {
         /* Calcule si le proprio est le seul fournisseur */
-        var alone = joueurs.length > 2; // Faux si seulement 2 joueurs
+        var alone = GestionJoueur.getNb() > 2; // Faux si seulement 2 joueurs
         /* Seul groupe qui m'interesse, on refuse */
         if ((interestGroupe == true && otherInterests.length == 1) || terrain.isGroupee()) {
             return 0;

@@ -1548,7 +1548,7 @@ function Joueur(numero, nom, color) {
 	this.resolveProblemeArgent = function (montant, callback) {
 		// On ouvre le panneau de resolution en empechant la fermeture
 		this.montant -= montant;
-		var _self = this;
+		var _self = this;		
 		var button = InfoMessage.create(this,"Attention", "red", "Vous n'avez pas les fonds necessaires, il faut trouver de l'argent", function () {
 			// On attache un evenement a la fermeture
 			var onclose = function (e) {
@@ -1794,5 +1794,158 @@ function Joueur(numero, nom, color) {
 			}
 		}
 		return mc;
+	}
+}
+
+
+/* Gere les joueurs : creation, changement... */
+var GestionJoueur = {
+	joueurs:[],
+	joueurCourant:null,
+	getJoueurCourant:function(){
+		return this.joueurCourant;
+	},
+	create:function(isRobot, i, nom){
+		var id = 'joueur' + i;			
+		var color = colorsJoueurs[i];
+		var joueur = isRobot ? new JoueurOrdinateur(i, nom, color) : joueur = new Joueur(i, nom, color);
+		var div = $('<div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div><hr/>');
+		if(i%2 == 0 && window.innerWidth > 1350){
+			$('#informations-left').append(div);;
+		}
+		else{
+			$('#informations').append(div);
+		}	
+		joueur.setDiv($('#' + id));
+		joueur.setPion(color);
+		// On defini la couleurs
+		$('#' + id + ' > div.joueur-bloc').css('backgroundImage', 'linear-gradient(to right,white 50%,' + color + ')');
+		$.trigger('monopoly.newPlayer', {
+			joueur: joueur
+		});
+		this.joueurs.push(joueur);
+		joueurs.push(joueur);// TODO supprimer
+		return joueur;    
+	},
+	getById:function(id){
+		var numero = parseInt(id);
+		for (var joueur in this.joueurs) {
+			if (this.joueurs[joueur].numero == numero) {
+				return this.joueurs[joueur];
+			}
+		}
+		return null;
+	},
+	/* @param idInitialJoueur : si present, joueur qui debute */
+	change:function(idInitialJoueur){
+		if(idInitialJoueur!=null){
+			var joueur = this.getById(idInitialJoueur);
+			if(joueur!=null){
+				return this._select(joueur);
+			}
+		}
+		// Si un echange est en cours, on ne change pas de joueur
+		if (GestionEchange.running) {
+			return;
+		}
+		// Joueur bloque, on le debloque avant de continuer
+		var joueur = null;
+		try {
+			joueur = this.next();
+		} catch (gagnant) {
+			this._showVainqueur(gagnant);
+			return gagnant;
+		}
+		if (joueur == null) {
+			return null;
+		}
+		if(!GestionDes.isDouble()){
+			GestionDes.resetDouble();
+		}
+		this._select(joueur);
+		return null;
+	},
+	_showVainqueur:function(gagnant){
+		$.trigger('monopoly.victoire',{joueur:gagnant});
+		// On affiche les resultats complets
+		var perdants = this.joueurs.filter(function(j){return j.defaite;});
+		perdants.sort(function(a,b){
+			if(a.tourDefaite == b.tourDefaite){
+				return b.numero - a.numero;
+			}
+			return b.tourDefaite - a.tourDefaite;
+		});			
+		var message = "Le joueur " + gagnant.nom + " a gagné en " + formatTempsJeu() + ".<br/>";
+		message+="1 - " + gagnant.nom + "<br/>";
+		
+		for(var i = 0 ; i < perdants.length ; i++){
+			message+= (i+2) + " - " + perdants[i].nom + "<br/>";
+		}
+		InfoMessage.create(this.joueurCourant,"Fin de partie", "green", message, null, null, true);
+		//console.log("stats terrains",writePositions(stats.positions));
+	},
+	_select:function(joueur){
+		$('.action-joueur').removeAttr('disabled').removeClass('disabled');
+		if(VARIANTES.echangeApresVente && GestionFiche.isFreeFiches()){
+		
+		}
+		if (!joueur.equals(this.joueurCourant)) {
+			$('.joueurCourant').removeClass('joueurCourant');
+			if(this.joueurCourant!=null){
+				this.joueurCourant.pion.pion.setSelected(false);
+			}
+		}
+
+		this.joueurCourant = joueur;
+		this.joueurCourant.pion.pion.setSelected(true);
+		joueur.select();
+	
+	},
+	getWinner:function() {
+		var defaites = 0;
+		var gagnantProbable;
+		for (var index in this.joueurs) {
+			if (this.joueurs[index].defaite == true) {
+				defaites++;
+			} else {
+				gagnantProbable = this.joueurs[index];
+			}
+		}
+		if (defaites == this.joueurs.length - 1) {
+			return gagnantProbable;
+		}
+		return null;
+	},
+	next:function(){
+		if (this.joueurCourant == null) {
+			return this.joueurs[0];
+		}
+		// On verifie s'il y a encore des joueurs "vivants"
+		if (this.joueurCourant.bloque) {
+			return null;
+		}
+		var gagnant = this.getWinner();
+		if (gagnant != null) {
+			// On a un vainqueur
+			throw gagnant;
+		}
+		var joueur = this.joueurCourant;
+		/* Changement de joueur */
+		if(!GestionDes.isDouble()){
+			var pos = 0;
+			joueur = this.joueurs[(joueur.numero + 1) % (this.joueurs.length)];
+			while (joueur.defaite == true & pos++ < this.joueurs.length) {
+				joueur = this.joueurs[(joueur.numero + 1) % (this.joueurs.length)];
+			}
+			// On incremente le nb de tours
+			if (joueur.numero < this.joueurCourant.numero) {
+				nbTours++;
+				stats.nbTours++;
+			}
+		}
+		return joueur;
+	},
+	forEach:function(callback){
+		this.joueurs.forEach(callback);
 	}
 }

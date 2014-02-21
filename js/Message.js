@@ -147,16 +147,17 @@ var InfoMessage = {
 	},
 	create:function(joueur,titre, background, message, call, param, forceshow){
 		this._initMessage(background,titre,message);
-		var button = {
+        var button = {
             "Ok": function () {
                 InfoMessage.close();
             }
         };
         this.div.bind('dialogclose.message', function () {
+            InfoMessage.div.unbind('dialogclose.message');
             if (call != null) {
                 call(param);
             }
-            InfoMessage.div.unbind('dialogclose.message');
+            
         });
         if (call != null) {
             this.div.dialog('option', 'buttons', button);

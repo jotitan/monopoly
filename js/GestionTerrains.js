@@ -81,7 +81,7 @@ var GestionTerrains = {
         this.Hypotheque.update();
         var totals = this.Constructions.update();
         this.divCout.text((this.cout - totals.cout) + " " + CURRENCY);
-        this.totalRestant = joueurCourant.montant + this.cout - totals.cout;
+        this.totalRestant = GestionJoueur.getJoueurCourant().montant + this.cout - totals.cout;
         this.divArgentRestant.text((this.totalRestant) + " " + CURRENCY);
     },
     verify: function () {
@@ -91,7 +91,7 @@ var GestionTerrains = {
             }
             GestionTerrains.Constructions.verify();
         } catch (e) {
-            InfoMessage.create(joueurCourant,"Attention", "red", e);
+            InfoMessage.create(GestionJoueur.getJoueurCourant(),"Attention", "red", e);
             return false;
         }
         return true;
@@ -144,7 +144,7 @@ var GestionTerrains = {
         },
         /* Charge les terrains hypothequables */
         load: function () {
-            var proprietes = joueurCourant.findMaisonsHypothecables();
+            var proprietes = GestionJoueur.getJoueurCourant().findMaisonsHypothecables();
 			proprietes.forEach(function(m){GestionTerrains.Hypotheque.addOption(m);});
             /*$(proprietes).each(function () {
                 GestionTerrains.Hypotheque.addOption(this);
@@ -210,7 +210,7 @@ var GestionTerrains = {
             }
         },
         load: function () {
-            var proprietes = joueurCourant.findMaisonsHypothequees();
+            var proprietes = GestionJoueur.getJoueurCourant().findMaisonsHypothequees();
             $(proprietes).each(function () {
                 var fiche = this;
                 var div = $("<div>" + this.nom + "</div>");
@@ -271,14 +271,14 @@ var GestionTerrains = {
             for (var achat in this.table) {
                 var data = this.table[achat];
                 data.propriete.setNbMaison(data.nbMaison);
-                joueurCourant.payer(data.cout);
+                GestionJoueur.getJoueurCourant().payer(data.cout);
             }
             // On modifie les quantites de maisons / hotels
             if (this.simulation != null && (this.simulation.achat.maison!=0 || this.simulation.achat.hotel!=0)) {
                 GestionConstructions.buyHouses(this.simulation.achat.maison);
                 GestionConstructions.buyHotels(this.simulation.achat.hotel);
                  $.trigger('monopoly.acheteConstructions', {
-                    joueur: joueurCourant,
+                    joueur: GestionJoueur.getJoueurCourant(),
                     achats: this.simulation.achat
                 });
             }
@@ -354,7 +354,7 @@ var GestionTerrains = {
             this.div.find(selectors).show();
         },
         load: function () {
-            var groups = joueurCourant.findGroupes();
+            var groups = GestionJoueur.getJoueurCourant().findGroupes();
             //var table = $('#idTerrainsConstructibles');
             for (var color in groups) {
                 var divTitre = $('<div style="cursor:pointer" class="group-' + color.substring(1) + '">Groupe <span style="color:' + color + ';font-weight:bold">' + groups[color].proprietes[0].groupe.nom + '</span></div>');

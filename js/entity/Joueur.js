@@ -170,7 +170,7 @@ function JoueurOrdinateur(numero, nom, color) {
 				var joueur = maison.joueurPossede;
 				prop.compensation = 0;
 				// Calcule les monnaies d'echange
-				prop.deals = maison.joueurPossede.findOthersInterestProprietes(this,proprietes);
+				prop.deals = maison.joueurPossede.findOthersInterestProprietes(this,maison);
 				if (prop.deals.length == 0) {
 					// On ajoute les terrains non importants (gare seule, compagnie)
 					var othersProprietes = this.findUnterestsProprietes();
@@ -1648,8 +1648,8 @@ function Joueur(numero, nom, color) {
 	/* Les terrains sont tries par interet.
 	 * Les criteres : la rentabilite, le nombre de terrain a acheter (1 ou 2), le fait de faire une ligne avec un groupe possede */
 	/* @param joueur : ne recherche que les proprietes de ce joueur */
-	/* @param excludes : terrain exclu, a ne pas renvoyer */
-	this.findOthersInterestProprietes = function (joueur,excludes) {
+	/* @param excludes : terrain exclu, a ne pas renvoyer (celui vise par l'echange) */
+	this.findOthersInterestProprietes = function (joueur,exclude) {
 		var interests = [];
 		var treatGroups = []; // groupes traites
 		// On parcourt les terrains du joueur. Pour chaque, on etudie le groupe
@@ -1661,7 +1661,8 @@ function Joueur(numero, nom, color) {
 				// Si tous les terrains vendus et un terrain a l'adversaire ou deux terrains a deux adversaires differents, on peut echanger
 				if (infos.free == 0 && (infos.adversaire == 1 || infos.nbAdversaires > 1)) {
 					for (var idx in infos.maisons) {
-						if (joueur == null || joueur.equals(infos.maisons[idx].joueurPossede)) {
+						if ((joueur == null || joueur.equals(infos.maisons[idx].joueurPossede))
+							&& (exclude == null || !exclude.groupe.equalse)) {
 							interests.push({
 								maison: infos.maisons[idx],
 								nb: infos.maisons.length

@@ -146,7 +146,7 @@ function CircleCase(pos, axe, color, title, prix, img){
 			canvas.beginPath();
 			canvas.fillStyle=this.color;
 			canvas.moveTo(width/2,width/2);
-			canvas.arc(width/2,width/2,width/2-2,(this.pos)*pasAngle,(this.pos+1)*pasAngle);
+			canvas.arc(width/2,width/2,width/2,(this.pos)*pasAngle,(this.pos+1)*pasAngle);
 			canvas.fill();
 			canvas.closePath();
 			canvas.beginPath();
@@ -181,7 +181,6 @@ function CircleCase(pos, axe, color, title, prix, img){
 			// Margin left est defini en portion d'angle (1 correspond a la largeur de la case)
 			// Margin top joue sur la longueur du rayon
 			var coords = getCoords((this.pos + this.data.image.marginLeft)*pasAngle,width/2-30 - this.data.image.margin);
-			console.log(coords,this.data.image.margin,this.title);
 			var angle = DrawerHelper.fromDegresToRad(this.data.image.rotate) + this.pos*pasAngle + Math.PI/2;
 			DrawerHelper.drawImage(canvas, this.data.image, width/2+coords.x, width/2+coords.y, this.data.image.width,this.data.image.height, angle);
 		}
@@ -194,6 +193,14 @@ function CircleCase(pos, axe, color, title, prix, img){
     	else{
     		var coords = getCoords((this.pos + 0.4)*pasAngle,width/2-4);
     		DrawerHelper.drawImage(canvas, this.imageHotel, width/2+coords.x, width/2+coords.y, 16,16, this.pos*pasAngle + Math.PI/2)							
+    	}
+    	if(this.joueurPossede!=null){
+    		canvas.beginPath();
+			canvas.strokeStyle=this.joueurPossede.color;
+			canvas.lineWidth = 10;			
+			canvas.arc(width/2,width/2,width/2-widthCase+15,(this.pos)*pasAngle,(this.pos+1)*pasAngle);
+			canvas.stroke();
+			canvas.closePath();
     	}
 	}
 	this.init();

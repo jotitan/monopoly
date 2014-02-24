@@ -23,8 +23,10 @@
    <script type="text/javascript" src="js/ui/CircleGraphics.js"></script>
    <script type="text/javascript" src="js/entity/Comportement.js"></script>
    <script type="text/javascript" src="js/entity/Strategie.js"></script>
-   <script type="text/javascript" src="js/Message.js"></script>
+   <script type="text/javascript" src="js/entity/Joueur.js"></script>
    <script type="text/javascript" src="js/entity/CartesAction.js"></script>
+   <script type="text/javascript" src="js/Message.js"></script>
+   <script type="text/javascript" src="js/CaseJeu.js"></script>
    <script type="text/javascript" src="monopoly.js"></script>
    <!--<!(endif)-->
 
@@ -76,10 +78,12 @@
 			</div>
 		</td>
 		<td style="vertical-align:top">    
+			<!--(if target dev)><!-->
 			<div id="idDebug" style="display:none">
 			   case : <input type="text" size="3" id="nb"/><input type="button" onclick="GestionJoueur.getJoueurCourant().joueDes(parseInt($('#nb').val()))" value="click"/><br/>
 			   Goto : <input type="text" size="3" id="ide"/><input type="text" size="3" id="idp"/><input type="button" onclick="GestionJoueur.getJoueurCourant().pion.goto($('#ide').val(),$('#idp').val(),doActions)" value="goto"/><br/>
-			</div>	   
+			</div>	   			
+			<!--<!(endif)-->
 			<div id="informations" class="panneau_joueur"><hr/></div>
 		</td>
 	</tr></table>
@@ -270,10 +274,12 @@
 	  nomPlateau = "data-monopoly-" + location.href.substring(location.href.indexOf("plateau=")+8) + ".json";
 	}
 	var debug = false;
+	<!--(if target dev)><!-->
 	if (location.href.indexOf("debug=1")!=-1) {
 	  $('#idDebug').show();
 	  debug = true;
 	}
+	<!--<!(endif)-->
 	$(function(){
 		$('#idMontantParc').hide();
 		init(nomPlateau,debug);

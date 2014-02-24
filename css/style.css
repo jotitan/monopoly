@@ -22,6 +22,10 @@
     width: 240px;
 }
 
+.panneau_joueur  {
+    width:250px;
+}
+
 .joueurCourant > .joueur-name {
     padding-left: 35px;
     background-image: url("../img/dice.png");

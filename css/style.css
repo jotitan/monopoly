@@ -1,3 +1,10 @@
+@media screen and (max-width: 1350px) {
+	#informations-left {
+		display:none;
+	}
+}
+
+
 .info-joueur > img { padding-right: 10px }
 .fiche {
 	display:block;

@@ -1386,7 +1386,7 @@ function Joueur(numero, nom, color) {
 		}
 		maison.input = $('#idInputFiche' + maison.id);
 		maison.input.click(function () {
-			openDetailFiche(GestionFiche.getById(maison.id), $(this));
+			FicheDisplayer.openDetail(GestionFiche.getById(maison.id), $(this));
 		});
 	}
 
@@ -1662,7 +1662,7 @@ function Joueur(numero, nom, color) {
 				if (infos.free == 0 && (infos.adversaire == 1 || infos.nbAdversaires > 1)) {
 					for (var idx in infos.maisons) {
 						if ((joueur == null || joueur.equals(infos.maisons[idx].joueurPossede))
-							&& (exclude == null || !exclude.groupe.equalse)) {
+							&& (exclude == null || !exclude.groupe.equals(infos.maisons[idx].groupe))) {
 							interests.push({
 								maison: infos.maisons[idx],
 								nb: infos.maisons.length
@@ -1815,10 +1815,13 @@ var GestionJoueur = {
 		return joueur;
 	},
 	create:function(isRobot, i, nom){
+		/*if(window.innerWidth > 1350){
+			$('#informations-left').hide();	// Mettre media query
+		}*/
 		var id = 'joueur' + i;			
 		var color = this.colorsJoueurs[i];
 		var joueur = isRobot ? new JoueurOrdinateur(i, nom, color) : joueur = new Joueur(i, nom, color);
-		var div = $('<div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div><hr/>');
+		var div = $('<hr/><div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div>');
 		if(i%2 == 0 && window.innerWidth > 1350){
 			$('#informations-left').append(div);;
 		}

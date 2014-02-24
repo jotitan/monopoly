@@ -50,6 +50,7 @@ var CURRENCY = "F.";
 var largeur = 65;
 var hauteur = 100;
 var total = (largeur * 9) / 2;
+var plateauSize = 800;
 var centre = 400;
 var bordure = 20;
 var largeurPion = (largeur - 5) / 3;
@@ -300,84 +301,6 @@ var GestionEchange = {
     function CarteCaisseDeCommunaute(libelle, carte) {
 		CarteAction.call(this,libelle,carte,titles.communaute,"pink","caissecommunaute");	           
     }
-
-    // Gere les dessins
-var Drawer = {
-    components: new Array(),	// Un ordre est ajoute lors de l'insertion
-    height: 0,
-    width: 0,
-    interval: null,
-    intervalRT: null,
-    canvas: null,
-    intervals: [], // Stocke les flags d'arret du refresh
-    canvasRT: null, //Canvas de temps reel
-    // ajoute un composant. On indique le canvas sur lequel il s'affiche
-	/* @param order : Si present, indique l'ordre d'affichage. Le plus petit en premier */
-    add: function (component, order) {
-		if(component == null){return;}
-        component.getId = function () {
-            return Drawer.canvas.canvas.id
-        };
-		component.order = (order==null)?0:order;
-        Drawer.components.push(component);        
-    },
-    addRealTime: function (component) {
-        component.getId = function () {
-            return Drawer.canvasRT.canvas.id
-        };
-        Drawer.components.push(component);
-    },
-    removeComponent: function (component) {
-        // Boucle sur les composants et supprime si l'id est le meme
-        for (var i = 0; i < this.components.length; i++) {
-            if (this.components[i].id == component.id) {
-                this.components.splice(i, 1);
-                return;
-            }
-        }
-    },
-    clear: function (canvas) {
-        canvas.clearRect(0, 0, this.width, this.height);
-    },
-    /* Rafraichit un seul canvas */
-    refresh: function (canvas) {
-        Drawer.clear(canvas);
-        for (var i = 0; i < Drawer.components.length; i++) {
-            if (Drawer.components[i].getId() === canvas.canvas.id) {
-				Drawer.components[i].draw(canvas);
-            }
-        }
-    },
-    // Refraichissement du graphique, time en ms
-    setFrequency: function (time, canvas) {
-        if (Drawer.intervals[canvas.canvas.id] != null) {
-            clearInterval(Drawer.intervals[canvas.canvas.id]);
-        }
-        Drawer.intervals[canvas.canvas.id] = setInterval(function () {
-            Drawer.refresh(canvas);
-        }, time);
-    },
-    init: function (width, height) {
-		// On tri les composants qui ont ete ajoutes
-		this.components.sort(function(a,b){
-			return a.order - b.order;
-		});
-        this.width = width;
-        this.height = height;
-        this.canvas = document.getElementById("canvas").getContext("2d");
-        this.canvasRT = document.getElementById("canvas_rt").getContext("2d");
-        this.canvas.strokeStyle = '#AA0000';
-        this.canvasRT.strokeStyle = '#AA0000';
-        // On ne recharge pas le plateau, il n'est charge qu'une seule fois (ou rechargement a la main)
-        this.refresh(this.canvas);
-        this.setFrequency(50, this.canvasRT);
-
-        $.bind('refreshPlateau', function () {
-            Drawer.refresh(Drawer.canvas);
-        });
-        return this;
-    }
-};
 
     /* Represente un groupe de terrain */
     function Groupe(nom, color) {
@@ -688,8 +611,9 @@ var Drawer = {
         DEBUG = debugValue;
         MessageDisplayer.init('idInfoBox');
 		InfoMessage.init('message');
-        initDetailFiche();
-        initFiches();
+        //initDetailFiche();
+        FicheDisplayer.init();
+		//initFiches();
         initPanels();
 		initJoueurs();
         GestionTerrains.init({
@@ -934,10 +858,10 @@ var Drawer = {
 		$('#idLancerDes').click(function(){
 			GestionDes.lancer();
 		});
-		Drawer.add(DrawerFactory.getPlateau(0, 0, 800, 800, plateau.backgroundColor), 0); 				
+		Drawer.add(DrawerFactory.getPlateau(0, 0, plateauSize, plateauSize, plateau.backgroundColor), 0); 				
 		buildPlateau(data);
 		Drawer.add(DrawerFactory.endPlateau(),2);
-		Drawer.init(800, 800);
+		Drawer.init(plateauSize, plateauSize);
 
 		if (callback) {
 			callback();
@@ -1068,14 +992,123 @@ var Drawer = {
             }
         }
     }
+	
+	/*
+	var FicheDisplayer = {
+		detailFiche:null,
+		fiche:null,
+		ficheCompagnie:null,
+		currentFiche:null,
+		init:function(){
+			this.fiche = $('#fiche');
+			this.detailFiche = this.fiche.clone();
+			this.detailFiche.attr('id', 'idDetailFiche').hide();
+			$('body').append(this.detailFiche);
+			this.ficheCompagnie = $('#ficheCompagnie');
+			
+			this.fiche.dialog({
+				autoOpen: false,
+				title: "Fiche",
+				width: 280,
+				height: 400,
+				modal: true,
+				resizable: false,
+				close: function () {
+					FicheDisplayer.close();
+				}
+			});
+			this.fiche.prev().css("background", "url()");
 
-    function initDetailFiche() {
-        var div = $('#fiche').clone();
-        div.attr('id', 'idDetailFiche').hide();
-        $('body').append(div);
-    }
+			this.ficheCompagnie.dialog({
+				autoOpen: false,
+				title: "Fiche",
+				width: 280,
+				height: 350,
+				modal: true,
+				resizable: false,
+				close: function () {
+					FicheDisplayer.close();
+				}
+			});
+			this.ficheCompagnie.prev().css("background", "url()");
+		},		
+		openDetail:function(fiche,input){
+			if (this.currentFiche != null && this.currentFiche.etat == fiche.etat && this.currentFiche.pos == fiche.pos) {
+				if ($(':visible',this.detailFiche).length == 0) {
+					this.detailFiche.slideDown();
+				} else {
+					this.detailFiche.slideUp();
+				}
+				return;
+			}
+			if (this.currentFiche != null && (this.currentFiche.etat != fiche.etat || this.currentFiche.pos != fiche.pos)) {
+				this.currentFiche = null;
+				this.detailFiche.slideUp(300, function () {
+					FicheDisplayer.openDetail(fiche, input);
+				});
+				return;
+			}
+			this.loadDetailFiche(fiche);
+			input.after(this.detailFiche);
+			this.detailFiche.slideDown();
+			this.currentFiche = fiche;
+		},
+		close:function(){
+			GestionJoueur.change();
+		},
+		closeDetail:function(){
+			this.detailFiche.slideUp();
+		},
+		loadFiche:function(fiche){
+			this._load(fiche, this.fiche, 'FFFFFF');
+			fiche.fiche.prev().css("background-color", fiche.color);
+		},
+		loadDetailFiche:function(fiche){
+			this._load(fiche, this.detailFiche, fiche.secondColor);
+		},
+		_load:function(fiche,div,color){
+			$('td[name^="loyer"]', div).each(function () {
+				$(this).text(fiche.loyer[parseInt($(this).attr('name').substring(5))]);
+			});
+			$('td[name]:not([name^="loyer"]),span[name]:not([name^="loyer"])', div).each(function () {
+				$(this).html(fiche[$(this).attr('name')]);
+			});
+			$(div).css('backgroundColor', color);
 
-    function openDetailFiche(fiche, input) {
+			// Cas des gare
+			if(fiche.type == 'gare'){
+				$('#loyer0', div).text(parseInt(fiche.getLoyer()));
+			}
+			else{
+				$('#loyer0', div).text((fiche.isGroupee() == true) ? parseInt(fiche.loyer[0]) * 2 : fiche.loyer[0]);
+			}
+
+			$('tr', div).removeClass("nbMaisons");
+			$('.infos-group', div).removeClass("nbMaisons");
+			$('#loyer' + fiche.nbMaison, div).parent().addClass("nbMaisons");
+			if (fiche.nbMaison == 0 && fiche.isGroupee() == true) { // possede la serie
+				$('.infos-group', div).addClass("nbMaisons");
+			}
+			if (fiche.type == 'gare') {
+				$('.maison', div).hide();
+			} else {
+				$('.maison', div).show();
+			}
+		},
+		closeFiche:function(){
+			if(this.fiche.dialog('isOpen')) {
+				this.fiche.dialog('close');
+			} else {
+				if (this.ficheCompagnie.dialog('isOpen')) {
+					this.ficheCompagnie.dialog('close');
+				} else {
+					this.close();
+				}
+			}
+		}
+	}*/
+/*	
+    function _openDetailFiche(fiche, input) {
         if (currentFiche != null && currentFiche.etat == fiche.etat && currentFiche.pos == fiche.pos) {
             if ($('#idDetailFiche:visible').length == 0) {
                 $('#idDetailFiche').slideDown();
@@ -1098,20 +1131,20 @@ var Drawer = {
         currentFiche = fiche;
     }
 
-    function closeDetailFiche() {
+    function _closeDetailFiche() {
         $('#idDetailFiche').slideUp();
     }
 
-function loadFiche(fiche) {
+function _loadFiche(fiche) {
     loadGenericFiche(fiche, $('#fiche'), 'FFFFFF');
     fiche.fiche.prev().css("background-color", fiche.color);
 }
 
-function loadDetailFiche(fiche) {
+function _loadDetailFiche(fiche) {
     loadGenericFiche(fiche, $('#idDetailFiche'), fiche.secondColor);
 }
 
-function loadGenericFiche(fiche, div, color) {
+function _loadGenericFiche(fiche, div, color) {
     $('td[name^="loyer"]', div).each(function () {
         $(this).text(fiche.loyer[parseInt($(this).attr('name').substring(5))]);
     });
@@ -1141,7 +1174,7 @@ function loadGenericFiche(fiche, div, color) {
     }
 }
 
-function doCloseFiche() {
+function _doCloseFiche() {
 	if ($('#fiche').dialog('isOpen')) {
         $('#fiche').dialog('close');
     } else {
@@ -1153,7 +1186,7 @@ function doCloseFiche() {
     }
 }
 
-function initFiches() {
+function _initFiches() {
     $('#fiche').dialog({
         autoOpen: false,
         title: "Fiche",
@@ -1180,6 +1213,8 @@ function initFiches() {
     });
     $('#ficheCompagnie').prev().css("background", "url()");
 }
+*/
+
 
 /* Affiche les echanges entre les joueurs */
 var CommunicationDisplayer = {

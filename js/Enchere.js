@@ -90,9 +90,9 @@ var GestionEnchere = {
         // 1) Vente par banque, pas d'enchere
 		// 2) Vente par joueur, pas d'enchere ou vente par banque avec une enchere
 		// 3) Vente par joueur avec enchere
-        if (this.joueursExit.size() >= joueurs.length || 
-			(this.joueursExit.size() >= joueurs.length - 1 && (this.terrain.joueurPossede != null ||this.joueurLastEnchere !=null)) || 
-			(this.joueursExit.size() >= joueurs.length - 2 && this.joueurLastEnchere != null && this.terrain.joueurPossede != null)
+        if (this.joueursExit.size() >= GestionJoueur.getNb() || 
+			(this.joueursExit.size() >= GestionJoueur.getNb() - 1 && (this.terrain.joueurPossede != null ||this.joueurLastEnchere !=null)) || 
+			(this.joueursExit.size() >= GestionJoueur.getNb() - 2 && this.joueurLastEnchere != null && this.terrain.joueurPossede != null)
 			) {
             return true;
         }
@@ -174,7 +174,7 @@ var GestionEnchere = {
     /* Enregistre les joueurs qui accusent reception. Quand tous ont repondu, on lance le callback */
     checkEndNotify: function (joueur) {
         this.endAckJoueurs[joueur.numero] = true;
-        if (this.endAckJoueurs.size() >= joueurs.length) {
+        if (this.endAckJoueurs.size() >= GestionJoueur.getNb()) {
             this.doCallback();
         }
     },

@@ -100,10 +100,7 @@ var DrawerFactory = {
 	/* A implementer : type, standardCase, specialCase */
 	addInstance:function(instance){
 		this.instances[instance.type] = instance;		
-	},
-	getPlateau:function(){
-		return;
-	},
+	},	
 	getDes:function(x, y, width){
 		return this._instantiate('des',arguments);		
 	},
@@ -134,3 +131,82 @@ var DrawerFactory = {
 		return o;
 	}
 }.init();
+
+// Gere les dessins
+var Drawer = {
+    components: new Array(),	// Un ordre est ajoute lors de l'insertion
+    height: 0,
+    width: 0,
+    interval: null,
+    intervalRT: null,
+    canvas: null,
+    intervals: [], // Stocke les flags d'arret du refresh
+    canvasRT: null, //Canvas de temps reel
+    // ajoute un composant. On indique le canvas sur lequel il s'affiche
+	/* @param order : Si present, indique l'ordre d'affichage. Le plus petit en premier */
+    add: function (component, order) {
+		if(component == null){return;}
+        component.getId = function () {
+            return Drawer.canvas.canvas.id
+        };
+		component.order = (order==null)?0:order;
+        Drawer.components.push(component);        
+    },
+    addRealTime: function (component) {
+        component.getId = function () {
+            return Drawer.canvasRT.canvas.id
+        };
+        Drawer.components.push(component);
+    },
+    removeComponent: function (component) {
+        // Boucle sur les composants et supprime si l'id est le meme
+        for (var i = 0; i < this.components.length; i++) {
+            if (this.components[i].id == component.id) {
+                this.components.splice(i, 1);
+                return;
+            }
+        }
+    },
+    clear: function (canvas) {
+        canvas.clearRect(0, 0, this.width, this.height);
+    },
+    /* Rafraichit un seul canvas */
+    refresh: function (canvas) {
+        Drawer.clear(canvas);
+        for (var i = 0; i < Drawer.components.length; i++) {
+            if (Drawer.components[i].getId() === canvas.canvas.id) {
+				Drawer.components[i].draw(canvas);
+            }
+        }
+    },
+    // Refraichissement du graphique, time en ms
+    setFrequency: function (time, canvas) {
+        if (Drawer.intervals[canvas.canvas.id] != null) {
+            clearInterval(Drawer.intervals[canvas.canvas.id]);
+        }
+        Drawer.intervals[canvas.canvas.id] = setInterval(function () {
+            Drawer.refresh(canvas);
+        }, time);
+    },
+    init: function (width, height) {
+		// On tri les composants qui ont ete ajoutes
+		this.components.sort(function(a,b){
+			return a.order - b.order;
+		});
+        this.width = width;
+        this.height = height;
+        this.canvas = document.getElementById("canvas").getContext("2d");
+        this.canvasRT = document.getElementById("canvas_rt").getContext("2d");
+        this.canvas.strokeStyle = '#AA0000';
+        this.canvasRT.strokeStyle = '#AA0000';
+        // On ne recharge pas le plateau, il n'est charge qu'une seule fois (ou rechargement a la main)
+        this.refresh(this.canvas);
+        this.setFrequency(50, this.canvasRT);
+
+        $.bind('refreshPlateau', function () {
+            Drawer.refresh(Drawer.canvas);
+        });
+        return this;
+    }
+};
+

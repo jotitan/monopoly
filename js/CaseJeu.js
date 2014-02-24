@@ -344,7 +344,7 @@ function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
 	this.openFiche = function () {
 		var buttons = this.getButtons();
 		this.fiche.dialog('option', 'buttons', buttons);
-		loadFiche(this);
+		FicheDisplayer.loadFiche(this);
 		if (GestionJoueur.getJoueurCourant().canPlay) {
 			this.fiche.dialog('open');
 		}
@@ -356,7 +356,7 @@ function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
 			if (GestionJoueur.getJoueurCourant().montant < this.achat) {
 				return {
 					"Pas assez d'argent": function () {
-						GestionJoueur.getJoueurCourant().refuseMaison(current,doCloseFiche);
+						GestionJoueur.getJoueurCourant().refuseMaison(current,function(){FicheDisplayer.closeFiche()});
 					}
 				};
 			} else {
@@ -365,17 +365,17 @@ function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
 						var j = GestionJoueur.getJoueurCourant();
 						var id = j.pion.etat + "-" + j.pion.position;
 						j.acheteMaison(current);
-						doCloseFiche();
+						FicheDisplayer.closeFiche();
 					},
 					"Refuser": function () {
-						GestionJoueur.getJoueurCourant().refuseMaison(current,doCloseFiche);
+						GestionJoueur.getJoueurCourant().refuseMaison(current,function(){FicheDisplayer.closeFiche()});
 					}
 				};
 			}
 		} else {
 			return {
 				"Fermer": function () {
-					doCloseFiche();
+					FicheDisplayer.closeFiche();
 				}
 			};
 		}

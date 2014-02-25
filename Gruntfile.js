@@ -53,13 +53,11 @@ module.exports = function(grunt){
 						'js/ui/SquareGraphics.js',
 						'js/ui/CircleGraphics.js',
 						'js/entity/*.js',
+						'js/display/*.js',
 						'js/Utils.js',
-						'js/CaseJeu.js',
 						'js/Enchere.js',
 						'js/GestionConstructions.js',
 						'js/GestionTerrains.js',
-						'js/Entity.js',						
-						'js/Message.js',
 						'js/Sauvegarde.js',
 						'monopoly.js']
 				}

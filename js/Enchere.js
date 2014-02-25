@@ -391,3 +391,118 @@ var EchangeDisplayer = {
         $('option', this.selectJoueurs).removeAttr('selected');
     }
 }
+
+/* Gere l'echange d'une propriete entre deux joueurs */
+var GestionEchange = {
+    running: false,
+    /* Indique qu'un echange est en cours, la partie est bloquee */
+    demandeur: null,
+    proprietaire: null,
+    terrain: null,
+    proposition: null,
+	initialProposition: null,
+    /* Derniere proposition faite. */
+    endCallback: null,
+    /* Methode appelee a la fin de la transaction */
+    /* Initialise une transaction entre deux joueurs */
+    init: function (demandeur, proprietaire, terrain, endCallback) {
+        if (this.running) {
+            throw "Transaction impossible, une transaction est deja en cours.";
+        }
+        this.running = true;
+        this.demandeur = demandeur;
+        this.proprietaire = proprietaire;
+        this.terrain = terrain;
+        this.endCallback = endCallback;
+        $.trigger('monopoly.echange.init', {
+            joueur: demandeur,
+            maison: terrain
+        });
+    },
+    /* Termine la transaction entre deux personnes */
+    end: function () {
+        this.running = false;
+        this.demandeur = null;
+        this.proprietaire = null;
+        this.terrain = null;
+        if (this.endCallback != null) {
+            this.endCallback();
+        }
+        this.endCallback = null;
+    },
+    /* Fait une proposition au proprietaire */
+    /* Une proposition peut etre un ou plusieurs terrains ou de l'argent. */
+    propose: function (proposition) {
+        // On transmet la demande au proprietaire
+        this.proposition = proposition;
+		this.initialProposition = proposition;
+        $.trigger('monopoly.echange.propose', {
+            joueur: GestionEchange.demandeur,
+            proposition: proposition
+        });
+        this.proprietaire.traiteRequeteEchange(this.demandeur, this.terrain, proposition);
+    },
+    /* Contre proposition du proprietaire, ca peut être des terrains ou de l'argent */
+    contrePropose: function (proposition, joueurContre) {
+        $.trigger('monopoly.echange.contrepropose', {
+            joueur: this.proprietaire,
+            proposition: proposition
+        });
+        this.proposition = proposition;
+        if (joueurContre.equals(this.demandeur)) {
+            this.proprietaire.traiteContreProposition(proposition, joueurContre, this.terrain);
+        } else {
+            this.demandeur.traiteContreProposition(proposition, joueurContre, this.terrain);
+        }
+    },
+    abort: function () {
+        this.end();
+    },
+    /* Le proprietaire accepte la proposition. On prend la derniere proposition et on l'applique */
+    /* @param joueurAccept : joueur qui accepte la proposition (suite au aller retour) */
+    accept: function (joueurAccept) {
+        $.trigger('monopoly.echange.accept', {
+            joueur: joueurAccept
+        });
+        // On notifie a l'autre joueur que c'est accepte
+        if (joueurAccept.equals(this.demandeur)) {
+            this.proprietaire.notifyAcceptProposition(function () {
+                GestionEchange._doAccept();
+            });
+        } else {
+            this.demandeur.notifyAcceptProposition(function () {
+                GestionEchange._doAccept();
+            });
+        }
+    },
+    _doAccept: function () {
+        // La propriete change de proprietaire
+        this.demandeur.getSwapProperiete(this.terrain);
+        // Le proprietaire recoit la proposition
+        if (this.proposition.compensation != null) {
+            this.demandeur.payerTo(this.proposition.compensation, this.proprietaire);
+        }
+        if (this.proposition.terrains != null && this.proposition.terrains.length > 0) {
+            for (var t in this.proposition.terrains) {
+                this.proprietaire.getSwapProperiete(this.proposition.terrains[t]);
+            }
+        }
+        this.end();
+    },
+    reject: function (joueurReject) {
+        $.trigger('monopoly.echange.reject', {
+            joueur: joueurReject
+        });
+        // On notifie le joueur et on lui donne le callback(end) pour lancer la suite du traitement
+		// Cas de la contreproposition
+        if (joueurReject.equals(this.demandeur)) {            
+			this.demandeur.notifyRejectProposition(function () {
+                GestionEchange.end();
+            }, this.terrain, this.initialProposition);			
+        } else {
+            this.demandeur.notifyRejectProposition(function () {
+                GestionEchange.end();
+            }, this.terrain, this.proposition);
+        }
+    }
+}

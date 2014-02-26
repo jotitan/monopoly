@@ -462,22 +462,65 @@ function writePositions(){
 				this.panelPartie.dialog('close');
 			} else {
 				this.initPlateau($('#idSelectPlateau').val(),function(){
-					var nb = $('select[name="nbPlayers"]', this.panelPartie).val();
+                    var options = {};
+                    $('#idPartie',this.panelPartie).find('select[name]').each(function(){
+                        options[$(this).attr('name')] = $(this).val();
+                    });
+                    $('#idPartie',this.panelPartie).find(':checkbox[name]').each(function(){
+                        options[$(this).attr('name')] = $(this).is(':checked');
+                    });
+                    $(':checkbox[name]', '#idVariantes').each(function () {
+                        VARIANTES[$(this).attr('name')] = $(this).is(':checked');
+                    });
+					/*var nb = $('select[name="nbPlayers"]', this.panelPartie).val();
 					var firstIA = $(':checkbox[name="firstIA"]:checked', this.panelPartie).length > 0;
 					var waitTimeIA = $('select[name="waitTimeIA"]', this.panelPartie).val();
-					/* Variantes */
-					this._loadVariantes();
-					createGame(nb, firstIA, {
-						waitTimeIA: waitTimeIA,
-						joueur:$('#idNomJoueur').val()
-					});
+					this._loadVariantes();*/
+					InitMonopoly.createGame(options);
 				});
 				this.panelPartie.dialog('close');
 			}
 		},
+        initPlateau:function(nomPlateau,callback){
+            // On charge le plateau
+            $.ajax({
+                url: 'data/' + nomPlateau,
+                dataType: 'json',
+                success: function (data) {
+                    if(data.plateau == null){
+                        throw "Erreur avec le plateau " + nomPlateau;
+                    }
+                    currentPlateauName = nomPlateau;
+                    // Gestion de l'heritage
+                    if(data.extend){
+                        // On charge l'autre plateau et on en etend
+                        $.ajax({
+                            url:'data/' + data.extend,
+                            dataType:'json',
+                            success:function(dataExtend){
+                                var extendedData = $.extend(true,{},dataExtend,data);                           
+                                loadPlateau(extendedData,callback);
+                            },
+                            error:function(a,b,c){
+                                console.log(a,b,c);
+                            }
+                        });
+                    }
+                    else{
+                        loadPlateau(data,callback);             
+                    }
+                },
+                error: function (a, b, c) {
+                    console.log(a,b,c);
+                    alert("Le plateau " + nomPlateau + " n'existe pas (" + 'data/' + nomPlateau + ")");
+                    return;
+                }
+            });
+},
 		/* Creer la partie apres le chargement du plateau */
-		_createGame:function(nb,firstPlayer,options){
-		
+		_createGame:function(options){
+		  options = $.extend({},{nbPlayers:0,waitTimeIA:1,firstIA:false,joueur:nomsJoueurs[i]},options);
+          console.log(options);
 		},
 		_loadVariantes:function(){
 			$(':checkbox[name]', '#idVariantes').each(function () {
@@ -504,7 +547,7 @@ function writePositions(){
 				//for (var i = 0; i < sauvegardes.length; i++) {
 					//$('#idSauvegardes').append('<option value="' + sauvegardes[i].value + '">' + sauvegardes[i].label + '</option>');
 					this.listSauvegarde.append('<option value="' + s.value + '">' + s.label + '</option>');
-				});
+				},this);
 				$('#idDeleteSauvegarde').unbind('click').bind('click', function () {
 					if ($('option:selected',this.listSauvegarde).length > 0) {
 						if (confirm("Etes vous sur de vouloir supprimer cette sauvegarde : " + this.listSauvegarde.val())) {
@@ -577,6 +620,8 @@ function writePositions(){
 	}
 	
     function init(nomPlateau, debugValue) {
+        InitMonopoly.init();
+        return;
         DEBUG = debugValue;
         MessageDisplayer.init('idInfoBox');
 		InfoMessage.init('message');
@@ -598,8 +643,8 @@ function writePositions(){
 		});
     }
 
-    function initPanels() {
-		InitMonopoly.loadPlateaux(showListPlateaux);
+    function _initPanels() {
+		//InitMonopoly.loadPlateaux(showListPlateaux);
         $('#message').dialog({
             autoOpen: false
         });

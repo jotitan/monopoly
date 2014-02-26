@@ -34,39 +34,41 @@ function SimpleCaseSpeciale(titre, montant, etat, pos, img) {
 	}
 }
 
-function CaseChance(etat, pos,img) {
+function CaseChance(etat, pos,img, cartes) {
 	this.id = etat + "-" + pos;
+	this.cartes = cartes;
 	this.drawing = DrawerFactory.getCase(pos, etat, null, titles.chance, null, img);
 	Drawer.add(this.drawing);
 	this.action = function () {
-		if (cartesChance.length == 0) {
+		if (this.cartes.length == 0) {
 			throw "Aucune carte chance";
 		}
-		var randomValue = Math.round((Math.random() * 1000)) % (cartesChance.length);
-		var c = cartesChance[randomValue];
+		var randomValue = Math.round((Math.random() * 1000)) % (this.cartes.length);
+		var c = this.cartes[randomValue];
 		// On test si la carte est une carte sortie de prison est possedee par un joueur
 		if (c.carte.type == "prison" && !c.carte.isLibre()) {
 			// on prend la carte suivante
-			c = cartesChance[randomValue + 1 % (cartesChance.length)];
+			c = this.cartes[randomValue + 1 % (this.cartes.length)];
 		}
 		return c.action();
 	}
 }
 
-function CaseCaisseDeCommunaute(etat, pos, img) {
+function CaseCaisseDeCommunaute(etat, pos, img, cartes) {
 	this.id = etat + "-" + pos;
+	this.cartes = cartes;
 	this.drawing = DrawerFactory.getCase(pos, etat, null, titles.communaute, null, img );
 	Drawer.add(this.drawing);
 	this.action = function () {
-		if (cartesCaisseCommunaute.length == 0) {
+		if (this.cartes.length == 0) {
 			throw "Aucune carte caisse de communaute";
 		}
-		var randomValue = Math.round((Math.random() * 1000)) % (cartesCaisseCommunaute.length);
-		var c = cartesCaisseCommunaute[randomValue];
+		var randomValue = Math.round((Math.random() * 1000)) % (this.cartes.length);
+		var c = this.cartes[randomValue];
 		// On test si la carte est une carte sortie de prison est possedee par un joueur
 		if (c.carte.type == "prison" && !c.carte.isLibre()) {
 			// on prend la carte suivante
-			c = cartesCaisseCommunaute[(randomValue + 1) % (cartesCaisseCommunaute.length)];
+			c = this.cartes[(randomValue + 1) % (this.cartes.length)];
 		}
 		return c.action();
 	}

@@ -32,13 +32,6 @@ var stats = {	// Statistiques
 	positions:[]
 }	
 var nbTours = 0; // Nombre de tours de jeu depuis le depuis (nb de boucle de joueurs)
-var currentSauvegardeName = null; // Nom de la sauvegarde en cours
-var plateau = null;	// Info du plateau
-var currentPlateauName = null;	// Plateau charge
-
-/* Liste des cases et des cartes */
-var parcGratuit = null;
-var currentFiche = null;
 
 var CURRENCY = "F.";
 
@@ -104,132 +97,6 @@ function CarteChance(libelle, carte) {
 function CarteCaisseDeCommunaute(libelle, carte) {
 	CarteAction.call(this,libelle,carte,titles.communaute,"pink","caissecommunaute");	           
 }
-
-/* Represente un groupe de terrain */
-function Groupe(nom, color) {
-	this.nom = nom;
-	this.color = color;
-	/* Liste de ses terrains */
-	this.fiches = [];
-	this.groupePrecedent = null;
-	this.groupeSuivant = null;
-
-	this.equals = function (groupe) {
-		if (groupe == null) {
-			return false;
-		}
-		return this.color == groupe.color;
-	}
-
-	this.getVoisins = function () {
-		return [this.groupePrecedent, this.groupeSuivant];
-	}
-
-	this.isVoisin = function (groupe) {
-		return (this.groupePrecedent != null && this.groupePrecedent.equals(groupe)) || (this.groupeSuivant != null && this.groupeSuivant.equals(groupe));
-	}
-
-	this.equals = function (groupe) {
-		return this.color == groupe.color;
-	}
-
-	/* Ajoute une fiche au groupe (lors de l'init) */
-	this.add = function (fiche) {
-		this.fiches.push(fiche);
-		fiche.groupe = this;
-		return this;
-	}
-
-	/* Indique que tous les terrains appartiennent a la meme personne */
-	this.isGroupee = function () {
-		if (this.fiches == null || this.fiches.length == 0) {
-			return false;
-		}
-		var joueur = this.fiches[0].joueurPossede;
-		for (var i = 0; i < this.fiches.length; i++) {
-			if (this.fiches[i].joueurPossede == null || !this.fiches[i].joueurPossede.equals(joueur)) {
-				return false;
-			}
-			joueur = this.fiches[i].joueurPossede;
-		}
-		return true;
-	}
-
-	/* Indique que le terrain possede des constructions */
-	this.isBuild = function () {
-		if (this.fiches == null || fiches.length == 0) {
-			return false;
-		}
-		for (var i = 0; i < this.fiches.length; i++) {
-			if (this.fiches[i].nbMaison > 0) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	this.getAverageConstructions = function () {
-		var nb = 0;
-		for (var i = 0; i < this.fiches.length; i++) {
-			nb += this.fiches[i].nbMaison;
-		}
-		return nb / this.fiches.length;
-	}
-
-	/* Renvoie le nombre de constructions sur le groupe */
-	this.getConstructions = function () {
-		var constructions = {
-			maison: 0,
-			hotel: 0
-		};
-		for (var i = 0; i < this.fiches.length; i++) {
-			if (this.fiches[i].hotel) {
-				constructions.hotel++;
-			} else {
-				constructions.maison += this.fiches[i].nbMaison;
-			}
-		}
-		return constructions;
-	}
-
-	/* Renvoie des infos sur les proprietes du groupe. Ajoute la liste des proprietes qui n'appartiennent pas au joueur */
-	this.getInfos = function (joueur) {
-		var infos = {
-			free: 0,
-			joueur: 0,
-			adversaire: 0,
-			nbAdversaires: 0,
-			maisons: [],
-			hypotheque: 0
-		};
-		var adversaires = []; // Liste des adversaires possedant un terrains
-		for (var i = 0; i < this.fiches.length; i++) {
-			var f = this.fiches[i];
-			if (f.statut == ETAT_LIBRE) {
-				infos.free++;
-			} else {
-				if (f.statutHypotheque) {
-					infos.hypotheque++;
-				}
-				if (joueur.equals(f.joueurPossede)) {
-					infos.joueur++;
-				} else {
-					infos.adversaire++;
-					infos.maisons.push(f);
-					adversaires[f.joueurPossede.id] = 1;
-				}
-			}
-		}
-		infos.nbAdversaires = adversaires.size();
-		return infos;
-	}
-
-	/* Renvoie le nombre de fiche dans le groupe */
-	this.getNb = function () {
-		return (this.fiches == null) ? 0 : this.fiches.length;
-	}		
-}
-
 
 // Cree le comportement lorsque le joueur arrive sur la carte
 function doActions() {
@@ -309,7 +176,7 @@ function writePositions(){
 				if (j.nbDouble == 2) {
 					MessageDisplayer.write(j, message + " et sort de prison en payant " + CURRENCY + " 5.000");
 					var buttons = InfoMessage.create(j,"Libere de prison", "lightblue", "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
-						j.payerParcGratuit(parcGratuit,5000, function () {
+						j.payerParcGratuit(InitMonopolt.plateau.parcGratuit,5000, function () {
 							j.exitPrison();
 							GestionDes.endLancer();
 						});
@@ -442,6 +309,7 @@ function writePositions(){
 		plateau:{
 			infos:null,
 			name:null,
+			parcGratuit:null,
 			cartes:{caisseCommunaute:[],chance:[]},
 			load:function(nomPlateau,callback){
 				// On charge le plateau
@@ -510,31 +378,21 @@ function writePositions(){
 					callback();
 				}
 			},
+			_buildCartes:function(data,Instance){				
+				return data!=null ? data.cartes.map(function(c){
+					return new Instance(c.nom, CarteActionFactory.get(c));					
+				}):[];				
+			},
 			_draw:function(data){
 				$('#idSubTitle').text(this.infos.subtitle);
-				parcGratuit = null;				
+				this.parcGratuit = null;				
 				var colors = [];
 				var groups = [];
 				var _self = this;
 				
-				// On charge les cartes chances et caisse de communaute
-				if (data.chance) {
-					$(data.chance.cartes).each(function () {
-						var actionCarte = CarteActionFactory.get(this);
-						if (actionCarte != null) {
-							_self.cartes.chance.push(new CarteChance(this.nom, actionCarte));
-						}
-					});
-				}
-				if (data.communaute) {
-					$(data.communaute.cartes).each(function () {
-						var actionCarte = CarteActionFactory.get(this);
-						if (actionCarte != null) {
-							_self.cartes.caisseCommunaute.push(new CarteCaisseDeCommunaute(this.nom, actionCarte));
-						}
-					});
-				}
-				
+				this.cartes.chance = this._buildCartes(data.chance,CarteChance);
+				this.cartes.caisseCommunaute = this._buildCartes(data.communaute,CarteCaisseDeCommunaute);
+								
 				$(data.fiches).each(function () {
 					var fiche = null;
 					if (this.colors != null && this.colors.length > 0 && groups[this.colors[0]] == null) {
@@ -575,8 +433,8 @@ function writePositions(){
 						}, this.axe, this.pos);
 						break;
 					case "parc":
-						parcGratuit = new ParcGratuit(this.axe, this.pos);
-						fiche = parcGratuit;
+						_self.parcGratuit = new ParcGratuit(this.axe, this.pos);
+						fiche = _self.parcGratuit;
 						break;
 					case "depart":
 						fiche = new CaseActionSpeciale(this.nom, function () {
@@ -632,7 +490,7 @@ function writePositions(){
 			}
 		},
 		showPanel:function(){
-			this._loadPlateaux(showListPlateaux);
+			this._loadPlateaux();
 			this._configSauvegardePanel();
 			this.panelPartie.dialog({
 				title: "Monopoly",
@@ -683,6 +541,13 @@ function writePositions(){
 				}
 				GestionJoueur.create(i > 0 || options.firstIA, i,nom);            
 			}
+			this.afterCreateGame();
+			GestionJoueur.change();
+
+			/* Gestion des options */
+			IA_TIMEOUT = options.waitTimeIA || IA_TIMEOUT;		  
+		},
+		afterCreateGame:function(){
 			$('.info-joueur').tooltip({
 				content: function () {
 					var stats = GestionJoueur.getById($(this).data('idjoueur')).getStats();
@@ -693,11 +558,7 @@ function writePositions(){
 				}
 			});
 			// Panneau d'echange
-			EchangeDisplayer.init('idPanelEchange', 'idSelectJoueurs', 'idListTerrainsJoueur', 'idListTerrainsAdversaire');			
-			GestionJoueur.change();
-
-			/* Gestion des options */
-			IA_TIMEOUT = options.waitTimeIA || IA_TIMEOUT;		  
+			EchangeDisplayer.init('idPanelEchange', 'idSelectJoueurs', 'idListTerrainsJoueur', 'idListTerrainsAdversaire');	
 		},
 		/* Charge les plateaux de jeu disponible */
 		_loadPlateaux:function(){
@@ -717,6 +578,7 @@ function writePositions(){
 		_configSauvegardePanel:function(){
 			var sauvegardes = Sauvegarde.findSauvegardes();
 			this.listSauvegarde = $('#idSauvegardes');
+			var _self = this;
 			if (sauvegardes.length > 0) {
 				sauvegardes.forEach(function(s){
 				//for (var i = 0; i < sauvegardes.length; i++) {
@@ -724,17 +586,17 @@ function writePositions(){
 					this.listSauvegarde.append('<option value="' + s.value + '">' + s.label + '</option>');
 				},this);
 				$('#idDeleteSauvegarde').unbind('click').bind('click', function () {
-					if ($('option:selected',this.listSauvegarde).length > 0) {
-						if (confirm("Etes vous sur de vouloir supprimer cette sauvegarde : " + this.listSauvegarde.val())) {
-							Sauvegarde.delete(this.listSauvegarde.val());
-							$('option:selected',this.listSauvegarde).remove();
+					if ($('option:selected',_self.listSauvegarde).length > 0) {
+						if (confirm("Etes vous sur de vouloir supprimer cette sauvegarde : " + _self.listSauvegarde.val())) {
+							Sauvegarde.delete(_self.listSauvegarde.val());
+							$('option:selected',_self.listSauvegarde).remove();
 						}
 					}
 				});
 				$('#idLoadSauvegarde').unbind('click').bind('click', function () {
-					if (this.listSauvegarde.val() != "") {
-						Sauvegarde.load(this.listSauvegarde.val());
-						this.panelPartie.dialog('close');
+					if (_self.listSauvegarde.val() != "") {
+						Sauvegarde.load(_self.listSauvegarde.val());
+						_self.panelPartie.dialog('close');
 					}
 				});
 			}
@@ -746,14 +608,8 @@ function writePositions(){
 			$('#message').prev().css("background", "url()");
 			/* Gestion de la sauvegarde */
 			$('#idSavePanel').click(function () {
-				if (currentSauvegardeName == null) {
-					currentSauvegardeName = prompt("Nom de la sauvegarde (si vide, defini par defaut)");
-					if (currentSauvegardeName == null) {
-						return;
-					}
-					currentSauvegardeName = Sauvegarde.getSauvegardeName(currentSauvegardeName);
-				}
-				Sauvegarde.save(currentSauvegardeName);
+				var name = Sauvegarde.isSauvegarde() ? prompt("Nom de la sauvegarde (si vide, defini par defaut)") : null;
+				Sauvegarde.save(name);				
 			});
 			// panneau d'achats de maisons
 			$('#achatMaisons').dialog({
@@ -774,87 +630,7 @@ function writePositions(){
 		}
 	}
 	
-    function init(nomPlateau, debugValue) {
-        InitMonopoly.init();
-        return;
-        DEBUG = debugValue;
-        MessageDisplayer.init('idInfoBox');
-		InfoMessage.init('message');
-        //initDetailFiche();
-        FicheDisplayer.init();
-		//initFiches();
-        initPanels();
-		initJoueurs();
-        GestionTerrains.init({
-			idArgentRestant:'#idArgentRestant',
-			idCout:'#idCoutTotal',
-			idPanel:'#housesPanel',
-			idTerrains:'#idTerrains',
-			idHypotheque:'#toHypotheque',
-			idTerrainsHypotheque:'#idTerrainsHypotheques',
-			idTerrainsConstructibles:'#idTerrainsConstructibles',
-			idCoutAchat:'#coutAchats',
-			idConstructions:'#resteConstructions'
-		});
-    }
-
-    function _initPanels() {
-		//InitMonopoly.loadPlateaux(showListPlateaux);
-        $('#message').dialog({
-            autoOpen: false
-        });
-        $('#message').prev().css("background", "url()");
-        /* Gestion de la sauvegarde */
-        $('#idSavePanel').click(function () {
-            if (currentSauvegardeName == null) {
-                currentSauvegardeName = prompt("Nom de la sauvegarde (si vide, defini par defaut)");
-                if (currentSauvegardeName == null) {
-                    return;
-                }
-                currentSauvegardeName = Sauvegarde.getSauvegardeName(currentSauvegardeName);
-            }
-            Sauvegarde.save(currentSauvegardeName);
-        });
-        // panneau de creation
-        $('#achatMaisons').dialog({
-            autoOpen: false,
-            title: "Achat de maisons /ea hetels",
-            width: 500,
-            height: 300
-        });
-        // Panneau d'enchere
-        GestionEnchereDisplayer.init('idEncherePanel');
-		
-		$('#idTerrainsLibres').dialog({
-			autoOpen:false,
-			title:"Liste des terrains libre",
-			width:350,
-			height:300,
-			buttons:[{text:'Fermer',click:function(){$('#idTerrainsLibres').dialog('close');}}],
-			open:function(){showFreeTerrains();}
-		});
-    }
-	
-	/* Recupere la liste des plateaux disponibles */
-	/*
-	function loadListPlateaux(callback){
-		$.ajax({
-			url:'data/plateaux.json',
-			dataType:'json',
-			success:function(data){
-				if(data == null || data.plateaux == null){return;}
-				callback(data.plateaux);
-			}
-		});
-	}*/
-	
-	function showListPlateaux(plateaux){
-		for(var i = 0 ; i < plateaux.length ; i++){
-			$('#idSelectPlateau').append('<option value="' + plateaux[i].url + '">' + plateaux[i].name + '</option>');
-		}
-	}
-	
-	function showFreeTerrains(){
+    function showFreeTerrains(){
 		$('#idTerrainsLibres').empty();
 		var it = GestionFiche.getTerrainsLibres();
 		while(it.hasNext()){
@@ -863,307 +639,12 @@ function writePositions(){
 		}
 	}
 
-    function showCreatePanel() {
-        var sauvegardes = Sauvegarde.findSauvegardes();
-        if (sauvegardes.length > 0) {
-            for (var i = 0; i < sauvegardes.length; i++) {
-                $('#idSauvegardes').append('<option value="' + sauvegardes[i].value + '">' + sauvegardes[i].label + '</option>');
-            }
-            $('#idDeleteSauvegarde').unbind('click').bind('click', function () {
-                var save = $('#idSauvegardes').val();
-                if (save != "") {
-                    if (confirm("Etes vous sur de vouloir supprimer cette sauvegarde : " + save)) {
-                        Sauvegarde.delete(save);
-                        $('#idSauvegardes > option:selected').remove();
-                    }
-                }
-            });
-            $('#idLoadSauvegarde').unbind('click').bind('click', function () {
-                if ($('#idSauvegardes').val() != "") {
-                    Sauvegarde.load($('#idSauvegardes').val());
-                    $('#idPanelCreatePartie').dialog('close');
-                }
-            });
-        }
-
-        $('#idPanelCreatePartie').dialog({
-            title: "Monopoly",
-            closeOnEscape: false,
-            modal: true,
-            width: 400,
-            buttons: [{
-                text: "Valider",
-                click: createPanelGame
-            }]
-        });
-    }
-
-    function createPanelGame() {
-        /* Chargement d'une partie */
-        if ($('#idSauvegardes').val() != "") {
-            Sauvegarde.load($('#idSauvegardes').val());
-			$('#idPanelCreatePartie').dialog('close');
-        } else {
-			initPlateau($('#idSelectPlateau').val(),function(){
-				var nb = $('select[name="nbPlayers"]', '#idPanelCreatePartie').val();
-				var firstPlayerIA = $(':checkbox[name="firstIA"]:checked', '#idPanelCreatePartie').length > 0;
-				var waitTimeIA = $('select[name="waitTimeIA"]', '#idPanelCreatePartie').val();
-				/* Variantes */
-				$(':checkbox[name]', '#idVariantes').each(function () {
-					VARIANTES[$(this).attr('name')] = $(this).is(':checked');
-				});
-				createGame(nb, firstPlayerIA, {
-					waitTimeIA: waitTimeIA,
-					joueur:$('#idNomJoueur').val()
-				});
-			});
-            $('#idPanelCreatePartie').dialog('close');
-        }        
-    }
-	
-    function createGame(nbPlayers, firstPlayerIA, options) {
-		for (var i = 0; i < nbPlayers; i++) {
-			var nom = "Joueur " + (i+1);
-			if(i == 0 && !firstPlayerIA && options.joueur!=null && options.joueur!=""){
-				nom = options.joueur;				
-			}else{
-				if(nomsJoueurs!=null && nomsJoueurs.length > 0){
-					nom = nomsJoueurs[i];
-				}
-			}
-			GestionJoueur.create(i > 0 || firstPlayerIA, i,nom);            
-        }
-        GestionJoueur.change();
-        initToolTipJoueur();
-
-        /* Gestion des options */
-        IA_TIMEOUT = options.waitTimeIA || IA_TIMEOUT;
-    }
-
-    function initToolTipJoueur() {
-        $('.info-joueur').tooltip({
-            content: function () {
-                var stats = GestionJoueur.getById($(this).data('idjoueur')).getStats();
-                $('span[name]', '#infoJoueur').each(function () {
-                    $(this).html(stats[$(this).attr('name')]);
-                });
-                return $('#infoJoueur').html();
-            }
-        });
-        // Panneau d'echange
-        EchangeDisplayer.init('idPanelEchange', 'idSelectJoueurs', 'idListTerrainsJoueur', 'idListTerrainsAdversaire');
-        CommunicationDisplayer.init('idCommunicationEchange');
-    }
-
     function reset() {
         $('#informations-left').empty();
         $('#informations').empty();
         joueurs = [];
     }
-
-    function initJoueurs() {
-        if (!DEBUG) {
-            showCreatePanel();
-        } else {
-            initPlateau('data-monopoly.json',function(){createGame(2, false, {});});
-        }
-    }
-
-    // Initialise le plateau en chargeant les donnees dans le fichier
-    function initPlateau(nomPlateau, callback) {
-        // On charge le plateau
-        $.ajax({
-            url: 'data/' + nomPlateau,
-            dataType: 'json',
-            success: function (data) {
-                if(data.plateau == null){
-					throw "Erreur avec le plateau " + nomPlateau;
-				}
-				currentPlateauName = nomPlateau;
-				// Gestion de l'heritage
-				if(data.extend){
-					// On charge l'autre plateau et on en etend
-					$.ajax({
-						url:'data/' + data.extend,
-						dataType:'json',
-						success:function(dataExtend){
-							var extendedData = $.extend(true,{},dataExtend,data);							
-							loadPlateau(extendedData,callback);
-						},
-						error:function(a,b,c){
-							console.log(a,b,c);
-						}
-					});
-				}
-				else{
-					loadPlateau(data,callback);				
-				}
-            },
-            error: function (a, b, c) {
-				console.log(a,b,c);
-                alert("Le plateau " + nomPlateau + " n'existe pas (" + 'data/' + nomPlateau + ")");
-                return;
-            }
-        });
-    }
-
-	/* Charge les donnees du plateau */
-	function loadPlateau(data,callback){
-		plateau = data.plateau;
-		DrawerFactory.addInfo('defaultImage',data.images.default || {});
-		if(plateau.type == 'circle'){
-			DrawerFactory.setType('circle');
-			$('.title').addClass('circle');
-			$('#plateau').addClass('action-circle');
-			$('#idSavePanel').arctext({radius: 80,dir:1})
-			$('#idInfoBox').addClass('circle');
-			$('#idInfoBox').unbind('mousewheel').bind('mousewheel',function(e,sens){
-				var scroll=$('#idInfoBox').scrollTop() + (sens * e.deltaFactor * -0.7);
-				$('#idInfoBox').scrollTop(scroll)
-				e.preventDefault();
-			});
-		}
-		
-		GestionDes.init(plateau.rollColor);
-		$('#idLancerDes').click(function(){
-			GestionDes.lancer();
-		});
-		Drawer.add(DrawerFactory.getPlateau(0, 0, plateauSize, plateauSize, plateau.backgroundColor), 0); 				
-		buildPlateau(data);
-		Drawer.add(DrawerFactory.endPlateau(),2);
-		Drawer.init(plateauSize, plateauSize);
-
-		if (callback) {
-			callback();
-		}
-	}
 	
-    /* Construit le plateau a partir des donnees */
-    function buildPlateau(data) {
-	
-        $('#idSubTitle').text(plateau.subtitle);
-		parcGratuit = null;
-        CURRENCY = data.currency;
-        titles = data.titles;
-		nomsJoueurs = plateau.nomsJoueurs || [];
-        var colors = [];
-        var groups = [];
-        $(data.fiches).each(function () {
-            var fiche = null;
-            if (this.colors != null && this.colors.length > 0 && groups[this.colors[0]] == null) {
-                groups[this.colors[0]] = new Groupe(this.groupe, this.colors[0]);
-            }
-            switch (this.type) {
-            case "propriete":
-                fiche = new Fiche(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers, this.prixMaison);
-                groups[this.colors[0]].add(fiche);
-                break;
-            case "compagnie":
-				fiche = new FicheCompagnie(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers,data.images[this.img] || data.images.compagnie);
-                groups[this.colors[0]].nom = 'Compagnie';
-                groups[this.colors[0]].add(fiche);
-                break;
-            case "gare":
-                fiche = new FicheGare(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers, data.images.gare);
-                groups[this.colors[0]].nom = 'Gare';
-                groups[this.colors[0]].add(fiche);
-                break;
-            case "chance":
-                fiche = new CaseChance(this.axe, this.pos,data.images.chance);
-                break;
-            case "communaute":
-                fiche = new CaseCaisseDeCommunaute(this.axe, this.pos,data.images.caisseDeCommunaute);
-                break;
-            case "taxe":
-                fiche = new SimpleCaseSpeciale(this.nom, this.prix, this.axe, this.pos, data.images.taxe);
-                break;
-            case "prison":
-                fiche = new CaseActionSpeciale(this.nom, function () {
-                    GestionJoueur.getJoueurCourant().goPrison();
-                }, this.axe, this.pos);
-                break;
-            case "special":
-                fiche = new CaseActionSpeciale(this.nom, function () {
-                    GestionJoueur.change();
-                }, this.axe, this.pos);
-                break;
-            case "parc":
-                parcGratuit = new ParcGratuit(this.axe, this.pos);
-                fiche = parcGratuit;
-                break;
-            case "depart":
-                fiche = new CaseActionSpeciale(this.nom, function () {
-                    if (VARIANTES.caseDepart) {
-                        GestionJoueur.getJoueurCourant().gagner((data.plateau.montantDepart || 20000)*2);
-                    } else {
-                        GestionJoueur.getJoueurCourant().gagner(data.plateau.montantDepart || 20000);
-                    }
-                    $.trigger('monopoly.depart', {
-                        joueur: GestionJoueur.getJoueurCourant()
-                    });
-                    GestionJoueur.change();
-                }, this.axe, this.pos);
-                break;
-            }
-            if(fiche!=null){
-			GestionFiche.add(fiche);
-				if (fiche.color != null) {
-					if (colors[fiche.color] == null) {
-						// On genere un style
-						$('style', 'head').prepend('.color_' + fiche.color.substring(1) + '{color:white;font-weight:bold;background-color:' + fiche.color + ';}\n');
-						colors[fiche.color] = 1;
-					}
-				}
-			}
-        });
-        // On calcule les voisins de chaque groupe
-        calculeVoisinsGroupes();
-
-        // On charge les cartes chances et caisse de communaute
-        if (data.chance) {
-            $(data.chance.cartes).each(function () {
-                var actionCarte = CarteActionFactory.get(this);
-                if (actionCarte != null) {
-                    InitMonopoly.plateau.cartesChance.push(new CarteChance(this.nom, actionCarte));
-                }
-            });
-        }
-        if (data.communaute) {
-            $(data.communaute.cartes).each(function () {
-                var actionCarte = CarteActionFactory.get(this);
-                if (actionCarte != null) {
-                    InitMonopoly.plateau.cartesCaisseCommunaute.push(new CarteCaisseDeCommunaute(this.nom, actionCarte));
-                }
-            });
-        }		
-    }
-
-    /* Calcule les deux voisins (precedent / suivant) de chaque groupe. (utilisation : calcul de ligne) */
-    /*  */
-    function calculeVoisinsGroupes() {
-        var currentGroupe = null;
-        // Parcourt les fiches. On enregistre le groupe courant, quand changement, on defini le groupe precedent et calcule le suivant du precedent
-        for (var i = 0; i < 42; i++) {
-            var etat = Math.floor(i / 10) % 4;
-            var pos = i % 40 - (etat * 10);
-            var fiche = GestionFiche.get({
-                axe: etat,
-                pos: pos
-            });
-            if (fiche.groupe != null && fiche.constructible) {
-                if (currentGroupe == null) {
-                    // initialisation
-                    currentGroupe = fiche.groupe;
-                }
-                if (!currentGroupe.equals(fiche.groupe)) { // Changement de groupe
-                    fiche.groupe.groupePrecedent = currentGroupe;
-                    currentGroupe.groupeSuivant = fiche.groupe;
-                    currentGroupe = fiche.groupe;
-                }
-            }
-        }
-    }
-
 var MessageDisplayer = {
     div: null,
     order: 0,
@@ -1288,10 +769,8 @@ var MessageDisplayer = {
                     nom: 'debug'
                 }, data.message);
             }
-
         });
     }
-
 }
 /*  DEBUG */
 /* Achete des maisons pour le joueur courant, on passe les ids de fiche */

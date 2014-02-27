@@ -74,6 +74,131 @@ function CaseCaisseDeCommunaute(etat, pos, img, cartes) {
 	}
 }
 
+/* Represente un groupe de terrain */
+function Groupe(nom, color) {
+	this.nom = nom;
+	this.color = color;
+	/* Liste de ses terrains */
+	this.fiches = [];
+	this.groupePrecedent = null;
+	this.groupeSuivant = null;
+
+	this.equals = function (groupe) {
+		if (groupe == null) {
+			return false;
+		}
+		return this.color == groupe.color;
+	}
+
+	this.getVoisins = function () {
+		return [this.groupePrecedent, this.groupeSuivant];
+	}
+
+	this.isVoisin = function (groupe) {
+		return (this.groupePrecedent != null && this.groupePrecedent.equals(groupe)) || (this.groupeSuivant != null && this.groupeSuivant.equals(groupe));
+	}
+
+	this.equals = function (groupe) {
+		return this.color == groupe.color;
+	}
+
+	/* Ajoute une fiche au groupe (lors de l'init) */
+	this.add = function (fiche) {
+		this.fiches.push(fiche);
+		fiche.groupe = this;
+		return this;
+	}
+
+	/* Indique que tous les terrains appartiennent a la meme personne */
+	this.isGroupee = function () {
+		if (this.fiches == null || this.fiches.length == 0) {
+			return false;
+		}
+		var joueur = this.fiches[0].joueurPossede;
+		for (var i = 0; i < this.fiches.length; i++) {
+			if (this.fiches[i].joueurPossede == null || !this.fiches[i].joueurPossede.equals(joueur)) {
+				return false;
+			}
+			joueur = this.fiches[i].joueurPossede;
+		}
+		return true;
+	}
+
+	/* Indique que le terrain possede des constructions */
+	this.isBuild = function () {
+		if (this.fiches == null || fiches.length == 0) {
+			return false;
+		}
+		for (var i = 0; i < this.fiches.length; i++) {
+			if (this.fiches[i].nbMaison > 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	this.getAverageConstructions = function () {
+		var nb = 0;
+		for (var i = 0; i < this.fiches.length; i++) {
+			nb += this.fiches[i].nbMaison;
+		}
+		return nb / this.fiches.length;
+	}
+
+	/* Renvoie le nombre de constructions sur le groupe */
+	this.getConstructions = function () {
+		var constructions = {
+			maison: 0,
+			hotel: 0
+		};
+		for (var i = 0; i < this.fiches.length; i++) {
+			if (this.fiches[i].hotel) {
+				constructions.hotel++;
+			} else {
+				constructions.maison += this.fiches[i].nbMaison;
+			}
+		}
+		return constructions;
+	}
+
+	/* Renvoie des infos sur les proprietes du groupe. Ajoute la liste des proprietes qui n'appartiennent pas au joueur */
+	this.getInfos = function (joueur) {
+		var infos = {
+			free: 0,
+			joueur: 0,
+			adversaire: 0,
+			nbAdversaires: 0,
+			maisons: [],
+			hypotheque: 0
+		};
+		var adversaires = []; // Liste des adversaires possedant un terrains
+		for (var i = 0; i < this.fiches.length; i++) {
+			var f = this.fiches[i];
+			if (f.statut == ETAT_LIBRE) {
+				infos.free++;
+			} else {
+				if (f.statutHypotheque) {
+					infos.hypotheque++;
+				}
+				if (joueur.equals(f.joueurPossede)) {
+					infos.joueur++;
+				} else {
+					infos.adversaire++;
+					infos.maisons.push(f);
+					adversaires[f.joueurPossede.id] = 1;
+				}
+			}
+		}
+		infos.nbAdversaires = adversaires.size();
+		return infos;
+	}
+
+	/* Renvoie le nombre de fiche dans le groupe */
+	this.getNb = function () {
+		return (this.fiches == null) ? 0 : this.fiches.length;
+	}		
+}
+
 /* Represente un terrain TODO REFACTO */
 function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
 	this.nom = nom;

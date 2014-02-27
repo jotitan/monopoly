@@ -71,7 +71,7 @@ var CarteActionFactory = {
 		switch (data.type) {
 		/* Amande a payer */
 		case "taxe":
-			return new PayerCarte(data.montant,parcGratuit);
+			return new PayerCarte(data.montant,InitMonopoly.plateau.parcGratuit);
 		/* Argent a toucher */
 		case "prime":
 			return new GagnerCarte(data.montant);
@@ -85,7 +85,7 @@ var CarteActionFactory = {
 		case "prison":
 			return new PrisonCarte();
 		}
-		return null;
+		throw "Type inconnu";
 	}
 }
 	

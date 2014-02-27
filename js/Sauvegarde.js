@@ -2,10 +2,12 @@
 var Sauvegarde = {
     prefix: "monopoly.",
     suffix: ".save",
+	currentSauvegardeName:null,
+	isSauvegarde:function(){
+		return currentSauvegardeName!=null;
+	},
     save: function (name) {
-        if (name == null) {
-            name = this.getSauvegardeName();
-        }
+		this.currentSauvegardeName = name !=null ? this.getSauvegardeName(name) : this.currentSauvegardeName || this.getSauvegardeName();
         // On recupere la liste des joueurs
         var saveJoueurs = [];
 		GestionJoueur.forEach(function(j){if(j.save){saveJoueurs.push(j.save())}});
@@ -29,20 +31,21 @@ var Sauvegarde = {
             nbTours: nbTours,
 			plateau:currentPlateauName
         };
-        this._putStorage(name, data);
+        this._putStorage(this.currentSauvegardeName, data);
         $.trigger("monopoly.save", {
-            name: name
+            name: this.currentSauvegardeName
         });
     },
     load: function (name) {
-        currentSauvegardeName = name;
+        this.currentSauvegardeName = name;
         var data = this._getStorage(name);
         reset();
 		// On charge le plateau
-		initPlateau(data.plateau || "data-monopoly.json",function(){
-			for (var i = 0; i < data.joueurs.length; i++) {
+		InitMonopoly.plateau.load(data.plateau || "data-monopoly.json",function(){
+			data.joueurs.forEach(function(j){GestionJoueur.createAndLoad(!j.canPlay, i,j.nom,j);});
+			/*for (var i = 0; i < data.joueurs.length; i++) {
 				GestionJoueur.createAndLoad(!data.joueurs[i].canPlay, i,data.joueurs[i].nom,data.joueurs[i]);
-			}
+			}*/
 			data.fiches.forEach(function(f){GestionFiche.getById(f.id).load(f);});
 			/*for (var i = 0; i < data.fiches.length; i++) {
 				GestionFiche.getById(data.fiches[i].id).load(data.fiches[i]);
@@ -50,8 +53,7 @@ var Sauvegarde = {
 			$.trigger('refreshPlateau');
 			VARIANTES = data.variantes || VARIANTES;
 			nbTours = data.nbTours || 0;
-			initToolTipJoueur();
-			
+			InitMonopoly.afterCreateGame();			
 			GestionJoueur.change(data.joueurCourant);			
 		});       
     },

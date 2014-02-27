@@ -37,8 +37,6 @@ var plateau = null;	// Info du plateau
 var currentPlateauName = null;	// Plateau charge
 
 /* Liste des cases et des cartes */
-var cartesChance = new Array();
-var cartesCaisseCommunaute = new Array();
 var parcGratuit = null;
 var currentFiche = null;
 
@@ -55,7 +53,6 @@ var largeurPion = (largeur - 5) / 3;
 
 // Parametrage des titres
 var titles = {};
-var nomsJoueurs = [];
 	
 function ParcGratuit(axe, pos) {
     this.id = axe + "-" + pos;
@@ -498,7 +495,7 @@ function writePositions(){
 				
 				CURRENCY = data.currency;
 				titles = data.titles;
-				nomsJoueurs = this.infos.nomsJoueurs || [];
+				this.infos.nomsJoueurs = this.infos.nomsJoueurs || [];
 				
 				GestionDes.init(this.infos.rollColor);
 				$('#idLancerDes').click(function(){
@@ -596,7 +593,7 @@ function writePositions(){
 						break;
 					}
 					if(fiche!=null){
-					GestionFiche.add(fiche);
+					    GestionFiche.add(fiche);
 						if (fiche.color != null) {
 							if (colors[fiche.color] == null) {
 								// On genere un style
@@ -672,15 +669,16 @@ function writePositions(){
 		},
 		/* Creer la partie apres le chargement du plateau */
 		_createGame:function(options){
-			options = $.extend({},{nbPlayers:0,waitTimeIA:1,firstIA:false,joueur:nomsJoueurs[0]},options);
+            var j = this.plateau.infos.nomsJoueurs.length > 0 ? this.plateau.infos.nomsJoueurs[0] : "";
+			options = $.extend({},{nbPlayers:0,waitTimeIA:1,firstIA:false,joueur:j},options);
 
 			for (var i = 0; i < options.nbPlayers; i++) {
 				var nom = "Joueur " + (i+1);
 				if(i == 0){
 					nom = options.joueur;				
 				}else{
-					if(nomsJoueurs!=null && nomsJoueurs.length > 0){
-						nom = nomsJoueurs[i];
+					if(this.plateau.infos.nomsJoueurs.length > i){
+						nom = this.plateau.infos.nomsJoueurs[i];
 					}
 				}
 				GestionJoueur.create(i > 0 || options.firstIA, i,nom);            

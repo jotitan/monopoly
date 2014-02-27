@@ -65,7 +65,7 @@ function Pion(color, joueur) {
 	// Si on passe par la case depart, on prend 20000 Francs
 	this.treatCaseDepart = function () {
 		this.stats.tour++;
-		this.joueur.gagner(plateau.montantDepart || 20000);
+		this.joueur.gagner(InitMonopoly.plateau.montantDepart || 20000);
 	}    
 
 	this.goDirectToCell = function (etat, pos, callback) {

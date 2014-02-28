@@ -1,7 +1,6 @@
 /* Gestion du comportement*/
 /* @required GestionFiche */
 
-
 /* @Abstract */
 /* Objet qui gere le comportement (rapport a l'argent). Integre la prise de risque (position du jour) */
 /* @risque : prise de risque entre 0 et 1 */

@@ -51,6 +51,19 @@ var DrawerHelper = {
                 }
             }
         }
+		// On verifie les splits
+		if(mots.some(function(m){return m.indexOf('\n')!=-1;})){
+			var mots2 = [];
+			mots.forEach(function(m){
+				if(m.indexOf('\n')!=-1){
+					m.split('\n').forEach(function(mm){mots2.push(mm);});
+				}
+				else{
+					mots2.push(m);
+				}
+			});
+			mots = mots2;
+		}
         canvas.save();
         canvas.translate(x, y);
         canvas.rotate(rotate);

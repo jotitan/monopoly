@@ -7,12 +7,14 @@ var ETAT_ACHETE = 1;
 function ParcGratuit(axe, pos) {
     this.id = axe + "-" + pos;
     this.montant = null;
-
-    this.drawing = DrawerFactory.getCaseSpeciale(0, "Parc Gratuit");
+	this._titre = "Parc Gratuit";
+    this.drawing = DrawerFactory.getCaseSpeciale(0, this._titre);
     Drawer.add(this.drawing);
 
     this.setMontant = function (montant) {
         this.montant = montant;
+		this.drawing.titre = this._titre + ((this.montant > 0) ? "\n" + CURRENCY + " " + this.montant : "");
+		$.trigger('refreshPlateau');
         $('#idMontantParc > span').text(this.montant);
     }
 

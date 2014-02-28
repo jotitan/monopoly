@@ -176,25 +176,29 @@ function Case(pos, axe, color, title, prix, img) {
 	this.init = function () {
 		this.imgMaison.src = "img/maison.png";
 		this.imgHotel.src = "img/hotel.png";
+		var centre = DrawerFactory.dimensions.plateauSize/2;
+		var largeur = DrawerFactory.dimensions.largeur;
+		var hauteur = DrawerFactory.dimensions.hauteur;
+		var demiLargeurPlateau = (largeur * 9) / 2;
 		if (axe % 2 == 1) { // E et 0
 			// height et width inverse
 			this.data.height = largeur;
 			this.data.width = hauteur;
 			if (axe == 1) {
-				this.data.x = centre + total;
+				this.data.x = centre + demiLargeurPlateau;
 				this.data.y = centre + (pos - 5.5) * largeur;
                 } else {
-                    this.data.x = centre - total - hauteur;
+                    this.data.x = centre - demiLargeurPlateau - hauteur;
                     this.data.y = centre + (4.5 - pos) * largeur;
                 }
             } else { // N et S
                 this.data.height = hauteur;
                 this.data.width = largeur;
                 if (axe == 2) {
-                    this.data.y = centre + total;
+                    this.data.y = centre + demiLargeurPlateau;
                     this.data.x = centre + (4.5 - pos) * largeur;
                 } else {
-                    this.data.y = centre - total - hauteur;
+                    this.data.y = centre - demiLargeurPlateau - hauteur;
                     this.data.x = centre + (pos - 5.5) * largeur;
                 }
             }
@@ -217,6 +221,9 @@ function Case(pos, axe, color, title, prix, img) {
 	}
 
 	this.draw = function (canvas) {
+		var bordure = DrawerFactory.dimensions.bordure/2;
+		var largeur = DrawerFactory.dimensions.largeur;
+		var hauteur = DrawerFactory.dimensions.hauteur;
 		canvas.strokeStyle = '#000000';
 		canvas.strokeRect(this.data.x, this.data.y, this.data.width, this.data.height);
 		if (color != null) {
@@ -367,11 +374,12 @@ function Case(pos, axe, color, title, prix, img) {
 	// Retourne le decalage d'un pion sur la case
 	/* @param inverse : decalage inverse (remise en place) */
 	this._decalagePion = function () {
-		var dec = 20 + ((color != null) ? bordure : 0) + largeurPion / 2;
+		var bordure = DrawerFactory.dimensions.bordure/2;
+		var dec = 20 + ((color != null) ? bordure : 0) + DrawerFactory.dimensions.largeurPion / 2;
 		var center = this.getCenter();
 		center.x += 5;
 		var pas = {
-			x: largeurPion,
+			x: DrawerFactory.dimensions.largeurPion,
 			y: (this.data.height - dec) / 3
 		}
 		var nb = this.getNbJoueurs() - 1;
@@ -395,21 +403,25 @@ function CaseSpeciale(axe, titre) {
 	this.titre = titre;
 	this.data = {};
 	this.init = function () {
+		var largeur = DrawerFactory.dimensions.largeur;
+		var hauteur = DrawerFactory.dimensions.hauteur;
+		var centre = DrawerFactory.dimensions.plateauSize/2;
+		var demiLargeurPlateau = (largeur * 9) / 2;
 		if (axe % 2 == 1) { // E et 0
 			// height et width inverse
 			if (axe == 1) {
-				this.data.x = centre + total;
+				this.data.x = centre + demiLargeurPlateau;
 				this.data.y = centre + -4.5 * largeur - hauteur;
 			} else {
-				this.data.x = centre - total - hauteur;
+				this.data.x = centre - demiLargeurPlateau - hauteur;
 				this.data.y = centre + 4.5 * largeur;
 			}
 		} else { // N et S
 			if (axe == 2) {
-				this.data.y = centre + total;
+				this.data.y = centre + demiLargeurPlateau;
 				this.data.x = centre + 4.5 * largeur;
 			} else {
-				this.data.y = centre - total - hauteur;
+				this.data.y = centre - demiLargeurPlateau - hauteur;
 				this.data.x = centre - 4.5 * largeur - hauteur;
 			}
 		}
@@ -424,7 +436,7 @@ function CaseSpeciale(axe, titre) {
 	this.draw = function (canvas) {
 		canvas.strokeStyle = '#000000';
 		canvas.strokeRect(this.data.x, this.data.y, this.data.width, this.data.height);
-		DrawerHelper.writeText(this.titre, this.data.x, this.data.y + hauteur / 2, 0, canvas, 9, this.data.width);
+		DrawerHelper.writeText(this.titre, this.data.x, this.data.y + DrawerFactory.dimensions.hauteur / 2, 0, canvas, 9, this.data.width);
 	}
 	this.init();
 }

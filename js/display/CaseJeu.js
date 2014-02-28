@@ -3,6 +3,37 @@
 var ETAT_LIBRE = 0;
 var ETAT_ACHETE = 1;
 
+/* Case representant le parc gratuit */
+function ParcGratuit(axe, pos) {
+    this.id = axe + "-" + pos;
+    this.montant = null;
+
+    this.drawing = DrawerFactory.getCaseSpeciale(0, "Parc Gratuit");
+    Drawer.add(this.drawing);
+
+    this.setMontant = function (montant) {
+        this.montant = montant;
+        $('#idMontantParc > span').text(this.montant);
+    }
+
+    this.payer = function (montant) {
+        this.setMontant(this.montant + montant);
+    }
+
+    this.action = function () {
+		var _self = this;
+        return InfoMessage.create(GestionJoueur.getJoueurCourant(),"Parc gratuit", "lightblue", "Vous gagnez " + this.montant + " " + CURRENCY, function (param) {
+            param.joueur.gagner(param.montant);
+            _self.setMontant(0);
+            GestionJoueur.change();
+        }, {
+            joueur: GestionJoueur.getJoueurCourant(),
+            montant: this.montant
+        });
+    }
+    this.setMontant(0);
+}
+
 function CaseActionSpeciale(titre, actionSpeciale, etat, pos) {
 	this.titre = titre;
 	this.actionSpeciale = actionSpeciale;
@@ -24,7 +55,7 @@ function SimpleCaseSpeciale(titre, montant, etat, pos, img) {
 	Drawer.add(this.drawing);
 	this.action = function () {
 		return InfoMessage.create(GestionJoueur.getJoueurCourant(),titre, "lightblue", "Vous devez payer la somme de " + montant + " " + CURRENCY, function (param) {
-			param.joueur.payerParcGratuit(parcGratuit,param.montant, function () {
+			param.joueur.payerParcGratuit(InitMonopoly.plateau.parcGratuit,param.montant, function () {
 				GestionJoueur.change();
 			});
 		}, {

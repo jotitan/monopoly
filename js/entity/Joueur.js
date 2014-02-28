@@ -1663,6 +1663,9 @@ function Joueur(numero, nom, color) {
 					for (var idx in infos.maisons) {
 						if ((joueur == null || joueur.equals(infos.maisons[idx].joueurPossede))
 							&& (exclude == null || !exclude.groupe.equals(infos.maisons[idx].groupe))) {
+							if(exclude){
+								console.log(maison.groupe,exclude.groupe);
+							}
 							interests.push({
 								maison: infos.maisons[idx],
 								nb: infos.maisons.length

@@ -33,7 +33,7 @@ var DrawerHelper = {
     },
     /* @param align : si null, center, sinon 'left' ou 'right' */
     writeText: function (text, x, y, rotate, canvas, size, specificWidth, align) {
-        var width = specificWidth || largeur;
+        var width = specificWidth || DrawerFactory.dimensions.largeur;
 		canvas.strokeStyle='#000000';
         canvas.font = ((size != null) ? size : "7") + "pt Times news roman";
         // Mesure la longueur du mot
@@ -85,7 +85,14 @@ var DrawerFactory = {
 	instances:[],
 	type:null,
 	infos:{},	// Infos communes
-
+	dimensions:{
+		largeur:65,
+		largeurPion:20,
+		hauteur:100,
+		bordure:20,
+		plateauSize:800,
+		innerPlateauSize:220
+	},
 	init:function(){
 		return this;
 	},
@@ -95,6 +102,9 @@ var DrawerFactory = {
 	},
 	addInfo:function(name,info){
 		this.infos[name] = info;
+	},
+	getInfo:function(name){
+		return this.infos[name];
 	},
 	/* Ajoute une nouvelle implementation */
 	/* A implementer : type, standardCase, specialCase */

@@ -8,7 +8,7 @@ function Pion(color, joueur) {
 		tour: 0,
 		prison: 0
 	}; // stat du joueur		
-	this.pion = DrawerFactory.getPionJoueur(color,largeurPion);
+	this.pion = DrawerFactory.getPionJoueur(color,DrawerFactory.dimensions.largeurPion);
 	Drawer.addRealTime(this.pion);
 
 	/* Supprime le pion en cas de defaite */

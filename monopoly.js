@@ -35,36 +35,6 @@ var CURRENCY = "F.";
 
 // Parametrage des titres
 var titles = {};
-	
-function ParcGratuit(axe, pos) {
-    this.id = axe + "-" + pos;
-    this.montant = null;
-
-    this.drawing = DrawerFactory.getCaseSpeciale(0, "Parc Gratuit");
-    Drawer.add(this.drawing);
-
-    this.setMontant = function (montant) {
-        this.montant = montant;
-        $('#idMontantParc > span').text(this.montant);
-    }
-
-    this.payer = function (montant) {
-        this.setMontant(this.montant + montant);
-    }
-
-    this.action = function () {
-		var _self = this;
-        return InfoMessage.create(GestionJoueur.getJoueurCourant(),"Parc gratuit", "lightblue", "Vous gagnez " + this.montant + " " + CURRENCY, function (param) {
-            param.joueur.gagner(param.montant);
-            _self.setMontant(0);
-            GestionJoueur.change();
-        }, {
-            joueur: GestionJoueur.getJoueurCourant(),
-            montant: this.montant
-        });
-    }
-    this.setMontant(0);
-}
 
 function CarteAction(libelle,carte,title,color,triggerLabel){
 	this.carte = carte;

@@ -19,7 +19,7 @@ function ParcGratuit(axe, pos) {
     }
 
     this.payer = function (montant) {
-        this.setMontant(this.montant + montant);
+		this.setMontant(this.montant + montant);
     }
 
     this.action = function () {
@@ -602,7 +602,6 @@ function FicheCompagnie(etat, pos, color, nom, achat, loyers,img) {
 		return this.loyer[0] * loyer;
 	}
 }
-
 
 /* Permet de gerer les fiches */
 var GestionFiche = {

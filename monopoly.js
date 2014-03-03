@@ -70,16 +70,6 @@ function doActions() {
 	GestionJoueur.getJoueurCourant().actionApresDes(buttons, fiche);
 }
 
-function formatTempsJeu(){		
-	var time = Math.round((new Date().getTime() - stats.heureDebut)/1000);
-	if(time < 60){
-		return sec + " sec";
-	}
-	var sec = time%60;
-	time = Math.round(time/60);
-	return time + " min et " + sec + " sec";
-}
-
 function writePositions(){
 	var str = "position;nb";
 	for(var p in stats.positions){

@@ -31,27 +31,8 @@ var DrawerHelper = {
 		}catch(e){}
 		canvas.restore();
     },
-    /* @param align : si null, center, sinon 'left' ou 'right' */
-    writeText: function (text, x, y, rotate, canvas, size, specificWidth, align) {
-        var width = specificWidth || DrawerFactory.dimensions.largeur;
-		canvas.strokeStyle='#000000';
-        canvas.font = ((size != null) ? size : "7") + "pt Times news roman";
-        // Mesure la longueur du mot
-        var mots = [text];
-        if (canvas.measureText(text).width > width - 5) {
-            // On split les mots intelligement (on regroupe)
-            var splitMots = text.split(" ");
-            var pos = 0;
-            for (var i = 0; i < splitMots.length; i++) {
-                if (pos > 0 && (canvas.measureText(mots[pos - 1]).width + canvas.measureText(splitMots[i]).width) < width - 5) {
-                    // on concatene
-                    mots[pos - 1] = mots[pos - 1] + " " + splitMots[i];
-                } else {
-                    mots[pos++] = splitMots[i];
-                }
-            }
-        }
-		// On verifie les splits
+	/* Detect les sauts de ligne */
+	_splitLine:function(mots){
 		if(mots.some(function(m){return m.indexOf('\n')!=-1;})){
 			var mots2 = [];
 			mots.forEach(function(m){
@@ -64,6 +45,39 @@ var DrawerHelper = {
 			});
 			mots = mots2;
 		}
+		return mots;
+	},
+    /* @param align : si null, center, sinon 'left' ou 'right' */
+    writeText: function (text, x, y, rotate, canvas, size, specificWidth, align) {
+        var width = specificWidth || DrawerFactory.dimensions.largeur;
+		canvas.strokeStyle='#000000';
+        canvas.font = ((size != null) ? size : "7") + "pt Times news roman";
+        
+		var mots = this._splitLine([text])
+		
+		var mots2 = [];
+		mots.forEach(function(m){
+			if (canvas.measureText(m).width > width - 5) {
+				// On split les mots intelligement (on regroupe)
+				var splitMots = m.split(" ");
+				var tempMots = [];
+				var pos = 0;
+				for (var i = 0; i < splitMots.length; i++) {
+					if (pos > 0 && (canvas.measureText(tempMots[pos - 1]).width + canvas.measureText(splitMots[i]).width) < width - 5) {
+						// on concatene
+						tempMots[pos - 1] = tempMots[pos - 1] + " " + splitMots[i];
+					} else {
+						tempMots[pos++] = splitMots[i];
+					}
+				}
+				// On ajoute les mots
+				tempMots.forEach(function(m){mots2.push(m);});
+			}else{
+				mots2.push(m);
+			}
+		});
+		mots = mots2;
+       
         canvas.save();
         canvas.translate(x, y);
         canvas.rotate(rotate);
@@ -102,7 +116,7 @@ var DrawerFactory = {
 		largeur:65,
 		largeurPion:20,
 		hauteur:100,
-		bordure:20,
+		bordure:25,
 		plateauSize:800,
 		innerPlateauSize:220
 	},

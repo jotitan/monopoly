@@ -1664,7 +1664,7 @@ function Joueur(numero, nom, color) {
 						if ((joueur == null || joueur.equals(infos.maisons[idx].joueurPossede))
 							&& (exclude == null || !exclude.groupe.equals(infos.maisons[idx].groupe))) {
 							if(exclude){
-								console.log(maison.groupe,exclude.groupe);
+								console.log(maison.groupe.color,maison.groupe.color == exclude.groupe.color);
 							}
 							interests.push({
 								maison: infos.maisons[idx],
@@ -1889,7 +1889,7 @@ var GestionJoueur = {
 			}
 			return b.tourDefaite - a.tourDefaite;
 		});			
-		var message = "Le joueur " + gagnant.nom + " a gagné en " + formatTempsJeu() + ".<br/>";
+		var message = "Le joueur " + gagnant.nom + " a gagné en " + this._formatTempsJeu(stats.heureDebut) + ".<br/>";
 		message+="1 - " + gagnant.nom + "<br/>";
 		
 		for(var i = 0 ; i < perdants.length ; i++){
@@ -1897,6 +1897,15 @@ var GestionJoueur = {
 		}
 		InfoMessage.create(this.joueurCourant,"Fin de partie", "green", message, null, null, true);
 		//console.log("stats terrains",writePositions(stats.positions));
+	},
+	_formatTempsJeu:function(beginTime){
+		var time = Math.round((new Date().getTime() - beginTime)/1000);
+		if(time < 60){
+			return sec + " sec";
+		}
+		var sec = time%60;
+		time = Math.round(time/60);
+		return time + " min et " + sec + " sec";
 	},
 	_select:function(joueur){
 		$('.action-joueur').removeAttr('disabled').removeClass('disabled');

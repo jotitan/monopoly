@@ -134,7 +134,8 @@ function CircleCase(pos, axe, color, title, prix, img){
 	}
 
 	this.draw = function(canvas){
-		var center = DrawerFactory.dimensions.plateauSize/2;
+		var centre = DrawerFactory.dimensions.plateauSize/2;
+		var bordure = DrawerFactory.dimensions.bordure/2;
 		var pA = getCoords(this.pos*pasAngle,centre);
 		var pB = getCoords(this.pos*pasAngle,centre-DrawerFactory.dimensions.innerPlateauSize);
 		canvas.fillStyle='#000000';
@@ -153,27 +154,27 @@ function CircleCase(pos, axe, color, title, prix, img){
 			canvas.beginPath();
 			canvas.fillStyle='#FFFFFF';
 			canvas.moveTo(centre,centre);
-			canvas.arc(centre,centre,centre-25,this.pos*pasAngle,(this.pos+1)*pasAngle);
+			canvas.arc(centre,centre,centre-bordure,this.pos*pasAngle,(this.pos+1)*pasAngle);
 			canvas.fill();
 			canvas.closePath();
 		}		
 		if(this.title!=null){
 			if(this.pos > 10 && this.pos < 30){
-				var p = getCoords((this.pos+0.7)*pasAngle,centre-30);
+				var p = getCoords((this.pos+0.7)*pasAngle,centre-bordure -5);
 				DrawerHelper.writeText(this.title, p.x + centre,p.y + centre, ((this.pos+20)%40 + 0.8)*pasAngle, canvas,9,maxLength,'left');
 			}else{
 				var length = canvas.measureText(this.title).width + 30;
-				var p = getCoords((this.pos+0.3)*pasAngle,centre -maxLength - 30);
+				var p = getCoords((this.pos+0.3)*pasAngle,centre -maxLength - bordure -5);
 				DrawerHelper.writeText(this.title, p.x + centre,p.y + centre, (this.pos + 0.2)*pasAngle, canvas,9,maxLength,'right');
 			}			
 		}
 		if(this.prix!=null){
 			if(this.pos > 10 && this.pos < 30){
-				var p = getCoords((this.pos+0.15)*pasAngle,centre-30);
+				var p = getCoords((this.pos+0.15)*pasAngle,centre-bordure -5);
 				DrawerHelper.writeText(this.prix, p.x + centre,p.y + centre, ((this.pos+20)%40 + 0.5)*pasAngle, canvas,9,maxLength,'left');
 			}else{
 				var length = canvas.measureText(this.prix).width + 30;
-				var p = getCoords((this.pos+0.9)*pasAngle,centre -maxLength - 30);
+				var p = getCoords((this.pos+0.9)*pasAngle,centre -maxLength - bordure -5);
 				DrawerHelper.writeText(this.prix, p.x + centre,p.y + centre, (this.pos + 0.7)*pasAngle, canvas,9,maxLength,'right');
 			}
 		}
@@ -181,7 +182,7 @@ function CircleCase(pos, axe, color, title, prix, img){
 		if (this.data.image != null) {
 			// Margin left est defini en portion d'angle (1 correspond a la largeur de la case)
 			// Margin top joue sur la longueur du rayon
-			var coords = getCoords((this.pos + this.data.image.marginLeft)*pasAngle,centre-30 - this.data.image.margin);
+			var coords = getCoords((this.pos + this.data.image.marginLeft)*pasAngle,centre-bordure -5 - this.data.image.margin);
 			var angle = DrawerHelper.fromDegresToRad(this.data.image.rotate) + this.pos*pasAngle + Math.PI/2;
 			DrawerHelper.drawImage(canvas, this.data.image, centre+coords.x, centre+coords.y, this.data.image.width,this.data.image.height, angle);
 		}
@@ -212,7 +213,7 @@ function CircleCaseSpeciale(axe, title){
 	this.pos = convertAxePos(axe,0);
 	this.title = title;
 	this.draw = function(canvas){
-		var center = DrawerFactory.dimensions.plateauSize/2;
+		var centre = DrawerFactory.dimensions.plateauSize/2;
 		var pA = getCoords(this.pos*pasAngle,centre);
 		var pB = getCoords(this.pos*pasAngle,centre-DrawerFactory.dimensions.innerPlateauSize);
 		canvas.fillStyle='#FFFFFF';
@@ -259,7 +260,7 @@ function EndCirclePlateau(){
 	Component.apply(this);
 	
 	this.draw = function(canvas){
-		var center = DrawerFactory.dimensions.plateauSize/2;
+		var centre = DrawerFactory.dimensions.plateauSize/2;
 		var innerPlateau = DrawerFactory.dimensions.innerPlateauSize;
 		DrawerHelper.drawCircle(canvas,'#000000',centre-innerPlateau,{x:centre,y:centre});
 		DrawerHelper.drawCircle(canvas,'#FFFFFF',centre-innerPlateau - 2,{x:centre,y:centre});

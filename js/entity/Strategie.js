@@ -72,7 +72,7 @@ function Strategie(colors, agressif, name, id, interetGare) {
 		var i2 = statutGroup.statut;
 		var coeff = 1;
 		if (i1 == false && i2 == 0) {
-            return {interet:0.1};	// Permet en cas de situation tres confortable de continuer a investir
+            return {interet:0.2};	// Permet en cas de situation tres confortable de continuer a investir
         }
 		// Realise un blocage
         if (i1 == false && i2 == 2) {

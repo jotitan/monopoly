@@ -32,17 +32,13 @@ var GestionTerrains = {
         $('.currency-value').text(CURRENCY);
         this.update();
     },
-    //init: function (config) {
     init: function (config) {
 		this.divArgentRestant = $(config.idArgentRestant);
-        //this.divArgentRestant = $('#idArgentRestant');
         this.divCout = $(config.idCout);
-        //this.divCout = $('#idCoutTotal');
         this.Hypotheque.init(config.idTerrains,config.idHypotheque);
         this.LeverHypotheque.init(config.idTerrainsHypotheque);
         this.Constructions.init(config.idTerrainsConstructibles,config.idCoutAchat,config.idConstructions);
         this.panel = $(config.idPanel);
-        //this.panel = $('#housesPanel');
         this.panel.dialog({
             width: 800,
             height: 600,
@@ -116,9 +112,7 @@ var GestionTerrains = {
         div: null,
         init: function (idTerrains,idHypotheque) {
             this.select = $('select',idTerrains);
-            //this.select = $('select', '#idTerrains');
             this.div = $(idHypotheque);
-            //this.div = $('#toHypotheque');
         },
         reset: function () {
             this.table = [];
@@ -146,9 +140,6 @@ var GestionTerrains = {
         load: function () {
             var proprietes = GestionJoueur.getJoueurCourant().findMaisonsHypothecables();
 			proprietes.forEach(function(m){GestionTerrains.Hypotheque.addOption(m);});
-            /*$(proprietes).each(function () {
-                GestionTerrains.Hypotheque.addOption(this);
-            });*/
         },
         addGroup: function (group) {
             for (var index in group.proprietes) {
@@ -198,7 +189,6 @@ var GestionTerrains = {
         table: [],
         init: function (idTerrains) {
             this.div = $(idTerrains + ' > div');
-            //this.div = $('#idTerrainsHypotheques > div');
         },
         reset: function () {
             this.div.empty();
@@ -237,10 +227,8 @@ var GestionTerrains = {
 		resteConstructions:null,
         init: function (idTerrains,idCout,idConstructions) {
             this.div = $(idTerrains);
-            //this.div = $('#idTerrainsConstructibles');
             this.infos = $(idCout);
-            //this.infos = $('#coutAchats');
-			this.resteConstructions = $(idConstructions);
+    		this.resteConstructions = $(idConstructions);
         },
         /* Verifie pour la validation et renvoie une exception */
         verify: function () {
@@ -337,9 +325,7 @@ var GestionTerrains = {
             /* Il faut construire la situation avant / apres */
             this.simulation = GestionConstructions.simulateBuy(projects);
             $('span[name="nbMaison"]', this.resteConstructions).text(this.simulation.reste.maison);
-            //$('span[name="nbMaison"]', '#resteConstructions').text(this.simulation.reste.maison);
             $('span[name="nbHotel"]', this.resteConstructions).text(this.simulation.reste.hotel);
-            //$('span[name="nbHotel"]', '#resteConstructions').text(this.simulation.reste.hotel);
             return totals;
         },
         /* Supprime la possibilite d'acheter des maisons sur les terrains de cette couleur */
@@ -355,7 +341,6 @@ var GestionTerrains = {
         },
         load: function () {
             var groups = GestionJoueur.getJoueurCourant().findGroupes();
-            //var table = $('#idTerrainsConstructibles');
             for (var color in groups) {
                 var divTitre = $('<div style="cursor:pointer" class="group-' + color.substring(1) + '">Groupe <span style="color:' + color + ';font-weight:bold">' + groups[color].proprietes[0].groupe.nom + '</span></div>');
                 divTitre.data("color", color.substring(1));

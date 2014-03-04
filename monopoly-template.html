@@ -47,11 +47,11 @@
 			<div id="informations-left" class="panneau_joueur"></div>
 		</td>
 		<td>
-			<div style="width:810px;height:810px;position:relative" id="plateau">
+			<div style="width:810px;height:810px;position:relative" id="plateau" class="graphic_element">
 			  <canvas id="canvas" width="810" height="810" style="top:0px;left:0px;position:absolute"></canvas>
 			  <canvas id="canvas_rt" width="810" height="810" style="top:0px;left:0px;position:absolute"></canvas>
 				<div>
-				   <div style="position:absolute;top:210px;left:270px;padding:5px;width:200px;height:80px;" class="ui-corner-all" id="informationsCentrale"></div>
+				   <img src="img/reload_dice.png" style="display:none;" id="idReloadDice" title="Relancez" class="graphic_element"/>
 				   <button style="position:absolute;top:260px;left:135px;" title="Lancez les dés" id="idLancerDes" class="action-joueur" disabled="disabled">
 						<img src="img/dice.png" style="width:24px;padding:0px;"/>
 				   </button>
@@ -72,7 +72,7 @@
 						<h1 id="idSavePanel" title="Cliquez pour sauvegarder">MONOPOLY</h1>
 						<h2 id="idSubTitle"></h2>
 					</div>	
-				   <div class="info_box" id="idInfoBox">
+				   <div class="info_box graphic_element" id="idInfoBox">
 					<div></div><div></div><div></div><div></div>
 				   </div>
 			   </div>			  

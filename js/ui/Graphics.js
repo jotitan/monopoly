@@ -105,7 +105,6 @@ function Component() {
 	}
 }
 
-
 /* En fonction du type de plateau (square, circle), fournit les objets permettant de le construire */
 /* Renvoie uniquement des components (implemente draw) */
 var DrawerFactory = {
@@ -116,7 +115,7 @@ var DrawerFactory = {
 		largeur:65,
 		largeurPion:20,
 		hauteur:100,
-		bordure:25,
+		bordure:40,
 		plateauSize:800,
 		innerPlateauSize:220
 	},

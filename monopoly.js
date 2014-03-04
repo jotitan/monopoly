@@ -11,7 +11,8 @@
 /* IDEE : Cassandra, Ring, Hash */
 /* BIG TODO : implementation du des rapide */
 /* TODO : pour echange, si argent dispo et adversaire dans la deche, on propose une grosse somme (si old proposition presente) */
-/* Gerer la relance des des differements (icone) */
+
+// TESTER SAVE / LOAD
 
 var DEBUG = false;
 var IA_TIMEOUT = 1000; // Temps d'attente pour les actions de l'ordinateur
@@ -26,11 +27,10 @@ var VARIANTES = {
 }
 
 var stats = {	// Statistiques
-	nbTours:0,
+	nbTours:0,	// Nombre de tours de jeu depuis le depuis (nb de boucle de joueurs)
 	heureDebut:new Date(),
 	positions:[]
 }	
-var nbTours = 0; // Nombre de tours de jeu depuis le depuis (nb de boucle de joueurs)
 
 var CURRENCY = "F.";
 
@@ -184,9 +184,9 @@ var GestionDes = {
 	endLancer:function(){
 		GestionJoueur.getJoueurCourant().joueDes(this.total());
 		if (this.isDouble()) {
-			$('#informationsCentrale').html("Relancez");
+			$('#idReloadDice').show();
 		}else{
-			$('#informationsCentrale').html("");
+			$('#idReloadDice').hide();
 		}
 	},
 	isDouble:function(){
@@ -301,10 +301,8 @@ var InitMonopoly = {
 			DrawerFactory.addInfo('defaultImage',data.images.default || {});
 			if(this.infos.type == 'circle'){
 				DrawerFactory.setType('circle');
-				$('.title').addClass('circle');
-				$('#plateau').addClass('action-circle');
+				$('.graphic_element,.title').addClass('circle');
 				$('#idSavePanel').arctext({radius: 80,dir:1})
-				$('#idInfoBox').addClass('circle');
 				$('#idInfoBox').unbind('mousewheel').bind('mousewheel',function(e,sens){
 					var scroll=$('#idInfoBox').scrollTop() + (sens * e.deltaFactor * -0.7);
 					$('#idInfoBox').scrollTop(scroll)

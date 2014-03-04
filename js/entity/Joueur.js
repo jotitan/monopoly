@@ -125,7 +125,7 @@ function JoueurOrdinateur(numero, nom, color) {
 			this.rejectedPropositions[terrain.id] = [];
 		}
 		this.rejectedPropositions[terrain.id].push({
-			nbTours: nbTours,
+			nbTours: stats.nbTours,
 			proposition: proposition
 		});
 		if (callback) {
@@ -259,7 +259,7 @@ function JoueurOrdinateur(numero, nom, color) {
 		var last = this._getLastProposition(terrain);
 		if (last != null) {
 			var pas = 3 + (Math.round((Math.random() * 1000) % 3));
-			return last.nbTours + pas < nbTours;
+			return last.nbTours + pas < stats.nbTours;
 		}
 
 		return true;
@@ -1535,7 +1535,7 @@ function Joueur(numero, nom, color) {
 		$('.joueurCourant', this.div).removeAttr('style').addClass('defaite');
 		this.setArgent(0);
 		this.defaite = true;
-		this.tourDefaite = nbTours;
+		this.tourDefaite = stats.nbTours;
 		$.trigger("monopoly.defaite", {
 			joueur: this
 		});
@@ -1663,7 +1663,7 @@ function Joueur(numero, nom, color) {
 					for (var idx in infos.maisons) {
 						if ((joueur == null || joueur.equals(infos.maisons[idx].joueurPossede))
 							&& (exclude == null || !exclude.groupe.equals(infos.maisons[idx].groupe))) {
-							if(exclude){
+							if(exclude && maison.groupe.color == exclude.groupe.color){
 								console.log(maison.groupe.color,maison.groupe.color == exclude.groupe.color);
 							}
 							interests.push({
@@ -1962,7 +1962,7 @@ var GestionJoueur = {
 			}
 			// On incremente le nb de tours
 			if (joueur.numero < this.joueurCourant.numero) {
-				nbTours++;
+				//nbTours++;
 				stats.nbTours++;
 			}
 		}

@@ -4,7 +4,6 @@
 	}
 }
 
-
 .info-joueur > img { padding-right: 10px }
 .fiche {
 	display:block;
@@ -119,6 +118,19 @@ body { margin: 0 }
     border:3px inset #A09A9A;
 }
 
+#idReloadDice {
+	width:25px;
+	height:25px;
+	position:absolute;
+	top:215px;
+	left:270px;
+}
+
+#idReloadDice.circle {
+	top:310px;
+	left:465px;
+}
+
 .info_box.circle {
 	border-radius:10px 10px 300px 300px;
 	height:175px;
@@ -167,7 +179,12 @@ div.ui-tooltip {
 	margin-top:130px;
 }
 
-.action-circle .action-joueur{
+#plateau.circle {
+	margin-left:159px;
+	margin-top:100px;
+}
+
+.action-joueur{
 	margin-left:159px;
 	margin-top:100px;
 }

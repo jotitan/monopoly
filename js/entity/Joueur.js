@@ -142,7 +142,6 @@ function JoueurOrdinateur(numero, nom, color) {
 	 */
 	this.echangeProprietes = function (callback) {
 		// Quand echange uniquement apres la vente de tous les terrains
-		// TODO : utiliser un PIVOT central pour la conf
 		if(VARIANTES.echangeApresVente && GestionFiche.isFreeFiches()){
 			if(callback){
 				callback();
@@ -1384,7 +1383,7 @@ function Joueur(numero, nom, color) {
 		} else {
 			this.div.append(input);
 		}
-		maison.input = $('#idInputFiche' + maison.id);
+		maison.input = $('input[id="idInputFiche' + maison.id + '"]');
 		maison.input.click(function () {
 			FicheDisplayer.openDetail(GestionFiche.getById(maison.id), $(this));
 		});
@@ -1800,7 +1799,6 @@ function Joueur(numero, nom, color) {
 	}
 }
 
-
 /* Gere les joueurs : creation, changement... */
 var GestionJoueur = {
 	colorsJoueurs : ["#383C89", "#A6193E", "#C58F01", "#086B3D", "#B9B29B","#663300"],
@@ -1818,20 +1816,13 @@ var GestionJoueur = {
 		return joueur;
 	},
 	create:function(isRobot, i, nom){
-		/*if(window.innerWidth > 1350){
-			$('#informations-left').hide();	// Mettre media query
-		}*/
 		var id = 'joueur' + i;			
 		var color = this.colorsJoueurs[i];
 		var joueur = isRobot ? new JoueurOrdinateur(i, nom, color) : joueur = new Joueur(i, nom, color);
 		var div = $('<hr/><div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div>');
-		if(i%2 == 0 && window.innerWidth > 1350){
-			$('#informations-left').append(div);;
-		}
-		else{
-			$('#informations').append(div);
-		}	
-		joueur.setDiv($('#' + id));
+		$('.panneau_joueur').append(div);
+		
+		joueur.setDiv($('div[id="' + id + '"]'));
 		joueur.setPion(color);
 		// On defini la couleurs
 		$('#' + id + ' > div.joueur-bloc').css('backgroundImage', 'linear-gradient(to right,white 50%,' + color + ')');
@@ -1910,7 +1901,7 @@ var GestionJoueur = {
 	_select:function(joueur){
 		$('.action-joueur').removeAttr('disabled').removeClass('disabled');
 		if(VARIANTES.echangeApresVente && GestionFiche.isFreeFiches()){
-		
+			$('#idEchangeTerrains').attr('disabled','disabled').addClass('disabled');
 		}
 		if (!joueur.equals(this.joueurCourant)) {
 			$('.joueurCourant').removeClass('joueurCourant');

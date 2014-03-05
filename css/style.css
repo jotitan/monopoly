@@ -1,7 +1,33 @@
-@media screen and (max-width: 1350px) {
-	#informations-left {
+@media screen and (min-width: 1000px) and (max-width: 1350px) {
+	#informations-left,#informations-bottom {
 		display:none;
 	}
+}
+
+@media screen and (min-width: 1350px) {
+	#informations-left.panneau_joueur > div:nth-child(4n),#informations-left.panneau_joueur > hr:nth-child(4n+3) {
+		display:none;
+	}
+	#informations.panneau_joueur > div:nth-child(4n+2),#informations.panneau_joueur > hr:nth-child(4n+1) {
+		display:none;
+	}
+	#informations-bottom {
+		display:none;
+	}
+}
+
+@media screen and (max-width: 1050px) and (min-height: 900px){
+	#informations-left,#informations  {
+		display:none;
+	}	
+}
+
+#informations-bottom > div {
+	float:left;
+	margin-left:10px;
+}
+#informations-bottom > hr {
+	display:none;
 }
 
 .info-joueur > img { padding-right: 10px }
@@ -27,6 +53,7 @@
     font-size: 14px;
     width: 240px;
 }
+
 
 .panneau_joueur  {
     width:250px;
@@ -179,12 +206,7 @@ div.ui-tooltip {
 	margin-top:130px;
 }
 
-#plateau.circle {
-	margin-left:159px;
-	margin-top:100px;
-}
-
-.action-joueur{
+#plateau.circle.action-joueur {
 	margin-left:159px;
 	margin-top:100px;
 }

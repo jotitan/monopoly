@@ -1,44 +1,43 @@
 <!DOCTYPE html>
 <html>
- <head>
-   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-   <title>Monopoly FULL JS</title>
-   <link type="text/css" href="css/sunny/jquery-ui-1.10.3.custom.min.css" rel="stylesheet" />
-   <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
-   <script type="text/javascript" src="lib/jquery-1.11.0.min.js"></script>
-   <script type="text/javascript" src="lib/jquery-ui-1.10.3.custom.min.js"></script>
-   <script type="text/javascript" src="lib/jquery.mousewheel.js"></script>
-   <script type="text/javascript" src="lib/jquery.arctext.js"></script>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>Monopoly FULL JS</title>
+		<link type="text/css" href="css/sunny/jquery-ui-1.10.3.custom.min.css" rel="stylesheet" />
+		<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+		<script type="text/javascript" src="lib/jquery-1.11.0.min.js"></script>
+		<script type="text/javascript" src="lib/jquery-ui-1.10.3.custom.min.js"></script>
+		<script type="text/javascript" src="lib/jquery.mousewheel.js"></script>
+		<script type="text/javascript" src="lib/jquery.arctext.js"></script>
    
-   
-   <!--(if target dev)><!-->
-   <script type="text/javascript" src="js/Sauvegarde.js"></script>
-   <script type="text/javascript" src="js/Utils.js"></script>
-   <script type="text/javascript" src="js/GestionConstructions.js"></script>
-   <script type="text/javascript" src="js/GestionTerrains.js"></script>
-   <script type="text/javascript" src="js/Enchere.js"></script>
-   <script type="text/javascript" src="js/ui/Graphics.js"></script>
-   <script type="text/javascript" src="js/ui/SquareGraphics.js"></script>
-   <script type="text/javascript" src="js/ui/CircleGraphics.js"></script>
-   <script type="text/javascript" src="js/display/Message.js"></script>
-   <script type="text/javascript" src="js/entity/Comportement.js"></script>
-   <script type="text/javascript" src="js/entity/Strategie.js"></script>
-   <script type="text/javascript" src="js/entity/Pion.js"></script>
-   <script type="text/javascript" src="js/entity/Joueur.js"></script>
-   <script type="text/javascript" src="js/entity/CartesAction.js"></script>
-   <script type="text/javascript" src="js/display/Displayers.js"></script>
-   <script type="text/javascript" src="js/display/CaseJeu.js"></script>
-   <script type="text/javascript" src="monopoly.js"></script>
-   <!--<!(endif)-->
+		<!--(if target dev)><!-->
+		<script type="text/javascript" src="js/Sauvegarde.js"></script>
+		<script type="text/javascript" src="js/Utils.js"></script>
+		<script type="text/javascript" src="js/GestionConstructions.js"></script>
+		<script type="text/javascript" src="js/GestionTerrains.js"></script>
+		<script type="text/javascript" src="js/Enchere.js"></script>
+		<script type="text/javascript" src="js/ui/Graphics.js"></script>
+		<script type="text/javascript" src="js/ui/SquareGraphics.js"></script>
+		<script type="text/javascript" src="js/ui/CircleGraphics.js"></script>
+		<script type="text/javascript" src="js/display/Message.js"></script>
+		<script type="text/javascript" src="js/entity/Comportement.js"></script>
+		<script type="text/javascript" src="js/entity/Strategie.js"></script>
+		<script type="text/javascript" src="js/entity/Pion.js"></script>
+		<script type="text/javascript" src="js/entity/Joueur.js"></script>
+		<script type="text/javascript" src="js/entity/CartesAction.js"></script>
+		<script type="text/javascript" src="js/display/Displayers.js"></script>
+		<script type="text/javascript" src="js/display/CaseJeu.js"></script>
+		<script type="text/javascript" src="monopoly.js"></script>
+		<!--<!(endif)-->
 
-   <!--(if target prod)><!-->
-   	<script type="text/javascript" src="monopoly-min.js"></script>
-   <!--<!(endif)-->
-   
-   <style>
-					
-   </style>
-	<link rel="stylesheet" type="text/css" href="css/style.css"/>
+		<!--(if target prod)><!-->
+		<script type="text/javascript" src="monopoly-min.js"></script>
+		<!--<!(endif)-->
+		
+		<style></style>
+		<link rel="stylesheet" type="text/css" href="css/style.css"/>
+  
+	</head>
   
 	<body>
 	
@@ -58,7 +57,7 @@
 				   <button style="position:absolute;top:260px;left:190px;" title="Achat maisons" class="action-joueur" onclick="GestionTerrains.open()" disabled="disabled">
 						<img src="img/house.png" style="width:24px;padding:0px;"/>
 					</button>
-				   <button style="position:absolute;top:260px;left:245px;" title="Echange terrains" class="action-joueur" onclick="EchangeDisplayer.open(GestionJoueur.getJoueurCourant())" disabled="disabled">
+				   <button style="position:absolute;top:260px;left:245px;" title="Echange terrains" id="idEchangeTerrains" class="action-joueur" onclick="EchangeDisplayer.open(GestionJoueur.getJoueurCourant())" disabled="disabled">
 						<img src="img/swap.png" style="width:24px;padding:0px;"/>
 					</button>
 				   <button style="position:absolute;top:260px;left:300px;" title="Terrains libres" class="action-joueur" onclick="$('#idTerrainsLibres').dialog('open');" disabled="disabled">
@@ -89,7 +88,9 @@
 		</td>
 	</tr></table>
  
-   <div id="fiche" style="background-color:white;font-size:12px">
+	<div id="informations-bottom" class="panneau_joueur" style="width:100%"></div>
+ 
+	<div id="fiche" style="background-color:white;font-size:12px">
 	<table>
 	  <tr><td></td><td>€</td></tr>
 	  <tr><td>ACHAT</td><td id="achat" name="achat"></td></tr>
@@ -113,15 +114,15 @@
 	
    </div>
    
-   <div id="ficheCompagnie" style="background-color:white">
+	<div id="ficheCompagnie" style="background-color:white">
 	<br/>
 	Si l'on poss&eagrave;de UNE carte de compagnie de Service Public, le loyer est 400 fois le montant indiqué par les d&eacute;s.<br/><br/>
 	Si l'on poss&eagrave;de les DEUX cartes de compagnies de Service Public, le loyer est MILLE fois le montant indiqué par les d&eacute;s.<br/><br/>
 	Valeur hypot&eacute;caire : Frs 7.500
    </div>
    
-   <div id="achatMaisons" style="background-color:white;"></div>
-   <div id="message" style="display:none;background-color:white"></div>
+	<div id="achatMaisons" style="background-color:white;"></div>
+	<div id="message" style="display:none;background-color:white"></div>
  
  	<div style="display:none" id="housesPanel">
  	<div style="width:50%;height:calc(100% - 40px);background-color:lightblue;float:left">
@@ -268,7 +269,7 @@
 		
 	</div>
  
-   <script language="javascript">
+	<script language="javascript">
 	// On detecte le type de donnees a charger
 	var nomPlateau = "data-monopoly.json";
 	if (location.href.indexOf("plateau=")!=-1) {

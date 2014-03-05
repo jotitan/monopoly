@@ -3,16 +3,15 @@
 /* -- TODO : Echange uniquement quand tous les terrains sont vendus. La banque vend (quand on achete pas) ou quand un joueur perd */
 /* -- TODO : plafonner argent a mettre dans une enchere (depend du prix de base). Encore trop cher (gare a 60K). Moins d'importance sur une gare */
 /* -- TODO : integrer les contres sur les encheres (n'encherie que si la personne vraiment interesse pose une enchere */
+/* -- TODO : changer strategie quand deux terrains du meme groupe. Ne pas les enchanger contre une merde */
 /* TODO : Permettre l'achat de terrain hors strategie quand on est blinde et qu'on a deja des groupes et des constructions dessus */
 /* TODO : proposer tout de même un terrain si deja une oldProposition */
-/* -- TODO : changer strategie quand deux terrains du meme groupe. Ne pas les enchanger contre une merde */
 /* TODO : pour contre propal, demander argent si besoin de construire */
 /* GetBudget quand Cheap tres dur (evaluation du terrain le plus cher). Ponderer avec l'existance de constructions pour forcer a construire */
 /* IDEE : Cassandra, Ring, Hash */
 /* BIG TODO : implementation du des rapide */
+/* TODO : Changer les couleurs du panneau d'achat de terrains */
 /* TODO : pour echange, si argent dispo et adversaire dans la deche, on propose une grosse somme (si old proposition presente) */
-
-// TESTER SAVE / LOAD
 
 var DEBUG = false;
 var IA_TIMEOUT = 1000; // Temps d'attente pour les actions de l'ordinateur
@@ -34,7 +33,6 @@ var stats = {	// Statistiques
 
 var CURRENCY = "F.";
 
-// Parametrage des titres
 var titles = {};
 
 function CarteAction(libelle,carte,title,color,triggerLabel){
@@ -84,6 +82,7 @@ var GestionDes = {
 	cube:{des1:null,des2:null},
 	des1:0,
 	des2:0,
+	desRapide:0,	// Version avec des rapide
 	nbDouble:0,	// Nombre de double de suite pour le joueur en cours
 	rollColor:'#000000',
 	init:function(rollColor){

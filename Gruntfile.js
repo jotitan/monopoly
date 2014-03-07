@@ -25,7 +25,8 @@ module.exports = function(grunt){
 					authKey:'default'
 				},
 				src:'build',
-				dest:'monopoly/'
+				dest:'monopoly/',
+				exclusions:['*.zip']
 			}
 		},
 		targethtml:{

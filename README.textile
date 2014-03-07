@@ -2,7 +2,6 @@
 
 h2. Todo
 
-* Faire un ecran qui liste les terrains libres
 * Accepter plus facilement les propositions vers la fin du jeu, surtout si on a rien
 * Couche réseau ?
 * Stats sur le jeu

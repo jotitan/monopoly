@@ -13,6 +13,8 @@
 /* TODO : Changer les couleurs du panneau d'achat de terrains */
 /* TODO : pour echange, si argent dispo et adversaire dans la deche, on propose une grosse somme (si old proposition presente) */
 
+/* Calculer un score (nb de tours des adversaires, nb de terrains, tune) */
+
 var DEBUG = false;
 var IA_TIMEOUT = 1000; // Temps d'attente pour les actions de l'ordinateur
 
@@ -196,6 +198,7 @@ var GestionDes = {
 		this.before(function(){
 			GestionDes.des1 = GestionDes._rand();
 			GestionDes.des2 = GestionDes._rand();
+            $('#idReloadDice').hide();
 			GestionDes._anime();
 		});			
 	},

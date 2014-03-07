@@ -1,4 +1,4 @@
-@media screen and (min-width: 1000px) and (max-width: 1350px) {
+@media screen and (max-width: 1350px) and (max-height:1000px) {
 	#informations-left,#informations-bottom {
 		display:none;
 	}
@@ -16,10 +16,13 @@
 	}
 }
 
-@media screen and (max-width: 1050px) and (min-height: 900px){
+@media screen and (min-height: 1000px){
 	#informations-left,#informations  {
 		display:none;
 	}	
+    #informations-bottom {
+        display:block;
+    }
 }
 
 #informations-bottom > div {

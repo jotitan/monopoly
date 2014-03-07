@@ -13,8 +13,6 @@
 /* TODO : Changer les couleurs du panneau d'achat de terrains */
 /* TODO : pour echange, si argent dispo et adversaire dans la deche, on propose une grosse somme (si old proposition presente) */
 
-/* Calculer un score (nb de tours des adversaires, nb de terrains, tune) */
-
 var DEBUG = false;
 var IA_TIMEOUT = 1000; // Temps d'attente pour les actions de l'ordinateur
 
@@ -301,6 +299,7 @@ var InitMonopoly = {
 			this.infos = data.plateau;
 			var plateauSize = DrawerFactory.dimensions.plateauSize;
 			DrawerFactory.addInfo('defaultImage',data.images.default || {});
+			DrawerFactory.addInfo('textColor',this.infos.textColor || '#000000');
 			if(this.infos.type == 'circle'){
 				DrawerFactory.setType('circle');
 				$('.graphic_element,.title').addClass('circle');

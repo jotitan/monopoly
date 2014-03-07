@@ -50,8 +50,9 @@ var DrawerHelper = {
     /* @param align : si null, center, sinon 'left' ou 'right' */
     writeText: function (text, x, y, rotate, canvas, size, specificWidth, align) {
         var width = specificWidth || DrawerFactory.dimensions.largeur;
-		canvas.strokeStyle='#000000';
-        canvas.font = ((size != null) ? size : "7") + "pt Times news roman";
+		//canvas.strokeStyle=DrawerFactory.getInfo('textColor') || '#000000';
+		canvas.fillStyle=DrawerFactory.getInfo('textColor') || '#000000';
+        canvas.font = "200 " + ((size != null) ? size : "7") + "pt Arial";
         
 		var mots = this._splitLine([text])
 		
@@ -89,7 +90,7 @@ var DrawerHelper = {
             	case 'right':lng = width - canvas.measureText(mots[i]).width;break;
             	default : lng = (width - canvas.measureText(mots[i]).width) / 2;
             }
-			canvas.strokeText(mots[i], lng, i * pas);
+			canvas.fillText(mots[i], lng, i * pas);			
         }
         canvas.font = "6pt Times news roman";
         canvas.restore();

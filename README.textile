@@ -4,7 +4,6 @@ h2. Todo
 
 * Accepter plus facilement les propositions vers la fin du jeu, surtout si on a rien
 * Couche réseau ?
-* Stats sur le jeu
 
 h2. Capture d'une version intermédiaire : 
 

@@ -1391,12 +1391,16 @@ function Joueur(numero, nom, color) {
 
 	/* Permet de deplacer le terrain sur le joueur lors d'un echange */
 	this.getSwapProperiete = function (maison) {
-		var m = this.cherchePlacement(maison);
+		maison.input.remove();
+		maison.input = null;
+		this._drawTitrePropriete(maison);
+		
+		/*var m = this.cherchePlacement(maison);
 		if (m != null) {
 			m.after(maison.input);
 		} else {
 			this.div.append(maison.input);
-		}
+		}*/
 		// On supprime l'ancien proprio
 		if(maison.joueurPossede){
 			maison.joueurPossede.removeMaison(maison);
@@ -1886,8 +1890,25 @@ var GestionJoueur = {
 		for(var i = 0 ; i < perdants.length ; i++){
 			message+= (i+2) + " - " + perdants[i].nom + "<br/>";
 		}
-		InfoMessage.create(this.joueurCourant,"Fin de partie", "green", message, null, null, true);
+		var score = this._calculateScore(gagnant);
+		InfoMessage.create(this.joueurCourant,"Fin de partie : " + score + " Points", "green", message, null, null, true);
 		//console.log("stats terrains",writePositions(stats.positions));
+	},
+	/* Calcule un score de victoire */
+	/* Prend en compte l'argent, le nombre de terrains, le nombre de constructions, le nombre de tours des joueurs adverses */
+	/* On pondere par rapport au nombre de joueur (plus il est grand, plus le nombre de maison a de l'importance) */
+	_calculateScore:function(joueur){
+		var statsJoueur = joueur.getStats();
+		var critere1 = statsJoueur.argent/10000;
+		var critere2 = (joueur.maisons.length*this.joueurs.length)/4;	// < 1
+		var critere3 = statsJoueur.hotel/12 + statsJoueur.maison/32;	// < 2
+		var critere4 = statsJoueur.tour * this.joueurs.length;		// ~5 * nbJoueurs
+		var critere5 = 1;												// ~5 * nbJoueurs
+		this.joueurs.forEach(function(j){
+			critere5+=(!j.equals(joueur))?j.pion.stats.tour:0;
+		});
+		var score = (critere4 - critere5) * critere1 * critere2 * critere3;
+		return score;
 	},
 	_formatTempsJeu:function(beginTime){
 		var time = Math.round((new Date().getTime() - beginTime)/1000);

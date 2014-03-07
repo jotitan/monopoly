@@ -20,6 +20,10 @@
         {
             "name": "James Bond Circle",
             "url": "data-monopoly-circle-bond.json"
+        },
+        {
+            "name": "Star Wars",
+            "url": "data-monopoly-starwars.json"
         }
     ]
 }

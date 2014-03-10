@@ -300,6 +300,13 @@ var InitMonopoly = {
 			var plateauSize = DrawerFactory.dimensions.plateauSize;
 			DrawerFactory.addInfo('defaultImage',data.images.default || {});
 			DrawerFactory.addInfo('textColor',this.infos.textColor || '#000000');
+			if(this.infos.colors){
+				GestionJoueur.colorsJoueurs = this.infos.colors;
+			}
+			if(this.infos.imgJoueurs){
+				GestionJoueur.imgJoueurs = this.infos.imgJoueurs;
+			}
+			
 			if(this.infos.type == 'circle'){
 				DrawerFactory.setType('circle');
 				$('.graphic_element,.title').addClass('circle');

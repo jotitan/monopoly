@@ -1469,8 +1469,8 @@ function Joueur(numero, nom, color) {
 		}
 	}
 
-	this.setPion = function (color) {
-		this.pion = new Pion(color, this);
+	this.setPion = function (color,img) {
+		this.pion = new Pion(color, this,img);
 	}
 
 	/* Verifie si le joueur peut payer ses dettes */
@@ -1806,6 +1806,7 @@ function Joueur(numero, nom, color) {
 /* Gere les joueurs : creation, changement... */
 var GestionJoueur = {
 	colorsJoueurs : ["#383C89", "#A6193E", "#C58F01", "#086B3D", "#B9B29B","#663300"],
+	imgJoueurs : [],
 	joueurs:[],
 	joueurCourant:null,
 	getJoueurCourant:function(){
@@ -1822,12 +1823,13 @@ var GestionJoueur = {
 	create:function(isRobot, i, nom){
 		var id = 'joueur' + i;			
 		var color = this.colorsJoueurs[i];
+		var img = this.imgJoueurs[i];
 		var joueur = isRobot ? new JoueurOrdinateur(i, nom, color) : joueur = new Joueur(i, nom, color);
 		var div = $('<hr/><div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div>');
 		$('.panneau_joueur').append(div);
 		
 		joueur.setDiv($('div[id="' + id + '"]'));
-		joueur.setPion(color);
+		joueur.setPion(color,img);
 		// On defini la couleurs
 		$('#' + id + ' > div.joueur-bloc').css('backgroundImage', 'linear-gradient(to right,white 50%,' + color + ')');
 		$.trigger('monopoly.newPlayer', {

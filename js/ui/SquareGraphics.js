@@ -2,7 +2,7 @@
 
 /* Represente un pion d'un joueur */
 // TODO : sortir GestionFiche
-function PionJoueur(color, largeur) {
+function PionJoueur(color, largeur,img) {
 	Component.apply(this);
 	this.etat;
 	this.pos;
@@ -13,6 +13,12 @@ function PionJoueur(color, largeur) {
 	this.largeur = largeur; // Largeur du pion
 	this.currentInterval = null;
 	
+	this.img = null;
+	if(img){
+		this.img = new Image();
+		this.img.src = img;		
+	}
+
 	this.init = function(etat,pos){
 		var id = etat + "-" + pos;
 		this.etat = etat;
@@ -29,13 +35,18 @@ function PionJoueur(color, largeur) {
 			canvas.arc(this.x, this.y, (this.largeur+6) / 2, 0, 2 * Math.PI);
 			canvas.fill();
 			canvas.closePath();
+		}		
+		if(this.img!=null){
+			DrawerHelper.drawImage(canvas, this.img, this.x-this.largeur/2, this.y-this.largeur/2, this.largeur+10, this.largeur+10, 0);
 		}
-		canvas.fillStyle = this.color;
-		canvas.strokeStyle = "#FF0000";
-		canvas.beginPath();
-		canvas.arc(this.x, this.y, this.largeur / 2, 0, 2 * Math.PI);
-		canvas.fill();
-		canvas.closePath();
+		else{
+			canvas.fillStyle = this.color;
+			canvas.strokeStyle = "#FF0000";
+			canvas.beginPath();
+			canvas.arc(this.x, this.y, this.largeur / 2, 0, 2 * Math.PI);
+			canvas.fill();
+			canvas.closePath();
+		}
 	}
 	this.setSelected = function(value){
 		this.isSelected = value;

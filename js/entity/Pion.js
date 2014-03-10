@@ -1,6 +1,6 @@
 /* Objet PION */
 
-function Pion(color, joueur) {
+function Pion(color, joueur,img) {
 	this.etat = 2;
 	this.position = 0;
 	this.joueur = joueur;
@@ -8,7 +8,7 @@ function Pion(color, joueur) {
 		tour: 0,
 		prison: 0
 	}; // stat du joueur		
-	this.pion = DrawerFactory.getPionJoueur(color,DrawerFactory.dimensions.largeurPion);
+	this.pion = DrawerFactory.getPionJoueur(color,DrawerFactory.dimensions.largeurPion,img);
 	Drawer.addRealTime(this.pion);
 
 	/* Supprime le pion en cas de defaite */

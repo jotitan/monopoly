@@ -3,7 +3,9 @@
 		"subtitle":"Classique",
 		"backgroundColor": "#888888",
 		"textColor": "#DDDDDD",
-		"nomsJoueurs":["Luke Skywalker","Leia Organa","Han Solo","Dark Vador","R2D2","C6PO","Chewbacca"],
+		"nomsJoueurs":["R2 D2","Dark Vador","Jango Feet","StormTrooper","Boba Feet","Clone","Chewbacca"],
+		"colors":["#2551A9","#000000","#9EA3A5","#FFFFFF","#7A9B94","#FFD300"],
+		"imgJoueurs":["img/starwars/r2_d2.png","img/starwars/darth_vader.png","img/starwars/jango_fett.png","img/starwars/stormtrooper.png","img/starwars/boba_fett.png","img/starwars/clone_2.png"],
 		"rollColor":"#999999"
 	},
 	"background-image":"",

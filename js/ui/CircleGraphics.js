@@ -16,12 +16,18 @@ function convertAxePos(axe,pos){
 
 
 // Represente un pion d'un joueur
-function CirclePionJoueur(color, largeur) {
+function CirclePionJoueur(color, largeur,img) {
 	Component.apply(this);
 	this.pos;
 	this.color = color;
 	this.isSelected = false;
 	this.largeur = largeur/2; // Largeur du pion
+	this.img = null;
+	if(img!=null){
+		this.img = new Image();
+		this.img.src = img;
+		this.largeur+=10;
+	}
 	
 	this.init = function(axe,pos){
 		var center = DrawerFactory.dimensions.plateauSize/2;
@@ -36,17 +42,24 @@ function CirclePionJoueur(color, largeur) {
 		var centrePlateau = DrawerFactory.dimensions.plateauSize/2;
 		var centre = getCoords((this.pos+this._angle)*pasAngle,this._rayon);
 		if(this.isSelected){
-			canvas.beginPath();
+			DrawerHelper.drawCircle(canvas,"#FFFFFF",(this.largeur+2) / 2,{x:centre.x+centrePlateau,y:centre.y+centrePlateau},"#FF0000");
+			/*canvas.beginPath();
 			canvas.fillStyle = '#FFFFFF';
 			canvas.arc(centre.x+centrePlateau,centre.y+centrePlateau,this.largeur+2,0,2*Math.PI);
 			canvas.fill();
-			canvas.closePath();	
+			canvas.closePath();*/
 		}		
-		canvas.beginPath();
+		if(this.img!=null){
+			DrawerHelper.drawImage(canvas, this.img, centre.x+centrePlateau-this.largeur/2, centre.y+centrePlateau-this.largeur/2, this.largeur, this.largeur, 0);
+		}
+		else{
+			DrawerHelper.drawCircle(canvas,this.color,this.largeur,{x:centre.x+centrePlateau,y:centre.y+centrePlateau},"#FF0000");
+		}		
+		/*canvas.beginPath();
 		canvas.fillStyle = this.color;
 		canvas.arc(centre.x+centrePlateau,centre.y+centrePlateau,this.largeur,0,2*Math.PI);
 		canvas.fill();
-		canvas.closePath();				
+		canvas.closePath();*/
 	}
 	this.setSelected = function(value){
 		this.isSelected = value;
@@ -138,7 +151,8 @@ function CircleCase(pos, axe, color, title, prix, img){
 		var bordure = DrawerFactory.dimensions.bordure/2;
 		var pA = getCoords(this.pos*pasAngle,centre);
 		var pB = getCoords(this.pos*pasAngle,centre-DrawerFactory.dimensions.innerPlateauSize);
-		canvas.fillStyle='#000000';
+		var bgColor = DrawerFactory.getInfo("backgroundColor");
+		canvas.fillStyle=bgColor;
 		canvas.lineWidth=0.5;
 		canvas.moveTo(centre - pA.x,centre - pA.y);
 		canvas.lineTo(centre - pB.x,centre - pB.y);
@@ -152,7 +166,7 @@ function CircleCase(pos, axe, color, title, prix, img){
 			canvas.fill();
 			canvas.closePath();
 			canvas.beginPath();
-			canvas.fillStyle='#FFFFFF';
+			canvas.fillStyle=bgColor;
 			canvas.moveTo(centre,centre);
 			canvas.arc(centre,centre,centre-bordure,this.pos*pasAngle,(this.pos+1)*pasAngle);
 			canvas.fill();
@@ -216,12 +230,13 @@ function CircleCaseSpeciale(axe, title){
 		var centre = DrawerFactory.dimensions.plateauSize/2;
 		var pA = getCoords(this.pos*pasAngle,centre);
 		var pB = getCoords(this.pos*pasAngle,centre-DrawerFactory.dimensions.innerPlateauSize);
-		canvas.fillStyle='#FFFFFF';
+		var bgColor = DrawerFactory.getInfo("backgroundColor");
+		canvas.fillStyle=bgColor;
 		canvas.lineWidth=0.5;
 		canvas.moveTo(centre - pA.x,centre - pA.y);
 		canvas.lineTo(centre - pB.x,centre - pB.y);
 		canvas.stroke();
-		DrawerHelper.drawArcCircle(canvas,'#FFFFFF',centre,{x:centre,y:centre},this.pos*pasAngle,(this.pos+1)*pasAngle)
+		DrawerHelper.drawArcCircle(canvas,bgColor,centre,{x:centre,y:centre},this.pos*pasAngle,(this.pos+1)*pasAngle)
 		var maxLength = 120;
 		if(this.title!=null){
 			if(this.pos > 10 && this.pos < 30){

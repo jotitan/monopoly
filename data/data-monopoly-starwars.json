@@ -1,10 +1,10 @@
 {
 	"plateau":{
-		"subtitle":"Classique",
+		"subtitle":"Star Wars",
 		"backgroundColor": "#888888",
-		"textColor": "#DDDDDD",
+		"textColor": "#FFFFFF",
 		"nomsJoueurs":["R2 D2","Dark Vador","Jango Feet","StormTrooper","Boba Feet","Clone","Chewbacca"],
-		"colors":["#2551A9","#000000","#9EA3A5","#FFFFFF","#7A9B94","#FFD300"],
+		"colors":["#2551A9","#000000","#800000","#FFFFFF","#7A9B94","#FFD300","#7A9B94","#9EA3A5"],
 		"imgJoueurs":["img/starwars/r2_d2.png","img/starwars/darth_vader.png","img/starwars/jango_fett.png","img/starwars/stormtrooper.png","img/starwars/boba_fett.png","img/starwars/clone_2.png"],
 		"rollColor":"#999999"
 	},
@@ -59,14 +59,16 @@
             "height": 50
 		},
 		"chance":{
-		    "src": "img/interrogation.png",
+		    "src": "img/starwars/sith_light_saber.png",
             "width": 50,
-            "height": 60
+            "height": 70,
+			"margin":-5
         },
 		"caisseDeCommunaute":{
-			"src": "img/banque2.png",
-            "width": 60,
-            "height": 60
+			"src": "img/starwars/jedi_light_saber.png",
+            "width": 50,
+            "height": 70,
+			"margin":-5
 		},
 		"compagnie":{
 			"src": "img/light.png",

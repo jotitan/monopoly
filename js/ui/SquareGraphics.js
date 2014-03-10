@@ -16,7 +16,8 @@ function PionJoueur(color, largeur,img) {
 	this.img = null;
 	if(img){
 		this.img = new Image();
-		this.img.src = img;		
+		this.img.src = img;	
+		this.largeur+=6;
 	}
 
 	this.init = function(etat,pos){
@@ -29,23 +30,13 @@ function PionJoueur(color, largeur,img) {
 	
 	this.draw = function (canvas) {
 		if(this.isSelected){
-			canvas.fillStyle = "#FFFFFF";
-			canvas.strokeStyle = "#FF0000";
-			canvas.beginPath();
-			canvas.arc(this.x, this.y, (this.largeur+6) / 2, 0, 2 * Math.PI);
-			canvas.fill();
-			canvas.closePath();
+			DrawerHelper.drawCircle(canvas,"#FFFFFF",(this.largeur+6) / 2,{x:this.x,y:this.y},"#FF0000");
 		}		
 		if(this.img!=null){
-			DrawerHelper.drawImage(canvas, this.img, this.x-this.largeur/2, this.y-this.largeur/2, this.largeur+10, this.largeur+10, 0);
+			DrawerHelper.drawImage(canvas, this.img, this.x-this.largeur/2, this.y-this.largeur/2, this.largeur, this.largeur, 0);
 		}
 		else{
-			canvas.fillStyle = this.color;
-			canvas.strokeStyle = "#FF0000";
-			canvas.beginPath();
-			canvas.arc(this.x, this.y, this.largeur / 2, 0, 2 * Math.PI);
-			canvas.fill();
-			canvas.closePath();
+			DrawerHelper.drawCircle(canvas,this.color,this.largeur / 2,{x:this.x,y:this.y},"#FF0000");
 		}
 	}
 	this.setSelected = function(value){

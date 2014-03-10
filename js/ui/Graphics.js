@@ -7,8 +7,9 @@ var DrawerHelper = {
 	fromDegresToRad:function(angle){
 		return (angle/180)*Math.PI;
 	},
-	drawCircle:function(canvas,color,rayon,center){
+	drawCircle:function(canvas,color,rayon,center,strokeColor){
 		canvas.fillStyle=color;
+		canvas.strokeColor = strokeColor || color;
 		canvas.beginPath();
 		canvas.arc(center.x,center.y,rayon,0,2*Math.PI);
 		canvas.fill();
@@ -134,7 +135,6 @@ var DrawerFactory = {
 		return this.infos[name];
 	},
 	/* Ajoute une nouvelle implementation */
-	/* A implementer : type, standardCase, specialCase */
 	addInstance:function(instance){
 		this.instances[instance.type] = instance;		
 	},	

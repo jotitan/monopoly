@@ -12,7 +12,7 @@ var MessageDisplayer = {
     write: function (joueur, message) {
         MessageDisplayer.order++;
         var orderMessage = (DEBUG) ? (' (' + MessageDisplayer.order + ')') : '';
-        this.div.prepend('<div><span style="color:' + joueur.color + '">' + joueur.nom + '</span> : ' + message + orderMessage + '</div>');
+		this.div.prepend('<div><span style="color:' + joueur.color + '">' + joueur.nom + '</span> : ' + message + orderMessage + '</div>');
     },
     _buildTerrain: function (terrain) {
         return '<span style="font-weight:bold;color:' + terrain.color + '">' + terrain.nom + '</span>';
@@ -222,7 +222,8 @@ var MessageDisplayer = {
     write: function (joueur, message) {
         MessageDisplayer.order++;
         var orderMessage = (DEBUG) ? (' (' + MessageDisplayer.order + ')') : '';
-        this.div.prepend('<div><span style="color:' + joueur.color + '">' + joueur.nom + '</span> : ' + message + orderMessage + '</div>');
+		var backgroundColor = (joueur.color == '#FFFFFF')?'background-color:#000000;':'';		
+        this.div.prepend('<div><span style="' + backgroundColor + 'color:' + joueur.color + '">' + joueur.nom + '</span> : ' + message + orderMessage + '</div>');
     },
     _buildTerrain: function (terrain) {
         return '<span style="font-weight:bold;color:' + terrain.color + '">' + terrain.nom + '</span>';

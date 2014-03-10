@@ -70,7 +70,7 @@ function SimpleCaseSpeciale(titre, montant, etat, pos, img) {
 function CaseChance(etat, pos,img, cartes) {
 	this.id = etat + "-" + pos;
 	this.cartes = cartes;
-	this.drawing = DrawerFactory.getCase(pos, etat, null, titles.chance, null, img);
+	this.drawing = DrawerFactory.getCase(pos, etat, null, InitMonopoly.plateau.titles.chance, null, img);
 	Drawer.add(this.drawing);
 	this.action = function () {
 		if (this.cartes.length == 0) {
@@ -90,7 +90,7 @@ function CaseChance(etat, pos,img, cartes) {
 function CaseCaisseDeCommunaute(etat, pos, img, cartes) {
 	this.id = etat + "-" + pos;
 	this.cartes = cartes;
-	this.drawing = DrawerFactory.getCase(pos, etat, null, titles.communaute, null, img );
+	this.drawing = DrawerFactory.getCase(pos, etat, null, InitMonopoly.plateau.titles.communaute, null, img );
 	Drawer.add(this.drawing);
 	this.action = function () {
 		if (this.cartes.length == 0) {

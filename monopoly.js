@@ -22,8 +22,15 @@ var VARIANTES = {
     caseDepart: false, 		// Double la prime sur la case depart
     parcGratuit: false, 	// Toutes les taxes sont verses au parc gratuit
     enchereAchat: false, 	// Permet la mise aux encheres d'un terrain qu'un joueur ne veut pas acheter
-	echangeApresVente: false,	// Permet d'echanger des terrains meme quand ils ne sont pas vendus
+	echangeApresVente: false,	// Permet d'echanger des terrains meme quand ils ne sont pas tous vendus
 }
+
+/* Preconfiguration des variantes */
+var configJeu = [
+	{nom:"Classique strict",config:[false,false,true,true]},
+	{nom:"Classique",config:[false,false,false,false]},
+	{nom:"Variante 1",config:[true,true,false,false]}
+];
 
 var stats = {	// Statistiques
 	nbTours:0,	// Nombre de tours de jeu depuis le depuis (nb de boucle de joueurs)
@@ -32,8 +39,6 @@ var stats = {	// Statistiques
 }	
 
 var CURRENCY = "F.";
-
-var titles = {};
 
 function CarteAction(libelle,carte,title,color,triggerLabel){
 	this.carte = carte;
@@ -49,11 +54,11 @@ function CarteAction(libelle,carte,title,color,triggerLabel){
 }
 
 function CarteChance(libelle, carte) {
-	CarteAction.call(this,libelle,carte,titles.chance,"lightblue","chance");	   
+	CarteAction.call(this,libelle,carte,InitMonopoly.plateau.titles.chance,"lightblue","chance");	   
 }
 
 function CarteCaisseDeCommunaute(libelle, carte) {
-	CarteAction.call(this,libelle,carte,titles.communaute,"pink","caissecommunaute");	           
+	CarteAction.call(this,libelle,carte,InitMonopoly.plateau.titles.communaute,"pink","caissecommunaute");	           
 }
 
 // Cree le comportement lorsque le joueur arrive sur la carte
@@ -258,24 +263,29 @@ var InitMonopoly = {
 	},
 	plateau:{
 		infos:null,
+		titles:{},
 		name:null,
 		parcGratuit:null,
 		cartes:{caisseCommunaute:[],chance:[]},
-		load:function(nomPlateau,callback){
+		load:function(nomPlateau,callback,dataExtend){
+			this._temp_load_data = dataExtend;
 			// On charge le plateau
 			$.ajax({
 				url: 'data/' + nomPlateau,
 				dataType: 'json',
 				context:this,
 				success: function (data) {
+					this._temp_load_data;
 					if(data.plateau == null){
 						throw "Erreur avec le plateau " + nomPlateau;
 					}
 					this.name = nomPlateau;
 					// Gestion de l'heritage
+					var dataExtend = $.extend(true,{},data,this._temp_load_data || {});
 					if(data.extend){
+						this.load(data.extend,callback,dataExtend);
 						// On charge l'autre plateau et on en etend
-						$.ajax({
+						/*$.ajax({
 							url:'data/' + data.extend,
 							dataType:'json',
 							context:this,
@@ -283,10 +293,10 @@ var InitMonopoly = {
 								var extendedData = $.extend(true,{},dataExtend,data);                           
 								this._build(extendedData,callback);
 							}
-						});
+						});*/
 					}
 					else{
-						this._build(data,callback);             
+						this._build(dataExtend,callback);             
 					}
 				},
 				error: function (a, b, c) {
@@ -300,6 +310,8 @@ var InitMonopoly = {
 			var plateauSize = DrawerFactory.dimensions.plateauSize;
 			DrawerFactory.addInfo('defaultImage',data.images.default || {});
 			DrawerFactory.addInfo('textColor',this.infos.textColor || '#000000');
+			DrawerFactory.addInfo('backgroundColor',this.infos.backgroundColor || '#FFFFFF');
+			
 			if(this.infos.colors){
 				GestionJoueur.colorsJoueurs = this.infos.colors;
 			}
@@ -318,7 +330,7 @@ var InitMonopoly = {
 				});
 			}				
 			CURRENCY = data.currency;
-			titles = data.titles;
+			this.titles = data.titles;
 			this.infos.nomsJoueurs = this.infos.nomsJoueurs || [];
 			
 			GestionDes.init(this.infos.rollColor);

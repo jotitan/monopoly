@@ -1910,7 +1910,7 @@ var GestionJoueur = {
 			critere5+=(!j.equals(joueur))?j.pion.stats.tour:0;
 		});
 		var score = (critere4 - critere5) * critere1 * critere2 * critere3;
-		return score;
+		return Math.round(score);
 	},
 	_formatTempsJeu:function(beginTime){
 		var time = Math.round((new Date().getTime() - beginTime)/1000);

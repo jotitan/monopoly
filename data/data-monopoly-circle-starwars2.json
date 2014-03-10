@@ -1,0 +1,15 @@
+{
+	"extend":"data-monopoly-starwars2.json",
+	"plateau":{
+		"type":"circle"
+	},
+	"images":{
+		"default":{
+			"marginTop":140,
+			"marginLeft":0.25,
+			"rotate":-90
+		}
+	}
+		
+		
+}

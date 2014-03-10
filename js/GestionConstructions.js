@@ -156,5 +156,4 @@ var GestionConstructions = {
         }
         return simulation;
     }
-
 }

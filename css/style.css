@@ -77,7 +77,7 @@
     height:22px;            
 }
 .joueurCourant > div { padding-left: 0px }
-.defaite { background-color: grey;padding-left:10px;color:lightgrey }
+.defaite { background-color: grey;padding-left:10px;color:lightgrey;text-decoration:line-through }
 .nbMaisons {
     text-decoration: underline;
     background-color: salmon;
@@ -209,7 +209,7 @@ div.ui-tooltip {
 	margin-top:130px;
 }
 
-#plateau.circle.action-joueur {
+#plateau.circle button.action-joueur {
 	margin-left:159px;
 	margin-top:100px;
 }

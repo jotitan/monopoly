@@ -152,7 +152,7 @@ function CircleCase(pos, axe, color, title, prix, img){
 		var pA = getCoords(this.pos*pasAngle,centre);
 		var pB = getCoords(this.pos*pasAngle,centre-DrawerFactory.dimensions.innerPlateauSize);
 		var bgColor = DrawerFactory.getInfo("backgroundColor");
-		canvas.fillStyle=bgColor;
+		canvas.fillStyle='#FFFFFF';
 		canvas.lineWidth=0.5;
 		canvas.moveTo(centre - pA.x,centre - pA.y);
 		canvas.lineTo(centre - pB.x,centre - pB.y);
@@ -240,11 +240,10 @@ function CircleCaseSpeciale(axe, title){
 		var maxLength = 120;
 		if(this.title!=null){
 			if(this.pos > 10 && this.pos < 30){
-				var p = getCoords((this.pos+0.7)*pasAngle,centre-30);
-				DrawerHelper.writeText(this.title, p.x + centre,p.y + centre, ((this.pos+20)%40 + 0.8)*pasAngle, canvas,9,maxLength,'left');
+				var p = getCoords((this.pos+0.5)*pasAngle,centre-15);
+				DrawerHelper.writeText(this.title, p.x + centre,p.y + centre, ((this.pos+20)%40 + 0.6)*pasAngle, canvas,9,maxLength,'left');
 			}else{
-				var length = canvas.measureText(this.title).width + 30;
-				var p = getCoords((this.pos+0.3)*pasAngle,centre -maxLength - 30);
+				var p = getCoords((this.pos+0.6)*pasAngle,centre -maxLength - 15);
 				DrawerHelper.writeText(this.title, p.x + centre,p.y + centre, (this.pos + 0.2)*pasAngle, canvas,9,maxLength,'right');
 			}
 		}

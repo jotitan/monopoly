@@ -7,8 +7,6 @@
 /* TODO : Permettre l'achat de terrain hors strategie quand on est blinde et qu'on a deja des groupes et des constructions dessus */
 /* TODO : proposer tout de même un terrain si deja une oldProposition */
 /* TODO : pour contre propal, demander argent si besoin de construire */
-/* GetBudget quand Cheap tres dur (evaluation du terrain le plus cher). Ponderer avec l'existance de constructions pour forcer a construire */
-/* IDEE : Cassandra, Ring, Hash */
 /* BIG TODO : implementation du des rapide */
 /* TODO : Changer les couleurs du panneau d'achat de terrains */
 /* TODO : pour echange, si argent dispo et adversaire dans la deche, on propose une grosse somme (si old proposition presente) */

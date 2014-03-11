@@ -88,7 +88,8 @@ function Comportement(risque, name, id) {
         return maisons;
     }
 
-    /* Calcule la marge d'achat par rapport au montant et le pondere par rapport a la prise de risque */
+    /* Calcule la marge d'achat par rapport au montant et le pondere par rapport a la prise de risque. */
+	/* Plus il est grand, plus c'est risque */
     this.calculMargeMontant = function (joueur, cout) {
         var marge = cout / joueur.montant; // inferieur a 1
         return marge / this.risque;

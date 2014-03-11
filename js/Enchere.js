@@ -7,7 +7,7 @@ var GestionEnchere = {
     callback: null,
     miseDepart: 0,
     ventePerte: false,
-    pasVente: 1000,
+    pasVente: 2000,
     joueurLastEnchere: null,
     lastEnchere: 0,
     nextMontantEnchere: 0,

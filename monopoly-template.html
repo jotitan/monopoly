@@ -125,23 +125,22 @@
 	<div id="message" style="display:none;background-color:white"></div>
  
  	<div style="display:none" id="housesPanel">
- 	<div style="width:50%;height:calc(100% - 40px);background-color:white;float:left">
+ 	<div style="width:50%;height:calc(100% - 45px);background-color:white;float:left">
  		<div class="title-dialog">Hypotheque</div>
-		<div id="idTerrainsHypotheques">
-			Terrains hypothéqués<br/>
+		<fieldset id="idTerrainsHypotheques" style="border:solid 1px darkgrey;margin-top:10px;">
+			<legend>Terrains hypothéqués</legend>
 			<div>
 			
 			</div>
-		</div>
-		<hr/>
-		<div id="idTerrains">
-			Terrains hypothécables<br/>
+		</fieldset>
+		<fieldset id="idTerrains" style="border:solid 1px darkgrey;margin-top:10px;">
+			<legend>Terrains hypothécables</legend>
 			<select></select>
 			<button id="idHypothequeAction">Hypothéquer</button>
 			<div id="toHypotheque"></div>
-		</div>			
+		</fieldset>			
  	</div>
- 	<div style="width:50%;height:calc(100% - 40px);background-color:white;float:right">
+ 	<div style="width:50%;height:calc(100% - 45px);background-color:white;float:right">
  		<div class="title-dialog">Constructions</div>
 		<div id="idTerrainsConstructibles" class="constructions" style="padding-left: 10px"></div>
 		<hr style="margin-right:10px;width:150px;float:right;"/>
@@ -159,12 +158,12 @@
  	</div>
 	<div id="idTest" style="clear:both;width:100%;height:40px">
 	  <table style="height:100%;width:100%;border:0;border-collapse: collapse"><tr>
-	  <td style="width:37%;height:100%;border-top:solid 1px lightblue;"></td>
-	  <td style="width:26%;border:solid 1px black;padding:5px">
+	  <td style="width:37%;height:100%;border-top:solid 1px black;"></td>
+	  <td style="width:26%;border:solid 1px black;padding:5px;background-color:white">
 	    Resultat : <span id="idCoutTotal"></span><br/>
 	    Porte-monnaie : <span id="idArgentRestant"></span>
 	  </td>
-	  <td style="width:37%;border-top:solid 1px lightgreen;"></td>
+	  <td style="width:37%;border-top:solid 1px black;"></td>
 	  </tr></table>
 	</div>
 	

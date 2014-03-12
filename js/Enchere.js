@@ -317,13 +317,7 @@ var EchangeDisplayer = {
             }
         });
         // On charge les joueurs
-		
-		// TODO : verify
-		GestionJoueur.forEach(function(j){this.selectJoueurs.append('<option value="' + j.id + '">' + j + '</option>');},this)
-        
-		/*for (var j in joueurs) {
-            this.selectJoueurs.append('<option value="' + joueurs[j].id + '">' + joueurs[j].nom + '</option>');
-        }*/
+		GestionJoueur.forEach(function(j){this.selectJoueurs.append('<option value="' + j.id + '">' + j.nom + '</option>');},this)
         this.selectJoueurs.change(function () {
             $('option:not(:first),optgroup', EchangeDisplayer.listTerrainsAdversaire).remove();
             var joueur = GestionJoueur.getById(EchangeDisplayer.selectJoueurs.val());

@@ -5,7 +5,8 @@
 		"backgroundColor": "#999999",
 		"background-image":"",
 		"nomsJoueurs":["Daniel Craig","Roger Moore","Sean Connery","Timothy Dalton","Pierce Brosnan","Georges Lazenby"],
-		"rollColor":"#444444"
+		"rollColor":"#444444",
+		"depart":2000
 	},
 	"currency": "£",
 	"fiches": [

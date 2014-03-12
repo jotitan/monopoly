@@ -71,15 +71,7 @@ function doActions() {
 	GestionJoueur.getJoueurCourant().actionApresDes(buttons, fiche);
 }
 
-function writePositions(){
-	var str = "position;nb";
-	for(var p in stats.positions){
-		str += "\n" + p + ";" + stats.positions[p];
-	}
-	return str;
-}
-
-	/* Gere le fonctionnement du des */
+/* Gere le fonctionnement du des */
 var GestionDes = {
 	nbAnimation:8,
 	cube:{des1:null,des2:null},
@@ -264,6 +256,7 @@ var InitMonopoly = {
 		titles:{},
 		name:null,
 		parcGratuit:null,
+		montantDepart:null,
 		cartes:{caisseCommunaute:[],chance:[]},
 		load:function(nomPlateau,callback,dataExtend){
 			this._temp_load_data = dataExtend;
@@ -281,17 +274,7 @@ var InitMonopoly = {
 					// Gestion de l'heritage
 					var dataExtend = $.extend(true,{},data,this._temp_load_data || {});
 					if(data.extend){
-						this.load(data.extend,callback,dataExtend);
-						// On charge l'autre plateau et on en etend
-						/*$.ajax({
-							url:'data/' + data.extend,
-							dataType:'json',
-							context:this,
-							success:function(dataExtend){
-								var extendedData = $.extend(true,{},dataExtend,data);                           
-								this._build(extendedData,callback);
-							}
-						});*/
+						this.load(data.extend,callback,dataExtend);						
 					}
 					else{
 						this._build(dataExtend,callback);             
@@ -309,7 +292,7 @@ var InitMonopoly = {
 			DrawerFactory.addInfo('defaultImage',data.images.default || {});
 			DrawerFactory.addInfo('textColor',this.infos.textColor || '#000000');
 			DrawerFactory.addInfo('backgroundColor',this.infos.backgroundColor || '#FFFFFF');
-			
+			this.montantDepart = this.infos.depart || 20000;
 			if(this.infos.colors){
 				GestionJoueur.colorsJoueurs = this.infos.colors;
 			}
@@ -405,9 +388,9 @@ var InitMonopoly = {
 				case "depart":
 					fiche = new CaseActionSpeciale(this.nom, function () {
 						if (VARIANTES.caseDepart) {
-							GestionJoueur.getJoueurCourant().gagner((data.plateau.montantDepart || 20000)*2);
+							GestionJoueur.getJoueurCourant().gagner((data.plateau.montantDepart)*2);
 						} else {
-							GestionJoueur.getJoueurCourant().gagner(data.plateau.montantDepart || 20000);
+							GestionJoueur.getJoueurCourant().gagner(data.plateau.montantDepart);
 						}
 						$.trigger('monopoly.depart', {
 							joueur: GestionJoueur.getJoueurCourant()
@@ -546,9 +529,7 @@ var InitMonopoly = {
 		this.listSauvegarde = $('#idSauvegardes');
 		var _self = this;
 		if (sauvegardes.length > 0) {
-			sauvegardes.forEach(function(s){
-			//for (var i = 0; i < sauvegardes.length; i++) {
-				//$('#idSauvegardes').append('<option value="' + sauvegardes[i].value + '">' + sauvegardes[i].label + '</option>');
+			sauvegardes.forEach(function(s){			
 				this.listSauvegarde.append('<option value="' + s.value + '">' + s.label + '</option>');
 			},this);
 			$('#idDeleteSauvegarde').unbind('click').bind('click', function () {

@@ -555,7 +555,7 @@ var InitMonopoly = {
 		$('#message').prev().css("background", "url()");
 		/* Gestion de la sauvegarde */
 		$('#idSavePanel').click(function () {
-			var name = Sauvegarde.isSauvegarde() ? prompt("Nom de la sauvegarde (si vide, defini par defaut)") : null;
+			var name = !Sauvegarde.isSauvegarde() ? prompt("Nom de la sauvegarde (si vide, defini par defaut)") : null;
 			Sauvegarde.save(name);				
 		});
 		// panneau d'achats de maisons

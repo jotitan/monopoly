@@ -141,6 +141,9 @@ var DrawerFactory = {
 	getDes:function(x, y, width){
 		return this._instantiate('des',arguments);		
 	},
+	getDesRapide:function(x, y, width){
+		return this._instantiate('desRapide',arguments);		
+	},
 	getCase:function(pos,axe,color,nom,prix,img){
 		return this._instantiate('standardCase',arguments);	
 	},

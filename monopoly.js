@@ -21,6 +21,7 @@ var VARIANTES = {
     parcGratuit: false, 	// Toutes les taxes sont verses au parc gratuit
     enchereAchat: false, 	// Permet la mise aux encheres d'un terrain qu'un joueur ne veut pas acheter
 	echangeApresVente: false,	// Permet d'echanger des terrains meme quand ils ne sont pas tous vendus
+	desRapide:false			// Jeu avec le des rapide
 }
 
 /* Preconfiguration des variantes */
@@ -72,9 +73,12 @@ function doActions() {
 }
 
 /* Gere le fonctionnement du des */
+/* Regle du des rapide : */
+/* Le 3eme des (des rapide) est accessible a partir du 2eme tour. En prison, il n'est pas utilise */
+/**/
 var GestionDes = {
 	nbAnimation:8,
-	cube:{des1:null,des2:null},
+	cube:{des1:null,des2:null,desRapide:null},
 	des1:0,
 	des2:0,
 	desRapide:0,	// Version avec des rapide
@@ -85,6 +89,11 @@ var GestionDes = {
 		this.cube.des2 = DrawerFactory.getDes(210, 200, 50);
 		Drawer.addRealTime(this.cube.des1);
 		Drawer.addRealTime(this.cube.des2);
+		
+		if(VARIANTES.desRapide){
+			this.cube.desRapide = DrawerFactory.getDesRapide(112, 210, 35);			
+			Drawer.addRealTime(this.cube.desRapide);
+		}
 		this.rollColor = rollColor;
 	},
 	resetDouble:function(){
@@ -145,6 +154,11 @@ var GestionDes = {
 	 * 3 - Le joueur atteint sont 3eme lancer, il paie
 	 * 4 - Pas de double, il reste en prison
 	 * */
+	/* DES RAPIDE */
+	/* Si le des fait 1, 2 ou 3, on ajoute le score au des */
+	/* Si on obtient un triple, on se deplace ou l'on souhaite (IA : trouver meilleure case : terrain a acheter (finir un groupe), passer une zone a risque) */
+	/* Si on obtient le bus, on utilise l'un ou l'autre des des ou les deux (IA : chercher la cause la plus avantageuse / moins risque (terrain interessant, loyer le moins cher)) */
+	/* Si on obtient un Mr Monopoly, on se de place sur la prochaine propriété vide. Si tout vendu, on se deplace sur la premiere */
 	after:function(){
 		var message = "lance les dés et fait " + (this.total()) + " (" + this.des1 + " et " + this.des2 + ") ";
 		// Separer le code
@@ -186,11 +200,17 @@ var GestionDes = {
 	isDouble:function(){
 		return this.des1 == this.des2;
 	},
+	isTriple:function(){
+		return this.des1 == this.des2 && this.des2 == this.desRapide && this.des1 <=3;
+	},
 	/* lancement du des */
 	lancer:function(){
 		this.before(function(){
 			GestionDes.des1 = GestionDes._rand();
 			GestionDes.des2 = GestionDes._rand();
+			if(VARIANTES.desRapide){
+				GestionDes.desRapide = GestionDes._rand();
+			}
             $('#idReloadDice').hide();
 			GestionDes._anime();
 		});			
@@ -201,16 +221,19 @@ var GestionDes = {
 		var interval = setInterval(function () {
 			if (nb-- < 0) {
 				clearInterval(interval);
-				GestionDes._drawCubes(GestionDes.des1,GestionDes.des2);
+				GestionDes._drawCubes(GestionDes.des1,GestionDes.des2,GestionDes.desRapide);
 				GestionDes.after();
 				return;
 			}
-			GestionDes._drawCubes(GestionDes._rand(),GestionDes._rand(),GestionDes.rollColor);
+			GestionDes._drawCubes(GestionDes._rand(),GestionDes._rand(),GestionDes._rand()%3+1,GestionDes.rollColor);
 		}, 100);
 	},
-	_drawCubes:function(val1,val2,color){
+	_drawCubes:function(val1,val2,desRapide,color){
 		GestionDes.cube.des1.setValue(val1, color);
 		GestionDes.cube.des2.setValue(val2, color);
+		if(VARIANTES.desRapide){
+			GestionDes.cube.desRapide.setValue(desRapide, color);
+		}
 	},
 	/* Renvoie le total des dés */
 	total:function(){
@@ -287,6 +310,9 @@ var InitMonopoly = {
 			});
 		},
 		_build:function(data,callback){
+			$(':checkbox[name]', '#idVariantes').each(function () {
+				VARIANTES[$(this).attr('name')] = $(this).is(':checked');
+			});
 			this.infos = data.plateau;
 			var plateauSize = DrawerFactory.dimensions.plateauSize;
 			DrawerFactory.addInfo('defaultImage',data.images.default || {});
@@ -466,9 +492,7 @@ var InitMonopoly = {
 				$('#idPartie',this.panelPartie).find(':checkbox[name]').each(function(){
 					options[$(this).attr('name')] = $(this).is(':checked');
 				});
-				$(':checkbox[name]', '#idVariantes').each(function () {
-					VARIANTES[$(this).attr('name')] = $(this).is(':checked');
-				});
+				
 				InitMonopoly._createGame(options);
 			});
 			this.panelPartie.dialog('close');

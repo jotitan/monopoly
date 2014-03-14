@@ -443,6 +443,34 @@ function CaseSpeciale(axe, titre) {
 	this.init();
 }
 
+function DesRapide(x,y,width){
+	Des.call(this,x,y,width);
+	this.imgBus = new Image();this.imgBus.src="img/bus.png";
+	this.imgMr = new Image();this.imgMr.src="img/mr_monopoly.jpg";
+	this.margin = width*0.1;
+	this.draw = function(canvas){
+		this._drawCadre(canvas);
+		if (this.value == null) {
+			return;
+		}
+		if (this.value == 1) {
+			this.drawPoint(canvas, x + width / 2, y + width / 2, width / 5, this.color);
+		}
+		if (this.value == 2 || this.value == 3) {
+			this.drawPoint(canvas, x + width * 0.25, y + width * 0.75, width / 5, this.color);
+			this.drawPoint(canvas, x + width * 0.75, y + width * 0.25, width / 5, this.color);
+		}
+		if(this.value == 4 || this.value == 6){
+			// Bus
+			DrawerHelper.drawImage(canvas, this.imgBus, x + this.margin, y + this.margin, width - this.margin, width - this.margin, 0);
+		}
+		if(this.value == 5){
+			// Mr monopoly
+			DrawerHelper.drawImage(canvas, this.imgMr, x + this.margin, y + this.margin, width - this.margin, width - this.margin, 0);
+		}
+	}
+}
+
 /* Represente un dé physique */
 function Des(x, y, width) {
 	this.value;
@@ -454,20 +482,7 @@ function Des(x, y, width) {
 	}
 	this.draw = function (canvas) {		
 		// Structure du des
-		canvas.strokeStyle = '#000000';
-		canvas.fillStyle = '#000000';
-		canvas.beginPath();
-		canvas.moveTo(x + this.coin, y);
-		canvas.lineTo(x + this.coin + this.width, y);
-		canvas.bezierCurveTo(x + this.coin * 2 + this.width, y, x + this.coin * 2 + this.width, y + this.coin, x + this.coin * 2 + this.width, y + this.coin);
-		canvas.lineTo(x + this.coin * 2 + this.width, y + this.coin + this.width);
-		canvas.bezierCurveTo(x + this.coin * 2 + this.width, y + this.coin * 2 + this.width, x + this.width + this.coin, y + this.coin * 2 + this.width, x + this.width + this.coin, y + this.coin * 2 + this.width);
-		canvas.lineTo(x + this.coin, y + this.coin * 2 + this.width);
-		canvas.bezierCurveTo(x, y + this.coin * 2 + this.width, x, y + this.coin + this.width, x, y + this.coin + this.width);
-		canvas.lineTo(x, y + this.coin);
-		canvas.bezierCurveTo(x, y, x + this.coin, y, x + this.coin, y);
-		canvas.stroke();
-		canvas.closePath();
+		this._drawCadre(canvas);
 		if (this.value == null) {
 			return;
 		}
@@ -486,6 +501,22 @@ function Des(x, y, width) {
 			this.drawPoint(canvas, x + width * 0.75, y + width * 0.5, width / 5, this.color);
 			this.drawPoint(canvas, x + width * 0.25, y + width * 0.5, width / 5, this.color);
 		}
+	}
+	this._drawCadre = function(canvas){
+		canvas.strokeStyle = '#000000';
+		canvas.fillStyle = '#000000';		
+		canvas.beginPath();
+		canvas.moveTo(x + this.coin, y);
+		canvas.lineTo(x + this.coin + this.width, y);
+		canvas.bezierCurveTo(x + this.coin * 2 + this.width, y, x + this.coin * 2 + this.width, y + this.coin, x + this.coin * 2 + this.width, y + this.coin);
+		canvas.lineTo(x + this.coin * 2 + this.width, y + this.coin + this.width);
+		canvas.bezierCurveTo(x + this.coin * 2 + this.width, y + this.coin * 2 + this.width, x + this.width + this.coin, y + this.coin * 2 + this.width, x + this.width + this.coin, y + this.coin * 2 + this.width);
+		canvas.lineTo(x + this.coin, y + this.coin * 2 + this.width);
+		canvas.bezierCurveTo(x, y + this.coin * 2 + this.width, x, y + this.coin + this.width, x, y + this.coin + this.width);
+		canvas.lineTo(x, y + this.coin);
+		canvas.bezierCurveTo(x, y, x + this.coin, y, x + this.coin, y);
+		canvas.stroke();
+		canvas.closePath();
 	}
 	// Dessine un point
 	this.drawPoint = function (canvas, x, y, width, color) {
@@ -520,6 +551,7 @@ function initSquareInstance(){
 		specialCase:CaseSpeciale,
 		pionJoueur:PionJoueur,
 		des:Des,
+		desRapide:DesRapide,
 		plateau:Plateau,
 		endPlateau:null
 	}

@@ -279,7 +279,6 @@ var InitMonopoly = {
 		titles:{},
 		name:null,
 		parcGratuit:null,
-		montantDepart:null,
 		cartes:{caisseCommunaute:[],chance:[]},
 		load:function(nomPlateau,callback,dataExtend){
 			this._temp_load_data = dataExtend;
@@ -310,7 +309,7 @@ var InitMonopoly = {
 			});
 		},
 		_build:function(data,callback){
-			$(':checkbox[name]', '#idVariantes').each(function () {
+            $(':checkbox[name]', '#idVariantes').each(function () {
 				VARIANTES[$(this).attr('name')] = $(this).is(':checked');
 			});
 			this.infos = data.plateau;
@@ -318,7 +317,7 @@ var InitMonopoly = {
 			DrawerFactory.addInfo('defaultImage',data.images.default || {});
 			DrawerFactory.addInfo('textColor',this.infos.textColor || '#000000');
 			DrawerFactory.addInfo('backgroundColor',this.infos.backgroundColor || '#FFFFFF');
-			this.montantDepart = this.infos.depart || 20000;
+			this.infos.montantDepart = this.infos.depart || 20000;
 			if(this.infos.colors){
 				GestionJoueur.colorsJoueurs = this.infos.colors;
 			}
@@ -330,6 +329,7 @@ var InitMonopoly = {
 				DrawerFactory.setType('circle');
 				$('.graphic_element,.title').addClass('circle');
 				$('#idSavePanel').arctext({radius: 80,dir:1})
+                $('#idSubTitle').hide();
 				$('#idInfoBox').unbind('mousewheel').bind('mousewheel',function(e,sens){
 					var scroll=$('#idInfoBox').scrollTop() + (sens * e.deltaFactor * -0.7);
 					$('#idInfoBox').scrollTop(scroll)
@@ -414,9 +414,9 @@ var InitMonopoly = {
 				case "depart":
 					fiche = new CaseActionSpeciale(this.nom, function () {
 						if (VARIANTES.caseDepart) {
-							GestionJoueur.getJoueurCourant().gagner((data.plateau.montantDepart)*2);
+							GestionJoueur.getJoueurCourant().gagner((InitMonopoly.plateau.infos.montantDepart)*2);
 						} else {
-							GestionJoueur.getJoueurCourant().gagner(data.plateau.montantDepart);
+							GestionJoueur.getJoueurCourant().gagner(InitMonopoly.plateau.infos.montantDepart);
 						}
 						$.trigger('monopoly.depart', {
 							joueur: GestionJoueur.getJoueurCourant()

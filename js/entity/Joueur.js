@@ -1448,6 +1448,9 @@ function Joueur(numero, nom, color) {
 	}
 
 	this.setArgent = function (montant) {
+        if(montant == NaN){
+            console.log("error montant")
+        }
 		this.montant = montant;
 		$('.compte-banque', this.div).text(montant);
 	}
@@ -1942,7 +1945,7 @@ var GestionJoueur = {
 		var defaites = 0;
 		var gagnantProbable;
 		for (var index in this.joueurs) {
-			if (this.joueurs[index].defaite == true) {
+			if (this.joueurs[index].defaite === true) {
 				defaites++;
 			} else {
 				gagnantProbable = this.joueurs[index];

@@ -134,14 +134,14 @@ var CommunicationDisplayer = {
         this.addMessage("Que souhaitez vous faire", [{
             nom: "Accepter",
             action: function () {
-                GestionEchange.accept(CommunicationDisplayer.joueur);
                 CommunicationDisplayer.close();
+                GestionEchange.accept(CommunicationDisplayer.joueur);
             }
         }, {
             nom: "Refuser",
             action: function () {
-                GestionEchange.reject(CommunicationDisplayer.joueur);
                 CommunicationDisplayer.close();
+                GestionEchange.reject(CommunicationDisplayer.joueur);
             }
         }, {
             nom: "Négocier",
@@ -187,8 +187,8 @@ var CommunicationDisplayer = {
         }, {
             nom: "Rejeter",
             action: function () {
-                GestionEchange.reject(CommunicationDisplayer.joueur);
                 CommunicationDisplayer.close();
+                GestionEchange.reject(CommunicationDisplayer.joueur);
             }
         }], true)
     },
@@ -248,14 +248,14 @@ var CommunicationDisplayer = {
         this.addMessage("Une contreproposition a été faite", [{
             nom: "Refuser",
             action: function () {
-                GestionEchange.reject(CommunicationDisplayer.joueur);
                 CommunicationDisplayer.close();
+                GestionEchange.reject(CommunicationDisplayer.joueur);
             }
         }, {
             nom: "Accepter",
             action: function () {
-                GestionEchange.accept(CommunicationDisplayer.joueur);
                 CommunicationDisplayer.close();
+                GestionEchange.accept(CommunicationDisplayer.joueur);
             }
         }]);
         this._showProposition($('.communications', this.panel), contreProposition);
@@ -277,9 +277,13 @@ var CommunicationDisplayer = {
                 buttons.push(button)
             }
             this.panel.dialog('option', 'buttons', buttons);
+            this.open();
         }
     },
     close: function () {
         this.panel.dialog('close');
+    },
+    open: function () {
+        this.panel.dialog('open');
     }
 }

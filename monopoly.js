@@ -168,7 +168,6 @@ var GestionDes = {
 		} else {
 			if (this.isDouble()) {
 				if (this.nbDouble >= 2) {
-					// Creer un message
 					var buttons = InfoMessage.create(GestionJoueur.getJoueurCourant(),"Allez en prison", "red", "Vous avez fait 3 doubles, vous allez en prison", function () {
 						MessageDisplayer.write(GestionJoueur.getJoueurCourant(), message + ", a fait 3 doubles et va en prison");
 						$('#informationsCentrale').text("3eme double, allez en PRISON");
@@ -501,7 +500,7 @@ var InitMonopoly = {
 	/* Creer la partie apres le chargement du plateau */
 	_createGame:function(options){
 		var j = this.plateau.infos.nomsJoueurs.length > 0 ? this.plateau.infos.nomsJoueurs[0] : "";
-		options = $.extend({},{nbPlayers:0,waitTimeIA:1,firstIA:false,joueur:j},options);
+		options = $.extend({},{nbPlayers:0,nbRobots:0,waitTimeIA:1,joueur:j},options);
 
 		for (var i = 0; i < options.nbPlayers; i++) {
 			var nom = "Joueur " + (i+1);
@@ -512,7 +511,7 @@ var InitMonopoly = {
 					nom = this.plateau.infos.nomsJoueurs[i];
 				}
 			}
-			GestionJoueur.create(i > 0 || options.firstIA, i,nom);            
+			GestionJoueur.create(i >= options.nbPlayers - options.nbRobots, i,nom);            
 		}
 		this.afterCreateGame();
 		GestionJoueur.change();

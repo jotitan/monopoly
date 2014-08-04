@@ -19,7 +19,7 @@ var GestionTerrains = {
         if (onclose) {
             this.panel.unbind('dialogbeforeclose').bind('dialogbeforeclose', onclose);
         } else {
-            this.panel.unbind('dialogclose');
+            this.panel.unbind('dialogbeforeclose');
         }
         this.panel.dialog('open');
     },

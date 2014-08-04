@@ -446,7 +446,7 @@ function CaseSpeciale(axe, titre) {
 function DesRapide(x,y,width){
 	Des.call(this,x,y,width);
 	this.imgBus = new Image();this.imgBus.src="img/bus.png";
-	this.imgMr = new Image();this.imgMr.src="img/mr_monopoly.jpg";
+	this.imgMr = new Image();this.imgMr.src="img/mr_monopoly.png";
 	this.margin = width*0.1;
 	this.draw = function(canvas){
 		this._drawCadre(canvas);

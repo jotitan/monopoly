@@ -161,6 +161,9 @@ var GestionDes = {
 	/* Si on obtient un Mr Monopoly, on se de place sur la prochaine propriété vide. Si tout vendu, on se deplace sur la premiere */
 	after:function(){
 		var message = "lance les dés et fait " + (this.total()) + " (" + this.des1 + " et " + this.des2 + ") ";
+        if(VARIANTES.desRapide && this.desRapide < 4){
+            message+=" et rapide : " + this.desRapide;
+        }
 		// Separer le code
 		if (GestionJoueur.getJoueurCourant().enPrison == true) {
 			this.treatPrison(message);
@@ -236,7 +239,11 @@ var GestionDes = {
 	},
 	/* Renvoie le total des dés */
 	total:function(){
-		return this.des1 + this.des2;
+		var total = this.des1 + this.des2;
+        if(VARIANTES.desRapide && this.desRapide < 4){
+            total+=this.desRapide;
+        }
+        return total;
 	}		
 }
 

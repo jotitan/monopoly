@@ -1337,6 +1337,11 @@ function Joueur(numero, nom, color) {
 
 	// Fonction a ne pas implementer avec un vrai joueur
 	this.joue = function () {}
+	
+	/* Pour le des rapide, choisi la combinaison de des qu'il souhaite */
+	this.choisiDes = function(des1,des2,callback){
+		
+	}
 
 	// Fonction a ne pas implementer avec un vrai joueur
 	this.actionApresDes = function (buttons, propriete) {}

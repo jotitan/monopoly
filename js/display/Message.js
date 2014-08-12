@@ -75,6 +75,12 @@ var MessageDisplayer = {
             MessageDisplayer.write(data.joueur, "lève l'hypothèque de " + MessageDisplayer._buildTerrain(data.maison));
         }).bind("monopoly.goPrison", function (e, data) {
             MessageDisplayer.write(data.joueur, "va en prison");
+        }).bind("monopoly.derapide.bus", function (e, data) {
+            MessageDisplayer.write(data.joueur, " prend le bus");
+        }).bind("monopoly.derapide.triple", function (e, data) {
+            MessageDisplayer.write(data.joueur, " fait un triple");
+        }).bind("monopoly.derapide.mrmonopoly", function (e, data) {
+            MessageDisplayer.write(data.joueur, " fait un Mr Monopoly et va sur " + MessageDisplayer._buildTerrain(data.maison));
         }).bind("monopoly.exitPrison", function (e, data) {
             MessageDisplayer.write(data.joueur, "sort de prison");
         }).bind("monopoly.acheteConstructions", function (e, data) {
@@ -145,6 +151,29 @@ var InfoMessage = {
         this.div.empty();
         this.div.append(message);
 	},
+	/* Affiche uniquement pour un vrai joueur */
+	createGeneric:function(joueur,titre, background, message, actionButtons){
+		this._initMessage(background,titre,message);
+        
+		// Empeche la fermeture sans vraie action
+        this.div.unbind('dialogclose.message').bind('dialogclose.message', function () {
+           InfoMessage.div.dialog('open'); 
+        });
+		var buttons = {};
+		actionButtons.forEach(function(action){
+			buttons[action.title] = function(){
+				InfoMessage.div.unbind('dialogclose.message');
+				InfoMessage.div.dialog('close');
+				action.fct();
+			}
+		});
+        this.div.dialog('option', 'buttons', buttons);
+
+        if (joueur.canPlay || forceshow) {
+            this.div.dialog('open');
+        }
+        return buttons;
+	},	
 	create:function(joueur,titre, background, message, call, param, forceshow){
 		this._initMessage(background,titre,message);
         var button = {
@@ -152,7 +181,7 @@ var InfoMessage = {
                 InfoMessage.close();
             }
         };
-        this.div.bind('dialogclose.message', function () {
+        this.div.unbind('dialogclose.message').bind('dialogclose.message', function () {
             InfoMessage.div.unbind('dialogclose.message');
             if (call != null) {
                 call(param);

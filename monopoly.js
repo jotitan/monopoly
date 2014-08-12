@@ -76,7 +76,7 @@ function doActions() {
 /* Regle du des rapide : */
 /* Le 3eme des (des rapide) est accessible a partir du 2eme tour. En prison, il n'est pas utilise */
 /**/
-var GestionDes = {
+var GestionDes_old = {
 	nbAnimation:8,
 	cube:{des1:null,des2:null,desRapide:null},
 	des1:0,
@@ -247,13 +247,29 @@ var GestionDes = {
 }
 
 
-function TempDes(){
+var GestionDes = {
+	gestionDes:null,
+
+	init:function(rollColor){
+		this.gestionDes.init(rollColor);
+	},
+	lancer:function(){
+		this.gestionDes.lancer();
+	},
+	isDouble:function(){
+		return this.gestionDes.isDouble();
+	},
+	resetDouble:function(){
+		return this.gestionDes.resetDouble();
+	}
+}
+
+function GestionDesImpl(){
 	this.nbAnimation = 8;
 	this.cube = {des1:null,des2:null};
 	this.des1 = 0;
 	this.des2 = 0;
-	this.desRapide;
-	this.nbDouble:0;	// Nombre de double de suite pour le joueur en cours
+	this.nbDouble = 0;	// Nombre de double de suite pour le joueur en cours
 	this.rollColor = '#000000';
 	this.init = function(rollColor){
 		this._init(rollColor);
@@ -288,11 +304,12 @@ function TempDes(){
 	/* Cas lorsque le joueur est en prison */
 	this.treatPrison = function(message){
 		var j = GestionJoueur.getJoueurCourant();
+		var gd = this;
 		if (this.isDouble()) {
 			MessageDisplayer.write(GestionJoueur.getJoueurCourant(), message + " et sort de prison");
 			var buttons = InfoMessage.create(GestionJoueur.getJoueurCourant(),"Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", function () {
 				GestionJoueur.getJoueurCourant().exitPrison();
-				GestionDes.endLancer();
+				gd.endLancer();
 			}, {});
 			GestionJoueur.getJoueurCourant().actionApresDes(buttons, null);
 			return;
@@ -302,7 +319,7 @@ function TempDes(){
 				var buttons = InfoMessage.create(j,"Libere de prison", "lightblue", "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
 					j.payerParcGratuit(InitMonopoly.plateau.parcGratuit,5000, function () {
 						j.exitPrison();
-						GestionDes.endLancer();
+						gd.endLancer();
 					});
 				}, {});
 				j.actionApresDes(buttons, null);
@@ -332,21 +349,26 @@ function TempDes(){
 			return;
 		} else {
 			if (this.isDouble()) {
-				this.treatDouble();				
+				this.treatDouble(message);				
 			}else{
 				MessageDisplayer.write(GestionJoueur.getJoueurCourant(), message);
 			}
 		}
-		GestionDes.endLancer();
+		this.endLancer();
 	}
 	/* Gere le comportement des doubles */
-	this.treatDouble = function(){
+	this.treatDouble = function(message){
+		this._doTreatDouble(message);
+	}
+	
+	this._doTreatDouble = function(message){
+		var gd = this;
 		if (this.nbDouble >= 2) {
 			var buttons = InfoMessage.create(GestionJoueur.getJoueurCourant(),"Allez en prison", "red", "Vous avez fait 3 doubles, vous allez en prison", function () {
 				MessageDisplayer.write(GestionJoueur.getJoueurCourant(), message + ", a fait 3 doubles et va en prison");
 				$('#informationsCentrale').text("3eme double, allez en PRISON");
 				// On met des valeurs differentes pour les des pour que le joueur ne rejoue pas
-				GestionDes.des2++;
+				gd.des2++;
 				// Le changement de joueur lorsque le deplacement est termine
 				GestionJoueur.getJoueurCourant().goPrison();
 			}, {});
@@ -379,32 +401,34 @@ function TempDes(){
 	}
 	/* lancement du des */
 	this.lancer = function(){
+		var gd = this;
 		this.before(function(){
-			this._randDes();
+			gd._randDes();
             $('#idReloadDice').hide();
-			GestionDes._anime();
+			gd._anime();
 		});			
 	}
 	this._randDes = function(){
-		GestionDes.des1 = GestionDes._rand();
-		GestionDes.des2 = GestionDes._rand();		
+		this.des1 = this._rand();
+		this.des2 = this._rand();		
 	}
 	this._anime = function(){
 		$('.action-joueur').attr('disabled', 'disabled').addClass('disabled');   
 		var nb = this.nbAnimation;
+		var gd = this;
 		var interval = setInterval(function () {
 			if (nb-- < 0) {
 				clearInterval(interval);
-				GestionDes._drawCubes(GestionDes.des1,GestionDes.des2,GestionDes.desRapide);
-				GestionDes.after();
+				gd._drawCubes(gd.des1,gd.des2,gd.desRapide);
+				gd.after();
 				return;
 			}
-			GestionDes._drawCubes(GestionDes._rand(),GestionDes._rand(),GestionDes._rand()%3+1,GestionDes.rollColor);
+			gd._drawCubes(gd._rand(),gd._rand(),gd._rand()%3+1,gd.rollColor);
 		}, 100);
 	}
 	this._drawCubes = function(val1,val2,desRapide,color){
-		GestionDes.cube.des1.setValue(val1, color);
-		GestionDes.cube.des2.setValue(val2, color);		
+		this.cube.des1.setValue(val1, color);
+		this.cube.des2.setValue(val2, color);		
 	}
 	/* Renvoie le total des dés */
 	this.total = function(){
@@ -417,11 +441,12 @@ function TempDes(){
 	/* Si le des fait 1, 2 ou 3, on ajoute le score au des */
 	/* Si on obtient un triple, on se deplace ou l'on souhaite (IA : trouver meilleure case : terrain a acheter (finir un groupe), passer une zone a risque) */
 	/* Si on obtient le bus, on utilise l'un ou l'autre des des ou les deux (IA : chercher la cause la plus avantageuse / moins risque (terrain interessant, loyer le moins cher)) */
-	/* Si on obtient un Mr Monopoly, on se de place sur la prochaine propriété vide. Si tout vendu, on se deplace sur la premiere */
+	/* Si on obtient un Mr Monopoly, on se place sur la prochaine propriété vide. Si tout vendu, on se deplace sur la premiere */
 	
-function TempDesRapide(){
-	TempDes.call(this);
+function GestionDesRapideImpl(){
+	GestionDesImpl.call(this);
 	this.cube.desRapide=null;
+	this.desRapide;
 	
 	this.init = function(rollColor){
 		this._init(rollColor);
@@ -430,15 +455,20 @@ function TempDesRapide(){
 	}
 	
 	this._randDes = function(){
-		GestionDes.des1 = GestionDes._rand();
-		GestionDes.des2 = GestionDes._rand();
-		GestionDes.desRapide = GestionDes._rand();	
+		this.des1 = this._rand();
+		this.des2 = this._rand();
+		this.desRapide = this._rand();	
 	}
 		
 	// Cas du triple : double + des rapide avec le meme chiffre (1, 2 ou 3) => Joueur place son pion ou il veut
 	// Cas du double : double + des rapide different. Seul le double est pris en compte => Double normal
-	this.treatDouble = function(){
-		
+	this.treatDouble = function(message){
+		// Cas triple
+		if(this.des1 == this.desRapide){
+			GestionJoueur.getJoueurCourant.choisiCase();
+		}else{
+			this._doTreatDouble(message);
+		}
 	}
 	
 	this.total = function(){
@@ -453,6 +483,10 @@ function TempDesRapide(){
 		return this.desRapide == 4 || this.desRapide == 6;
 	}
 	
+	this._isMonopolyMan = function(){
+		return this.desRapide == 5;
+	}
+	
 	/* Surcharge le comportement apres le lancer */
 	this.endLancer = function(){
 		this.showReload();	
@@ -463,14 +497,20 @@ function TempDesRapide(){
 				GestionJoueur.getJoueurCourant().joueDes(total);
 			});
 		}
+		if(this._isMonopolyMan()){
+			var pos = GestionJoueur.getJoueurCourant().getPosition();
+			var fiche = GestionFiche.isFreeFiches() ? GestionFiche.getNextFreeTerrain(pos) : GestionFiche.getNextTerrain(pos);
+			$.trigger('monopoly.derapide.mrmonopoly',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
+			GestionJoueur.getJoueurCourant().joueSurCase(fiche);
+		}
 		GestionJoueur.getJoueurCourant().joueDes(this.total());
 			
 	}
 	
 	this._drawCubes = function(val1,val2,desRapide,color){
-		GestionDes.cube.des1.setValue(val1, color);
-		GestionDes.cube.des2.setValue(val2, color);
-		GestionDes.cube.desRapide.setValue(desRapide, color);		
+		this.cube.des1.setValue(val1, color);
+		this.cube.des2.setValue(val2, color);
+		this.cube.desRapide.setValue(desRapide, color);		
 	}
 }
 
@@ -573,6 +613,7 @@ var InitMonopoly = {
 			this.titles = data.titles;
 			this.infos.nomsJoueurs = this.infos.nomsJoueurs || [];
 			
+			GestionDes.gestionDes = new GestionDesImpl()
 			GestionDes.init(this.infos.rollColor);
 			$('#idLancerDes').click(function(){
 				GestionDes.lancer();

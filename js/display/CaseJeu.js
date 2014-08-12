@@ -632,6 +632,24 @@ var GestionFiche = {
 	isFreeFiches:function(){
         return this.fiches.some(function(f){return f.statut == ETAT_LIBRE;});		
 	},
+	/* Renvoie le prochain terrain libre */
+	getNextFreeTerrain:function(from){
+		return this._getNextFiche(from,function(f){return f.isTerrain && f.statut == ETAT_LIBRE;});
+	},
+	getNextTerrain:function(from){
+		return this._getNextFiche(from,function(f){return f.isTerrain;});		
+	},
+	_getNextFiche:function(from,condition){
+		var info = {position:from.pos,etat:from.etat};
+		do{
+			var info = this.nextPos(info.etat,info.position);
+			var fiche = this.get({axe:info.etat,pos:info.position});
+			if(condition == null || condition(fiche)){
+				return fiche;
+			}		 
+		}while(from.etat!=info.etat || from.pos!=info.position);
+		return null;
+	},
     /* iterateur pour parcourir les fiches */
     iterator: function () {
         return {

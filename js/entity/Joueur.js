@@ -1332,7 +1332,12 @@ function Joueur(numero, nom, color) {
 
 	this.joueDes = function (sommeDes) {
 		var nextCase = this.pion.deplaceValeursDes(sommeDes);
-		this.pion.goto(nextCase.axe, nextCase.pos, doActions);
+		this.joueSurCase(nextCase);
+	}
+	
+	/* Joueur sur une case donnees */
+	this.joueSurCase = function(fiche){
+		this.pion.goto(fiche.axe, fiche.pos, doActions);
 	}
 
 	// Fonction a ne pas implementer avec un vrai joueur
@@ -1340,7 +1345,15 @@ function Joueur(numero, nom, color) {
 	
 	/* Pour le des rapide, choisi la combinaison de des qu'il souhaite */
 	this.choisiDes = function(des1,des2,callback){
+		if(!callback){return;}
 		
+		var options = [
+			{title:(des1 + ' + ' + des2),fct:function(){callback(des1+des2);}},
+			{title:(des1),fct:function(){callback(des1);}},
+			{title:(des2),fct:function(){callback(des2);}}
+		];
+		var message = 'Quel(s) dé(s) vous choisissez';
+		InfoMessage.createGeneric(this,'Vous prenez le bus','green',message,options);		
 	}
 
 	// Fonction a ne pas implementer avec un vrai joueur

@@ -76,9 +76,9 @@ var MessageDisplayer = {
         }).bind("monopoly.goPrison", function (e, data) {
             MessageDisplayer.write(data.joueur, "va en prison");
         }).bind("monopoly.derapide.bus", function (e, data) {
-            MessageDisplayer.write(data.joueur, " prend le bus");
+            MessageDisplayer.write(data.joueur, " prend le bus et fait " + data.total);
         }).bind("monopoly.derapide.triple", function (e, data) {
-            MessageDisplayer.write(data.joueur, " fait un triple");
+            MessageDisplayer.write(data.joueur, " fait un triple et choisi d'aller à " + MessageDisplayer._buildTerrain(data.maison));
         }).bind("monopoly.derapide.mrmonopoly", function (e, data) {
             MessageDisplayer.write(data.joueur, " fait un Mr Monopoly et va sur " + MessageDisplayer._buildTerrain(data.maison));
         }).bind("monopoly.exitPrison", function (e, data) {

@@ -8,6 +8,7 @@ function ParcGratuit(axe, pos) {
     this.id = axe + "-" + pos;
     this.montant = null;
 	this._titre = "Parc Gratuit";
+	this.type="parc";
     this.drawing = DrawerFactory.getCaseSpeciale(0, this._titre);
     Drawer.add(this.drawing);
 
@@ -36,10 +37,11 @@ function ParcGratuit(axe, pos) {
     this.setMontant(0);
 }
 
-function CaseActionSpeciale(titre, actionSpeciale, etat, pos) {
+function CaseActionSpeciale(titre, actionSpeciale, etat, pos,type) {
 	this.titre = titre;
 	this.actionSpeciale = actionSpeciale;
 	this.id = etat + "-" + pos;
+	this.type = type;	
 	this.drawing = DrawerFactory.getCaseSpeciale(etat,titre);
 	Drawer.add(this.drawing);
 
@@ -49,10 +51,11 @@ function CaseActionSpeciale(titre, actionSpeciale, etat, pos) {
 	}
 }
 
-
  /* Case speciale, comme la taxe de luxe */
-function SimpleCaseSpeciale(titre, montant, etat, pos, img) {
+function SimpleCaseSpeciale(titre, montant, etat, pos, type, img) {
 	this.id = etat + "-" + pos;
+	this.type = type;
+	this.montant = montant;
 	this.drawing = DrawerFactory.getCase(pos, etat, null, titre, CURRENCY + " " + montant, img);
 	Drawer.add(this.drawing);
 	this.action = function () {
@@ -69,6 +72,7 @@ function SimpleCaseSpeciale(titre, montant, etat, pos, img) {
 
 function CaseChance(etat, pos,img, cartes) {
 	this.id = etat + "-" + pos;
+	this.type = "carte";
 	this.cartes = cartes;
 	this.drawing = DrawerFactory.getCase(pos, etat, null, InitMonopoly.plateau.titles.chance, null, img);
 	Drawer.add(this.drawing);
@@ -90,6 +94,7 @@ function CaseChance(etat, pos,img, cartes) {
 function CaseCaisseDeCommunaute(etat, pos, img, cartes) {
 	this.id = etat + "-" + pos;
 	this.cartes = cartes;
+	this.type = "carte";
 	this.drawing = DrawerFactory.getCase(pos, etat, null, InitMonopoly.plateau.titles.communaute, null, img );
 	Drawer.add(this.drawing);
 	this.action = function () {
@@ -254,6 +259,7 @@ function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
 	this.maisons = new Array();
 	this.constructible = true;
 	this.isTerrain = true;
+	this.type = "terrain";
 	this.etat = etat;
 	this.pos = pos;
 	var current = this;
@@ -619,6 +625,12 @@ var GestionFiche = {
     get: function (info) {
 		return this.fiches[this._calculateId(info)];
     },
+	getPrison : function(){
+		return this.fiches[this._calculateId({axe:1,pos:0})];
+	},
+	getDepart : function(){
+		return this.fiches[this._calculateId({axe:2,pos:0})];
+	},
     add: function (fiche) {
 		var intId = this._calculateStrId(fiche.id);
 		this.fiches[intId] = fiche;

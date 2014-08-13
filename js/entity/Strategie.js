@@ -81,6 +81,10 @@ function Strategie(colors, agressif, name, id, interetGare) {
         if (i1 == true && i2 == 3) {
             return {interet:4};
         }
+		// En possede deja
+		if(i1 == true && i2 == 5){
+			return {interet:1.5};
+		}
         if(isEnchere){
             return {interet:this.interetProprieteInStrategie(propriete)};
         }
@@ -111,9 +115,9 @@ function Strategie(colors, agressif, name, id, interetGare) {
           1 : s'il reste des libres apres celle ci
           2 : si toutes appartiennent a une meme personne sauf celle-ci
           3 : si toutes appartiennent au joueur sauf celle-ci
-          4 : autres */
+          4 : autres 
+		  5 : joueur en possede deja une de la famille */
     /* @param isEnchere : achat du terrain a un autre joueur, on ne prend pas en compte le statut libre */
-    // Prendre en compte si j'ai la famille, que c'est la derniere carte. Il faut passer les autres options de risques, prix. Il faut absolument acheter
     this.statutGroup = function (propriete, joueur, isEnchere) {
         var nbTotal = 0;
         var nbLibre = 0;
@@ -146,6 +150,10 @@ function Strategie(colors, agressif, name, id, interetGare) {
         /* Cas ou seul terrain manquant */
         if ((nbLibre == 1 || isEnchere) && nbPossede == nbTotal - 1) {
             return {statut:3};
+        }
+		/* Cas ou on en possede deja 1 */
+		if (nbPossede > 0 && nbLibre > 0) {
+            return {statut:5};
         }
         if (nbLibre > 0) {
             return {statut:1};

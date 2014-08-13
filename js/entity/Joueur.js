@@ -82,6 +82,75 @@ function JoueurOrdinateur(numero, nom, color) {
 		});
 	}
 
+	/* Choisi la case qui l'interesse le plus */
+	/* 1) Cherche dans les terrains libres celui qu'il prefere */
+	/* 2) Si pas de terrain libre, choisi la case prison (protege le plus) si besoin */	
+	this.choisiCase = function(callback){
+		var fiches = GestionFiche.getFreeFiches();
+		var maxInteret;
+		var maxFiche;
+		fiches.forEach(function(fiche){
+			var interet = this.strategie.interetGlobal(fiche,this,false).interet;
+			if(interet !=0 && (maxInteret == null || interet > maxInteret)){
+				maxInteret = interet;
+				maxFiche = fiche;
+			}
+		},this);
+		if(maxFiche!=null){
+			callback(maxFiche);
+		}else{
+			// Interessant de rester en prison
+			if(!this.getOutPrison()){
+				callback(GestionFiche.getPrison());
+			}else{
+				callback(GestionFiche.getDepart());
+			}
+		}
+	}
+	
+	/* Pour le de rapide, choisi la meilleure configuration */
+	/* 1) Prefere les terrains libres qui l'interessent */
+	/* 2) Prefere les terrains libres */
+	/* 3) Choisi les cases safe (case depart, parking, simple visite) */
+	/* 4) Choisi le loyer le moins cher a payer */
+	this.choisiDes = function(des1,des2,callback){
+		var f1 = {fiche:this.pion.deplaceValeursDes(des1),total:des1};
+		var f2 = {fiche:this.pion.deplaceValeursDes(des2),total:des2};
+		var f3 = {fiche:this.pion.deplaceValeursDes(des1 + des2),total:des1+des2};
+		
+		var maxInteret = -1000;
+		var total = 0;
+		[f1,f2,f3].forEach(function(f){
+			var value = this._analyseCase(GestionFiche.get(f.fiche));
+			if(value > maxInteret){
+				total = f.total;
+				maxInteret = value;
+			}
+		},this);
+		callback(total);
+	}
+	
+	/* Determine l'interet d'une case. Plus il est elevé, plus il est important */
+	/* Interet pour taxe depend du montant. */
+	/* Case depart mieux que terrain inutile mais moins que terrain utile */
+	/* Prison depend de l'interet a y rester. Si non, equivaut a une taxe de 2000 */
+	/* Interet d'un terrain depend des moyens qu'on a */
+	/* TODO : dans le cas d'enchere immediate, empecher de tomber sur un terrain qui interesse un autre ? */
+	this._analyseCase = function(fiche){
+		var interet = 0;
+		if(fiche.isTerrain == true){
+			interet = fiche.statut == ETAT_LIBRE ? 
+				this.strategie.interetGlobal(fiche,this,false).interet :
+				fiche.getLoyer() / -1000;			
+		}
+		switch(fiche.type){
+			case "prison" : interet = this.getOutPrison() ? -2 : 1;break;
+			case "taxe" : interet = -1 * fiche.montant / 1000;break;
+			case "depart": interet = 0.5;break;
+		}		
+		return interet;
+	}
+	
 	// Fonction appelee lorsque les des sont lances et que le pion est place
 	this.actionApresDes = function (buttons, propriete) {
 		if (buttons == null) {
@@ -1355,7 +1424,13 @@ function Joueur(numero, nom, color) {
 		var message = 'Quel(s) dé(s) vous choisissez';
 		InfoMessage.createGeneric(this,'Vous prenez le bus','green',message,options);		
 	}
-
+	/* Le joueur se deplace sur la case qu'il souhaite */
+	this.choisiCase = function(callback){
+		InfoMessage.create(this,"Triple dé","green","Choisissez votre case",function(){
+			InitMonopoly.plateau.enableMouse(callback);
+		});
+	}
+	
 	// Fonction a ne pas implementer avec un vrai joueur
 	this.actionApresDes = function (buttons, propriete) {}
 

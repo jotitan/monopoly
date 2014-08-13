@@ -531,6 +531,7 @@ function Des(x, y, width) {
 
 function Plateau(x,y,width,height,color){
 	Component.apply();
+	this.canvas = null;
 	this.data = {
 		x: x,
 		y: y,
@@ -539,8 +540,32 @@ function Plateau(x,y,width,height,color){
 	};
 
 	this.draw = function (canvas) {
+		this.canvas = canvas;
 		canvas.fillStyle = color;
 		canvas.fillRect(this.data.x, this.data.y, this.data.width, this.data.height);
+	}
+	
+	this.enableCaseDetect = function(callback){
+		var plateau = this;
+		this.canvas.unbind('mousedown').bind('mousedown',function(event){
+			var fiche = plateau._findFiche(event.clientX,event.clientY);
+			if(fiche!=null){
+				plateau.disableCaseDetect();
+				callback(fiche);
+			}
+		});
+	}
+	this.disableCaseDetect = function(){
+		this.canvas.unbind('mousedown');
+	}
+	this._findFiche = function(x,y){
+		GestionFiche.fiches.forEach(function(f){
+			var data = f.drawing.data;
+			if(x >= data.x && x<= (data.x + data.width) && y >= data.y && y <= (data.y + data.height)){
+				return f;
+			}
+		});
+		return null;
 	}
 }
 

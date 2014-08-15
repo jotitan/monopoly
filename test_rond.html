@@ -311,7 +311,7 @@ function CirclePionJoueur(color, largeur) {
 	this.isSelected = false;
 	this.largeur = largeur; // Largeur du pion
 	
-	this.init = function(etat,pos){
+	this.init = function(axe,pos){
 		this.pos = convertAxePos(axe,pos);
 	}
 	
@@ -358,13 +358,13 @@ function CirclePionJoueur(color, largeur) {
 	}
 	
 	// Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
-	this.goto = function (etat, pos, callback) {
+	this.goto = function (axe, pos, callback) {
 		var ciblePos = convertAxePos(axe,pos);
 		this._moveTo(ciblePos,callback,0.2);			
 	}
 	
-	this.gotoDirect = function(etat, pos, callback){
-		if (etat == null || pos == null) {
+	this.gotoDirect = function(axe, pos, callback){
+		if (axe == null || pos == null) {
 			return;
 		}
 		var ciblePos = convertAxePos(axe,pos);

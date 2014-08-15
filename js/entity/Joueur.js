@@ -1196,7 +1196,7 @@ function Joueur(numero, nom, color) {
 			defaite: this.defaite,
 			cartesPrison: this.cartesSortiePrison.length,
 			position: this.pion.position,
-			etat: this.pion.etat
+			axe: this.pion.axe
 		};
 		this.saveMore(data);
 		return data;
@@ -1211,7 +1211,7 @@ function Joueur(numero, nom, color) {
 		this.setArgent(this.montant);            
 		this.loadMore(data);
 		// Position initiale, aucune action
-		this.pion.goDirectToCell(data.etat, data.position);
+		this.pion.goDirectToCell(data.axe, data.position);
 		// Cas des cartes de prison
 	}
 
@@ -1271,8 +1271,8 @@ function Joueur(numero, nom, color) {
 
 	this.getPosition = function () {
 		return {
-			pos: this.pion.pos,
-			etat: this.pion.etat
+			pos: this.pion.position,
+			axe: this.pion.axe
 		};
 	}
 
@@ -1668,7 +1668,7 @@ function Joueur(numero, nom, color) {
 	}
 
 	this.getFichePosition = function () {
-		return GestionFiche.getById(this.pion.etat + "-" + this.pion.position);
+		return GestionFiche.getById(this.pion.axe + "-" + this.pion.position);
 	}
 
 	/** Renvoie la liste des terrains hypothecables : sans construction sur le terrain et ceux de la famille, pas deja hypotheques

@@ -62,7 +62,7 @@ function CarteCaisseDeCommunaute(libelle, carte) {
 
 // Cree le comportement lorsque le joueur arrive sur la carte
 function doActions() {
-	var fiche = GestionFiche.getById(GestionJoueur.getJoueurCourant().pion.etat + "-" + GestionJoueur.getJoueurCourant().pion.position);
+	var fiche = GestionFiche.getById(GestionJoueur.getJoueurCourant().pion.axe + "-" + GestionJoueur.getJoueurCourant().pion.position);
 	if (fiche == null) {
 		GestionJoueur.change();
 		return;
@@ -261,7 +261,10 @@ var GestionDes = {
 	},
 	resetDouble:function(){
 		return this.gestionDes.resetDouble();
-	}
+	}  ,
+    total:function(){
+        return this.gestionDes.total();
+    }
 }
 
 function GestionDesImpl(){
@@ -465,10 +468,22 @@ function GestionDesRapideImpl(){
 		this.des2 = this._rand();
 		this.desRapide = this._rand();	
 	}
-		
+
+    this.total = function(){
+        var total = this.des1 + this.des2;
+        if(!this.isDouble() && this._isValue()){
+            total+=this.desRapide;
+        }
+        return total;
+    }
+
 	/* Renvoie la combinaison des des */
 	this.combinaisonDes = function(){
-		return this.des1 + ", " + this.des2 + " et " + this.desRapide;
+        if(this._isMonopolyMan()){
+            return "Mr Monopoly";
+        }
+		return this.des1 + ", " + this.des2 + " et " +
+            ((this.desRapide == 4 || this.desRapide == 6)?" bus":this.desRapide);
 	}
 		
 	// Cas du triple : double + des rapide avec le meme chiffre (1, 2 ou 3) => Joueur place son pion ou il veut
@@ -484,10 +499,17 @@ function GestionDesRapideImpl(){
 			this._doTreatDouble(message);
 		}
 	}
-	
+
+    this.isTriple = function(){
+        return this.isDouble() && this.desRapide == this.des1;
+    }
+
 	this.total = function(){
+        if(this._isMonopolyMan()){
+            return 0;
+        }
 		var total = this.des1 + this.des2;
-        if(this.desRapide < 4){
+        if(this.desRapide < 4 && !this.isDouble()){
             total+=this.desRapide;
         }
         return total;
@@ -506,7 +528,10 @@ function GestionDesRapideImpl(){
 	}
 	/* Surcharge le comportement apres le lancer */
 	this.endLancer = function(){
-		this.showReload();	
+		this.showReload();
+        if(this.isTriple()){    // Joueur a choisi la case
+            return;
+        }
 		if(this.isDouble() || this._isValue()){
 			GestionJoueur.getJoueurCourant().joueDes(this.total());
 			return;
@@ -740,10 +765,10 @@ var InitMonopoly = {
 			var currentGroupe = null;
 			// Parcourt les fiches. On enregistre le groupe courant, quand changement, on defini le groupe precedent et calcule le suivant du precedent
 			for (var i = 0; i < 42; i++) {
-				var etat = Math.floor(i / 10) % 4;
-				var pos = i % 40 - (etat * 10);
+				var axe = Math.floor(i / 10) % 4;
+				var pos = i % 40 - (axe * 10);
 				var fiche = GestionFiche.get({
-					axe: etat,
+					axe: axe,
 					pos: pos
 				});
 				if (fiche.groupe != null && fiche.constructible) {

@@ -40,7 +40,7 @@ var FicheDisplayer = {
 		this.ficheCompagnie.prev().css("background", "url()");
 	},		
 	openDetail:function(fiche,input){
-		if (this.currentFiche != null && this.currentFiche.etat == fiche.etat && this.currentFiche.pos == fiche.pos) {
+		if (this.currentFiche != null && this.currentFiche.axe == fiche.axe && this.currentFiche.pos == fiche.pos) {
 			if ($(':visible',this.detailFiche).length == 0) {
 				this.detailFiche.slideDown();
 			} else {
@@ -48,7 +48,7 @@ var FicheDisplayer = {
 			}
 			return;
 		}
-		if (this.currentFiche != null && (this.currentFiche.etat != fiche.etat || this.currentFiche.pos != fiche.pos)) {
+		if (this.currentFiche != null && (this.currentFiche.axe != fiche.axe || this.currentFiche.pos != fiche.pos)) {
 			this.currentFiche = null;
 			this.detailFiche.slideUp(300, function () {
 				FicheDisplayer.openDetail(fiche, input);

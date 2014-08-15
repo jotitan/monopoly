@@ -4,7 +4,7 @@
 // TODO : sortir GestionFiche
 function PionJoueur(color, largeur,img) {
 	Component.apply(this);
-	this.etat;
+	this.axe;
 	this.pos;
 	this.x;
 	this.y;
@@ -20,9 +20,9 @@ function PionJoueur(color, largeur,img) {
 		this.largeur+=6;
 	}
 
-	this.init = function(etat,pos){
-		var id = etat + "-" + pos;
-		this.etat = etat;
+	this.init = function(axe,pos){
+		var id = axe + "-" + pos;
+		this.axe = axe;
 		this.pos = pos;
 		this.x = GestionFiche.getById(id).drawing.getCenter().x;
 		this.y = GestionFiche.getById(id).drawing.getCenter().y;
@@ -44,19 +44,19 @@ function PionJoueur(color, largeur,img) {
 	}
 	
 	// Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
-	this.goto = function (etat, pos, callback,init) {
+	this.goto = function (axe, pos, callback,init) {
 		if (this.currentInterval != null) {
 			throw "Impossible de realiser ce deplacement primaire";
 		}
 		// Cas initial
 		if(init){
-			var center = GestionFiche.getById(this.etat + "-" + this.pos).drawing.getCenter();
+			var center = GestionFiche.getById(this.axe + "-" + this.pos).drawing.getCenter();
 			this.x = center.x;
 			this.y = center.y;
 		}
 		// Cas de la fin
-		if (this.etat == etat && this.pos == pos) {
-			var decalage = GestionFiche.getById(this.etat + "-" + this.pos).drawing._decalagePion();
+		if (this.axe == axe && this.pos == pos) {
+			var decalage = GestionFiche.getById(this.axe + "-" + this.pos).drawing._decalagePion();
 			this.x = decalage.x;
 			this.y = decalage.y;
 			if (callback) {
@@ -83,21 +83,21 @@ function PionJoueur(color, largeur,img) {
 				_self.x = caseFiche.x;
 				clearInterval(_self.currentInterval);
 				_self.currentInterval = null;
-				_self.goto(etat, pos, callback);
+				_self.goto(axe, pos, callback);
 			}
 		}, 30);
 	}
 	
-	this.gotoDirect = function(etat, pos, callback){
-		if (etat == null || pos == null) {
+	this.gotoDirect = function(axe, pos, callback){
+		if (axe == null || pos == null) {
 			return;
 		}
 		if (this.currentInterval != null) {
 			throw "Impossible de realiser ce deplacement direct";
 		}
 		// On calcule la fonction affine
-		var p1 = GestionFiche.getById(this.etat + "-" + this.pos).drawing.getCenter();
-		var p2 = GestionFiche.getById(etat + "-" + pos).drawing.getCenter();
+		var p1 = GestionFiche.getById(this.axe + "-" + this.pos).drawing.getCenter();
+		var p2 = GestionFiche.getById(axe + "-" + pos).drawing.getCenter();
 		// Si meme colonne, (x constant), on ne fait varier que y
 		if (p1.x == p2.x) {
 			var y = p1.y;
@@ -106,7 +106,7 @@ function PionJoueur(color, largeur,img) {
 			var _self = this;
 			this.currentInterval = setInterval(function () {
 				if ((sens < 0 && _self.y <= p2.y) || (sens > 0 && _self.y >= p2.y)) {
-					_self.etat = etat;
+					_self.axe = axe;
 					_self.pos = pos;
 					clearInterval(_self.currentInterval);
 					_self.currentInterval = null;
@@ -129,7 +129,7 @@ function PionJoueur(color, largeur,img) {
 				if ((sens < 0 && x <= p2.x) || (sens > 0 && x >= p2.x)) {
 					_self.x = p2.x;
 					_self.y = p2.y;
-					_self.etat = etat;
+					_self.axe = axe;
 					_self.pos = pos;
 					clearInterval(_self.currentInterval);
 					_self.currentInterval = null;
@@ -149,10 +149,10 @@ function PionJoueur(color, largeur,img) {
 	this._toNextCase = function () {
 		this.pos++;
 		if (this.pos >= 10) {
-			this.etat = (this.etat + 1) % 4;
+			this.axe = (this.axe + 1) % 4;
 			this.pos = 0;
 		}
-		return GestionFiche.getById(this.etat + "-" + this.pos).drawing.getCenter();
+		return GestionFiche.getById(this.axe + "-" + this.pos).drawing.getCenter();
 	}
 	
 	this.init(2,0);
@@ -368,7 +368,7 @@ function Case(pos, axe, color, title, prix, img) {
 	this.getNbJoueurs = function () {
 		var count = 0;
 		GestionJoueur.forEach(function(j){
-			count+=(j.pion.etat == this.axe && j.pion.position == this.pos)?1:0;
+			count+=(j.pion.axe == this.axe && j.pion.position == this.pos)?1:0;
 		},this);
 		return count;
 	}
@@ -453,7 +453,7 @@ function DesRapide(x,y,width){
 		if (this.value == null) {
 			return;
 		}
-		if (this.value == 1) {
+		if (this.value == 1 || this.value == 3) {
 			this.drawPoint(canvas, x + width / 2, y + width / 2, width / 5, this.color);
 		}
 		if (this.value == 2 || this.value == 3) {
@@ -547,7 +547,8 @@ function Plateau(x,y,width,height,color){
 	
 	this.enableCaseDetect = function(callback){
 		var plateau = this;
-		this.canvas.unbind('mousedown').bind('mousedown',function(event){
+		$('canvas').unbind('mousedown').bind('mousedown',function(event){
+            console.log("clik")
 			var fiche = plateau._findFiche(event.clientX,event.clientY);
 			if(fiche!=null){
 				plateau.disableCaseDetect();
@@ -556,7 +557,7 @@ function Plateau(x,y,width,height,color){
 		});
 	}
 	this.disableCaseDetect = function(){
-		this.canvas.unbind('mousedown');
+		$('canvas').unbind('mousedown');
 	}
 	this._findFiche = function(x,y){
 		GestionFiche.fiches.forEach(function(f){

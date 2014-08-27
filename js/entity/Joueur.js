@@ -1477,7 +1477,10 @@ function Joueur(numero, nom, color) {
 			this.div.append(input);
 		}
 		maison.input = $('input[id="idInputFiche' + maison.id + '"]');
-		maison.input.click(function () {
+        if (maison.statutHypotheque == true) {
+            maison.input.addClass('hypotheque');
+        }
+        maison.input.click(function () {
 			FicheDisplayer.openDetail(GestionFiche.getById(maison.id), $(this));
 		});
 	}
@@ -1488,12 +1491,6 @@ function Joueur(numero, nom, color) {
 		maison.input = null;
 		this._drawTitrePropriete(maison);
 		
-		/*var m = this.cherchePlacement(maison);
-		if (m != null) {
-			m.after(maison.input);
-		} else {
-			this.div.append(maison.input);
-		}*/
 		// On supprime l'ancien proprio
 		if(maison.joueurPossede){
 			maison.joueurPossede.removeMaison(maison);

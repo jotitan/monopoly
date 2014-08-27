@@ -425,6 +425,10 @@ function Fiche(axe, pos, colors, nom, achat, loyers, prixMaison, img) {
 		if (this.joueurPossede != null && this.statutHypotheque == false) { // on doit payer un loyer
 			return this.payerLoyer();
 		}
+        if(this.statutHypotheque == true){
+            GestionJoueur.change();
+            return;
+        }
 		return this.openFiche();
 	}
 

@@ -40,7 +40,7 @@ var MessageDisplayer = {
                 nom: 'info'
             }, 'sauvegarde de la partie (' + data.name + ')');
         }).bind("monopoly.depart", function (e, data) {
-            MessageDisplayer.write(data.joueur, 's\'arrête sur la case départ');
+            MessageDisplayer.write(data.joueur, 's\'arrête sur la case départ et gagne ' + data.montant + " " + CURRENCY);
         }).bind("monopoly.enchere.init", function (e, data) {
             MessageDisplayer.write(data.joueur != null ? data.joueur : {color:'black',nom:'La banque'}, 'met aux enchères ' + MessageDisplayer._buildTerrain(data.maison));
         }).bind("monopoly.enchere.fail", function (e, data) {

@@ -138,7 +138,7 @@ function JoueurOrdinateur(numero, nom, color) {
 	/* TODO : dans le cas d'enchere immediate, empecher de tomber sur un terrain qui interesse un autre ? */
 	this._analyseCase = function(fiche){
 		var interet = 0;
-		if(fiche.isTerrain == true){
+		if(fiche.isTerrain() == true){
 			interet = fiche.statut == ETAT_LIBRE ? 
 				this.strategie.interetGlobal(fiche,this,false).interet :
 				fiche.getLoyer() / -1000;			
@@ -1760,12 +1760,13 @@ function Joueur(numero, nom, color) {
 						if ((joueur == null || joueur.equals(infos.maisons[idx].joueurPossede))
 							&& (exclude == null || !exclude.groupe.equals(infos.maisons[idx].groupe))) {
 							if(exclude && maison.groupe.color == exclude.groupe.color){
-								console.log(maison.groupe.color,maison.groupe.color == exclude.groupe.color);
-							}
-							interests.push({
-								maison: infos.maisons[idx],
-								nb: infos.maisons.length
-							}); // On ajoute chaque maison avec le nombre a acheter pour terminer le groupe
+								console.log("Meme groupe, rejet",maison.groupe.color,maison.groupe.color == exclude.groupe.color);
+							} else{
+                                interests.push({
+                                    maison: infos.maisons[idx],
+                                    nb: infos.maisons.length
+                                }); // On ajoute chaque maison avec le nombre a acheter pour terminer le groupe
+                            }
 						}
 					}
 				}

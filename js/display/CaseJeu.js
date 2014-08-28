@@ -8,6 +8,10 @@ function PlateauCase(axe,pos,type){
     this.pos = pos;
     this.id = axe + "-" + pos;
     this.type = type;
+
+    this.isTerrain = function(){
+        return this.type == "terrain";
+    }
 }
 
 /* Case representant le parc gratuit */
@@ -261,7 +265,6 @@ function Fiche(axe, pos, colors, nom, achat, loyers, prixMaison, img) {
 	this.hotel = false; // Si un hotel est present
 	this.maisons = new Array();
 	this.constructible = true;
-	this.isTerrain = true;
 	var current = this;
 	this.input = null; // Bouton
 
@@ -649,10 +652,10 @@ var GestionFiche = {
 	},
 	/* Renvoie le prochain terrain libre */
 	getNextFreeTerrain:function(from){
-		return this._getNextFiche(from,function(f){return f.isTerrain && f.statut == ETAT_LIBRE;});
+		return this._getNextFiche(from,function(f){return f.isTerrain() && f.statut == ETAT_LIBRE;});
 	},
 	getNextTerrain:function(from){
-		return this._getNextFiche(from,function(f){return f.isTerrain;});		
+		return this._getNextFiche(from,function(f){return f.isTerrain();});
 	},
 	_getNextFiche:function(from,condition){
 		var info = {position:from.pos,axe:from.axe};
@@ -683,7 +686,7 @@ var GestionFiche = {
         // On calcule des cles
         var keys = [];
 		for (var id in this.fiches) {
-            if (this.fiches[id].isTerrain) {
+            if (this.fiches[id].isTerrain()) {
                 keys.push(id);
             }
         }
@@ -692,7 +695,7 @@ var GestionFiche = {
     getTerrainsLibres: function () {
         var keys = [];
         for (var id in this.fiches) {
-            if (this.fiches[id].isTerrain && this.fiches[id].statut == ETAT_LIBRE) {
+            if (this.fiches[id].isTerrain() && this.fiches[id].statut == ETAT_LIBRE) {
                 keys.push(id);
             }
         }

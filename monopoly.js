@@ -598,7 +598,7 @@ var InitMonopoly = {
 					axe: axe,
 					pos: pos
 				});
-				if (fiche.groupe != null && fiche.constructible) {
+				if (fiche.groupe != null && fiche.isTerrain()) {
 					if (currentGroupe == null) {
 						// initialisation
 						currentGroupe = fiche.groupe;

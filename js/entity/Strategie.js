@@ -64,32 +64,37 @@ function Strategie(colors, agressif, name, id, interetGare) {
 
     /* Calcul l'interet global du joueur pour une propriete */
     /* Prend en compte l'interet propre (liste d'achat) ainsi que l'etat du groupe */
+    /* Si ce n'est pas un terrain (gare, compagnie), la valeur est plus faible */
 	/* @param isEnchere : indique que la mesure est faite pour une enchere */
 	/* Cas des encheres, on ajoute un critere qui determine si le terrain est indispensable pour la strategie : autre groupe, autre terrain... */
 	this.interetGlobal = function (propriete, joueur, isEnchere) {
         var i1 = this.interetPropriete(propriete);
         var statutGroup = this.statutGroup(propriete, joueur, isEnchere);
 		var i2 = statutGroup.statut;
+        var interet = {interet:1};
 		var coeff = 1;
 		if (i1 == false && i2 == 0) {
-            return {interet:0.2};	// Permet en cas de situation tres confortable de continuer a investir
+            interet = {interet:0.2};	// Permet en cas de situation tres confortable de continuer a investir
         }
 		// Realise un blocage
         if (i1 == false && i2 == 2) {
-            return {interet:this.agressif,joueur:statutGroup.joueur};
+            interet = {interet:this.agressif,joueur:statutGroup.joueur};
         }
         if (i1 == true && i2 == 3) {
-            return {interet:4};
+            interet = {interet:4};
         }
 		// En possede deja
 		if(i1 == true && i2 == 5){
-			return {interet:1.5};
+            interet = {interet:1.5};
 		}
         if(isEnchere){
-            return {interet:this.interetProprieteInStrategie(propriete)};
+            interet = {interet:this.interetProprieteInStrategie(propriete)};
+        }
+        if(!propriete.isTerrain()){
+            interet.interet/=2;
         }
         
-        return {interet:1};
+        return interet;
     }
 
 	/* Determine l'interet de la propriete par rapport a l'etat de la strategie */

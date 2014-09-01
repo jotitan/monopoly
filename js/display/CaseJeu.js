@@ -264,7 +264,6 @@ function Fiche(axe, pos, colors, nom, achat, loyers, prixMaison, img) {
 	this.nbMaison = 0; // Nombre de maison construite sur le terrain par le proprietaire
 	this.hotel = false; // Si un hotel est present
 	this.maisons = new Array();
-	this.constructible = true;
 	var current = this;
 	this.input = null; // Bouton
 
@@ -347,7 +346,7 @@ function Fiche(axe, pos, colors, nom, achat, loyers, prixMaison, img) {
 	/* Renvoie la rentabilite de la propriete. Se base sur le rapport entre le loyer de trois maisons et le prix d'achat d'une maison */
 	this.getRentabilite = function () {
 		var ponderation = 10; // Facteur pour nivelle le taux
-		if (!this.constructible || this.nbMaison >= 3) {
+		if (!this.isTerrain() || this.nbMaison >= 3) {
 			return 0;
 		} else {
 			// Maison du groupe
@@ -362,7 +361,7 @@ function Fiche(axe, pos, colors, nom, achat, loyers, prixMaison, img) {
 
 	/* Renvoie la rentabilite brute, sans prise en compte des maisons achetees */
 	this.getRentabiliteBrute = function () {
-		return !this.constructible ? 0 : this.loyer[3] / (this.achat + 3 * this.prixMaison);			
+		return !this.isTerrain() ? 0 : this.loyer[3] / (this.achat + 3 * this.prixMaison);
 	}
 
 	/* Hypotheque le terrain */
@@ -579,7 +578,6 @@ function Fiche(axe, pos, colors, nom, achat, loyers, prixMaison, img) {
 function FicheGare(axe, pos, color, nom, achat, loyers, img) {
 	Fiche.call(this, axe, pos, color, nom, achat, loyers, null, img);
 	this.type = "gare";
-	this.constructible = false;
 	this.getLoyer = function () {
 		if (this.joueurPossede != null) {
 			var nb = -1;
@@ -598,7 +596,6 @@ function FicheCompagnie(axe, pos, color, nom, achat, loyers,img) {
 	Fiche.call(this, axe, pos, color, nom, achat, loyers, null,img);
 	this.fiche = $('#ficheCompagnie');
 	this.type = "compagnie";
-	this.constructible = false;
 
 	this.getLoyer = function () {
 		var loyer = GestionDes.total();

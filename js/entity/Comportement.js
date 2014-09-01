@@ -71,7 +71,7 @@ function Comportement(risque, name, id) {
                 var posActuel = j.getPosition();
                 for (var i = 1; i < 12; i++) {
                     var fiche = GestionFiche.get(j.pion.deplaceValeursDes(i));
-                    if (fiche.constructible && fiche.joueurPossede != null && fiche.joueurPossede.equals(joueur)) {
+                    if (fiche.isTerrain() && fiche.joueurPossede != null && fiche.joueurPossede.equals(joueur)) {
                         //maison visitable, on ajoute la maison avec la proba
                         if (maisons[fiche.id] != null) {
                             maisons[fiche.id].proba += this.probaDes[i] / 100;

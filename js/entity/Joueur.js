@@ -726,7 +726,7 @@ function JoueurOrdinateur(numero, nom, color) {
 				return -2;
 				break;
 			default:
-				return (maison.constructible) ? maison.groupe.getInfos(joueur) : 0;
+				return (maison.isTerrain()) ? maison.groupe.getInfos(joueur) : 0;
 			}
 		}
 		maisons.sort(function (a, b) {
@@ -1251,7 +1251,7 @@ function Joueur(numero, nom, color) {
 			stats.hotel += parseInt(maison.hotel == true ? 1 : 0);
 			stats.maison += parseInt(maison.hotel == false ? maison.nbMaison : 0);
 			// Revente des constructions + hypotheque
-			stats.argentDispo += (maison.statutHypotheque) ? 0 : (((maison.constructible) ? (maison.nbMaison * (maison.prixMaison / 2)) : 0) + maison.achat / 2);
+			stats.argentDispo += (maison.statutHypotheque) ? 0 : (((maison.isTerrain()) ? (maison.nbMaison * (maison.prixMaison / 2)) : 0) + maison.achat / 2);
 			// Revente uniquement des terrains non groupes
 			stats.argentDispoHypo += (!maison.isGroupee() && !maison.statutHypotheque) ? maison.achat / 2 : 0; // hypotheque des terrains non groupes
 		}
@@ -1713,7 +1713,7 @@ function Joueur(numero, nom, color) {
 
 		for (var i = 0; i < this.maisons.length; i++) {
 			var m = this.maisons[i];
-			if (m.constructible == true && m.groupe != null) {
+			if (m.isTerrain() == true && m.groupe != null) {
 				// Deja traite, on possede la famille
 				if (colorsOK[m.color] == true) {
 					//groups[m.color].proprietes.push(m);
@@ -1807,8 +1807,8 @@ function Joueur(numero, nom, color) {
 				}
 			}
 			var critere5 = 1;
-			if(a.maison.constructible!=b.maison.constructible){
-				critere5 = (a.maison.constructible)?0.5:2;
+			if(a.maison.isTerrain()!=b.maison.isTerrain()){
+				critere5 = (a.maison.isTerrain())?0.5:2;
 			}
 			var criteres = critere1 * critere2 * critere3 * critere4 * critere5;
 			return criteres - 1;
@@ -1824,7 +1824,7 @@ function Joueur(numero, nom, color) {
 		var nbByGroups = [];
 		for (var m in this.maisons) {
 			var maison = this.maisons[m];
-			if (!maison.constructible) {
+			if (!maison.isTerrain()) {
 				proprietes.push(maison);
 				if (nbByGroups[maison.groupe.nom] == null) {
 					nbByGroups[maison.groupe.nom] = 1;
@@ -1852,7 +1852,7 @@ function Joueur(numero, nom, color) {
 		}
 		for (var f in this.maisons) {
 			var maison = this.maisons[f];
-			if (maison.constructible && !maison.isGroupee() && mapInterests[maison.id] == null) {
+			if (maison.isTerrain() && !maison.isGroupee() && mapInterests[maison.id] == null) {
 				terrains.push(maison);
 			}
 		}
@@ -1868,7 +1868,7 @@ function Joueur(numero, nom, color) {
 		// Si une maison est hypothequee, on ne peut plus construire sur le groupe
 		for (var i = 0; i < this.maisons.length; i++) {
 			var m = this.maisons[i];
-			if (m.constructible == true) {
+			if (m.isTerrain() == true) {
 				if (colorsOK[m.color] == true) {
 					mc.push(m); // on a la couleur, on ajoute
 				} else {
@@ -1878,7 +1878,7 @@ function Joueur(numero, nom, color) {
 						// On cherche une propriete qui n'appartient pas au joueur
 						for (var f in m.groupe.fiches) {
 							var fiche = m.groupe.fiches[f];
-							if (fiche.constructible == true &&
+							if (fiche.isTerrain() == true &&
 								(fiche.joueurPossede == null || !fiche.joueurPossede.equals(this) || fiche.statutHypotheque == true)) {
 								ok = false;
 							}

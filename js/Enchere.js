@@ -483,7 +483,7 @@ var GestionEchange = {
         // On notifie le joueur et on lui donne le callback(end) pour lancer la suite du traitement
 		// Cas de la contreproposition
         if (joueurReject.equals(this.demandeur)) {            
-			this.demandeur.notifyRejectProposition(function () {
+			this.proprietaire.notifyRejectProposition(function () {
                 GestionEchange.end();
             }, this.terrain, this.initialProposition);			
         } else {

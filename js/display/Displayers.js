@@ -115,7 +115,7 @@ var FicheDisplayer = {
 	}
 }
 
-/* Affiche les ecrans de communication lors d'enchere */
+/* Affiche les ecrans de communication lors d'echange */
 var CommunicationDisplayer = {
     panel: null,
     joueur: null, // Joueur a qui est affiche le panneau
@@ -223,7 +223,7 @@ var CommunicationDisplayer = {
     },
     /* Affiche la proposition acceptee */
     showAccept: function (callback) {
-        this.addMessage("La proposition a été acceptée", [{
+        this.addMessage("La proposition a été <span style=\"color:green\">acceptée</span>", [{
             nom: "Fermer",
             action: function () {
                 CommunicationDisplayer.close();
@@ -234,7 +234,7 @@ var CommunicationDisplayer = {
         }]);
     },
     showReject: function (callback) {
-        this.addMessage("La proposition a été rejetée", [{
+        this.addMessage("La proposition a été <span style=\"color:red\">rejetée</span>.", [{
             nom: "Fermer",
             action: function () {
                 CommunicationDisplayer.close();

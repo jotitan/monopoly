@@ -1,7 +1,7 @@
 /* Objet PION */
 
 function Pion(color, joueur,img) {
-	this.etat = 2;
+	this.axe = 2;
 	this.position = 0;
 	this.joueur = joueur;
 	this.stats = {
@@ -25,7 +25,7 @@ function Pion(color, joueur,img) {
 
 	this.deplaceValeursDes = function (des) {
 		var pos = this.position + des;
-		var axe = this.etat;
+		var axe = this.axe;
 		while(pos<0){
 			pos+=10;
 			axe= (axe + 3)%4;
@@ -40,8 +40,8 @@ function Pion(color, joueur,img) {
 		}
 	}
 
-	this.goto = function (etat, pos, call) {
-		var id = etat+"-"+pos;
+	this.goto = function (axe, pos, call) {
+		var id = axe+"-"+pos;
 		if(stats.positions[id] == null){
 			stats.positions[id] = 1;
 		}
@@ -49,17 +49,17 @@ function Pion(color, joueur,img) {
 			stats.positions[id]++;
 		}
 		$.trigger("monopoly.debug", {
-			message: GestionJoueur.getJoueurCourant().nom + " est en " + this.etat + "-" + this.position + " et va en " + id
+			message: GestionJoueur.getJoueurCourant().nom + " est en " + this.axe + "-" + this.position + " et va en " + id
 		});
 		// On gere le cas de la case depart (si elle est sur le trajet)
-		var depart = this.etat*10 + this.position;
-		var cible = etat*10 + pos;
+		var depart = this.axe*10 + this.position;
+		var cible = axe*10 + pos;
 		if((depart < 20 && cible > 20) || (depart > cible && (depart < 20 || cible > 20))){
 			this.treatCaseDepart();
 		}
-		this.etat = etat;
+		this.axe = axe;
 		this.position = pos;
-		this.pion.goto(etat, pos, call,true);
+		this.pion.goto(axe, pos, call,true);
 	}
 
 	// Si on passe par la case depart, on prend 20000 Francs
@@ -68,9 +68,9 @@ function Pion(color, joueur,img) {
 		this.joueur.gagner(InitMonopoly.plateau.infos.montantDepart || 20000);
 	}    
 
-	this.goDirectToCell = function (etat, pos, callback) {
-		this.etat = etat;
+	this.goDirectToCell = function (axe, pos, callback) {
+		this.axe = axe;
 		this.position = pos;
-		this.pion.gotoDirect(etat,pos,callback);           
+		this.pion.gotoDirect(axe,pos,callback);
 	}
 }

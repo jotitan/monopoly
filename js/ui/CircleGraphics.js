@@ -255,6 +255,10 @@ function CircleDes(x, y, width) {
 	Des.call(this,x+195,y+100,width);	
 }
 
+function CircleDesRapide(x,y,width){
+    DesRapide.call(this,x+190,y+100,width);
+}
+
 function CirclePlateau(x,y,width,height,color){
 	Component.apply(this);
 	this.data = {
@@ -290,6 +294,7 @@ function initCircleInstance(){
 		specialCase:CircleCaseSpeciale,
 		pionJoueur:CirclePionJoueur,
 		des:CircleDes,
+        desRapide:CircleDesRapide,
 		plateau:CirclePlateau,
 		endPlateau:EndCirclePlateau
 	}

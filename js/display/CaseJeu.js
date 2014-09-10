@@ -3,9 +3,20 @@
 var ETAT_LIBRE = 0;
 var ETAT_ACHETE = 1;
 
+function PlateauCase(axe,pos,type){
+    this.axe = axe;
+    this.pos = pos;
+    this.id = axe + "-" + pos;
+    this.type = type;
+
+    this.isTerrain = function(){
+        return this.type == "terrain";
+    }
+}
+
 /* Case representant le parc gratuit */
 function ParcGratuit(axe, pos) {
-    this.id = axe + "-" + pos;
+    PlateauCase.call(this,axe,pos,"parc");
     this.montant = null;
 	this._titre = "Parc Gratuit";
     this.drawing = DrawerFactory.getCaseSpeciale(0, this._titre);
@@ -36,11 +47,11 @@ function ParcGratuit(axe, pos) {
     this.setMontant(0);
 }
 
-function CaseActionSpeciale(titre, actionSpeciale, etat, pos) {
+function CaseActionSpeciale(titre, actionSpeciale, axe, pos,type) {
 	this.titre = titre;
 	this.actionSpeciale = actionSpeciale;
-	this.id = etat + "-" + pos;
-	this.drawing = DrawerFactory.getCaseSpeciale(etat,titre);
+    PlateauCase.call(this,axe,pos,type);
+    this.drawing = DrawerFactory.getCaseSpeciale(axe,titre);
 	Drawer.add(this.drawing);
 
 	this.action = function () {
@@ -49,11 +60,11 @@ function CaseActionSpeciale(titre, actionSpeciale, etat, pos) {
 	}
 }
 
-
  /* Case speciale, comme la taxe de luxe */
-function SimpleCaseSpeciale(titre, montant, etat, pos, img) {
-	this.id = etat + "-" + pos;
-	this.drawing = DrawerFactory.getCase(pos, etat, null, titre, CURRENCY + " " + montant, img);
+function SimpleCaseSpeciale(titre, montant, axe, pos, type, img) {
+    PlateauCase.call(this,axe,pos,type);
+    this.montant = montant;
+    this.drawing = DrawerFactory.getCase(pos, axe, null, titre, CURRENCY + " " + montant, img);
 	Drawer.add(this.drawing);
 	this.action = function () {
 		return InfoMessage.create(GestionJoueur.getJoueurCourant(),titre, "lightblue", "Vous devez payer la somme de " + montant + " " + CURRENCY, function (param) {
@@ -67,10 +78,10 @@ function SimpleCaseSpeciale(titre, montant, etat, pos, img) {
 	}
 }
 
-function CaseChance(etat, pos,img, cartes) {
-	this.id = etat + "-" + pos;
+function CaseChance(axe, pos,img, cartes) {
+    PlateauCase.call(this,axe,pos,"carte");
 	this.cartes = cartes;
-	this.drawing = DrawerFactory.getCase(pos, etat, null, InitMonopoly.plateau.titles.chance, null, img);
+    this.drawing = DrawerFactory.getCase(pos, axe, null, InitMonopoly.plateau.titles.chance, null, img);
 	Drawer.add(this.drawing);
 	this.action = function () {
 		if (this.cartes.length == 0) {
@@ -87,10 +98,10 @@ function CaseChance(etat, pos,img, cartes) {
 	}
 }
 
-function CaseCaisseDeCommunaute(etat, pos, img, cartes) {
-	this.id = etat + "-" + pos;
+function CaseCaisseDeCommunaute(axe, pos, img, cartes) {
+    PlateauCase.call(this,axe,pos,"carte");
 	this.cartes = cartes;
-	this.drawing = DrawerFactory.getCase(pos, etat, null, InitMonopoly.plateau.titles.communaute, null, img );
+	this.drawing = DrawerFactory.getCase(pos, axe, null, InitMonopoly.plateau.titles.communaute, null, img );
 	Drawer.add(this.drawing);
 	this.action = function () {
 		if (this.cartes.length == 0) {
@@ -233,8 +244,9 @@ function Groupe(nom, color) {
 }
 
 /* Represente un terrain TODO REFACTO */
-function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
-	this.nom = nom;
+function Fiche(axe, pos, colors, nom, achat, loyers, prixMaison, img) {
+    PlateauCase.call(this,axe,pos,"terrain");
+    this.nom = nom;
 	this.groupe = null;
 	this.color = colors[0];
 	this.secondColor = (colors.length == 2) ? colors[1] : colors[0];
@@ -252,15 +264,10 @@ function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
 	this.nbMaison = 0; // Nombre de maison construite sur le terrain par le proprietaire
 	this.hotel = false; // Si un hotel est present
 	this.maisons = new Array();
-	this.constructible = true;
-	this.isTerrain = true;
-	this.etat = etat;
-	this.pos = pos;
 	var current = this;
-	this.id = etat + "-" + pos;
-	this.input = null; // Bouton 
+	this.input = null; // Bouton
 
-	this.drawing = DrawerFactory.getCase(pos, etat, this.color, this.nom, CURRENCY + " " + achat, img);
+	this.drawing = DrawerFactory.getCase(pos, axe, this.color, this.nom, CURRENCY + " " + achat, img);
 	Drawer.add(this.drawing);
 
 	this.equals = function (fiche) {
@@ -339,7 +346,7 @@ function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
 	/* Renvoie la rentabilite de la propriete. Se base sur le rapport entre le loyer de trois maisons et le prix d'achat d'une maison */
 	this.getRentabilite = function () {
 		var ponderation = 10; // Facteur pour nivelle le taux
-		if (!this.constructible || this.nbMaison >= 3) {
+		if (!this.isTerrain() || this.nbMaison >= 3) {
 			return 0;
 		} else {
 			// Maison du groupe
@@ -354,7 +361,7 @@ function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
 
 	/* Renvoie la rentabilite brute, sans prise en compte des maisons achetees */
 	this.getRentabiliteBrute = function () {
-		return !this.constructible ? 0 : this.loyer[3] / (this.achat + 3 * this.prixMaison);			
+		return !this.isTerrain() ? 0 : this.loyer[3] / (this.achat + 3 * this.prixMaison);
 	}
 
 	/* Hypotheque le terrain */
@@ -420,6 +427,10 @@ function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
 		if (this.joueurPossede != null && this.statutHypotheque == false) { // on doit payer un loyer
 			return this.payerLoyer();
 		}
+        if(this.statutHypotheque == true){
+            GestionJoueur.change();
+            return;
+        }
 		return this.openFiche();
 	}
 
@@ -523,7 +534,7 @@ function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
 				return {
 					"Acheter": function () {
 						var j = GestionJoueur.getJoueurCourant();
-						var id = j.pion.etat + "-" + j.pion.position;
+						var id = j.pion.axe + "-" + j.pion.position;
 						j.acheteMaison(current);
 						FicheDisplayer.closeFiche();
 					},
@@ -564,10 +575,9 @@ function Fiche(etat, pos, colors, nom, achat, loyers, prixMaison, img) {
 	}
 }
 
-function FicheGare(etat, pos, color, nom, achat, loyers, img) {
-	Fiche.call(this, etat, pos, color, nom, achat, loyers, null, img);
+function FicheGare(axe, pos, color, nom, achat, loyers, img) {
+	Fiche.call(this, axe, pos, color, nom, achat, loyers, null, img);
 	this.type = "gare";
-	this.constructible = false;
 	this.getLoyer = function () {
 		if (this.joueurPossede != null) {
 			var nb = -1;
@@ -582,11 +592,10 @@ function FicheGare(etat, pos, color, nom, achat, loyers, img) {
 	}
 }
 
-function FicheCompagnie(etat, pos, color, nom, achat, loyers,img) {
-	Fiche.call(this, etat, pos, color, nom, achat, loyers, null,img);
+function FicheCompagnie(axe, pos, color, nom, achat, loyers,img) {
+	Fiche.call(this, axe, pos, color, nom, achat, loyers, null,img);
 	this.fiche = $('#ficheCompagnie');
 	this.type = "compagnie";
-	this.constructible = false;
 
 	this.getLoyer = function () {
 		var loyer = GestionDes.total();
@@ -619,6 +628,12 @@ var GestionFiche = {
     get: function (info) {
 		return this.fiches[this._calculateId(info)];
     },
+	getPrison : function(){
+		return this.fiches[this._calculateId({axe:1,pos:0})];
+	},
+	getDepart : function(){
+		return this.fiches[this._calculateId({axe:2,pos:0})];
+	},
     add: function (fiche) {
 		var intId = this._calculateStrId(fiche.id);
 		this.fiches[intId] = fiche;
@@ -631,6 +646,25 @@ var GestionFiche = {
 	/* Renvoie vrai s'il reste des terrains libres */
 	isFreeFiches:function(){
         return this.fiches.some(function(f){return f.statut == ETAT_LIBRE;});		
+	},
+	/* Renvoie le prochain terrain libre */
+	getNextFreeTerrain:function(from){
+		return this._getNextFiche(from,function(f){return f.isTerrain() && f.statut == ETAT_LIBRE;});
+	},
+	getNextTerrain:function(from){
+		return this._getNextFiche(from,function(f){return f.isTerrain();});
+	},
+	_getNextFiche:function(from,condition){
+		var info = {position:from.pos,axe:from.axe};
+		do{
+			var info = this.nextPos(info.axe,info.position);
+			var fiche = this.get({axe:info.axe,pos:info.position});
+            console.log(info.axe,info.position,fiche);
+			if(condition == null || condition(fiche)){
+				return fiche;
+			}		 
+		}while(from.axe!=info.axe || from.pos!=info.position);
+		return null;
 	},
     /* iterateur pour parcourir les fiches */
     iterator: function () {
@@ -649,7 +683,7 @@ var GestionFiche = {
         // On calcule des cles
         var keys = [];
 		for (var id in this.fiches) {
-            if (this.fiches[id].isTerrain) {
+            if (this.fiches[id].isTerrain()) {
                 keys.push(id);
             }
         }
@@ -658,7 +692,7 @@ var GestionFiche = {
     getTerrainsLibres: function () {
         var keys = [];
         for (var id in this.fiches) {
-            if (this.fiches[id].isTerrain && this.fiches[id].statut == ETAT_LIBRE) {
+            if (this.fiches[id].isTerrain() && this.fiches[id].statut == ETAT_LIBRE) {
                 keys.push(id);
             }
         }
@@ -676,15 +710,15 @@ var GestionFiche = {
             }
         }
     },
-    nextPos: function (etat, position) {
+    nextPos: function (axe, position) {
         position++;
         if (position == 10) {
-            etat = (etat + 1) % 4;
+            axe = (axe + 1) % 4;
             position = 0;
         }
         return {
             "position": position,
-            "etat": etat
+            "axe": axe
         };
     }
 }

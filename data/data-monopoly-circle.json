@@ -6,13 +6,13 @@
 	},
 	"images":{
 		"default":{
-			"marginTop":140,
+			"marginTop":150,
 			"marginLeft":0.25,
 			"rotate":-90
 		},
 		"gare":{
 			"width":40,
-			"height":20		
+			"height":20
 		},
 		"chance":{
 			"width":25,

@@ -1,0 +1,93 @@
+<html>
+
+<head>
+<title>Test</title>
+<script src="jquery-1.11.0.min.js"></script>
+</head>
+
+<body style="height:100%">
+
+<canvas width="400" height="300" id="canvas" style="left:200px;top:120px;position:absolute"></canvas>
+
+
+<script language="Javascript">
+
+var context = document.getElementById('canvas').getContext("2d");
+
+var components = [];
+/*var img = new Image();
+img.src='file://C:/Users/960963/Pictures/gopher.png';
+components.push(function(){
+	context.drawImage(img,0,0,200,110)	
+});*/
+components.push(function(){drawCircle(pos1,y,20)});
+components.push(function(){drawCircle(pos2,y,20)});
+
+components.push(function(){fillCircle(x1,y1,8,'black')});
+components.push(function(){
+	fillCircle(x1-(pos1-x1)/4,y1-(y-y1)/4,2,'white')
+});
+
+components.push(function(){fillCircle(x2,y2,8,'black')});
+components.push(function(){
+	fillCircle(x2-(pos2-x2)/4,y2-(y-y2)/4,2,'white')
+});
+
+function run(){
+	setInterval(function(){
+		context.clearRect(0,0,400,300);
+		components.forEach(function(c){
+			c(); 
+		});
+	},50);
+}
+
+var pos1 = 70;
+var pos2 = 130;
+var y = 35;
+var x1 = pos1;var y1 = y;
+var x2 = pos2;var y2 = y;
+$('body').bind('mousemove',function(e){
+	var coords = calcMousePoint(e,pos1,y,10);
+	x1 = coords.x;y1 = coords.y;
+	coords = calcMousePoint(e,pos2,y,10);
+	x2 = coords.x;y2 = coords.y;
+	
+});
+
+function calcMousePoint(e,pos,x,r){
+	var coords = getPosition(e);
+	var d1 = Math.sqrt(Math.pow(coords.y - x,2) + Math.pow(coords.x - pos,2));
+	var d2 = coords.x - pos;
+	
+	var angle = Math.acos(d2/d1);
+	if(coords.y < x)angle=2* Math.PI - angle;
+	
+	return {x:pos+Math.cos(angle)*Math.min(r,Math.abs(d1)),y:x+Math.sin(angle)*Math.min(r,Math.abs(d1))};
+}
+
+function getPosition(e){
+	return {x:e.clientX - $(canvas).position().left,y:e.clientY - $(canvas).position().top};
+}
+
+run();
+
+
+function drawCircle(x,y,r){
+	context.beginPath();
+	context.arc(x,y,r,0,Math.PI * 2);
+	context.stroke();
+}
+
+function fillCircle(x,y,r,color){
+	context.fillStyle=color;
+	context.beginPath();
+	context.arc(x,y,r,0,Math.PI * 2);
+	context.fill();
+}
+
+</script>
+
+</body>
+
+</html>

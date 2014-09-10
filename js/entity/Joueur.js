@@ -82,6 +82,75 @@ function JoueurOrdinateur(numero, nom, color) {
 		});
 	}
 
+	/* Choisi la case qui l'interesse le plus */
+	/* 1) Cherche dans les terrains libres celui qu'il prefere */
+	/* 2) Si pas de terrain libre, choisi la case prison (protege le plus) si besoin */	
+	this.choisiCase = function(callback){
+		var fiches = GestionFiche.getFreeFiches();
+		var maxInteret;
+		var maxFiche;
+		fiches.forEach(function(fiche){
+			var interet = this.strategie.interetGlobal(fiche,this,false).interet;
+			if(interet !=0 && (maxInteret == null || interet > maxInteret)){
+				maxInteret = interet;
+				maxFiche = fiche;
+			}
+		},this);
+		if(maxFiche!=null){
+			callback(maxFiche);
+		}else{
+			// Interessant de rester en prison
+			if(!this.getOutPrison()){
+				callback(GestionFiche.getPrison());
+			}else{
+				callback(GestionFiche.getDepart());
+			}
+		}
+	}
+	
+	/* Pour le de rapide, choisi la meilleure configuration */
+	/* 1) Prefere les terrains libres qui l'interessent */
+	/* 2) Prefere les terrains libres */
+	/* 3) Choisi les cases safe (case depart, parking, simple visite) */
+	/* 4) Choisi le loyer le moins cher a payer */
+	this.choisiDes = function(des1,des2,callback){
+		var f1 = {fiche:this.pion.deplaceValeursDes(des1),total:des1};
+		var f2 = {fiche:this.pion.deplaceValeursDes(des2),total:des2};
+		var f3 = {fiche:this.pion.deplaceValeursDes(des1 + des2),total:des1+des2};
+		
+		var maxInteret = -1000;
+		var total = 0;
+		[f1,f2,f3].forEach(function(f){
+			var value = this._analyseCase(GestionFiche.get(f.fiche));
+			if(value > maxInteret){
+				total = f.total;
+				maxInteret = value;
+			}
+		},this);
+		callback(total);
+	}
+	
+	/* Determine l'interet d'une case. Plus il est elevé, plus il est important */
+	/* Interet pour taxe depend du montant. */
+	/* Case depart mieux que terrain inutile mais moins que terrain utile */
+	/* Prison depend de l'interet a y rester. Si non, equivaut a une taxe de 2000 */
+	/* Interet d'un terrain depend des moyens qu'on a */
+	/* TODO : dans le cas d'enchere immediate, empecher de tomber sur un terrain qui interesse un autre ? */
+	this._analyseCase = function(fiche){
+		var interet = 0;
+		if(fiche.isTerrain() == true){
+			interet = fiche.statut == ETAT_LIBRE ? 
+				this.strategie.interetGlobal(fiche,this,false).interet :
+				fiche.getLoyer() / -1000;			
+		}
+		switch(fiche.type){
+			case "prison" : interet = this.getOutPrison() ? -2 : 1;break;
+			case "taxe" : interet = -1 * fiche.montant / 1000;break;
+			case "depart": interet = 0.5;break;
+		}		
+		return interet;
+	}
+	
 	// Fonction appelee lorsque les des sont lances et que le pion est place
 	this.actionApresDes = function (buttons, propriete) {
 		if (buttons == null) {
@@ -657,7 +726,7 @@ function JoueurOrdinateur(numero, nom, color) {
 				return -2;
 				break;
 			default:
-				return (maison.constructible) ? maison.groupe.getInfos(joueur) : 0;
+				return (maison.isTerrain()) ? maison.groupe.getInfos(joueur) : 0;
 			}
 		}
 		maisons.sort(function (a, b) {
@@ -1127,7 +1196,7 @@ function Joueur(numero, nom, color) {
 			defaite: this.defaite,
 			cartesPrison: this.cartesSortiePrison.length,
 			position: this.pion.position,
-			etat: this.pion.etat
+			axe: this.pion.axe
 		};
 		this.saveMore(data);
 		return data;
@@ -1142,7 +1211,7 @@ function Joueur(numero, nom, color) {
 		this.setArgent(this.montant);            
 		this.loadMore(data);
 		// Position initiale, aucune action
-		this.pion.goDirectToCell(data.etat, data.position);
+		this.pion.goDirectToCell(data.axe, data.position);
 		// Cas des cartes de prison
 	}
 
@@ -1182,7 +1251,7 @@ function Joueur(numero, nom, color) {
 			stats.hotel += parseInt(maison.hotel == true ? 1 : 0);
 			stats.maison += parseInt(maison.hotel == false ? maison.nbMaison : 0);
 			// Revente des constructions + hypotheque
-			stats.argentDispo += (maison.statutHypotheque) ? 0 : (((maison.constructible) ? (maison.nbMaison * (maison.prixMaison / 2)) : 0) + maison.achat / 2);
+			stats.argentDispo += (maison.statutHypotheque) ? 0 : (((maison.isTerrain()) ? (maison.nbMaison * (maison.prixMaison / 2)) : 0) + maison.achat / 2);
 			// Revente uniquement des terrains non groupes
 			stats.argentDispoHypo += (!maison.isGroupee() && !maison.statutHypotheque) ? maison.achat / 2 : 0; // hypotheque des terrains non groupes
 		}
@@ -1202,8 +1271,8 @@ function Joueur(numero, nom, color) {
 
 	this.getPosition = function () {
 		return {
-			pos: this.pion.pos,
-			etat: this.pion.etat
+			pos: this.pion.position,
+			axe: this.pion.axe
 		};
 	}
 
@@ -1332,12 +1401,36 @@ function Joueur(numero, nom, color) {
 
 	this.joueDes = function (sommeDes) {
 		var nextCase = this.pion.deplaceValeursDes(sommeDes);
-		this.pion.goto(nextCase.axe, nextCase.pos, doActions);
+		this.joueSurCase(nextCase);
+	}
+	
+	/* Joueur sur une case donnees */
+	this.joueSurCase = function(fiche){
+		this.pion.goto(fiche.axe, fiche.pos, doActions);
 	}
 
 	// Fonction a ne pas implementer avec un vrai joueur
 	this.joue = function () {}
-
+	
+	/* Pour le des rapide, choisi la combinaison de des qu'il souhaite */
+	this.choisiDes = function(des1,des2,callback){
+		if(!callback){return;}
+		
+		var options = [
+			{title:(des1 + ' + ' + des2),fct:function(){callback(des1+des2);}},
+			{title:(des1),fct:function(){callback(des1);}},
+			{title:(des2),fct:function(){callback(des2);}}
+		];
+		var message = 'Quel(s) dé(s) vous choisissez';
+		InfoMessage.createGeneric(this,'Vous prenez le bus','green',message,options);		
+	}
+	/* Le joueur se deplace sur la case qu'il souhaite */
+	this.choisiCase = function(callback){
+		InfoMessage.create(this,"Triple dé","green","Choisissez votre case",function(){
+			InitMonopoly.plateau.enableMouse(callback);
+		});
+	}
+	
 	// Fonction a ne pas implementer avec un vrai joueur
 	this.actionApresDes = function (buttons, propriete) {}
 
@@ -1384,7 +1477,10 @@ function Joueur(numero, nom, color) {
 			this.div.append(input);
 		}
 		maison.input = $('input[id="idInputFiche' + maison.id + '"]');
-		maison.input.click(function () {
+        if (maison.statutHypotheque == true) {
+            maison.input.addClass('hypotheque');
+        }
+        maison.input.click(function () {
 			FicheDisplayer.openDetail(GestionFiche.getById(maison.id), $(this));
 		});
 	}
@@ -1395,12 +1491,6 @@ function Joueur(numero, nom, color) {
 		maison.input = null;
 		this._drawTitrePropriete(maison);
 		
-		/*var m = this.cherchePlacement(maison);
-		if (m != null) {
-			m.after(maison.input);
-		} else {
-			this.div.append(maison.input);
-		}*/
 		// On supprime l'ancien proprio
 		if(maison.joueurPossede){
 			maison.joueurPossede.removeMaison(maison);
@@ -1575,7 +1665,7 @@ function Joueur(numero, nom, color) {
 	}
 
 	this.getFichePosition = function () {
-		return GestionFiche.getById(this.pion.etat + "-" + this.pion.position);
+		return GestionFiche.getById(this.pion.axe + "-" + this.pion.position);
 	}
 
 	/** Renvoie la liste des terrains hypothecables : sans construction sur le terrain et ceux de la famille, pas deja hypotheques
@@ -1623,7 +1713,7 @@ function Joueur(numero, nom, color) {
 
 		for (var i = 0; i < this.maisons.length; i++) {
 			var m = this.maisons[i];
-			if (m.constructible == true && m.groupe != null) {
+			if (m.isTerrain() == true && m.groupe != null) {
 				// Deja traite, on possede la famille
 				if (colorsOK[m.color] == true) {
 					//groups[m.color].proprietes.push(m);
@@ -1670,12 +1760,13 @@ function Joueur(numero, nom, color) {
 						if ((joueur == null || joueur.equals(infos.maisons[idx].joueurPossede))
 							&& (exclude == null || !exclude.groupe.equals(infos.maisons[idx].groupe))) {
 							if(exclude && maison.groupe.color == exclude.groupe.color){
-								console.log(maison.groupe.color,maison.groupe.color == exclude.groupe.color);
-							}
-							interests.push({
-								maison: infos.maisons[idx],
-								nb: infos.maisons.length
-							}); // On ajoute chaque maison avec le nombre a acheter pour terminer le groupe
+								console.log("Meme groupe, rejet",maison.groupe.color,maison.groupe.color == exclude.groupe.color);
+							} else{
+                                interests.push({
+                                    maison: infos.maisons[idx],
+                                    nb: infos.maisons.length
+                                }); // On ajoute chaque maison avec le nombre a acheter pour terminer le groupe
+                            }
 						}
 					}
 				}
@@ -1716,8 +1807,8 @@ function Joueur(numero, nom, color) {
 				}
 			}
 			var critere5 = 1;
-			if(a.maison.constructible!=b.maison.constructible){
-				critere5 = (a.maison.constructible)?0.5:2;
+			if(a.maison.isTerrain()!=b.maison.isTerrain()){
+				critere5 = (a.maison.isTerrain())?0.5:2;
 			}
 			var criteres = critere1 * critere2 * critere3 * critere4 * critere5;
 			return criteres - 1;
@@ -1733,7 +1824,7 @@ function Joueur(numero, nom, color) {
 		var nbByGroups = [];
 		for (var m in this.maisons) {
 			var maison = this.maisons[m];
-			if (!maison.constructible) {
+			if (!maison.isTerrain()) {
 				proprietes.push(maison);
 				if (nbByGroups[maison.groupe.nom] == null) {
 					nbByGroups[maison.groupe.nom] = 1;
@@ -1761,7 +1852,7 @@ function Joueur(numero, nom, color) {
 		}
 		for (var f in this.maisons) {
 			var maison = this.maisons[f];
-			if (maison.constructible && !maison.isGroupee() && mapInterests[maison.id] == null) {
+			if (maison.isTerrain() && !maison.isGroupee() && mapInterests[maison.id] == null) {
 				terrains.push(maison);
 			}
 		}
@@ -1777,7 +1868,7 @@ function Joueur(numero, nom, color) {
 		// Si une maison est hypothequee, on ne peut plus construire sur le groupe
 		for (var i = 0; i < this.maisons.length; i++) {
 			var m = this.maisons[i];
-			if (m.constructible == true) {
+			if (m.isTerrain() == true) {
 				if (colorsOK[m.color] == true) {
 					mc.push(m); // on a la couleur, on ajoute
 				} else {
@@ -1787,7 +1878,7 @@ function Joueur(numero, nom, color) {
 						// On cherche une propriete qui n'appartient pas au joueur
 						for (var f in m.groupe.fiches) {
 							var fiche = m.groupe.fiches[f];
-							if (fiche.constructible == true &&
+							if (fiche.isTerrain() == true &&
 								(fiche.joueurPossede == null || !fiche.joueurPossede.equals(this) || fiche.statutHypotheque == true)) {
 								ok = false;
 							}

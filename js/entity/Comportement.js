@@ -71,7 +71,7 @@ function Comportement(risque, name, id) {
                 var posActuel = j.getPosition();
                 for (var i = 1; i < 12; i++) {
                     var fiche = GestionFiche.get(j.pion.deplaceValeursDes(i));
-                    if (fiche.constructible && fiche.joueurPossede != null && fiche.joueurPossede.equals(joueur)) {
+                    if (fiche.isTerrain() && fiche.joueurPossede != null && fiche.joueurPossede.equals(joueur)) {
                         //maison visitable, on ajoute la maison avec la proba
                         if (maisons[fiche.id] != null) {
                             maisons[fiche.id].proba += this.probaDes[i] / 100;
@@ -106,13 +106,13 @@ function Comportement(risque, name, id) {
         // On calcul le risque de tomber sur une case cher.
         // On considere un risque quand on est au dessus de risque * montant d'amande)
         var position = joueur.pion.position;
-        var etat = joueur.pion.etat;
+        var axe = joueur.pion.axe;
         var stats = 0;
         for (var i = 1; i <= 12; i++) {
-            var pos = GestionFiche.nextPos(etat, position);
-            etat = pos.etat;
+            var pos = GestionFiche.nextPos(axe, position);
+            axe = pos.axe;
             position = pos.position;
-            var fiche = GestionFiche.getById(etat + "-" + position);
+            var fiche = GestionFiche.getById(axe + "-" + position);
             if (fiche != null && fiche.getLoyer != null && fiche.joueurPossede != null && !fiche.joueurPossede.equals(joueur) && (fiche.getLoyer() > (argent * this.risque))) {
                 stats += this.probaDes[i - 1];
             }

@@ -44,19 +44,12 @@ var GestionEnchere = {
         var observers = [];
         // exclure les joueurs qui ont perdus
 		GestionJoueur.forEach(function(j){
-			if (!j.equals(this.terrain.joueurPossede) && !j.equals(this.joueurLastEnchere) && this.joueursExit[j.nom] == null) {
+			if (!j.equals(this.terrain.joueurPossede) && !j.equals(this.joueurLastEnchere) && this.joueursExit[j.nom] == null && j.defaite == false) {
                 encherisseurs.push(j);
             } else {
                 observers.push(j);
             }
 		},this);
-        /*for (var j in joueurs) {
-            if (!joueurs[j].equals(this.terrain.joueurPossede) && !joueurs[j].equals(this.joueurLastEnchere) && this.joueursExit[joueurs[j].nom] == null) {
-                encherisseurs.push(joueurs[j]);
-            } else {
-                observers.push(joueurs[j]);
-            }
-        }*/
         return {
             encherisseurs: encherisseurs,
             observers: observers
@@ -490,7 +483,7 @@ var GestionEchange = {
         // On notifie le joueur et on lui donne le callback(end) pour lancer la suite du traitement
 		// Cas de la contreproposition
         if (joueurReject.equals(this.demandeur)) {            
-			this.demandeur.notifyRejectProposition(function () {
+			this.proprietaire.notifyRejectProposition(function () {
                 GestionEchange.end();
             }, this.terrain, this.initialProposition);			
         } else {

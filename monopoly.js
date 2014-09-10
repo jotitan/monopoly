@@ -62,7 +62,7 @@ function CarteCaisseDeCommunaute(libelle, carte) {
 
 // Cree le comportement lorsque le joueur arrive sur la carte
 function doActions() {
-	var fiche = GestionFiche.getById(GestionJoueur.getJoueurCourant().pion.etat + "-" + GestionJoueur.getJoueurCourant().pion.position);
+	var fiche = GestionFiche.getById(GestionJoueur.getJoueurCourant().pion.axe + "-" + GestionJoueur.getJoueurCourant().pion.position);
 	if (fiche == null) {
 		GestionJoueur.change();
 		return;
@@ -72,38 +72,53 @@ function doActions() {
 	GestionJoueur.getJoueurCourant().actionApresDes(buttons, fiche);
 }
 
-/* Gere le fonctionnement du des */
-/* Regle du des rapide : */
-/* Le 3eme des (des rapide) est accessible a partir du 2eme tour. En prison, il n'est pas utilise */
-/**/
 var GestionDes = {
-	nbAnimation:8,
-	cube:{des1:null,des2:null,desRapide:null},
-	des1:0,
-	des2:0,
-	desRapide:0,	// Version avec des rapide
-	nbDouble:0,	// Nombre de double de suite pour le joueur en cours
-	rollColor:'#000000',
+	gestionDes:null,
+
 	init:function(rollColor){
+		this.gestionDes.init(rollColor);
+	},
+	lancer:function(){
+		this.gestionDes.lancer();
+	},
+	isDouble:function(){
+		return this.gestionDes.isDouble();
+	},
+	resetDouble:function(){
+		return this.gestionDes.resetDouble();
+	}  ,
+    total:function(){
+        return this.gestionDes.total();
+    }
+}
+
+function GestionDesImpl(){
+	this.nbAnimation = 8;
+	this.cube = {des1:null,des2:null};
+	this.des1 = 0;
+	this.des2 = 0;
+	this.nbDouble = 0;	// Nombre de double de suite pour le joueur en cours
+	this.rollColor = '#000000';
+	this.init = function(rollColor){
+		this._init(rollColor);
+	}
+	
+	this._init = function(rollColor){
 		this.cube.des1 = DrawerFactory.getDes(150, 200, 50);
 		this.cube.des2 = DrawerFactory.getDes(210, 200, 50);
 		Drawer.addRealTime(this.cube.des1);
 		Drawer.addRealTime(this.cube.des2);
 		
-		if(VARIANTES.desRapide){
-			this.cube.desRapide = DrawerFactory.getDesRapide(112, 210, 35);			
-			Drawer.addRealTime(this.cube.desRapide);
-		}
 		this.rollColor = rollColor;
-	},
-	resetDouble:function(){
+	}
+	this.resetDouble = function(){
 		this.nbDouble = 0;
-	},
-	_rand:function(){
+	}
+	this._rand = function(){
 		return Math.round((Math.random() * 1000)) % 6 + 1;
-	},
+	}
 	/* Action avant le lancement du des */
-	before:function(callback){
+	this.before = function(callback){
 		if (GestionJoueur.getJoueurCourant().enPrison) {
 			// Propose au joueur de payer ou utiliser une carte
 			var buttons = InfoMessage.createPrison(GestionJoueur.getJoueurCourant(),GestionJoueur.getJoueurCourant().nbDouble, function () {
@@ -113,15 +128,16 @@ var GestionDes = {
 		} else {
 			callback();
 		}
-	},
+	}
 	/* Cas lorsque le joueur est en prison */
-	treatPrison:function(message){
+	this.treatPrison = function(message){
 		var j = GestionJoueur.getJoueurCourant();
+		var gd = this;
 		if (this.isDouble()) {
 			MessageDisplayer.write(GestionJoueur.getJoueurCourant(), message + " et sort de prison");
 			var buttons = InfoMessage.create(GestionJoueur.getJoueurCourant(),"Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", function () {
 				GestionJoueur.getJoueurCourant().exitPrison();
-				GestionDes.endLancer();
+				gd.endLancer();
 			}, {});
 			GestionJoueur.getJoueurCourant().actionApresDes(buttons, null);
 			return;
@@ -131,7 +147,7 @@ var GestionDes = {
 				var buttons = InfoMessage.create(j,"Libere de prison", "lightblue", "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
 					j.payerParcGratuit(InitMonopoly.plateau.parcGratuit,5000, function () {
 						j.exitPrison();
-						GestionDes.endLancer();
+						gd.endLancer();
 					});
 				}, {});
 				j.actionApresDes(buttons, null);
@@ -146,7 +162,7 @@ var GestionDes = {
 				return;
 			}
 		}
-	},
+	}
 	/* Action apres le lancement des des */
 	/* Regle de gestion 
 	 * 1 - Le joueur peut payer 5000 Frs ou utiliser une carte sortie de prison avant de lancer les des
@@ -154,97 +170,221 @@ var GestionDes = {
 	 * 3 - Le joueur atteint sont 3eme lancer, il paie
 	 * 4 - Pas de double, il reste en prison
 	 * */
-	/* DES RAPIDE */
-	/* Si le des fait 1, 2 ou 3, on ajoute le score au des */
-	/* Si on obtient un triple, on se deplace ou l'on souhaite (IA : trouver meilleure case : terrain a acheter (finir un groupe), passer une zone a risque) */
-	/* Si on obtient le bus, on utilise l'un ou l'autre des des ou les deux (IA : chercher la cause la plus avantageuse / moins risque (terrain interessant, loyer le moins cher)) */
-	/* Si on obtient un Mr Monopoly, on se de place sur la prochaine propriété vide. Si tout vendu, on se deplace sur la premiere */
-	after:function(){
-		var message = "lance les dés et fait " + (this.total()) + " (" + this.des1 + " et " + this.des2 + ") ";
-        if(VARIANTES.desRapide && this.desRapide < 4){
-            message+=" et rapide : " + this.desRapide;
-        }
-		// Separer le code
+	this.after = function(){
+		var message = "lance les dés et fait " + (this.total()) + " (" + this.combinaisonDes() + ") ";        
 		if (GestionJoueur.getJoueurCourant().enPrison == true) {
 			this.treatPrison(message);
 			return;
 		} else {
 			if (this.isDouble()) {
-				if (this.nbDouble >= 2) {
-					var buttons = InfoMessage.create(GestionJoueur.getJoueurCourant(),"Allez en prison", "red", "Vous avez fait 3 doubles, vous allez en prison", function () {
-						MessageDisplayer.write(GestionJoueur.getJoueurCourant(), message + ", a fait 3 doubles et va en prison");
-						$('#informationsCentrale').text("3eme double, allez en PRISON");
-						// On met des valeurs differentes pour les des pour que le joueur ne rejoue pas
-						GestionDes.des2++;
-						// Le changement de joueur lorsque le deplacement est termine
-						GestionJoueur.getJoueurCourant().goPrison();
-					}, {});
-					GestionJoueur.getJoueurCourant().actionApresDes(buttons, null);
-					return;
-				} else {
-					this.nbDouble++;
-					MessageDisplayer.write(GestionJoueur.getJoueurCourant(), message + " et rejoue");
-				}
+				if(!this.treatDouble(message)){
+                    return; // Si 3 doubles, prison et on ne continue pas le deplacement du jeu
+                };
 			}else{
 				MessageDisplayer.write(GestionJoueur.getJoueurCourant(), message);
 			}
 		}
-		GestionDes.endLancer();
-	},
-	endLancer:function(){
+		this.endLancer();
+	}
+	
+	/* Renvoie la combinaison des des */
+	this.combinaisonDes = function(){
+		return this.des1 + " et " + this.des2;
+	}
+	
+	/* Gere le comportement des doubles */
+	this.treatDouble = function(message){
+		return this._doTreatDouble(message);
+	}
+	
+	this._doTreatDouble = function(message){
+		var gd = this;
+		if (this.nbDouble >= 2) {
+			var buttons = InfoMessage.create(GestionJoueur.getJoueurCourant(),"Allez en prison", "red", "Vous avez fait 3 doubles, vous allez en prison", function () {
+				MessageDisplayer.write(GestionJoueur.getJoueurCourant(), message + ", a fait 3 doubles et va en prison");
+				$('#informationsCentrale').text("3eme double, allez en PRISON");
+				// On met des valeurs differentes pour les des pour que le joueur ne rejoue pas
+				gd.des2++;
+				// Le changement de joueur lorsque le deplacement est termine
+				GestionJoueur.getJoueurCourant().goPrison();
+			}, {});
+			GestionJoueur.getJoueurCourant().actionApresDes(buttons, null);
+			return false;
+		} else {
+			this.nbDouble++;
+			MessageDisplayer.write(GestionJoueur.getJoueurCourant(), message + " et rejoue");
+		}
+        return true;
+	}
+	
+	this.endLancer = function(){
 		GestionJoueur.getJoueurCourant().joueDes(this.total());
+		this.showReload();		
+	}
+	
+	this.showReload = function(){
 		if (this.isDouble()) {
 			$('#idReloadDice').show();
 		}else{
 			$('#idReloadDice').hide();
 		}
-	},
-	isDouble:function(){
+	}
+	
+	this.isDouble = function(){
 		return this.des1 == this.des2;
-	},
-	isTriple:function(){
+	}
+	this.isTriple = function(){
 		return this.des1 == this.des2 && this.des2 == this.desRapide && this.des1 <=3;
-	},
+	}
 	/* lancement du des */
-	lancer:function(){
+	this.lancer = function(){
+		var gd = this;
 		this.before(function(){
-			GestionDes.des1 = GestionDes._rand();
-			GestionDes.des2 = GestionDes._rand();
-			if(VARIANTES.desRapide){
-				GestionDes.desRapide = GestionDes._rand();
-			}
+			gd._randDes();
             $('#idReloadDice').hide();
-			GestionDes._anime();
+			gd._anime();
 		});			
-	},
-	_anime:function(){
+	}
+	this._randDes = function(){
+		this.des1 = this._rand();
+		this.des2 = this._rand();		
+	}
+	this._anime = function(){
 		$('.action-joueur').attr('disabled', 'disabled').addClass('disabled');   
 		var nb = this.nbAnimation;
+		var gd = this;
 		var interval = setInterval(function () {
 			if (nb-- < 0) {
 				clearInterval(interval);
-				GestionDes._drawCubes(GestionDes.des1,GestionDes.des2,GestionDes.desRapide);
-				GestionDes.after();
+				gd._drawCubes(gd.des1,gd.des2,gd.desRapide);
+				gd.after();
 				return;
 			}
-			GestionDes._drawCubes(GestionDes._rand(),GestionDes._rand(),GestionDes._rand()%3+1,GestionDes.rollColor);
+			gd._drawCubes(gd._rand(),gd._rand(),gd._rand()%3+1,gd.rollColor);
 		}, 100);
-	},
-	_drawCubes:function(val1,val2,desRapide,color){
-		GestionDes.cube.des1.setValue(val1, color);
-		GestionDes.cube.des2.setValue(val2, color);
-		if(VARIANTES.desRapide){
-			GestionDes.cube.desRapide.setValue(desRapide, color);
-		}
-	},
+	}
+	this._drawCubes = function(val1,val2,desRapide,color){
+		this.cube.des1.setValue(val1, color);
+		this.cube.des2.setValue(val2, color);		
+	}
 	/* Renvoie le total des dés */
-	total:function(){
-		var total = this.des1 + this.des2;
-        if(VARIANTES.desRapide && this.desRapide < 4){
+	this.total = function(){
+		return this.des1 + this.des2;        
+	}		
+}
+
+/* Implementation pour le des rapide */
+/* DES RAPIDE */
+	/* Si le des fait 1, 2 ou 3, on ajoute le score au des */
+	/* Si on obtient un triple, on se deplace ou l'on souhaite (IA : trouver meilleure case : terrain a acheter (finir un groupe), passer une zone a risque) */
+	/* Si on obtient le bus, on utilise l'un ou l'autre des des ou les deux (IA : chercher la cause la plus avantageuse / moins risque (terrain interessant, loyer le moins cher)) */
+	/* Si on obtient un Mr Monopoly, on se place sur la prochaine propriété vide. Si tout vendu, on se deplace sur la premiere */
+	
+function GestionDesRapideImpl(){
+	GestionDesImpl.call(this);
+	this.cube.desRapide=null;
+	this.desRapide;
+	
+	this.init = function(rollColor){
+		this._init(rollColor);
+		this.cube.desRapide = DrawerFactory.getDesRapide(112, 210, 35);			
+		Drawer.addRealTime(this.cube.desRapide);
+	}
+	
+	this._randDes = function(){
+		this.des1 = this._rand();
+		this.des2 = this._rand();
+		this.desRapide = this._rand();	
+	}
+
+    this.total = function(){
+        var total = this.des1 + this.des2;
+        if(!this.isDouble() && this._isValue()){
             total+=this.desRapide;
         }
         return total;
-	}		
+    }
+
+	/* Renvoie la combinaison des des */
+	this.combinaisonDes = function(){
+        if(this._isMonopolyMan()){
+            return "Mr Monopoly";
+        }
+		return this.des1 + ", " + this.des2 + " et " +
+            ((this.desRapide == 4 || this.desRapide == 6)?" bus":this.desRapide);
+	}
+		
+	// Cas du triple : double + des rapide avec le meme chiffre (1, 2 ou 3) => Joueur place son pion ou il veut
+	// Cas du double : double + des rapide different. Seul le double est pris en compte => Double normal
+	this.treatDouble = function(message){
+		// Cas triple
+		if(this.des1 == this.desRapide){
+			GestionJoueur.getJoueurCourant().choisiCase(function(fiche){
+				GestionJoueur.getJoueurCourant().joueSurCase(fiche);
+				$.trigger('monopoly.derapide.triple',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
+			});
+		}else{
+			this._doTreatDouble(message);
+		}
+	}
+
+    this.isTriple = function(){
+        return this.isDouble() && this.desRapide == this.des1 && this.des1 < 4;
+    }
+
+	this.total = function(){
+        if(!this.isDouble() && this._isMonopolyMan()){
+            return 0;
+        }
+		var total = this.des1 + this.des2;
+        if(this.desRapide < 4 && !this.isDouble()){
+            total+=this.desRapide;
+        }
+        return total;
+	}
+	
+	this._isBus = function(){
+		return this.desRapide == 4 || this.desRapide == 6;
+	}
+	
+	this._isMonopolyMan = function(){
+		return this.desRapide == 5;
+	}
+	
+	this._isValue = function(){
+		return this.desRapide <=3;
+	}
+	/* Surcharge le comportement apres le lancer */
+	this.endLancer = function(){
+		this.showReload();
+        if(this.isTriple()){    // Joueur a choisi la case
+            return;
+        }
+		if(this.isDouble() || this._isValue()){
+			GestionJoueur.getJoueurCourant().joueDes(this.total());
+			return;
+		}
+		
+		/* Cas du bus, le joueur choisi quel des il utilise */
+		if(this._isBus()){
+			GestionJoueur.getJoueurCourant().choisiDes(this.des1,this.des2,function(total){
+				$.trigger('monopoly.derapide.bus',{joueur:GestionJoueur.getJoueurCourant(),total:total});
+				GestionJoueur.getJoueurCourant().joueDes(total);
+			});
+		}
+		if(this._isMonopolyMan()){
+			var pos = GestionJoueur.getJoueurCourant().getPosition();
+			var fiche = GestionFiche.isFreeFiches() ? GestionFiche.getNextFreeTerrain(pos) : GestionFiche.getNextTerrain(pos);
+			$.trigger('monopoly.derapide.mrmonopoly',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
+			GestionJoueur.getJoueurCourant().joueSurCase(fiche);
+		}				
+	}
+	
+	this._drawCubes = function(val1,val2,desRapide,color){
+		this.cube.des1.setValue(val1, color);
+		this.cube.des2.setValue(val2, color);
+		this.cube.desRapide.setValue(desRapide, color);		
+	}
 }
 
 var InitMonopoly = {
@@ -286,6 +426,7 @@ var InitMonopoly = {
 		name:null,
 		parcGratuit:null,
 		cartes:{caisseCommunaute:[],chance:[]},
+		drawing:null,
 		load:function(nomPlateau,callback,dataExtend){
 			this._temp_load_data = dataExtend;
 			// On charge le plateau
@@ -346,11 +487,13 @@ var InitMonopoly = {
 			this.titles = data.titles;
 			this.infos.nomsJoueurs = this.infos.nomsJoueurs || [];
 			
+			GestionDes.gestionDes = VARIANTES.desRapide ? new GestionDesRapideImpl():new GestionDesImpl();
 			GestionDes.init(this.infos.rollColor);
 			$('#idLancerDes').click(function(){
 				GestionDes.lancer();
 			});
-			Drawer.add(DrawerFactory.getPlateau(0, 0, plateauSize, plateauSize, this.infos.backgroundColor), 0); 				
+			this.drawing = DrawerFactory.getPlateau(0, 0, plateauSize, plateauSize, this.infos.backgroundColor);
+			Drawer.add(this.drawing, 0); 				
 			this._draw(data);
 			Drawer.add(DrawerFactory.endPlateau(),2);
 			Drawer.init(plateauSize, plateauSize);
@@ -401,17 +544,17 @@ var InitMonopoly = {
 					fiche = new CaseCaisseDeCommunaute(this.axe, this.pos,data.images.caisseDeCommunaute,_self.cartes.caisseCommunaute);
 					break;
 				case "taxe":
-					fiche = new SimpleCaseSpeciale(this.nom, this.prix, this.axe, this.pos, data.images.taxe);
+					fiche = new SimpleCaseSpeciale(this.nom, this.prix, this.axe, this.pos, "taxe",data.images.taxe);
 					break;
 				case "prison":
 					fiche = new CaseActionSpeciale(this.nom, function () {
 						GestionJoueur.getJoueurCourant().goPrison();
-					}, this.axe, this.pos);
+					}, this.axe, this.pos,"prison");
 					break;
 				case "special":
 					fiche = new CaseActionSpeciale(this.nom, function () {
 						GestionJoueur.change();
-					}, this.axe, this.pos);
+					}, this.axe, this.pos,"special");
 					break;
 				case "parc":
 					_self.parcGratuit = new ParcGratuit(this.axe, this.pos);
@@ -419,16 +562,15 @@ var InitMonopoly = {
 					break;
 				case "depart":
 					fiche = new CaseActionSpeciale(this.nom, function () {
-						if (VARIANTES.caseDepart) {
-							GestionJoueur.getJoueurCourant().gagner((InitMonopoly.plateau.infos.montantDepart)*2);
-						} else {
-							GestionJoueur.getJoueurCourant().gagner(InitMonopoly.plateau.infos.montantDepart);
-						}
+                        var montant = VARIANTES.caseDepart ? (InitMonopoly.plateau.infos.montantDepart)*2 : InitMonopoly.plateau.infos.montantDepart;
+                        GestionJoueur.getJoueurCourant().gagner(montant);
+
 						$.trigger('monopoly.depart', {
-							joueur: GestionJoueur.getJoueurCourant()
+							joueur: GestionJoueur.getJoueurCourant(),
+                            montant:montant
 						});
 						GestionJoueur.change();
-					}, this.axe, this.pos);
+					}, this.axe, this.pos,"depart");
 					break;
 				}
 				if(fiche!=null){
@@ -450,13 +592,13 @@ var InitMonopoly = {
 			var currentGroupe = null;
 			// Parcourt les fiches. On enregistre le groupe courant, quand changement, on defini le groupe precedent et calcule le suivant du precedent
 			for (var i = 0; i < 42; i++) {
-				var etat = Math.floor(i / 10) % 4;
-				var pos = i % 40 - (etat * 10);
+				var axe = Math.floor(i / 10) % 4;
+				var pos = i % 40 - (axe * 10);
 				var fiche = GestionFiche.get({
-					axe: etat,
+					axe: axe,
 					pos: pos
 				});
-				if (fiche.groupe != null && fiche.constructible) {
+				if (fiche.groupe != null && fiche.isTerrain()) {
 					if (currentGroupe == null) {
 						// initialisation
 						currentGroupe = fiche.groupe;
@@ -468,6 +610,9 @@ var InitMonopoly = {
 					}
 				}
 			}
+		},
+		enableMouse:function(callback){
+			this.drawing.enableCaseDetect(callback);
 		}
 	},
 	showPanel:function(){

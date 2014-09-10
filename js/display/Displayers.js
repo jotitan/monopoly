@@ -40,7 +40,7 @@ var FicheDisplayer = {
 		this.ficheCompagnie.prev().css("background", "url()");
 	},		
 	openDetail:function(fiche,input){
-		if (this.currentFiche != null && this.currentFiche.etat == fiche.etat && this.currentFiche.pos == fiche.pos) {
+		if (this.currentFiche != null && this.currentFiche.axe == fiche.axe && this.currentFiche.pos == fiche.pos) {
 			if ($(':visible',this.detailFiche).length == 0) {
 				this.detailFiche.slideDown();
 			} else {
@@ -48,7 +48,7 @@ var FicheDisplayer = {
 			}
 			return;
 		}
-		if (this.currentFiche != null && (this.currentFiche.etat != fiche.etat || this.currentFiche.pos != fiche.pos)) {
+		if (this.currentFiche != null && (this.currentFiche.axe != fiche.axe || this.currentFiche.pos != fiche.pos)) {
 			this.currentFiche = null;
 			this.detailFiche.slideUp(300, function () {
 				FicheDisplayer.openDetail(fiche, input);
@@ -115,7 +115,7 @@ var FicheDisplayer = {
 	}
 }
 
-/* Affiche les ecrans de communication lors d'enchere */
+/* Affiche les ecrans de communication lors d'echange */
 var CommunicationDisplayer = {
     panel: null,
     joueur: null, // Joueur a qui est affiche le panneau
@@ -223,7 +223,7 @@ var CommunicationDisplayer = {
     },
     /* Affiche la proposition acceptee */
     showAccept: function (callback) {
-        this.addMessage("La proposition a été acceptée", [{
+        this.addMessage("La proposition a été <span style=\"color:green\">acceptée</span>", [{
             nom: "Fermer",
             action: function () {
                 CommunicationDisplayer.close();
@@ -234,7 +234,7 @@ var CommunicationDisplayer = {
         }]);
     },
     showReject: function (callback) {
-        this.addMessage("La proposition a été rejetée", [{
+        this.addMessage("La proposition a été <span style=\"color:red\">rejetée</span>.", [{
             nom: "Fermer",
             action: function () {
                 CommunicationDisplayer.close();

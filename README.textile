@@ -1,4 +1,4 @@
-﻿h1. Monopoly full JS
+h1. Monopoly full JS
 
 Implementation Full Javascript du Monopoly. 
 Utilisation de JQuery et canvas. Grunt permet de minifier le projet.

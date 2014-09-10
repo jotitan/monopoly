@@ -1,9 +1,18 @@
 ﻿h1. Monopoly full JS
 
-h2. Todo
+Implementation Full Javascript du Monopoly. 
+Utilisation de JQuery et canvas. Grunt permet de minifier le projet.
 
-* Accepter plus facilement les propositions vers la fin du jeu, surtout si on a rien
-* Couche réseau ?
+h2. Fonctionnalités
+
+* Possibilité de jouer à 6 sur le même ordinateur
+* IA : plusieurs robots peuvent jouer. Différents niveaux sont implémentés (gestion de l'argent, choix des terrains et agressivité).
+* Plusieurs variantes : case départ x 2, parc gratuit, enchere immédiate
+* Possibilité d'échanger les terrains avec les autres joueurs
+* Utilisation du dé rapide (règle récente) possible
+* Plusieurs plateaux sont disponibles : classique, en cercle
+* Possibilité de customiser les plateaux (images, nom des joueurs, nom des rues, cartes, couleurs)
+* Sauvegarde la partie (en cliquant sur "MONOPOLY")
 
 h2. Capture d'une version intermédiaire : 
 
@@ -12,3 +21,9 @@ h2. Capture d'une version intermédiaire :
 h2. Version en cercle du Monopoly
 
 !https://raw.github.com/jotitan/monopoly-js/gh-pages/screenshots/screenshot-circle.png!
+
+h2. Todo
+
+* Accepter plus facilement les propositions vers la fin du jeu, surtout si on a rien
+* Couche réseau ?
+* fin du dé rapide sur le cercle

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title></title>
     <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
-    <script src="jquery.mousewheel.min.js"></script>
+    <script src="js/jquery.mousewheel.min.js"></script>
 </head>
 <body>
 
@@ -40,9 +40,15 @@ Bonjour <br/><br/>
                 if(data.count == deep){
                     clean()
                     data.img.forEach(function(image){
-                        canvas.globalAlpha = (1 - (deep-1)/7) + image.i/7
+                        canvas.globalAlpha = (1 - (deep-1)/(deep+2)) + image.i/(deep+2)
                         canvas.drawImage(image,10 + 30*image.i,10 + 20*image.i)
+                        if(image.i == deep -1){
+                            canvas.strokeStyle='gray'
+                            canvas.lineWidth=3
+                            canvas.strokeRect(10 + 30*(deep-1),10+20*(deep-1),image.width,image.height)
+                        }
                     } )
+
                 }
              }
              img.src=getUrl(deep-i)
@@ -96,12 +102,15 @@ Bonjour <br/><br/>
                 if(data.count == deep + ((sens < 0)?1:0)){
                     clean()
                     data.img.forEach(function(image){
-                        canvas.globalAlpha = (1 - (deep-1)/7) + image.i/7
+                        canvas.globalAlpha = (1 - (deep-1)/(deep+2)) + image.i/(deep+2)
                         if(sens > 0 && image.i == deep-1){
                             canvas.globalAlpha = Math.max(0,1 - count/9)
                          }
                          if(sens < 0 && image.i == deep){
                             canvas.globalAlpha = count/9
+                         }
+                         if(sens < 0 && image.i == 0){
+                            canvas.globalAlpha = canvas.globalAlpha / Math.max(count,1)
                          }
                         canvas.drawImage(image,10 + 30*image.i + (count*3)*sens,10 + 20*image.i + (count*2)*sens)
                     } )
@@ -130,7 +139,6 @@ Bonjour <br/><br/>
     }
 
     changeImage()
-
 
 </script>
 

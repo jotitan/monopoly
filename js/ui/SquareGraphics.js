@@ -548,9 +548,9 @@ function Plateau(x,y,width,height,color){
 	this.enableCaseDetect = function(callback){
 		var plateau = this;
 		$('canvas').unbind('mousedown').bind('mousedown',function(event){
-            console.log("clik")
-			var fiche = plateau._findFiche(event.clientX,event.clientY);
-			if(fiche!=null){
+            var offset = $(this).offset();
+            var fiche = plateau._findFiche(event.clientX - offset.left,event.clientY - offset.top);
+         	if(fiche!=null){
 				plateau.disableCaseDetect();
 				callback(fiche);
 			}
@@ -560,13 +560,14 @@ function Plateau(x,y,width,height,color){
 		$('canvas').unbind('mousedown');
 	}
 	this._findFiche = function(x,y){
+        var fiche = null;
 		GestionFiche.fiches.forEach(function(f){
 			var data = f.drawing.data;
 			if(x >= data.x && x<= (data.x + data.width) && y >= data.y && y <= (data.y + data.height)){
-				return f;
+				fiche = f;
 			}
 		});
-		return null;
+        return fiche;
 	}
 }
 

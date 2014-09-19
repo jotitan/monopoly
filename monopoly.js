@@ -177,7 +177,7 @@ function GestionDesImpl(){
 			return;
 		} else {
 			if (this.isDouble()) {
-				if(!this.treatDouble(message)){
+                if(!this.treatDouble(message)){
                     return; // Si 3 doubles, prison et on ne continue pas le deplacement du jeu
                 };
 			}else{
@@ -294,7 +294,7 @@ function GestionDesRapideImpl(){
 	this._randDes = function(){
 		this.des1 = this._rand();
 		this.des2 = this._rand();
-		this.desRapide = this._rand();	
+		this.desRapide = this._rand();
 	}
 
     this.total = function(){
@@ -324,7 +324,7 @@ function GestionDesRapideImpl(){
 				$.trigger('monopoly.derapide.triple',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
 			});
 		}else{
-			this._doTreatDouble(message);
+			return this._doTreatDouble(message);
 		}
 	}
 
@@ -356,12 +356,12 @@ function GestionDesRapideImpl(){
 	}
 	/* Surcharge le comportement apres le lancer */
 	this.endLancer = function(){
-		this.showReload();
+        this.showReload();
         if(this.isTriple()){    // Joueur a choisi la case
             return;
         }
 		if(this.isDouble() || this._isValue()){
-			GestionJoueur.getJoueurCourant().joueDes(this.total());
+            GestionJoueur.getJoueurCourant().joueDes(this.total());
 			return;
 		}
 		

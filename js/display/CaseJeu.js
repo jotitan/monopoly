@@ -80,6 +80,7 @@ function SimpleCaseSpeciale(titre, montant, axe, pos, type, img) {
 
 function CaseChance(axe, pos,img, cartes) {
     PlateauCase.call(this,axe,pos,"carte");
+    this.nom = "carte chance"
 	this.cartes = cartes;
     this.drawing = DrawerFactory.getCase(pos, axe, null, InitMonopoly.plateau.titles.chance, null, img);
 	Drawer.add(this.drawing);
@@ -100,6 +101,7 @@ function CaseChance(axe, pos,img, cartes) {
 
 function CaseCaisseDeCommunaute(axe, pos, img, cartes) {
     PlateauCase.call(this,axe,pos,"carte");
+    this.nom = "carte caisse de communauté"
 	this.cartes = cartes;
 	this.drawing = DrawerFactory.getCase(pos, axe, null, InitMonopoly.plateau.titles.communaute, null, img );
 	Drawer.add(this.drawing);

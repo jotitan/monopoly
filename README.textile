@@ -14,7 +14,7 @@ h2. Fonctionnalités
 * Possibilité de customiser les plateaux (images, nom des joueurs, nom des rues, cartes, couleurs)
 * Sauvegarde la partie (en cliquant sur "MONOPOLY")
 
-h2. Capture d'une version intermédiaire : 
+h2. Capture de la version avec dé rapide : 
 
 !https://raw.github.com/jotitan/monopoly-js/gh-pages/screenshots/screenshot2.png!
 
@@ -26,4 +26,3 @@ h2. Todo
 
 * Accepter plus facilement les propositions vers la fin du jeu, surtout si on a rien
 * Couche réseau ?
-* fin du dé rapide sur le cercle

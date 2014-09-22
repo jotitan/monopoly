@@ -233,9 +233,6 @@ function GestionDesImpl(){
 	this.isDouble = function(){
 		return this.des1 == this.des2;
 	}
-	this.isTriple = function(){
-		return this.des1 == this.des2 && this.des2 == this.desRapide && this.des1 <=3;
-	}
 	/* lancement du des */
 	this.lancer = function(){
 		var gd = this;
@@ -305,7 +302,11 @@ function GestionDesRapideImpl(){
         return total;
     }
 
-	/* Renvoie la combinaison des des */
+    this.isTriple = function(){
+        return this.des1 == this.des2 && this.des2 == this.desRapide && this.des1 <=3;
+    }
+
+    /* Renvoie la combinaison des des */
 	this.combinaisonDes = function(){
         if(this._isMonopolyMan()){
             return "Mr Monopoly";

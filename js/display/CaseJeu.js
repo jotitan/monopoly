@@ -12,6 +12,10 @@ function PlateauCase(axe,pos,type){
     this.isTerrain = function(){
         return this.type == "terrain";
     }
+
+    this.isPropriete = function(){
+        return this.type == "terrain" || this.type == "gare" || this.type == "compagnie";
+    }
 }
 
 /* Case representant le parc gratuit */
@@ -651,10 +655,10 @@ var GestionFiche = {
 	},
 	/* Renvoie le prochain terrain libre */
 	getNextFreeTerrain:function(from){
-		return this._getNextFiche(from,function(f){return f.isTerrain() && f.statut == ETAT_LIBRE;});
+		return this._getNextFiche(from,function(f){return f.isPropriete() && f.statut == ETAT_LIBRE;});
 	},
 	getNextTerrain:function(from){
-		return this._getNextFiche(from,function(f){return f.isTerrain();});
+		return this._getNextFiche(from,function(f){return f.isPropriete();});
 	},
 	_getNextFiche:function(from,condition){
 		var info = {position:from.pos,axe:from.axe};

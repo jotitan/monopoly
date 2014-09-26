@@ -115,7 +115,7 @@ function GestionDesImpl(){
 		this.nbDouble = 0;
 	}
 	this._rand = function(){
-		return 2;//Math.round((Math.random() * 1000)) % 6 + 1;
+		return Math.round((Math.random() * 1000)) % 6 + 1;
 	}
 	/* Action avant le lancement du des */
 	this.before = function(callback){
@@ -287,6 +287,10 @@ function GestionDesRapideImpl(){
 		this.cube.desRapide = DrawerFactory.getDesRapide(112, 210, 35);			
 		Drawer.addRealTime(this.cube.desRapide);
 	}
+
+    this.isDouble = function(){
+        return this.des1 == this.des2 && this.des1 != this.desRapide;
+    }
 	
 	this._randDes = function(){
 		this.des1 = this._rand();

@@ -2,15 +2,15 @@
 var Sauvegarde = {
     prefix: "monopoly.",
     suffix: ".save",
-	currentSauvegardeName:null,
-	isSauvegarde:function(){
-		return this.currentSauvegardeName!=null;
-	},
+    currentSauvegardeName:null,
+    isSauvegarde:function(){
+        return this.currentSauvegardeName!=null;
+    },
     save: function (name) {
-		this.currentSauvegardeName = name !=null ? this.getSauvegardeName(name) : this.currentSauvegardeName || this.getSauvegardeName();
+        this.currentSauvegardeName = name !=null ? this.getSauvegardeName(name) : this.currentSauvegardeName || this.getSauvegardeName();
         // On recupere la liste des joueurs
         var saveJoueurs = [];
-		GestionJoueur.forEach(function(j){if(j.save){saveJoueurs.push(j.save())}});
+        GestionJoueur.forEach(function(j){if(j.save){saveJoueurs.push(j.save())}});
         // On recupere la liste des fiches
         var saveFiches = [];
         var it = GestionFiche.iteratorTerrains();
@@ -23,7 +23,7 @@ var Sauvegarde = {
             joueurCourant: GestionJoueur.getJoueurCourant().id,
             variantes: VARIANTES,
             nbTours: stats.nbTours,
-			plateau:InitMonopoly.plateau.name
+            plateau:InitMonopoly.plateau.name
         };
         this._putStorage(this.currentSauvegardeName, data);
         $.trigger("monopoly.save", {
@@ -34,15 +34,15 @@ var Sauvegarde = {
         this.currentSauvegardeName = name;
         var data = this._getStorage(name);
         // On charge le plateau
-		InitMonopoly.plateau.load(data.plateau || "data-monopoly.json",function(){
-			data.joueurs.forEach(function(j,i){GestionJoueur.createAndLoad(!j.canPlay, i,j.nom,j);});
-			data.fiches.forEach(function(f){GestionFiche.getById(f.id).load(f);});
-			$.trigger('refreshPlateau');
-			VARIANTES = data.variantes || VARIANTES;
-			stats.nbTours = data.nbTours || 0;
-			InitMonopoly.afterCreateGame();			
-			GestionJoueur.change(data.joueurCourant);			
-		});       
+        InitMonopoly.plateau.load(data.plateau || "data-monopoly.json",function(){
+            data.joueurs.forEach(function(j,i){GestionJoueur.createAndLoad(!j.canPlay, i,j.nom,j);});
+            data.fiches.forEach(function(f){GestionFiche.getById(f.id).load(f);});
+            $.trigger('refreshPlateau');
+            VARIANTES = data.variantes || VARIANTES;
+            stats.nbTours = data.nbTours || 0;
+            InitMonopoly.afterCreateGame();
+            GestionJoueur.change(data.joueurCourant);
+        });
     },
     delete: function (name) {
         localStorage.removeItem(name);

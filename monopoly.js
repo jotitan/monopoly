@@ -115,7 +115,7 @@ function GestionDesImpl(){
 		this.nbDouble = 0;
 	}
 	this._rand = function(){
-		return Math.round((Math.random() * 1000)) % 6 + 1;
+		return 2;//Math.round((Math.random() * 1000)) % 6 + 1;
 	}
 	/* Action avant le lancement du des */
 	this.before = function(callback){
@@ -291,7 +291,11 @@ function GestionDesRapideImpl(){
 	this._randDes = function(){
 		this.des1 = this._rand();
 		this.des2 = this._rand();
-		this.desRapide = this._rand();
+        if(GestionJoueur.getJoueurCourant().enPrison){
+            this.desRapide = 0;
+        }else{
+		    this.desRapide = this._rand();
+        }
 	}
 
     this.total = function(){
@@ -384,7 +388,11 @@ function GestionDesRapideImpl(){
 	this._drawCubes = function(val1,val2,desRapide,color){
 		this.cube.des1.setValue(val1, color);
 		this.cube.des2.setValue(val2, color);
-		this.cube.desRapide.setValue(desRapide, color);		
+        if(GestionJoueur.getJoueurCourant().enPrison){
+            this.cube.desRapide.setValue(0, color);
+        }else{
+		    this.cube.desRapide.setValue(desRapide, color);
+        }
 	}
 }
 

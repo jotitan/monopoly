@@ -28,13 +28,13 @@ function JoueurOrdinateur(numero, nom, color) {
 		data.strategie = this.strategie.id;
 		// Charge l'historique des propositions (derniere proposition du terrain)
 		data.rejectedPropositions = [];
-		for (var id in this.rejectedPropositions) {
+        for (var id in this.rejectedPropositions) {
 			var proposition = this.rejectedPropositions[id][this.rejectedPropositions[id].length -1].proposition;
 			var terrains = [];	// On ne garde que les ids des fiches pour eviter les cycles a la sauvegarde
-			for(var t in proposition.terrains){
-				terrains.push(proposition.terrains[t].id);
-			}
-			data.rejectedPropositions.push({
+            for(var t in proposition.terrains){
+                terrains.push(proposition.terrains[t].id);
+            }
+            data.rejectedPropositions.push({
 				id: id,
 				proposition: {
 					compensation:proposition.compensation,
@@ -58,8 +58,10 @@ function JoueurOrdinateur(numero, nom, color) {
 				}
 				// On ajoute la proposition dans le tableau
 				this.rejectedPropositions[data.rejectedPropositions[id].id] = [{
-					compensation:p.compensation,
-					terrains:terrains
+					proposition:{
+                        compensation:p.compensation,
+					    terrains:terrains
+                    }
 				}];
 			}
 		}

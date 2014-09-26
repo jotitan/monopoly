@@ -665,7 +665,6 @@ var GestionFiche = {
 		do{
 			var info = this.nextPos(info.axe,info.position);
 			var fiche = this.get({axe:info.axe,pos:info.position});
-            console.log(info.axe,info.position,fiche);
 			if(condition == null || condition(fiche)){
 				return fiche;
 			}		 

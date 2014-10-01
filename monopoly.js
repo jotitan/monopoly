@@ -382,6 +382,7 @@ function GestionDesRapideImpl(){
 			});
 		}
 		if(this._isMonopolyMan()){
+            // Apres son jeu, le joueur effectuera cette action
 			var pos = GestionJoueur.getJoueurCourant().getPosition();
 			var fiche = GestionFiche.isFreeFiches() ? GestionFiche.getNextFreeTerrain(pos) : GestionFiche.getNextTerrain(pos);
 			$.trigger('monopoly.derapide.mrmonopoly',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});

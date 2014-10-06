@@ -86,10 +86,17 @@ var GestionDes = {
 	},
 	resetDouble:function(){
 		return this.gestionDes.resetDouble();
-	}  ,
+	},
     total:function(){
         return this.gestionDes.total();
+    },
+    isSpecificAction:function(){
+        return this.gestionDes.isSpecificAction()
+    },
+    doSpecificAction:function(){
+        return this.gestionDes.doSpecificAction()
     }
+
 }
 
 function GestionDesImpl(){
@@ -117,6 +124,12 @@ function GestionDesImpl(){
 	this._rand = function(){
 		return Math.round((Math.random() * 1000)) % 6 + 1;
 	}
+    this.isSpecificAction = function(){
+        return false;
+    }
+
+    this.doSpecificAction = function(){}
+
 	/* Action avant le lancement du des */
 	this.before = function(callback){
 		if (GestionJoueur.getJoueurCourant().enPrison) {
@@ -290,6 +303,19 @@ function GestionDesRapideImpl(){
 
     this.isDouble = function(){
         return this.des1 == this.des2 && this.des1 != this.desRapide;
+    }
+
+    this.isSpecificAction = function(){
+        return this._isMonopolyMan();
+    }
+
+    this.doSpecificAction = function(){
+        // Apres son jeu, le joueur effectuera cette action
+        this.desRapide == 0 // annule le mr monopoly
+        var pos = GestionJoueur.getJoueurCourant().getPosition();
+        var fiche = GestionFiche.isFreeFiches() ? GestionFiche.getNextFreeTerrain(pos) : GestionFiche.getNextTerrain(pos);
+        $.trigger('monopoly.derapide.mrmonopoly',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
+        GestionJoueur.getJoueurCourant().joueSurCase(fiche);
     }
 	
 	this._randDes = function(){
@@ -651,7 +677,7 @@ var InitMonopoly = {
 		} else {
 			this.plateau.load($('#idSelectPlateau').val(),function(){
 				var options = {};
-				$('#idPartie',this.panelPartie).find('select[name]').each(function(){
+				$('#idPartie',this.panelPartie).find('select[name],:text[name]').each(function(){
 					options[$(this).attr('name')] = $(this).val();
 				});
 				$('#idPartie',this.panelPartie).find(':checkbox[name]').each(function(){
@@ -668,10 +694,11 @@ var InitMonopoly = {
 		var j = this.plateau.infos.nomsJoueurs.length > 0 ? this.plateau.infos.nomsJoueurs[0] : "";
 		options = $.extend({},{nbPlayers:0,nbRobots:0,waitTimeIA:1,joueur:j},options);
 
+
 		for (var i = 0; i < options.nbPlayers; i++) {
-			var nom = "Joueur " + (i+1);
-			if(i == 0){
-				nom = options.joueur;				
+            var nom = "Joueur " + (i+1);
+			if(i == 0 && options.joueur != "" ){
+				nom = options.joueur;
 			}else{
 				if(this.plateau.infos.nomsJoueurs.length > i){
 					nom = this.plateau.infos.nomsJoueurs[i];

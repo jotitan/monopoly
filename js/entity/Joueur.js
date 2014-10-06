@@ -1960,7 +1960,7 @@ var GestionJoueur = {
 		try {
 			joueur = this.next();
 		} catch (gagnant) {
-			this._showVainqueur(gagnant);
+          	this._showVainqueur(gagnant);
 			return gagnant;
 		}
 		if (joueur == null) {
@@ -2064,7 +2064,7 @@ var GestionJoueur = {
 		}
 		var joueur = this.joueurCourant;
 		/* Changement de joueur */
-		if(!GestionDes.isDouble()){
+		if(!GestionDes.isDouble() && !GestionDes.isSpecificAction()){
 			var pos = 0;
 			joueur = this.joueurs[(joueur.numero + 1) % (this.joueurs.length)];
 			while (joueur.defaite == true & pos++ < this.joueurs.length) {
@@ -2076,6 +2076,9 @@ var GestionJoueur = {
 				stats.nbTours++;
 			}
 		}
+        if(GestionDes.isSpecificAction()){
+            GestionDes.doSpecificAction();
+        }
 		return joueur;
 	},
 	/* @param element : sera represente par "this" dans la methode callback */

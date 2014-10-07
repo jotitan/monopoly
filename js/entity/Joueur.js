@@ -2077,7 +2077,9 @@ var GestionJoueur = {
 			}
 		}
         if(GestionDes.isSpecificAction()){
-            GestionDes.doSpecificAction();
+			GestionDes.doSpecificAction();
+			// On ne laisse pas le joueur jouer, on enchaine l'action
+			return null;
         }
 		return joueur;
 	},

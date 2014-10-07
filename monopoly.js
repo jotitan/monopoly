@@ -311,8 +311,8 @@ function GestionDesRapideImpl(){
 
     this.doSpecificAction = function(){
         // Apres son jeu, le joueur effectuera cette action
-        this.desRapide == 0 // annule le mr monopoly
-        var pos = GestionJoueur.getJoueurCourant().getPosition();
+	    this.desRapide = 0 // annule le mr monopoly
+    	var pos = GestionJoueur.getJoueurCourant().getPosition();
         var fiche = GestionFiche.isFreeFiches() ? GestionFiche.getNextFreeTerrain(pos) : GestionFiche.getNextTerrain(pos);
         $.trigger('monopoly.derapide.mrmonopoly',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
         GestionJoueur.getJoueurCourant().joueSurCase(fiche);
@@ -324,7 +324,7 @@ function GestionDesRapideImpl(){
         if(GestionJoueur.getJoueurCourant().enPrison){
             this.desRapide = 0;
         }else{
-		    this.desRapide = this._rand();
+		    this.desRapide = 5;//this._rand();
         }
 	}
 
@@ -368,10 +368,7 @@ function GestionDesRapideImpl(){
     }
 
 	this.total = function(){
-        if(!this.isDouble() && this._isMonopolyMan()){
-            return 0;
-        }
-		var total = this.des1 + this.des2;
+        var total = this.des1 + this.des2;
         if(this.desRapide < 4 && !this.isDouble()){
             total+=this.desRapide;
         }
@@ -395,25 +392,20 @@ function GestionDesRapideImpl(){
         if(this.isTriple()){    // Joueur a choisi la case
             return;
         }
-		if(this.isDouble() || this._isValue()){
-            GestionJoueur.getJoueurCourant().joueDes(this.total());
-			return;
-		}
-		
 		/* Cas du bus, le joueur choisi quel des il utilise */
 		if(this._isBus()){
 			GestionJoueur.getJoueurCourant().choisiDes(this.des1,this.des2,function(total){
 				$.trigger('monopoly.derapide.bus',{joueur:GestionJoueur.getJoueurCourant(),total:total});
 				GestionJoueur.getJoueurCourant().joueDes(total);
 			});
-		}
-		if(this._isMonopolyMan()){
-            // Apres son jeu, le joueur effectuera cette action
-			var pos = GestionJoueur.getJoueurCourant().getPosition();
-			var fiche = GestionFiche.isFreeFiches() ? GestionFiche.getNextFreeTerrain(pos) : GestionFiche.getNextTerrain(pos);
-			$.trigger('monopoly.derapide.mrmonopoly',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
-			GestionJoueur.getJoueurCourant().joueSurCase(fiche);
+			return
 		}				
+		
+		//if(this.isDouble() || this._isValue()){
+		GestionJoueur.getJoueurCourant().joueDes(this.total());
+			//return;
+		//}
+		
 	}
 	
 	this._drawCubes = function(val1,val2,desRapide,color){

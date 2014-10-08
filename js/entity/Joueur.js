@@ -2064,7 +2064,7 @@ var GestionJoueur = {
 		}
 		var joueur = this.joueurCourant;
 		/* Changement de joueur */
-		if(!GestionDes.isDouble() && !GestionDes.isSpecificAction()){
+		if(!GestionDes.continuePlayer() && !GestionDes.isSpecificAction()){
 			var pos = 0;
 			joueur = this.joueurs[(joueur.numero + 1) % (this.joueurs.length)];
 			while (joueur.defaite == true & pos++ < this.joueurs.length) {

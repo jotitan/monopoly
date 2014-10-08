@@ -84,6 +84,10 @@ var GestionDes = {
 	isDouble:function(){
 		return this.gestionDes.isDouble();
 	},
+	// Joueur continue (cas du double)
+	continuePlayer:function(){
+		return this.gestionDes.continuePlayer();
+	},
 	resetDouble:function(){
 		return this.gestionDes.resetDouble();
 	},
@@ -96,7 +100,6 @@ var GestionDes = {
     doSpecificAction:function(){
         return this.gestionDes.doSpecificAction()
     }
-
 }
 
 function GestionDesImpl(){
@@ -189,6 +192,7 @@ function GestionDesImpl(){
 			this.treatPrison(message);
 			return;
 		} else {
+			// Gere le cas du triple (de rapide) egalement
 			if (this.isDouble()) {
                 if(!this.treatDouble(message)){
                     return; // Si 3 doubles, prison et on ne continue pas le deplacement du jeu
@@ -241,6 +245,10 @@ function GestionDesImpl(){
 		}else{
 			$('#idReloadDice').hide();
 		}
+	}
+	
+	this.continuePlayer = function(){
+		return this.isDouble()
 	}
 	
 	this.isDouble = function(){
@@ -301,9 +309,9 @@ function GestionDesRapideImpl(){
 		Drawer.addRealTime(this.cube.desRapide);
 	}
 
-    this.isDouble = function(){
+    /*this.isDouble = function(){
         return this.des1 == this.des2 && this.des1 != this.desRapide;
-    }
+    }*/
 
     this.isSpecificAction = function(){
         // Pas de Mr monopoly quand le joueur est en prison
@@ -337,13 +345,21 @@ function GestionDesRapideImpl(){
         return total;
     }
 
+	this.continuePlayer = function(){
+		return this.isDouble() && !this.isTriple();
+	}
+	
+	/* Le triple est vu comme un double (pour le traitement global) */
     this.isTriple = function(){
         return this.des1 == this.des2 && this.des2 == this.desRapide && this.des1 <=3;
     }
 
     /* Renvoie la combinaison des des */
 	this.combinaisonDes = function(){
-        var msg = this.des1 + ", " + this.des2
+        if(this.isTriple()){
+			return "triple " + this.des1;
+		}
+		var msg = this.des1 + ", " + this.des2
         if(this.isDouble()){
             return msg
         }
@@ -359,6 +375,7 @@ function GestionDesRapideImpl(){
 				GestionJoueur.getJoueurCourant().joueSurCase(fiche);
 				$.trigger('monopoly.derapide.triple',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
 			});
+			return
 		}else{
 			return this._doTreatDouble(message);
 		}

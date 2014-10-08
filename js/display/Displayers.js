@@ -17,7 +17,7 @@ var FicheDisplayer = {
 			autoOpen: false,
 			title: "Fiche",
 			width: 280,
-			height: 400,
+			height: 410,
 			modal: true,
 			resizable: false,
 			close: function () {

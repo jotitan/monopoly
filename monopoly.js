@@ -306,7 +306,8 @@ function GestionDesRapideImpl(){
     }
 
     this.isSpecificAction = function(){
-        return this._isMonopolyMan();
+        // Pas de Mr monopoly quand le joueur est en prison
+        return !GestionJoueur.joueurCourant.enPrison && this._isMonopolyMan();
     }
 
     this.doSpecificAction = function(){
@@ -324,7 +325,7 @@ function GestionDesRapideImpl(){
         if(GestionJoueur.getJoueurCourant().enPrison){
             this.desRapide = 0;
         }else{
-		    this.desRapide = 5;//this._rand();
+		    this.desRapide = this._rand();
         }
 	}
 
@@ -342,11 +343,11 @@ function GestionDesRapideImpl(){
 
     /* Renvoie la combinaison des des */
 	this.combinaisonDes = function(){
-        if(this._isMonopolyMan()){
-            return "Mr Monopoly";
+        var msg = this.des1 + ", " + this.des2
+        if(this.isDouble()){
+            return msg
         }
-		return this.des1 + ", " + this.des2 + " et " +
-            ((this.desRapide == 4 || this.desRapide == 6)?" bus":this.desRapide);
+		return msg + " et " +((this._isBus())?" Bus":(this._isMonopolyMan())?"Mr Monopoly":this.desRapide);
 	}
 		
 	// Cas du triple : double + des rapide avec le meme chiffre (1, 2 ou 3) => Joueur place son pion ou il veut
@@ -363,18 +364,6 @@ function GestionDesRapideImpl(){
 		}
 	}
 
-    this.isTriple = function(){
-        return this.isDouble() && this.desRapide == this.des1 && this.des1 < 4;
-    }
-
-	this.total = function(){
-        var total = this.des1 + this.des2;
-        if(this.desRapide < 4 && !this.isDouble()){
-            total+=this.desRapide;
-        }
-        return total;
-	}
-	
 	this._isBus = function(){
 		return this.desRapide == 4 || this.desRapide == 6;
 	}
@@ -401,11 +390,10 @@ function GestionDesRapideImpl(){
 			return
 		}				
 		
-		//if(this.isDouble() || this._isValue()){
+		if(this.isDouble()){
+            this.desRapide = 0
+        }
 		GestionJoueur.getJoueurCourant().joueDes(this.total());
-			//return;
-		//}
-		
 	}
 	
 	this._drawCubes = function(val1,val2,desRapide,color){

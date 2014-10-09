@@ -143,7 +143,7 @@ function JoueurOrdinateur(numero, nom, color) {
 		if(fiche.isTerrain() == true){
 			interet = fiche.statut == ETAT_LIBRE ? 
 				this.strategie.interetGlobal(fiche,this,false).interet :
-				fiche.getLoyer() / -1000;			
+				fiche.getLoyerFor(this) / -1000;
 		}
 		switch(fiche.type){
 			case "prison" : interet = this.getOutPrison() ? -2 : 1;break;

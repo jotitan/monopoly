@@ -485,6 +485,14 @@ function Fiche(axe, pos, colors, nom, achat, loyers, prixMaison, img) {
 		}
 	}
 
+    /* Renvoie le montant du loyer pour ce joueur (0 s'il est proprietaire) */
+    this.getLoyerFor = function(joueur){
+        if(joueur.equals(this.joueurPossede)){
+            return 0;
+        }
+        return this.getLoyer()
+    }
+
 	this.getLoyer = function () {
 		if (this.statutHypotheque) {
 			return 0;

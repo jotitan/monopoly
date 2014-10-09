@@ -370,13 +370,14 @@ function GestionDesRapideImpl(){
 	// Cas du double : double + des rapide different. Seul le double est pris en compte => Double normal
 	this.treatDouble = function(message){
 		// Cas triple
-		if(this.des1 == this.desRapide){
+		if(this.isTriple()){
 			GestionJoueur.getJoueurCourant().choisiCase(function(fiche){
 				GestionJoueur.getJoueurCourant().joueSurCase(fiche);
 				$.trigger('monopoly.derapide.triple',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
 			});
 			return
 		}else{
+            this.desRapide = 0
 			return this._doTreatDouble(message);
 		}
 	}
@@ -399,7 +400,7 @@ function GestionDesRapideImpl(){
             return;
         }
 		/* Cas du bus, le joueur choisi quel des il utilise */
-		if(this._isBus()){
+		if(!this.isDouble() && this._isBus()){
 			GestionJoueur.getJoueurCourant().choisiDes(this.des1,this.des2,function(total){
 				$.trigger('monopoly.derapide.bus',{joueur:GestionJoueur.getJoueurCourant(),total:total});
 				GestionJoueur.getJoueurCourant().joueDes(total);

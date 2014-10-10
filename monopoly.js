@@ -21,7 +21,9 @@ var VARIANTES = {
     parcGratuit: false, 	// Toutes les taxes sont verses au parc gratuit
     enchereAchat: false, 	// Permet la mise aux encheres d'un terrain qu'un joueur ne veut pas acheter
 	echangeApresVente: false,	// Permet d'echanger des terrains meme quand ils ne sont pas tous vendus
-	desRapide:false			// Jeu avec le des rapide
+	desRapide:false,			// Jeu avec le des rapide
+    tourAchat:false             // Attendre un tour avant d'acheter
+
 }
 
 /* Preconfiguration des variantes */

@@ -96,9 +96,11 @@ var GestionTerrains = {
         if (!this.verify()) {
             return;
         }
+        this.Constructions.vendre();
         this.Hypotheque.valider();
         this.LeverHypotheque.valider();
-        this.Constructions.valider();
+        this.Constructions.acheter();
+
 
         this.closePanel();
     },
@@ -272,6 +274,35 @@ var GestionTerrains = {
             }
            
 
+        },
+        acheter: function () {
+            for (var achat in this.table) {
+                var data = this.table[achat];
+                if(data.propriete.nbMaison < data.maison){
+                    data.propriete.setNbMaison(data.nbMaison);
+                    GestionJoueur.getJoueurCourant().payer(data.cout);
+                }
+            }
+            // On modifie les quantites de maisons / hotels
+            if (this.simulation != null && (this.simulation.achat.maison!=0 || this.simulation.achat.hotel!=0)) {
+                GestionConstructions.buyHouses(this.simulation.achat.maison);
+                GestionConstructions.buyHotels(this.simulation.achat.hotel);
+                $.trigger('monopoly.acheteConstructions', {
+                    joueur: GestionJoueur.getJoueurCourant(),
+                    achats: this.simulation.achat
+                });
+            }
+
+
+        },
+        vendre: function () {
+            for (var achat in this.table) {
+                var data = this.table[achat];
+                if(data.propriete.nbMaison > data.maison){
+                    data.propriete.setNbMaison(data.nbMaison);
+                    GestionJoueur.getJoueurCourant().payer(data.cout);
+                }
+            }
         },
         reset: function () {
             this.table = [];

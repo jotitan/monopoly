@@ -8,12 +8,22 @@ function CarteAction(type,action){
 
 }
 
+/* Carte chance : impositions des maisons et hotels */
+function ImpositionCarte(tarifHotel,tarifMaison){
+	this.action = function(joueur){
+		stats = joueur.getStats()
+		var montant = stats.hotel * tarifHotel + stats.maison*tarifMaison
+		joueur.payer(montant,function(){GestionJoueur.change();})
+	}
+}
+
 /* Carte chance : chaque joueur vous donne 1000 francs */
 function BirthdayCarte(montant){
 	CarteAction.call(this,"birthday");
 	this.action = function(joueur){
 		GestionJoueur.joueurs.forEach(function(j){
 			if(!joueur.equals(j)){
+				// TODO : Ne permet pas la resolution de probleme d'argent
 				j.payerTo(montant,joueur,true);
 			}
 		})

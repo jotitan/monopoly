@@ -8,6 +8,19 @@ function CarteAction(type,action){
 
 }
 
+/* Carte chance : chaque joueur vous donne 1000 francs */
+function BirthdayCarte(montant){
+	CarteAction.call(this,"birthday");
+	this.action = function(joueur){
+		GestionJoueur.joueurs.forEach(function(j){
+			if(!joueur.equals(j)){
+				j.payerTo(montant,joueur,true);
+			}
+		})
+		GestionJoueur.change()
+	}
+}
+
 /* Action de déplacement vers une case */
 /* @param direct : si renseigné a vrai, le pion est deplacé directement vers la case, sans passer par la case depart */
 function GotoCarte(axe, pos, direct) {

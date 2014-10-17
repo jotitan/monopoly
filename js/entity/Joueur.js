@@ -1599,10 +1599,13 @@ function Joueur(numero, nom, color) {
 	/* Paye une somme a un joueur */
 	/* Si le joueur ne peut pas payer, une exception est lancee (il a perdu). On recupere le peut d'argent a prendre */
 	/* Payer est potentiellement asynchrone (resolve manuel), on indique l'etape suivante en cas de reussite */
-	this.payerTo = function (montant, joueur) {
+	this.payerTo = function (montant, joueur,noChange) {
 		try {
 			this.payer(montant, function () {
 				joueur.gagner(montant);
+				if(noChange){
+					return;
+				}
 				GestionJoueur.change();
 			});
 		} catch (insolvable) {

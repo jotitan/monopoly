@@ -28,9 +28,9 @@ var VARIANTES = {
 
 /* Preconfiguration des variantes */
 var configJeu = [
-	{nom:"Classique strict",config:[false,false,true,true]},
-	{nom:"Classique",config:[false,false,false,false]},
-	{nom:"Variante 1",config:[true,true,false,false]}
+	{nom:"Classique strict",config:[false,false,true,true,false]},
+	{nom:"Classique",config:[false,false,false,false,false]},
+	{nom:"Variante 1",config:[true,true,false,false,false]}
 ];
 
 var stats = {	// Statistiques

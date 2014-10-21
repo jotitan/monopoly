@@ -8,8 +8,8 @@ function CarteAction(type,action){
 
 }
 
-/* Carte chance : impositions des maisons et hotels */
-function ImpositionCarte(tarifHotel,tarifMaison){
+/* Carte chance : reparations des maisons et hotels */
+function ReparationsCarte(tarifHotel,tarifMaison){
 	this.action = function(joueur){
 		stats = joueur.getStats()
 		var montant = stats.hotel * tarifHotel + stats.maison*tarifMaison
@@ -21,13 +21,17 @@ function ImpositionCarte(tarifHotel,tarifMaison){
 function BirthdayCarte(montant){
 	CarteAction.call(this,"birthday");
 	this.action = function(joueur){
+		var nb = 0
 		GestionJoueur.joueurs.forEach(function(j){
 			if(!joueur.equals(j)){
-				// TODO : Ne permet pas la resolution de probleme d'argent
-				j.payerTo(montant,joueur,true);
+				j.payerTo(montant,joueur,function(){
+					if(++nb >=GestionJoueur.joueurs.length -1){
+						// End
+						GestionJoueur.change()
+					}
+				});
 			}
-		})
-		GestionJoueur.change()
+		})		
 	}
 }
 
@@ -107,6 +111,11 @@ var CarteActionFactory = {
 		/* Carte prison */
 		case "prison":
 			return new PrisonCarte();
+		/* Carte anniversaire */
+		case "birthday":
+			return new BirthdayCarte(data.montant)
+		case "repair":
+			return new ReparationsCarte(data.hotel,data.maison)
 		}
 		throw "Type inconnu";
 	}

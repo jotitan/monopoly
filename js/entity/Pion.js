@@ -42,7 +42,10 @@ function Pion(color, joueur,img) {
 
 	this.goto = function (axe, pos, call) {
 		var id = axe+"-"+pos;
-		if(stats.positions[id] == null){
+		if(stats.positions == null){
+            stats.positions = []
+        }
+        if(stats.positions[id] == null){
 			stats.positions[id] = 1;
 		}
 		else{

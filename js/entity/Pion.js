@@ -6,7 +6,8 @@ function Pion(color, joueur,img) {
 	this.joueur = joueur;
 	this.stats = {
 		tour: 0,
-		prison: 0
+		prison: 0,
+		positions:[]
 	}; // stat du joueur		
 	this.pion = DrawerFactory.getPionJoueur(color,DrawerFactory.dimensions.largeurPion,img);
 	Drawer.addRealTime(this.pion);
@@ -42,14 +43,12 @@ function Pion(color, joueur,img) {
 
 	this.goto = function (axe, pos, call) {
 		var id = axe+"-"+pos;
-		if(stats.positions == null){
-            stats.positions = []
-        }
-        if(stats.positions[id] == null){
-			stats.positions[id] = 1;
+
+		if(this.stats.positions[id] == null){
+			this.stats.positions[id] = 1;
 		}
 		else{
-			stats.positions[id]++;
+			this.stats.positions[id]++;
 		}
 		$.trigger("monopoly.debug", {
 			message: GestionJoueur.getJoueurCourant().nom + " est en " + this.axe + "-" + this.position + " et va en " + id

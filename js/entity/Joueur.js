@@ -1044,8 +1044,8 @@ function JoueurOrdinateur(numero, nom, color) {
 	 * Si on possede deux terrains d'une strategie qui n'est pas la notre, on choisi cette strategie
 	 */
 	this.changeStrategie = function () {
-		var stats = this.strategie.getStatsProprietes();
-		if (stats.color.pourcent < 40 && this.countInterestProperties() <= 2 && !this.isFamilyFree()) {
+		var localStats = this.strategie.getStatsProprietes();
+		if (localStats.color.pourcent < 40 && this.countInterestProperties() <= 2 && !this.isFamilyFree()) {
 			$.trigger("monopoly.debug", {
 				message: this.nom + " cherche une nouvelle strategie"
 			});
@@ -1237,7 +1237,7 @@ function Joueur(numero, nom, color) {
 	 * Argent disponible, argent apres vente maison / hypotheque, argent apres hypotheque
 	 */
 	this.getStats = function () {
-		var stats = {
+		var statsJ = {
 			prison: this.pion.stats.prison,
 			tour: this.pion.stats.tour,
 			argent: this.montant,
@@ -1250,14 +1250,14 @@ function Joueur(numero, nom, color) {
 		};
 		for (var index in this.maisons) {
 			var maison = this.maisons[index];
-			stats.hotel += parseInt(maison.hotel == true ? 1 : 0);
-			stats.maison += parseInt(maison.hotel == false ? maison.nbMaison : 0);
+			statsJ.hotel += parseInt(maison.hotel == true ? 1 : 0);
+			statsJ.maison += parseInt(maison.hotel == false ? maison.nbMaison : 0);
 			// Revente des constructions + hypotheque
-			stats.argentDispo += (maison.statutHypotheque) ? 0 : (((maison.isTerrain()) ? (maison.nbMaison * (maison.prixMaison / 2)) : 0) + maison.achat / 2);
+			statsJ.argentDispo += (maison.statutHypotheque) ? 0 : (((maison.isTerrain()) ? (maison.nbMaison * (maison.prixMaison / 2)) : 0) + maison.achat / 2);
 			// Revente uniquement des terrains non groupes
-			stats.argentDispoHypo += (!maison.isGroupee() && !maison.statutHypotheque) ? maison.achat / 2 : 0; // hypotheque des terrains non groupes
+			statsJ.argentDispoHypo += (!maison.isGroupee() && !maison.statutHypotheque) ? maison.achat / 2 : 0; // hypotheque des terrains non groupes
 		}
-		return stats;
+		return statsJ;
 	}
 
 	/* Selectionne le joueur */
@@ -1813,7 +1813,7 @@ function Joueur(numero, nom, color) {
 			}
 			var critere5 = 1;
 			if(a.maison.isTerrain()!=b.maison.isTerrain()){
-				critere5 = (a.maison.isTerrain())?0.5:2;
+				critere5 = (a.maison.isTerrain())?0.5:4;
 			}
 			var criteres = critere1 * critere2 * critere3 * critere4 * critere5;
 			return criteres - 1;
@@ -2075,7 +2075,6 @@ var GestionJoueur = {
 			}
 			// On incremente le nb de tours
 			if (joueur.numero < this.joueurCourant.numero) {
-				//nbTours++;
 				stats.nbTours++;
 			}
 		}

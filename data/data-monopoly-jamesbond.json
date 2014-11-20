@@ -6,7 +6,7 @@
 		"background-image":"",
 		"nomsJoueurs":["Daniel Craig","Roger Moore","Sean Connery","Timothy Dalton","Pierce Brosnan","Georges Lazenby"],
 		"rollColor":"#444444",
-		"depart":2000
+		"depart":20000
 	},
 	"currency": "£",
 	"fiches": [
@@ -104,16 +104,16 @@
 	},
 	"communaute":{
 		"cartes":[
-			{"nom":"La vente de votre stock pour rapport F 5.000","type":"prime","montant":5000},
-			{"nom":"Payez votre Police d'Assurance s'élevant à F 5.000","type":"taxe","montant":5000},
-			{"nom":"Recevez votre revenu annuel F 10.000","type":"prime","montant":10000},
-			{"nom":"Vous avez gagné le deuxième Prix de Beauté. Recevez F 1.000","type":"prime","montant":1000},
-			{"nom":"Payez la note du Médecin F 5.000","type":"taxe","montant":5000},
-			{"nom":"Les Contributions vous remboursent la somme de F 2.000","type":"prime","montant":2000},
-			{"nom":"Erreur de la Banque en votre faveur Recevez F 20.000","type":"prime","montant":2000},
-			{"nom":"Recevez votre intérêt sur l'emprunt à 7 % F 2.500","type":"prime","montant":2500},
-			{"nom":"Payez à l'Hôpital F 10.000","type":"taxe","montant":10000},
-			{"nom":"Vous héritez F 10.000","type":"prime","montant":10000}			
+			{"nom":"Une partie de golf vous rapporte £ 5.000","type":"prime","montant":5000},
+			{"nom":"Excès de vitesse, payer £ 5.000","type":"taxe","montant":5000},
+			{"nom":"Prime du MI6 pour service rendu £ 10.000","type":"prime","montant":10000},
+			{"nom":"Toujours un double six au backgammon. Recevez £ 1.000","type":"prime","montant":1000},
+			{"nom":"Les faux papiers coutent chers £ 5.000","type":"taxe","montant":5000},
+			{"nom":"Sanchez vous remercie pour vos informations, il vous donne £ 2.000","type":"prime","montant":2000},
+			{"nom":"Erreur de la Banque en votre faveur Recevez £ 20.000","type":"prime","montant":2000},
+			{"nom":"Recevez votre intérêt sur l'emprunt à 7 % £ 2.500","type":"prime","montant":2500},
+			{"nom":"Vous détruisez vos gadgets, Q demande £ 10.000","type":"taxe","montant":10000},
+			{"nom":"Vous héritez de £ 10.000","type":"prime","montant":10000}			
 		]
 	}
 }

@@ -6,8 +6,8 @@
 /* Il faut, a la creation, definir le style de jeu : prudent (achat des deux premiere lignes), agressif (achete tout)
 	mode fric (achete les plus chers).*/
 
-function JoueurOrdinateur(numero, nom, color) {
-	Joueur.call(this, numero, nom, color);
+function JoueurOrdinateur(numero, nom, color, argent) {
+	Joueur.call(this, numero, nom, color,argent);
 	this.canPlay = false;
 	this.initialName = nom;
 	/* Strategie : definit le comportement pour l'achat des maisons */
@@ -1161,12 +1161,12 @@ function JoueurOrdinateur(numero, nom, color) {
 }
 	
 /* Represente un joueur */
-function Joueur(numero, nom, color) {
+function Joueur(numero, nom, color,argent) {
 	this.numero = numero;
 	this.id = numero;
 	this.nom = nom || '';
 	this.color = color;
-	this.montant = 150000;	// Le rendre configurable
+	this.montant = argent;
 	this.maisons = new Array();
 	this.enPrison = false;
 	this.pion = null;
@@ -1922,7 +1922,8 @@ var GestionJoueur = {
 		var id = 'joueur' + i;			
 		var color = this.colorsJoueurs[i];
 		var img = this.imgJoueurs[i];
-		var joueur = isRobot ? new JoueurOrdinateur(i, nom, color) : joueur = new Joueur(i, nom, color);
+		var argent = InitMonopoly.plateau.infos.argentJoueurDepart
+		var joueur = isRobot ? new JoueurOrdinateur(i, nom, color,argent) : joueur = new Joueur(i, nom, color,argent);
 		var div = $('<hr/><div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div>');
 		$('.panneau_joueur').append(div);
 		

@@ -660,15 +660,13 @@ function JoueurOrdinateur(numero, nom, color) {
 		GestionEnchere.checkEndNotify(this);
 	}
 
-	/* Fonction doBlocage a developpe permettant de faire du blocage de construction : vente d'un hotel pour limiter l'achat de maison, decision d'acheter un hotel pour bloquer.
+	/* Permet de faire du blocage de construction : vente d'un hotel pour limiter l'achat de maison, decision d'acheter un hotel pour bloquer.
 	 * Se base sur les terrains constructibles des adversaires ainsi que de leur tresorie.
 	 * Retourne vrai s'il faut bloquer le jeu de constructions
 	 */
 	this.doBlocage = function () {
 		// On compte le nombre joueurs qui peuvent construire
 		GestionJoueur.forEach(function(joueur){
-		//for (var index in joueurs) {
-			//var joueur = joueurs[index];
 			if (!this.equals(this)) {
 				var groups = joueur.findGroupes();
 				if (groups.size() > 0) {
@@ -1042,6 +1040,7 @@ function JoueurOrdinateur(numero, nom, color) {
 	 * Si 60% des terrains qui l'interessent ont ete vendu
 	 * Si aucune famille n'est completable (dans la strategie choisie)
 	 * Si on possede deux terrains d'une strategie qui n'est pas la notre, on choisi cette strategie
+	 * TODO : Si on a des groupes, que la strategie est bloquee et qu'on a de l'argent pour changer
 	 */
 	this.changeStrategie = function () {
 		var localStats = this.strategie.getStatsProprietes();

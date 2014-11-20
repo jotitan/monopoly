@@ -72,7 +72,6 @@ function Strategie(colors, agressif, name, id, interetGare) {
         var statutGroup = this.statutGroup(propriete, joueur, isEnchere);
 		var i2 = statutGroup.statut;
         var interet = {interet:1};
-		var coeff = 1;
 		if (i1 == false && i2 == 0) {
             interet = {interet:0.2};	// Permet en cas de situation tres confortable de continuer a investir
         }
@@ -82,6 +81,10 @@ function Strategie(colors, agressif, name, id, interetGare) {
         }
         if (i1 == true && i2 == 3) {
             interet = {interet:4};
+        }
+		// Pas dans la strategie mais permet de completer le groupe (opportunisme)
+		if (i1 == false && i2 == 3) {
+            interet = {interet:1.5};
         }
 		// En possede deja
 		if(i1 == true && i2 == 5){
@@ -213,7 +216,7 @@ function Strategie(colors, agressif, name, id, interetGare) {
 
 /* Achete en priorite les terrains les moins chers : bleu marine-812B5C, bleu clair-119AEB, violet-73316F et orange-D16E2D */
 function CheapStrategie() {
-    Strategie.call(this, ["#812B5C", "#119AEB", "#73316F", "#D16E2D"], 0, "Radin", 0);
+    Strategie.call(this, ["#812B5C", "#119AEB", "#73316F", "#D16E2D"], 0, "Econome", 0);
 }
 
 /* Achete en priorite les terrains moyennement chers : violet-73316F, orange-D16E2D, rouge-D32C19 et jaune-E6E018 */

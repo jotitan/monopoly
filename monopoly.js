@@ -33,7 +33,8 @@ var configJeu = [
 	{nom:"Variante 1",config:[true,true,false,false,false]}
 ];
 
-var stats = {	// Statistiques
+var globalStats = {	// Statistiques
+//var stats = {	// Statistiques
 	nbTours:0,	// Nombre de tours de jeu depuis le depuis (nb de boucle de joueurs)
 	heureDebut:new Date(),
 	positions:[]

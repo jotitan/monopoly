@@ -22,7 +22,7 @@ var Sauvegarde = {
             fiches: saveFiches,
             joueurCourant: GestionJoueur.getJoueurCourant().id,
             variantes: VARIANTES,
-            nbTours: stats.nbTours,
+            nbTours: globalStats.nbTours,
             plateau:InitMonopoly.plateau.name
         };
         this._putStorage(this.currentSauvegardeName, data);
@@ -39,7 +39,7 @@ var Sauvegarde = {
             data.fiches.forEach(function(f){GestionFiche.getById(f.id).load(f);});
             $.trigger('refreshPlateau');
             VARIANTES = data.variantes || VARIANTES;
-            stats.nbTours = data.nbTours || 0;
+            globalStats.nbTours = data.nbTours || 0;
             InitMonopoly.afterCreateGame();
             GestionJoueur.change(data.joueurCourant);
         });

@@ -196,7 +196,7 @@ function JoueurOrdinateur(numero, nom, color) {
 			this.rejectedPropositions[terrain.id] = [];
 		}
 		this.rejectedPropositions[terrain.id].push({
-			nbTours: stats.nbTours,
+			nbTours: globalStats.nbTours,
 			proposition: proposition
 		});
 		if (callback) {
@@ -329,7 +329,7 @@ function JoueurOrdinateur(numero, nom, color) {
 		var last = this._getLastProposition(terrain);
 		if (last != null) {
 			var pas = 3 + (Math.round((Math.random() * 1000) % 3));
-			return last.nbTours + pas < stats.nbTours;
+			return last.nbTours + pas < globalStats.nbTours;
 		}
 
 		return true;
@@ -1635,7 +1635,7 @@ function Joueur(numero, nom, color) {
 		$('.joueurCourant', this.div).removeAttr('style').addClass('defaite');
 		this.setArgent(0);
 		this.defaite = true;
-		this.tourDefaite = stats.nbTours;
+		this.tourDefaite = globalStats.nbTours;
 		$.trigger("monopoly.defaite", {
 			joueur: this
 		});
@@ -1984,7 +1984,7 @@ var GestionJoueur = {
 			}
 			return b.tourDefaite - a.tourDefaite;
 		});			
-		var message = "Le joueur " + gagnant.nom + " a gagné en " + this._formatTempsJeu(stats.heureDebut) + ".<br/>";
+		var message = "Le joueur " + gagnant.nom + " a gagné en " + this._formatTempsJeu(globalStats.heureDebut) + ".<br/>";
 		message+="1 - " + gagnant.nom + "<br/>";
 		
 		for(var i = 0 ; i < perdants.length ; i++){
@@ -2074,7 +2074,7 @@ var GestionJoueur = {
 			}
 			// On incremente le nb de tours
 			if (joueur.numero < this.joueurCourant.numero) {
-				stats.nbTours++;
+				globalStats.nbTours++;
 			}
 		}
         if(GestionDes.isSpecificAction()){

@@ -696,7 +696,7 @@ var GestionFiche = {
         // On calcule des cles
         var keys = [];
 		for (var id in this.fiches) {
-            if (this.fiches[id].isTerrain()) {
+            if (this.fiches[id].isPropriete()) {
                 keys.push(id);
             }
         }
@@ -705,7 +705,7 @@ var GestionFiche = {
     getTerrainsLibres: function () {
         var keys = [];
         for (var id in this.fiches) {
-            if (this.fiches[id].isTerrain() && this.fiches[id].statut == ETAT_LIBRE) {
+            if (this.fiches[id].isPropriete() && this.fiches[id].statut == ETAT_LIBRE) {
                 keys.push(id);
             }
         }

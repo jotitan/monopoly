@@ -312,10 +312,6 @@ function GestionDesRapideImpl(){
 		Drawer.addRealTime(this.cube.desRapide);
 	}
 
-    /*this.isDouble = function(){
-        return this.des1 == this.des2 && this.des1 != this.desRapide;
-    }*/
-
     this.isSpecificAction = function(){
         // Pas de Mr monopoly quand le joueur est en prison
         return !GestionJoueur.joueurCourant.enPrison && this._isMonopolyMan();

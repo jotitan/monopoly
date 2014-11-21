@@ -1599,6 +1599,7 @@ function Joueur(numero, nom, color,argent) {
 	/* Si le joueur ne peut pas payer, une exception est lancee (il a perdu). On recupere le peut d'argent a prendre */
 	/* Payer est potentiellement asynchrone (resolve manuel), on indique l'etape suivante en cas de reussite */
 	this.payerTo = function (montant, joueur,callback) {
+		argentDispo = this.getStats().argentDispo;
 		try {
 			this.payer(montant, function () {
 				joueur.gagner(montant);
@@ -1610,7 +1611,7 @@ function Joueur(numero, nom, color,argent) {
 		} catch (insolvable) {
 			// Le joueur n'est pas solvable, on se sert sur le reste
 			if (joueur != null) { // Pb quand amende ?
-				joueur.gagner(this.getStats().argentDispo);
+				joueur.gagner(argentDispo);
 			}
 			GestionJoueur.change();
 		}

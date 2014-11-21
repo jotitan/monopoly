@@ -82,9 +82,9 @@ function Strategie(colors, agressif, name, id, interetGare) {
         if (i1 == true && i2 == 3) {
             interet = {interet:4};
         }
-		// Pas dans la strategie mais permet de completer le groupe (opportunisme)
+		// Pas dans la strategie mais permet de completer le groupe et de construire
 		if (i1 == false && i2 == 3) {
-            interet = {interet:1.5};
+            interet = {interet:2};
         }
 		// En possede deja
 		if(i1 == true && i2 == 5){

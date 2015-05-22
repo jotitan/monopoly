@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title></title>
     <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
-    <script src="js/jquery.mousewheel.min.js"></script>
+    <script src="jquery.mousewheel.min.js"></script>
 </head>
 <body>
 
@@ -16,58 +16,59 @@ Bonjour <br/><br/>
 
 <script>
     $('#idDiv').mousewheel(function(e){
-        /*current+=e.deltaY
-        if(current <0){current = 0;return;}*/
-        run(e.deltaY > 0 ? -1:1)
-        //changeImage()
+        PileRunner.add(function(speed){/*count = 0;*/_show(e.deltaY > 0 ? -1:1,speed)});
     });
 
-    var url = "http://vbaranzini.free.fr/v2.0/photos/2014_05_17_REIMS/ld/"
+    //var url = "http://vbaranzini.free.fr/v2.0/photos/2014_05_17_REIMS/ld/"
+    var url = "file://C:/Projects/monopoly-js/poc/img_test/";
     var current = 2;
-    var prefixe = "2014_05_17_reims"
+    var prefixe = "icon_ok_";
 
-    var canvas = $('#idCanvas').get(0).getContext("2d")
+    var canvas = $('#idCanvas').get(0).getContext("2d");
 
-    var deep = 5
+    var deep = 5;
+
+    var isLastError = false;
 
     function changeImage(){
-         var data = {img:[],count:0}
+         var data = {img:[],count:0};
          for (var i = 0 ; i < deep  ; i++){
-             var img = new Image()
-             img.i=i
+             var img = new Image();
+             img.i=i;
              img.onload = function(){
-                data.count++
+                data.count++;
                 if(data.count == deep){
-                    clean()
+                    clean();
                     data.img.forEach(function(image){
-                        canvas.globalAlpha = (1 - (deep-1)/(deep+2)) + image.i/(deep+2)
-                        canvas.drawImage(image,10 + 30*image.i,10 + 20*image.i)
+                        canvas.globalAlpha = (1 - (deep-1)/(deep+2)) + image.i/(deep+2);
+                        canvas.drawImage(image,10 + 30*image.i,10 + 20*image.i);
                         if(image.i == deep -1){
-                            canvas.strokeStyle='gray'
-                            canvas.lineWidth=3
+                            canvas.strokeStyle='gray';
+                            canvas.lineWidth=3;
                             canvas.strokeRect(10 + 30*(deep-1),10+20*(deep-1),image.width,image.height)
                         }
                     } )
 
                 }
-             }
-             img.src=getUrl(deep-i)
+             };
+             img.onerror = function(){
+                 // Back to previous state, current -1 (case last one)
+                 //current--
+                 isLastError = true;
+             };
+             img.src=getUrl(deep-i);
              data.img.push(img);
          }
     }
 
-    var total = 0;
-
-    var count;
-    function run(sens){
-        PileRunner.add(function(speed){count = 0;_show(sens,speed)})
-    }
+    //var count;  // Count the current cycle of deplacement. Unique var cause one event a each time (no parallel execution)
 
     // Pile d'evenenemet, on met dedans
     var PileRunner = {
         table:[],
         running:false,
         add:function(e){
+            // No event runnning
             if(this.table.length == 0 && !this.running){
                 this._run(e,30)
             }else{
@@ -85,24 +86,36 @@ Bonjour <br/><br/>
             }
             this._run(this.table.splice(0,1)[0],10)
         }
-    }
+    };
 
-    var caches = []
+    var caches = [];
 
-    function _show(sens,speed){
-        speed = speed || 20
+    function _show(sens,speed,count){
+        count = count || 0
+        speed = speed || 20;
 
-        var data = {img:[],count:0}
+        console.log(count,sens,isLastError,current)
+
+
+        if(count == 0 && (!hasPrevious(sens) || !hasNext(sens))){
+            console.log("Force next");
+            PileRunner.next();
+            return
+        }
+        isLastError = false;
+
+        var data = {img:[],count:0};
         for (var i = 0; i < deep + ((sens < 0)?1:0)  ; i++){
-             var img = new Image()
-             img.i=i
+             var img = new Image();
+             img.i=i;
              img.onload = function(){
-                data.count++
+                 console.log("loaded")
+                data.count++;
 
                 if(data.count == deep + ((sens < 0)?1:0)){
-                    clean()
+                    clean();
                     data.img.forEach(function(image){
-                        canvas.globalAlpha = (1 - (deep-1)/(deep+2)) + image.i/(deep+2)
+                        canvas.globalAlpha = (1 - (deep-1)/(deep+2)) + image.i/(deep+2);
                         if(sens > 0 && image.i == deep-1){
                             canvas.globalAlpha = Math.max(0,1 - count/9)
                          }
@@ -113,32 +126,42 @@ Bonjour <br/><br/>
                             canvas.globalAlpha = canvas.globalAlpha / Math.max(count,1)
                          }
                         canvas.drawImage(image,10 + 30*image.i + (count*3)*sens,10 + 20*image.i + (count*2)*sens)
-                    } )
+                    } );
                     if(count++<10){
-                       setTimeout(function(){_show(sens,speed);},speed)
+                       setTimeout(function(){_show(sens,speed,count);},speed)
                     }else{
-                        current+=sens
-                        changeImage()
-                        PileRunner.next()
+                        current+=sens;
+                        changeImage();
+                        PileRunner.next();
                     }
                 }
-             }
-             img.src=getUrl(deep-i)
+             };
+            img.onerror = function(){
+                console.log("impossible to load image, skip");
+            };
+             img.src=getUrl(deep-i);
              data.img.push(img);
         }
+    }
 
+    // Can be less than 0
+    function hasPrevious(sens){
+        return current+sens >= 0
+    }
 
+    function hasNext(sens){
+        return sens != 1 || !isLastError
     }
 
     function getUrl(shift){
-        return url+prefixe+(current+((shift!=null)?shift:0))+".jpg"
+        return url+prefixe+(current+((shift!=null)?shift:0))+".png";
     }
 
     function clean(){
-        canvas.clearRect(0,0,400,300)
+        canvas.clearRect(0,0,400,300);
     }
 
-    changeImage()
+    changeImage();
 
 </script>
 

@@ -7,7 +7,7 @@ module.exports = function(grunt){
   			}
   		},
   		copy: {
-			target:{
+			target:{expand:true,
 				src:['lib/**','css/**','img/**','data/**','favicon.ico'],
 				dest:'build/'
 			}

@@ -3,6 +3,10 @@ h1. Monopoly full JS
 Implementation Full Javascript du Monopoly. 
 Utilisation de JQuery et canvas. Grunt permet de minifier le projet.
 
+h2. Démo
+
+Demo du monopoly  : "Monopoly":http://jotitan.github.io/monopoly/demo/
+
 h2. Fonctionnalités
 
 * Possibilité de jouer à 6 sur le même ordinateur

@@ -138,6 +138,7 @@ Bonjour <br/><br/>
              };
             img.onerror = function(){
                 console.log("impossible to load image, skip");
+                PileRunner.next();
             };
              img.src=getUrl(deep-i);
              data.img.push(img);
@@ -162,6 +163,7 @@ Bonjour <br/><br/>
     }
 
     changeImage();
+
 
 </script>
 

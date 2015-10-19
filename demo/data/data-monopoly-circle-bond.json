@@ -1,0 +1,8 @@
+{
+	"extend":"data-monopoly-jamesbond.json",
+	"plateau":{
+		"subtitle":"Round",
+		"type":"circle"
+		
+	}
+}

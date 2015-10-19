@@ -1,0 +1,231 @@
+@media screen and (max-width: 1350px) and (max-height:1000px) {
+	#informations-left,#informations-bottom {
+		display:none;
+	}
+}
+
+@media screen and (min-width: 1350px) {
+	#informations-left.panneau_joueur > div:nth-child(4n),#informations-left.panneau_joueur > hr:nth-child(4n+3) {
+		display:none;
+	}
+	#informations.panneau_joueur > div:nth-child(4n+2),#informations.panneau_joueur > hr:nth-child(4n+1) {
+		display:none;
+	}
+	#informations-bottom {
+		display:none;
+	}
+}
+
+@media screen and (min-height: 1000px){
+	#informations-left,#informations  {
+		display:none;
+	}	
+    #informations-bottom {
+        display:block;
+    }
+}
+
+#informations-bottom > div {
+	float:left;
+	margin-left:10px;
+}
+#informations-bottom > hr {
+	display:none;
+}
+
+.info-joueur > img { padding-right: 10px }
+.fiche {
+	display:block;
+	height:27px;
+	width:240px;
+}
+
+#fiche > table {
+	width:250px;
+}
+
+#idDetailFiche {
+	width:240px;
+}
+
+#idDetailFiche > table{
+	width:240px;
+}
+
+.panneau_joueur > div{
+    font-size: 14px;
+    width: 240px;
+}
+
+
+.panneau_joueur  {
+    width:250px;
+}
+
+.joueurCourant > .joueur-name {
+    padding-left: 35px;
+    background-image: url("../img/dice.png");
+    background-repeat: no-repeat;
+    background-size:25px;
+    background-position:5px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    font-weight: bold;
+	font-variant:small-caps;
+}
+.joueur-bloc{
+    height:22px;            
+}
+.joueurCourant > div { padding-left: 0px }
+.defaite { background-color: grey;padding-left:10px;color:lightgrey;text-decoration:line-through }
+.nbMaisons {
+    text-decoration: underline;
+    background-color: salmon;
+}
+.jail {
+    background-image: url("../img/prison.png");
+    background-repeat: no-repeat;
+    background-size: 25px 25px;
+    background-position : 0px -3px;
+    padding-left: 25px;
+}
+.jail > div {
+	width:215px
+}
+
+.jail > .fiche {
+	margin-left:-25px;
+}
+
+span.info-label {
+    display: inline-block;
+    width: 55px;
+    text-align: right;
+}
+body { margin: 0 }
+.title-dialog {
+    font-weight: bold;
+    text-align: center;
+    width: 100%;
+    border-bottom: solid 1px black;
+}
+.constructions select { width: 65px }
+.constructions select>option,
+.constructions select.hotel,
+.constructions select.maison {
+    background-repeat: no-repeat;
+    background-position: 2px;
+    background-size: 13px 13px;
+    padding-left: 15px;
+}
+.constructions select>option.maison,
+.constructions select>option.hotel { padding-left: 20px }
+.constructions select>option.maison,
+.constructions select.maison { background-image: url(../img/maison.png) }
+.constructions select>option.hotel,
+.constructions select.hotel { background-image: url(../img/hotel.png) }
+.constructions div.propriete { padding-left: 20px }
+.constructions div.propriete>span.title-propriete {
+    display: inline-block;
+    width: 200px;
+    font-weight: bold;
+}
+.ui-widget { font-size: 0.9em }
+
+.info_box {
+    border:solid grey 2px;
+    background-color:#FFFFFF;
+    position:absolute;
+    top:350px;
+    left:130px;
+    width:540px;
+    height:330px;
+    overflow:auto;
+    font-size: 12px;
+    font-family: Helvetica;
+    padding-left:3px;
+    border-radius: 10px;
+    border:3px inset #A09A9A;
+}
+
+#idReloadDice {
+	width:25px;
+	height:25px;
+	position:absolute;
+	top:215px;
+	left:270px;
+}
+
+#idReloadDice.circle {
+	top:310px;
+	left:465px;
+}
+
+.info_box.circle {
+	border-radius:10px 10px 300px 300px;
+	height:175px;
+	width:350px;
+	top:400px;
+	left:220px;
+	overflow:hidden;
+}
+
+.info_box.circle  > div{
+	text-align:center;
+	font-size:9px;
+}
+
+.list_encherisseurs > p {
+	margin-top:0px;
+	margin-bottom:0px;
+}
+
+div.ui-tooltip {
+    min-width: 180px;
+}
+
+.title h1 {
+    background-color:red;
+    color:white;
+    padding-left:10px;
+    font-size:40px;
+    padding-right:10px;
+    font-weight:bold;
+    text-shadow:-2px 2px #424242;
+	margin:0px;
+    cursor:pointer;
+}
+
+.circle > h1{
+	margin-left:-170px;
+	margin-top:30px;
+	font-size:53px;
+	background-color:transparent;
+}
+
+.title.circle > h2{
+	position:relative;
+	left:-100px;
+	margin-top:130px;
+}
+
+#plateau.circle button.action-joueur {
+	margin-left:159px;
+	margin-top:100px;
+}
+
+.title h2 {
+    font-size:25px;
+    float:right;
+	margin:0px;
+	margin-top:10px;
+}
+
+.disabled > img {
+    opacity: 0.2;
+}
+
+.hypotheque {
+    background-color: lightgrey;
+    color:black;
+}

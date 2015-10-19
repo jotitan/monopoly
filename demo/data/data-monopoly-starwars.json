@@ -1,0 +1,126 @@
+{
+	"plateau":{
+		"subtitle":"Star Wars",
+		"backgroundColor": "#888888",
+		"textColor": "#FFFFFF",
+		"nomsJoueurs":["R2 D2","Dark Vador","Jango Feet","StormTrooper","Boba Feet","Clone","Chewbacca"],
+		"colors":["#2551A9","#000000","#800000","#FFFFFF","#7A9B94","#FFD300","#7A9B94","#9EA3A5"],
+		"imgJoueurs":["img/starwars/r2_d2.png","img/starwars/darth_vader.png","img/starwars/jango_fett.png","img/starwars/stormtrooper.png","img/starwars/boba_fett.png","img/starwars/clone_2.png"],
+		"rollColor":"#999999",
+		"depart":200,
+		"argent":1500
+	},
+	"currency":"7",
+	"background-image":"",
+	"fiches": [
+		{"type": "depart","axe": 2,"pos": 0,"nom": "Départ"},
+		{"type": "propriete","groupe": "Violet","axe": 2,"pos": 1,"nom": "Tatooine Mos Eisley","colors": ["#812B5C", "#DFA4C6"],"prix": 40,"loyers": [2,10,30,90,160,250],"prixMaison": 50},
+		{"type": "communaute","axe": 2,"pos": 2},
+		{"type": "propriete","groupe": "Violet","axe": 2,"pos": 3,"nom": "tatooine Mos Espa","colors": ["#812B5C", "#DFA4C6"],"prix": 80,"loyers": [4, 20, 60, 180, 320, 450],"prixMaison": 50},
+		{"type": "taxe","axe": 2,"pos": 4,"nom": "Impots sur le revenu","prix": 200},
+		{"type": "gare","axe": 2,"pos": 5,"nom": "Corellian Corvette","colors": ["#000000", "#ABABAB"],"prix": 200,"loyers": [25, 50, 100, 200]},
+		{"type": "propriete","groupe": "Bleu clair","axe": 2,"pos": 6,"nom": "Dagobah","colors": ["#119AEB", "#98CEEE"],"prix": 100,"loyers": [6, 30, 90, 270, 400, 550],"prixMaison": 50},
+		{"type": "chance","axe": 2,"pos": 7},
+		{"type": "propriete","groupe": "Bleu clair","axe": 2,"pos": 8,"nom": "Endor","colors": ["#119AEB", "#98CEEE"],"prix": 100,"loyers": [6, 30, 90, 270, 400, 550],"prixMaison": 50},
+		{"type": "propriete","groupe": "Bleu clair","axe": 2,"pos": 9,"nom": "Bespin","colors": ["#119AEB", "#98CEEE"],"prix": 120,"loyers": [8, 40, 100, 300, 450, 600],"prixMaison": 50},				
+		{"type": "special","axe": 3,"pos": 0,"nom": "Simple visite"},				
+		{"type": "propriete","groupe": "Violet clair","axe": 3,"pos": 1,"nom": "Hoth","colors": ["#73316F", "#DFB4DC"],"prix": 140,"loyers": [10, 50, 150, 450, 625, 750],"prixMaison": 100},
+		{"type": "compagnie","axe": 3,"pos": 2,"nom": " Death Star","colors": ["lightgreen"],"prix": 150,"loyers": [4,10]},
+		{"type": "propriete","groupe": "Violet clair","axe": 3,"pos": 3,"nom": "Dantooine","colors": ["#73316F", "#DFB4DC"],"prix": 140,"loyers": [10, 50, 150, 450, 625, 750],"prixMaison": 100},				
+		{"type": "propriete","groupe": "Violet clair","axe": 3,"pos": 4,"nom": "Yavin 4","colors": ["#73316F", "#DFB4DC"],"prix": 160,"loyers": [12, 60, 180, 500, 700, 900],"prixMaison": 100},
+		{"type": "gare","axe": 3,"pos": 5,"nom": "Imperial Star Destroyer","colors": ["#000000", "#ABABAB"],"prix": 200,"loyers": [25, 50, 100, 200]},
+		{"type": "propriete","groupe": "Orange","axe": 3,"pos": 6,"nom": "Kashyyyk","colors": ["#D16E2D", "#FECC84"],"prix": 180,"loyers": [14, 70, 200, 550, 750, 950],"prixMaison": 100},
+		{"type": "communaute","axe": 3,"pos": 7},
+		{"type": "propriete","groupe": "Orange","axe": 3,"pos": 8,"nom": "Mustafar","colors": ["#D16E2D", "#FECC84"],"prix": 180,"loyers": [14, 70, 200, 550, 750, 950],"prixMaison": 100},
+		{"type": "propriete","groupe": "Orange","axe": 3,"pos": 9,"nom": "Utapau","colors": ["#D16E2D", "#FECC84"],"prix": 200,"loyers": [16, 80, 220, 600, 800, 1000],"prixMaison": 100},
+		{"type": "parc","axe": 0,"pos": 0,"nom": "Parc Gratuit"},
+		{"type": "propriete","groupe": "Rouge","axe": 0,"pos": 1,"nom": "Kessel","colors": ["#D32C19", "#F9AEA6"],"prix": 220,"loyers": [18, 90, 250, 700, 875, 1050],"prixMaison": 100},
+		{"type": "chance","axe": 0,"pos": 2},
+		{"type": "propriete","groupe": "Rouge","axe": 0,"pos": 3,"nom": "Sullust","colors": ["#D32C19", "#F9AEA6"],"prix": 220,"loyers": [18, 9000, 250, 700, 875, 1000],"prixMaison": 150},		
+		{"type": "propriete","groupe": "Rouge","axe": 0,"pos": 4,"nom": "Ord Mantell","colors": ["#D32C19", "#F9AEA6"],"prix": 240,"loyers": [20, 100, 300, 750, 925, 1100],"prixMaison": 150},						
+		{"type": "gare","axe": 0,"pos": 5,"nom": "Republic Assault Ship","colors": ["#000000", "#ABABAB"],"prix": 200,"loyers": [25, 50, 100, 200]},		
+		{"type": "propriete","groupe": "Jaune","axe": 0,"pos": 6,"nom": "Geonosis","colors": ["#E6E018", "#F8F587"],"prix": 260,"loyers": [20, 110, 330, 800, 975, 1150],"prixMaison": 150},
+		{"type": "propriete","groupe": "Jaune","axe": 0,"pos": 7,"nom": "Kamino","colors": ["#E6E018", "#F8F587"],"prix": 260,"loyers": [22, 110, 300, 800, 975, 1150],"prixMaison": 150},								
+		{"type": "compagnie","axe": 0,"pos": 8,"nom": " Death Star II","colors": ["lightgreen"],"prix": 150,"loyers": [4,10]},
+		{"type": "propriete","groupe": "Jaune","axe": 0,"pos": 9,"nom": "Naboo","colors": ["#E6E018", "#F8F587"],"prix": 280,"loyers": [24, 120, 360, 850, 1025, 1200],"prixMaison": 150},								
+		{"type": "prison","axe": 1,"pos": 0,"nom": "Allez en prison"},
+		{"type": "propriete","groupe": "Vert","axe": 1,"pos": 1,"nom": "Mon Calamari","colors": ["#11862E", "#93D1A2"],"prix": 300,"loyers": [26, 130, 390, 900, 1100, 1275],"prixMaison": 200},
+		{"type": "propriete","groupe": "Vert","axe": 1,"pos": 2,"nom": "Corellia","colors": ["#11862E", "#93D1A2"],"prix": 300,"loyers": [26, 130, 300, 900, 1100, 1275],"prixMaison": 200},
+		{"type": "communaute","axe": 1,"pos": 3},		
+		{"type": "propriete","groupe": "Vert","axe": 1,"pos": 4,"nom": "Alderaan","colors": ["#11862E", "#93D1A2"],"prix": 320,"loyers": [28, 150, 450, 1000, 1200, 1400],"prixMaison": 200},		
+		{"type": "gare","axe": 1,"pos": 5,"nom": "Super Star destroyer","colors": ["#000000", "#ABABAB"],"prix": 200,"loyers": [25, 50, 100, 200]},
+		{"type": "chance","axe": 1,"pos": 6},				
+		{"type": "propriete","groupe": "Bleu","axe": 1,"pos": 7,"nom": "Coruscant Jedi Temple","colors": ["#132450", "#808EB0"],"prix": 350,"loyers": [35, 175, 500, 1100, 1300, 1500],"prixMaison": 200},
+		{"type": "taxe","axe": 1,"pos": 8,"nom": "Taxe de luxe","prix": 10000},		
+		{"type": "propriete","groupe": "Bleu","axe": 1,"pos": 9,"nom": "Coruscant Senate","colors": ["#132450", "#808EB0"],"prix": 400,"loyers": [50, 200, 600, 1400, 1700, 2000],"prixMaison": 200}						
+	],
+	"images":{
+		"taxe": {
+			"src": "img/bijou.png",
+            "width": 40,
+            "height": 50
+		},
+		"chance":{
+		    "src": "img/starwars/sith_light_saber.png",
+            "width": 50,
+            "height": 70,
+			"margin":-5
+        },
+		"caisseDeCommunaute":{
+			"src": "img/starwars/jedi_light_saber.png",
+            "width": 50,
+            "height": 70,
+			"margin":-5
+		},
+		"compagnie":{
+			"src": "img/light.png",
+            "width": 50,
+            "height": 35,
+			"margin": 5
+		},
+		"gare":{
+			"src": "img/starwars/xwing.png",
+            "width": 50,
+            "height": 50
+		}
+	},
+	"titles":{
+		"chance":"Sith",
+		"communaute":"Jedi"
+	},
+	"chance":{
+		"cartes":[
+			{"nom":"Payer le carburant du landspeeder 7 150","type":"taxe","montant":150},
+			{"nom":"Amande pour excès de vitesse : 7 15","type":"taxe","montant":15},
+			{"nom":"Vous avez gagné le prix de tir. Recevez 7 100","type":"prime","montant":100},
+			{"nom":"La banque vous verse un dividende de 7 5.000","type":"prime","montant":50},
+			{"nom":"Votre immeuble et votre prêt rapportent. Vous devez toucher 7 150","type":"prime","montant":150},
+			{"nom":"Amande pour ivresse : 7 20","type":"taxe","montant":20},
+			{"nom":"Rendez vous à Ord Mantell. Si vous passez par la case Départ, recevez 7 200","type":"goto","axe":0,"pos":4},
+			{"nom":"Rendez vous au Coruscant Senate","type":"goto","axe":1,"pos":9},
+			{"nom":"Reculez de 3 cases","type":"move","nb":-3},
+			{"nom":"Avancez jusqu'à la case Départ","type":"goto","axe":2,"pos":0},
+			{"nom":"Rendez vous sur l'Imperial Star Destroyer. Si vous passez par la case Départ, recevez 7 200","type":"goto","axe":3,"pos":5},
+			{"nom":"Atterissez sur Hoth. Si vous passez par la case Départ, recevez 7 200","type":"goto","axe":3,"pos":1},
+			{"nom":"Allez en prison. Rendez vous directement à la prison. Ne franchissez par la case Départ. Ne touchez pas 7 200","type":"goto","axe":1,"pos":0,"direct":true}
+		]
+	},
+	"communaute":{
+		"cartes":[
+			{"nom":"La vente de votre stock pour rapport 7 50","type":"prime","montant":50},
+			{"nom":"Payez votre Police d'Assurance s'élevant à 7 50","type":"taxe","montant":50},
+			{"nom":"Recevez votre revenu annuel 7 100","type":"prime","montant":100},
+			{"nom":"Vous avez gagné le deuxième Prix de Beauté. Recevez 7 10","type":"prime","montant":10},
+			{"nom":"Payez la note du Médecin 7 50","type":"taxe","montant":50},
+			{"nom":"Les Contributions vous remboursent la somme de 7 20","type":"prime","montant":20},
+			{"nom":"Erreur de la Banque en votre faveur Recevez 7 200","type":"prime","montant":200},
+			{"nom":"Recevez votre intérêt sur l'emprunt à 7 % 7 25","type":"prime","montant":25},
+			{"nom":"Payez à l'Hôpital 7 100","type":"taxe","montant":100},
+			{"nom":"Vous héritez 7 100","type":"prime","montant":100},
+			{"nom":"Placez vous sur la case Départ","type":"goto","axe":2,"pos":0},
+			{"nom":"Allez en prison. Avancez tout droit en prison. Ne passez par la case Départ. Ne touchez pas 7 200","type":"goto","axe":1,"pos":0,"direct":true},
+			{"nom":"Retournez à Tatooine Mos Eisley.","type":"goto","axe":2,"pos":1,"direct":true},
+			{"nom":"Vous êtes libéré de prison","type":"prison"}
+		]
+	}
+}

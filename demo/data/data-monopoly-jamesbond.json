@@ -1,0 +1,119 @@
+{
+	"plateau":{
+		"subtitle":"James Bond Edition",
+		"textColor":"white",
+		"backgroundColor": "#999999",
+		"background-image":"",
+		"nomsJoueurs":["Daniel Craig","Roger Moore","Sean Connery","Timothy Dalton","Pierce Brosnan","Georges Lazenby"],
+		"rollColor":"#444444",
+		"depart":20000
+	},
+	"currency": "£",
+	"fiches": [
+		{"type": "depart","axe": 2,"pos": 0,"nom": "Départ"},
+		{"type": "propriete","groupe": "Violet","axe": 2,"pos": 1,"nom": "Docteur No","colors": ["#812B5C", "#DFA4C6"],"prix": 4000,"loyers": [200,1000,3000,9000,16000,25000],"prixMaison": 5000},
+		{"type": "communaute","axe": 2,"pos": 2},
+		{"type": "propriete","groupe": "Violet","axe": 2,"pos": 3,"nom": "Bons baisers de Russie","colors": ["#812B5C", "#DFA4C6"],"prix": 8000,"loyers": [400, 2000, 6000, 18000, 32000, 45000],"prixMaison": 5000},
+		{"type": "taxe","axe": 2,"pos": 4,"nom": "Impots sur le revenu","prix": 20000},
+		{"type": "gare","axe": 2,"pos": 5,"nom": "Aston Martin DB5","colors": ["#000000", "#ABABAB"],"prix": 20000,"loyers": [2500, 5000, 10000, 20000]},
+		{"type": "propriete","groupe": "Bleu clair","axe": 2,"pos": 6,"nom": "Goldfinger","colors": ["#119AEB", "#98CEEE"],"prix": 10000,"loyers": [600, 3000, 9000, 27000, 40000, 55000],"prixMaison": 5000},
+		{"type": "chance","axe": 2,"pos": 7},
+		{"type": "propriete","groupe": "Bleu clair","axe": 2,"pos": 8,"nom": "Opération Tonnerre","colors": ["#119AEB", "#98CEEE"],"prix": 10000,"loyers": [600, 3000, 9000, 27000, 40000, 55000],"prixMaison": 5000},
+		{"type": "propriete","groupe": "Bleu clair","axe": 2,"pos": 9,"nom": "On ne vit que deux fois","colors": ["#119AEB", "#98CEEE"],"prix": 12000,"loyers": [800, 4000, 10000, 30000, 45000, 60000],"prixMaison": 5000},				
+		{"type": "special","axe": 3,"pos": 0,"nom": "Simple visite"},				
+		{"type": "propriete","groupe": "Violet clair","axe": 3,"pos": 1,"nom": "Au Service secret de sa Majesté","colors": ["#73316F", "#DFB4DC"],"prix": 14000,"loyers": [1000, 5000, 15000, 45000, 62500, 75000],"prixMaison": 10000},
+		{"type": "compagnie","axe": 3,"pos": 2,"nom": "Universal Export","img":"compagnie-universal","colors": ["lightgreen"],"prix": 15000,"loyers": [400,1000]},
+		{"type": "propriete","groupe": "Violet clair","axe": 3,"pos": 3,"nom": "Les Diamants sont Eternels","colors": ["#73316F", "#DFB4DC"],"prix": 14000,"loyers": [1000, 5000, 15000, 45000, 62500, 75000],"prixMaison": 10000},				
+		{"type": "propriete","groupe": "Violet clair","axe": 3,"pos": 4,"nom": "Vivre et Laisser Mourir","colors": ["#73316F", "#DFB4DC"],"prix": 16000,"loyers": [1200, 6000, 18000, 50000, 70000, 90000],"prixMaison": 10000},
+		{"type": "gare","axe": 3,"pos": 5,"nom": "Aston Martin AMV8","colors": ["#000000", "#ABABAB"],"prix": 20000,"loyers": [2500, 5000, 10000, 20000]},
+		{"type": "propriete","groupe": "Orange","axe": 3,"pos": 6,"nom": "L'homme au Pistolet d'Or","colors": ["#D16E2D", "#FECC84"],"prix": 18000,"loyers": [1400, 7000, 20000, 55000, 75000, 95000],"prixMaison": 10000},
+		{"type": "communaute","axe": 3,"pos": 7},
+		{"type": "propriete","groupe": "Orange","axe": 3,"pos": 8,"nom": "L'espion qui m'aimait","colors": ["#D16E2D", "#FECC84"],"prix": 18000,"loyers": [1400, 7000, 20000, 55000, 75000, 95000],"prixMaison": 10000},
+		{"type": "propriete","groupe": "Orange","axe": 3,"pos": 9,"nom": "Moonraker","colors": ["#D16E2D", "#FECC84"],"prix": 20000,"loyers": [1600, 8000, 22000, 60000, 80000, 100000],"prixMaison": 10000},
+		{"type": "parc","axe": 0,"pos": 0,"nom": "Parc Gratuit"},
+		{"type": "propriete","groupe": "Rouge","axe": 0,"pos": 1,"nom": "Rien que pour vos yeux","colors": ["#D32C19", "#F9AEA6"],"prix": 22000,"loyers": [1800, 9000, 25000, 70000, 87500, 105000],"prixMaison": 15000},
+		{"type": "chance","axe": 0,"pos": 2},
+		{"type": "propriete","groupe": "Rouge","axe": 0,"pos": 3,"nom": "Octopussy","colors": ["#D32C19", "#F9AEA6"],"prix": 22000,"loyers": [1800, 9000, 25000, 70000, 87500, 105000],"prixMaison": 15000},		
+		{"type": "propriete","groupe": "Rouge","axe": 0,"pos": 4,"nom": "Dangereu- sement vôtre","colors": ["#D32C19", "#F9AEA6"],"prix": 24000,"loyers": [2000, 10000, 30000, 75000, 92500, 110000],"prixMaison": 15000},						
+		{"type": "gare","axe": 0,"pos": 5,"nom": "Aston Martin Vanquish","colors": ["#000000", "#ABABAB"],"prix": 20000,"loyers": [2500, 5000, 10000, 20000]},		
+		{"type": "propriete","groupe": "Jaune","axe": 0,"pos": 6,"nom": "Tuer n'est pas jouer","colors": ["#E6E018", "#F8F587"],"prix": 26000,"loyers": [2200, 11000, 33000, 80000, 97500, 115000],"prixMaison": 15000},
+		{"type": "propriete","groupe": "Jaune","axe": 0,"pos": 7,"nom": "Permis de Tuer","colors": ["#E6E018", "#F8F587"],"prix": 26000,"loyers": [2200, 11000, 33000, 80000, 97500, 115000],"prixMaison": 15000},								
+		{"type": "compagnie","axe": 0,"pos": 8,"nom": "S.P.E.C.T.R.E.","img":"compagnie-spectre","colors": ["lightgreen"],"prix": 15000,"loyers": [400,1000]},
+		{"type": "propriete","groupe": "Jaune","axe": 0,"pos": 9,"nom": "Goldeneye","colors": ["#E6E018", "#F8F587"],"prix": 28000,"loyers": [2400, 12000, 36000, 85000, 102500, 120000],"prixMaison": 15000},								
+		{"type": "prison","axe": 1,"pos": 0,"nom": "Allez en prison"},
+		{"type": "propriete","groupe": "Vert","axe": 1,"pos": 1,"nom": "Demain ne Meurt Jamais","colors": ["#11862E", "#93D1A2"],"prix": 30000,"loyers": [2600, 13000, 39000, 90000, 110000, 127500],"prixMaison": 20000},
+		{"type": "propriete","groupe": "Vert","axe": 1,"pos": 2,"nom": "Le Monde ne Suffit pas","colors": ["#11862E", "#93D1A2"],"prix": 30000,"loyers": [2600, 13000, 39000, 90000, 110000, 127500],"prixMaison": 20000},
+		{"type": "communaute","axe": 1,"pos": 3},		
+		{"type": "propriete","groupe": "Vert","axe": 1,"pos": 4,"nom": "Meurs un Autre Jour","colors": ["#11862E", "#93D1A2"],"prix": 32000,"loyers": [2800, 15000, 45000, 100000, 120000, 140000],"prixMaison": 20000},		
+		{"type": "gare","axe": 1,"pos": 5,"nom": "Aston Martin DBS","colors": ["#000000", "#ABABAB"],"prix": 20000,"loyers": [2500, 5000, 10000, 20000]},
+		{"type": "chance","axe": 1,"pos": 6},				
+		{"type": "propriete","groupe": "Bleu","axe": 1,"pos": 7,"nom": "Casino Royale","colors": ["#132450", "#808EB0"],"prix": 35000,"loyers": [3500, 17500, 50000, 110000, 130000, 150000],"prixMaison": 20000},
+		{"type": "taxe","axe": 1,"pos": 8,"nom": "Champagne","prix": 10000},		
+		{"type": "propriete","groupe": "Bleu","axe": 1,"pos": 9,"nom": "Quantum of Solace","colors": ["#132450", "#808EB0"],"prix": 40000,"loyers": [5000, 20000, 60000, 140000, 170000, 200000],"prixMaison": 20000}						
+	],
+	"images":{
+		"gare":{
+			"src" : "img/jamesbond/aston_martin.png",
+			"width":60,
+			"height":20,
+			"margin":15
+		},
+		"chance":{
+			"src" : "img/jamesbond/gadget.png",
+			"width":32,
+			"height":70,
+			"margin":-5
+		},
+		"caisseDeCommunaute":{
+			"src" : "img/jamesbond/woman.png",
+			"width":50,
+			"height":60,
+			"margin":0
+		},
+		"compagnie-spectre":{
+			"src" : "img/jamesbond/spectre.png",
+			"width":45,
+			"height":45,
+			"margin":0
+		},
+		"compagnie-universal":{
+			"src" : "img/jamesbond/universal_export.png",
+			"width":40,
+			"height":40,
+			"margin":5
+		}
+	},
+	"titles":{
+		"chance":"Gadgets",
+		"communaute":"James Bond Girl",
+		"taxe":"Champagne"
+	},
+	"chance":{
+		"cartes":[
+			{"nom":"L'aile avant de la DBS a été abimée, montant des réparations, £ 15.000","type":"taxe","montant":15000},
+			{"nom":"Amende pour excès de vitesse : £ 1.500","type":"taxe","montant":1500},
+			{"nom":"Casino de Monte Carlo, vous gagner 10000£ au bacarra","type":"prime","montant":10000},
+			{"nom":"Une partie de poker improvisée sur un yacht vous rapporte £ 5.000","type":"prime","montant":5000},
+			{"nom":"Vous récupérez la malette d'un terroriste, elle contient £ 15.000","type":"prime","montant":15000},
+			{"nom":"Amende pour ivresse : £ 2.000","type":"taxe","montant":2000},
+			{"nom":"Rendez vous à la Perlas de las Dunas","type":"goto","axe":1,"pos":9},
+			{"nom":"Q a un cadeau pour vous, avancez jusqu'à la case Départ","type":"goto","axe":2,"pos":0},
+			{"nom":"Regardez OHMSS. Si vous passez par la case Départ, recevez £ 20.000","type":"goto","axe":3,"pos":1},
+			{"nom":"Allez en prison. Rendez vous directement à la prison. Ne franchissez par la case Départ. Ne touchez pas £ 20.000","type":"goto","axe":1,"pos":0,"direct":true}			
+		]
+	},
+	"communaute":{
+		"cartes":[
+			{"nom":"Une partie de golf vous rapporte £ 5.000","type":"prime","montant":5000},
+			{"nom":"Excès de vitesse, payer £ 5.000","type":"taxe","montant":5000},
+			{"nom":"Prime du MI6 pour service rendu £ 10.000","type":"prime","montant":10000},
+			{"nom":"Toujours un double six au backgammon. Recevez £ 1.000","type":"prime","montant":1000},
+			{"nom":"Les faux papiers coutent chers £ 5.000","type":"taxe","montant":5000},
+			{"nom":"Sanchez vous remercie pour vos informations, il vous donne £ 2.000","type":"prime","montant":2000},
+			{"nom":"Erreur de la Banque en votre faveur Recevez £ 20.000","type":"prime","montant":2000},
+			{"nom":"Recevez votre intérêt sur l'emprunt à 7 % £ 2.500","type":"prime","montant":2500},
+			{"nom":"Vous détruisez vos gadgets, Q demande £ 10.000","type":"taxe","montant":10000},
+			{"nom":"Vous héritez de £ 10.000","type":"prime","montant":10000}			
+		]
+	}
+}

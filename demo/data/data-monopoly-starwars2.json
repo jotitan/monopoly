@@ -1,0 +1,8 @@
+{
+	"extend":"data-monopoly-starwars.json",
+	"plateau":{
+		"subtitle":"Star Wars Personnage",
+		"nomsJoueurs":["R2 D2","C3 PO","Dark Vador","StormTrooper","Boba Feet","Chewbacca"],
+		"imgJoueurs":["img/starwars/sw_r2d2.png","img/starwars/sw_c3po.png","img/starwars/sw_darth_vader.png","img/starwars/sw_clone.png","img/starwars/sw_boba_fett.png","img/starwars/sw_chewbacca.png"]	
+	}
+}

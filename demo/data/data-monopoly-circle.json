@@ -1,0 +1,27 @@
+{
+	"extend":"data-monopoly.json",
+	"plateau":{
+		"subtitle":"Round",
+		"type":"circle"		
+	},
+	"images":{
+		"default":{
+			"marginTop":150,
+			"marginLeft":0.25,
+			"rotate":-90
+		},
+		"gare":{
+			"width":40,
+			"height":20
+		},
+		"chance":{
+			"width":25,
+			"height":30
+		},
+		"caisseDeCommunaute":{
+			"height":30,
+			"width":25,
+			"marginLeft":0.15
+		}
+	}
+}

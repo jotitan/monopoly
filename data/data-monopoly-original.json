@@ -1,0 +1,126 @@
+{
+	"plateau":{
+		"subtitle":"Original",
+		"backgroundColor": "#A7E9DB",
+		"textColor": "#000000",
+		"nomsJoueurs":["Cat","Racecar","Top hat","Wheelbarrow","Thimble","Scottie Dog","Battleship","Boot"],
+		"rollColor":"#999999",
+		"depart":200
+	},
+	"background-image":"",
+	"currency": "$",
+	"fiches": [
+		{"type": "depart","axe": 2,"pos": 0,"nom": "GO"},
+		{"type": "propriete","groupe": "Violet","axe": 2,"pos": 1,"nom": "Mediterranean Avenue","colors": ["#812B5C", "#DFA4C6"],"prix": 60,"loyers": [2,10,30,90,160,250],"prixMaison": 50},
+		{"type": "communaute","axe": 2,"pos": 2},
+		{"type": "propriete","groupe": "Violet","axe": 2,"pos": 3,"nom": "Baltic Avenue","colors": ["#812B5C", "#DFA4C6"],"prix": 60,"loyers": [4, 20, 60, 180, 320, 450],"prixMaison": 50},
+		{"type": "taxe","axe": 2,"pos": 4,"nom": "Impots sur le revenu","prix": 200},
+		{"type": "gare","axe": 2,"pos": 5,"nom": "Reading Railroad","colors": ["#000000", "#ABABAB"],"prix": 200,"loyers": [25, 50, 100, 200]},
+		{"type": "propriete","groupe": "Bleu clair","axe": 2,"pos": 6,"nom": "Oriental Avenue","colors": ["#119AEB", "#98CEEE"],"prix": 100,"loyers": [6, 30, 90, 270, 400, 550],"prixMaison": 50},
+		{"type": "chance","axe": 2,"pos": 7},
+		{"type": "propriete","groupe": "Bleu clair","axe": 2,"pos": 8,"nom": "Vermont Avenue","colors": ["#119AEB", "#98CEEE"],"prix": 100,"loyers": [6, 30, 90, 270, 400, 550],"prixMaison": 50},
+		{"type": "propriete","groupe": "Bleu clair","axe": 2,"pos": 9,"nom": "Connecticut Avenue","colors": ["#119AEB", "#98CEEE"],"prix": 120,"loyers": [8, 40, 100, 300, 450, 600],"prixMaison": 50},				
+		{"type": "special","axe": 3,"pos": 0,"nom": "Simple visite"},				
+		{"type": "propriete","groupe": "Violet clair","axe": 3,"pos": 1,"nom": "St. Charles Place","colors": ["#73316F", "#DFB4DC"],"prix": 140,"loyers": [10, 50, 150, 450, 625, 750],"prixMaison": 100},
+		{"type": "compagnie","axe": 3,"pos": 2,"nom": "Electric Company","colors": ["lightgreen"],"prix": 150,"loyers": [400,1000]},
+		{"type": "propriete","groupe": "Violet clair","axe": 3,"pos": 3,"nom": "States Avenue","colors": ["#73316F", "#DFB4DC"],"prix": 140,"loyers": [10, 50, 150, 450, 625, 750],"prixMaison": 100},				
+		{"type": "propriete","groupe": "Violet clair","axe": 3,"pos": 4,"nom": "Virginia Avenue","colors": ["#73316F", "#DFB4DC"],"prix": 160,"loyers": [12, 60, 180, 500, 700, 900],"prixMaison": 100},
+		{"type": "gare","axe": 3,"pos": 5,"nom": "Pennsylvania Railroad","colors": ["#000000", "#ABABAB"],"prix": 200,"loyers": [25, 50, 100, 200]},
+		{"type": "propriete","groupe": "Orange","axe": 3,"pos": 6,"nom": "St. James Place","colors": ["#D16E2D", "#FECC84"],"prix": 180,"loyers": [14, 70, 200, 550, 750, 950],"prixMaison": 100},
+		{"type": "communaute","axe": 3,"pos": 7},
+		{"type": "propriete","groupe": "Orange","axe": 3,"pos": 8,"nom": "Tennessee Avenue","colors": ["#D16E2D", "#FECC84"],"prix": 180,"loyers": [14, 70, 200, 550, 750, 950],"prixMaison": 100},
+		{"type": "propriete","groupe": "Orange","axe": 3,"pos": 9,"nom": "New York Avenue","colors": ["#D16E2D", "#FECC84"],"prix": 200,"loyers": [16, 80, 220, 600, 800, 1000],"prixMaison": 100},
+		{"type": "parc","axe": 0,"pos": 0,"nom": "Parc Gratuit"},
+		{"type": "propriete","groupe": "Rouge","axe": 0,"pos": 1,"nom": "Kentucky Avenue","colors": ["#D32C19", "#F9AEA6"],"prix": 220,"loyers": [18, 90, 250, 700, 875, 1050],"prixMaison": 150},
+		{"type": "chance","axe": 0,"pos": 2},
+		{"type": "propriete","groupe": "Rouge","axe": 0,"pos": 3,"nom": "Indiana Avenue","colors": ["#D32C19", "#F9AEA6"],"prix": 220,"loyers": [18, 90, 250, 700, 875, 1050],"prixMaison": 150},		
+		{"type": "propriete","groupe": "Rouge","axe": 0,"pos": 4,"nom": "Illinois Avenue","colors": ["#D32C19", "#F9AEA6"],"prix": 240,"loyers": [20, 100, 300, 750, 925, 1100],"prixMaison": 150},						
+		{"type": "gare","axe": 0,"pos": 5,"nom": "B&O Railroad","colors": ["#000000", "#ABABAB"],"prix": 200,"loyers": [25, 50, 100, 200]},		
+		{"type": "propriete","groupe": "Jaune","axe": 0,"pos": 6,"nom": "Atlantic Avenue","colors": ["#E6E018", "#F8F587"],"prix": 260,"loyers": [22, 110, 330, 800, 975, 1150],"prixMaison": 150},
+		{"type": "propriete","groupe": "Jaune","axe": 0,"pos": 7,"nom": "Ventnor Avenue","colors": ["#E6E018", "#F8F587"],"prix": 260,"loyers": [22, 110, 330, 800, 975, 1150],"prixMaison": 150},								
+		{"type": "compagnie","axe": 0,"pos": 8,"nom": "Water Works","colors": ["lightgreen"],"prix": 150,"loyers": [400,1000]},
+		{"type": "propriete","groupe": "Jaune","axe": 0,"pos": 9,"nom": "Marvin Gardens","colors": ["#E6E018", "#F8F587"],"prix": 280,"loyers": [24, 120, 360, 850, 1025, 1200],"prixMaison": 150},								
+		{"type": "prison","axe": 1,"pos": 0,"nom": "Go To Jail"},
+		{"type": "propriete","groupe": "Vert","axe": 1,"pos": 1,"nom": "Pacific Avenue","colors": ["#11862E", "#93D1A2"],"prix": 300,"loyers": [26, 130, 390, 900, 1100, 1275],"prixMaison": 200},
+		{"type": "propriete","groupe": "Vert","axe": 1,"pos": 2,"nom": "North Carolina Avenue","colors": ["#11862E", "#93D1A2"],"prix": 300,"loyers": [26, 130, 390, 900, 1100, 1275],"prixMaison": 200},
+		{"type": "communaute","axe": 1,"pos": 3},		
+		{"type": "propriete","groupe": "Vert","axe": 1,"pos": 4,"nom": "Pennsylvania Avenue","colors": ["#11862E", "#93D1A2"],"prix": 320,"loyers": [28, 150, 450, 1000, 1200, 1400],"prixMaison": 200},		
+		{"type": "gare","axe": 1,"pos": 5,"nom": "Short Line","colors": ["#000000", "#ABABAB"],"prix": 200,"loyers": [25, 50, 100, 200]},
+		{"type": "chance","axe": 1,"pos": 6},				
+		{"type": "propriete","groupe": "Bleu","axe": 1,"pos": 7,"nom": "Park Place","colors": ["#132450", "#808EB0"],"prix": 350,"loyers": [35, 175, 500, 1100, 1300, 1500],"prixMaison": 200},
+		{"type": "taxe","axe": 1,"pos": 8,"nom": "Luxury Tax","prix": 100},		
+		{"type": "propriete","groupe": "Bleu","axe": 1,"pos": 9,"nom": "Boardwalk","colors": ["#132450", "#808EB0"],"prix": 400,"loyers": [50, 200, 600, 1400, 1700, 2000],"prixMaison": 200}						
+	],
+	"images":{
+		"taxe": {
+			"src": "img/bijou.png",
+            "width": 40,
+            "height": 50
+		},
+		"chance":{
+		    "src": "img/interrogation.png",
+            "width": 50,
+            "height": 60
+        },
+		"caisseDeCommunaute":{
+			"src": "img/banque2.png",
+            "width": 60,
+            "height": 60
+		},
+		"compagnie":{
+			"src": "img/light.png",
+            "width": 50,
+            "height": 35,
+			"margin": 5
+		},
+		"gare":{
+			"src": "img/big_train.png",
+            "width": 50,
+            "height": 35,
+			"margin": 5
+		}
+	},
+	"titles":{
+		"chance":"Chance",
+		"communaute":"Community Chest"
+	},
+	"chance":{
+		"cartes":[
+			{"nom":"You have been elected Chairman of the Board – Pay each player $50","type":"birthday","montant":50},
+			{"nom":"Make general repairs on all your property – For each house pay $25 – For each hotel $100","type":"repair","hotel":100,"maison":25},
+			{"nom":"Pay poor tax of $15","type":"taxe","montant":15},
+			{"nom":"You have won a crossword competition - Collect $100","type":"prime","montant":100},
+			{"nom":"Bank pays you dividend of $50","type":"prime","montant":50},
+			{"nom":"Your building loan matures – Collect $150","type":"prime","montant":150},
+			{"nom":"Advance to Illinois Ave. - If you pass Go, collect $200","type":"goto","axe":0,"pos":4},
+			{"nom":"Take a trip to Reading Railroad ","type":"goto","axe":2,"pos":5},
+			{"nom":"Take a walk on the Boardwalk","type":"goto","axe":1,"pos":9},
+			{"nom":"Go Back 3 Spaces","type":"move","nb":-3},
+			{"nom":"Advance to Go, collect $200 ","type":"goto","axe":2,"pos":0},
+			{"nom":"Advance to St. Charles Place – If you pass Go, collect $200","type":"goto","axe":3,"pos":1},
+			{"nom":"Go to Jail – Go directly to Jail – Do not pass Go, do not collect $200","type":"goto","axe":1,"pos":0,"direct":true},
+			{"nom":"Get out of Jail Free – This card may be kept until needed, or traded/sold","type":"prison"}
+		]
+	},
+	"communaute":{
+		"cartes":[
+			{"nom":"From sale of stock you get $50","type":"prime","montant":50},
+			{"nom":"Grand Opera Night – Collect $50 from every player for opening night seats","type":"birthday","montant":50},			
+			{"nom":"Life insurance matures – Collect $100","type":"prime","montant":100},
+			{"nom":"Holiday Fund matures - Receive $100 ","type":"prime","montant":100},
+			{"nom":"You have won second prize in a beauty contest – Collect $10","type":"prime","montant":10},
+			{"nom":"Doctor's fees – Pay $50 ","type":"taxe","montant":50},
+			{"nom":"It is your birthday - Collect $10 from each player","type":"birthday","montant":10},
+			{"nom":"Income tax refund – Collect $20","type":"prime","montant":20},
+			{"nom":"Bank error in your favor – Collect $200","type":"prime","montant":200},
+			{"nom":"Receive $25 consultancy fee","type":"prime","montant":25},
+			{"nom":"Pay hospital fees of $100","type":"taxe","montant":100},
+			{"nom":"Pay school fees of $150 ","type":"taxe","montant":150},
+			{"nom":"You inherit $100","type":"prime","montant":100},
+			{"nom":"Advance to Go","type":"goto","axe":2,"pos":0},
+			{"nom":"Go to Jail – Go directly to jail – Do not pass Go – Do not collect $200","type":"goto","axe":1,"pos":0,"direct":true},
+			{"nom":"Get out of Jail Free – This card may be kept until needed, or traded/sold","type":"prison"},
+			{"nom":"You are assessed for street repairs – $40 per house – $115 per hotel ","type":"repair","hotel":115,"maison":40},
+		]
+	}
+}

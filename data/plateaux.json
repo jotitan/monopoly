@@ -5,6 +5,10 @@
             "name": "Classique",
             "url": "data-monopoly.json"
         },
+		{
+            "name": "Original",
+            "url": "data-monopoly-original.json"
+        },
         {
             "name": "Classique Circle",
             "url": "data-monopoly-circle.json"

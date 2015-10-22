@@ -120,7 +120,7 @@
 			{"nom":"Advance to Go","type":"goto","axe":2,"pos":0},
 			{"nom":"Go to Jail – Go directly to jail – Do not pass Go – Do not collect $200","type":"goto","axe":1,"pos":0,"direct":true},
 			{"nom":"Get out of Jail Free – This card may be kept until needed, or traded/sold","type":"prison"},
-			{"nom":"You are assessed for street repairs – $40 per house – $115 per hotel ","type":"repair","hotel":115,"maison":40},
+			{"nom":"You are assessed for street repairs – $40 per house – $115 per hotel ","type":"repair","hotel":115,"maison":40}
 		]
 	}
 }

@@ -1,0 +1,133 @@
+<html>
+
+<head>
+</head>
+
+
+<body style="margin:0">
+
+<div style="width:100%;height:100%;background-color:#0BA7DA">
+	<div style="position:absolute;bottom:calc(10% + 3vw);width:100%">
+		<span class="button" onclick="Jeu.create();" style="position:absolute;left:10%">Tirage</span>
+		<span class="button" onclick="Jeu.showNext();" style="position:absolute;right:15%">Boule</span>
+	</div>
+	<div id="list" style="color:white;"></div>
+	
+</div>
+<div class="boule"><span id="current"></span></div>
+
+<style>
+
+  .button {
+   background-color:#DDFFDD;
+   cursor:pointer;
+   padding:10px;
+   border:dashed 3px darkgreen;
+   border-radius:100px;
+   font-size:3vw;
+  }
+
+   .button:hover {
+   background-color:green;
+  }
+
+ #list > span {
+	display:inline-block;
+	color:white;
+	padding:5px 7px;
+	border:solid 1px white;
+	border-radius:50px;
+	text-align:center;
+	font-size:3vw;
+	margin:5px;
+ }
+ .boule {
+	width:100%;
+	text-align:center;
+	top:calc(50% - 3.5vw);
+	font-size:7vw;
+	position:absolute;	
+ }
+ .boule > span {
+	color:black;
+	font-size:7vw;
+	border-radius:100px;
+	border:solid 2px orange;
+	padding:5px 9px;
+	background-color:white;
+ }
+</style>
+
+<script>
+
+var Jeu = {
+	boules : [],
+	position:0,
+	nb:90,
+	load:function(){
+		if(localStorage && localStorage["tirage"]!=null){
+			this.boules = JSON.parse(localStorage["tirage"]);
+			var position = parseInt(localStorage["position"]);
+			for(var i = 0 ; i < position ; i++){
+				this.showNext(true);
+			}
+		}else{
+			this.create();
+		}
+	},
+	create:function(){
+		var tab = [];
+		var temp = [];
+      for (var i = 0 ; i < this.nb ; i++){
+		    tab[i] = i+1;
+		    temp[i+1] = Math.random();
+		}
+		this.boules = tab.sort(function(a,b){
+         return temp[a] - temp[b];
+		});
+		this.position = 0;
+      var childs = document.getElementById('list').childNodes;
+      for(var i = childs.length -1; i>=0 ;i--){childs[i].remove();}
+      document.getElementById('current').textContent = "";
+		if(localStorage){
+			localStorage["tirage"] = JSON.stringify(this.boules);
+			localStorage["position"] = 0;
+		}
+	},
+	next:function(){
+		if(this.position >= this.boules.length-1){return;}
+		return (this.boules[this.position] < 10 ? "0":"") + this.boules[this.position++]
+	},
+	current:function(){
+		if(this.position>=this.boules.length-1 || this.position <1){return;}
+		return (this.boules[this.position-1] < 10 ? "0":"") + this.boules[this.position-1];
+	},
+	showCurrent : function(){
+		var current = this.current();
+		if(current != null){
+         var span = document.createElement('span');
+         span.textContent = current;
+         document.getElementById('list').appendChild(span);
+		}
+	},
+	showNext:function(noSave){		
+		this.showCurrent();
+      document.getElementById('current').textContent = this.next();
+		if(localStorage && (noSave==null || !noSave)){
+			localStorage["position"] = this.position;
+		}
+	}
+}
+
+Jeu.load();
+document.addEventListener('keyup',function(e){
+   if(e.keyCode == 32){
+      Jeu.showNext();
+   }
+});
+
+</script>
+
+</body>
+
+</html>

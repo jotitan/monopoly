@@ -10,9 +10,14 @@
 	<div style="position:absolute;bottom:calc(10% + 3vw);width:100%">
 		<span class="button" onclick="Jeu.create();" style="position:absolute;left:10%">Tirage</span>
 		<span class="button" onclick="Jeu.showNext();" style="position:absolute;right:15%">Boule</span>
+		<span class="button" onclick="Jeu.sort();" style="position:absolute;left:40%">Tri</span>
+		<span class="button" onclick="Jeu.switchDisplay();" style="position:absolute;left:55%">Table</span>
 	</div>
-	<div id="list" style="color:white;"></div>
-	
+	<div id="list" style="color:white;"></div>	
+	<div id="list_table" style="display:none;color:white;">
+		<table>
+		</table>
+	</div>	
 </div>
 <div class="boule"><span id="current"></span></div>
 
@@ -31,6 +36,24 @@
    background-color:green;
   }
 
+  #list_table > table {
+	border:solid 1px white;
+  }
+  
+  #list_table > table td{
+	border:solid 1px white;
+	padding:8px;
+  }
+  
+  #list_table > table td.selected {
+	color:white;
+	font-weight:bold;	
+  }
+  
+  #list_table > table td.selected span{
+	border-radius:20px;
+	}
+  
  #list > span {
 	display:inline-block;
 	color:white;
@@ -62,8 +85,14 @@
 
 var Jeu = {
 	boules : [],
-	position:0,
-	nb:90,
+	position:0,	
+	nb:89,
+	isSorted:false,
+	isTable:false,
+	init:function(){
+		this._createTable();
+		this.load();
+	},
 	load:function(){
 		if(localStorage && localStorage["tirage"]!=null){
 			this.boules = JSON.parse(localStorage["tirage"]);
@@ -86,40 +115,97 @@ var Jeu = {
          return temp[a] - temp[b];
 		});
 		this.position = 0;
-      var childs = document.getElementById('list').childNodes;
-      for(var i = childs.length -1; i>=0 ;i--){childs[i].remove();}
+      document.getElementById('list').innerHTML = "";
+	  /*var childs = document.getElementById('list').childNodes;
+      for(var i = childs.length -1; i>=0 ;i--){childs[i].remove();}*/
       document.getElementById('current').textContent = "";
 		if(localStorage){
 			localStorage["tirage"] = JSON.stringify(this.boules);
 			localStorage["position"] = 0;
 		}
+		var tds = document.getElementById('list_table').getElementsByTagName('table')[0].getElementsByTagName('td');	
+		for(var i = 0 ; i < tds.length ; i++){
+			tds[i].classList.remove('selected');
+		}
+	},
+	_createTable:function(){
+		var table = document.getElementById('list_table').getElementsByTagName('table')[0];
+		for(var i = 0 ; i < 10 ; i++){
+			var tr = document.createElement('tr');
+			for(var j = 0 ; j < 9 ; j++){
+				var td = document.createElement('td');
+				td.innerHTML=(j == 0 ? "0":"") + (j*10+ i);
+				tr.appendChild(td);
+			}
+			table.appendChild(tr);
+		}
+	},
+	switchDisplay:function(){
+		if(this.isTable){
+			this.isTable = false;
+			document.getElementById('list_table').style.display="none";
+			document.getElementById('list').style.display="";
+		}else{
+			this.isTable = true;
+			document.getElementById('list_table').style.display="";
+			document.getElementById('list').style.display="none";
+		}
+	},
+	sort:function(){
+		document.getElementById('list').innerHTML = "";			
+		if(!this.isSorted){
+			this.isSorted = true;
+			var boules = [];
+			for(var i = 0 ; i < this.position -1; i++){
+				boules[i] = this.boules[i];				
+			}
+			boules.sort(function(a,b){return a -b;});
+			for(var i = 0 ; i < this.position -1; i++){
+				this._add(boules[i]);
+			}
+		}else{
+			this.isSorted = false;
+			for(var i = 0 ; i < this.position -1; i++){
+				this._add(this.boules[i]);
+			}
+		}
 	},
 	next:function(){
 		if(this.position >= this.boules.length-1){return;}
-		return (this.boules[this.position] < 10 ? "0":"") + this.boules[this.position++]
+		return this.boules[this.position++]
 	},
 	current:function(){
 		if(this.position>=this.boules.length-1 || this.position <1){return;}
-		return (this.boules[this.position-1] < 10 ? "0":"") + this.boules[this.position-1];
+		return this.boules[this.position-1];
 	},
 	showCurrent : function(){
 		var current = this.current();
 		if(current != null){
-         var span = document.createElement('span');
-         span.textContent = current;
-         document.getElementById('list').appendChild(span);
+         this._add(current);		 
 		}
+	},
+	_add:function(value){
+		//this._addCurrentInTable(value);
+		var span = document.createElement('span');
+         span.textContent = (value < 10 ? "0":"") + value;
+         document.getElementById('list').appendChild(span);
+	},
+	_addCurrentInTable:function(value){
+		var pos = Math.floor(value/10) + (value%10)*9;
+		document.getElementById('list_table').getElementsByTagName('td')[pos].classList.add('selected');
 	},
 	showNext:function(noSave){		
 		this.showCurrent();
-      document.getElementById('current').textContent = this.next();
+		var next = this.next();
+		this._addCurrentInTable(next);
+		document.getElementById('current').textContent = (next < 10 ? "0":"") + next;
 		if(localStorage && (noSave==null || !noSave)){
 			localStorage["position"] = this.position;
 		}
 	}
 }
 
-Jeu.load();
+Jeu.init();
 document.addEventListener('keyup',function(e){
    if(e.keyCode == 32){
       Jeu.showNext();

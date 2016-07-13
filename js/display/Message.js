@@ -212,7 +212,7 @@ var InfoMessage = {
 		
 		var buttons = {
             "Payer": function () {
-                joueur.payer(5000);
+                joueur.payer(InitMonopoly.plateau.infos.montantPrison);
 				// TODO : Ajouter message pour indiquer qu'il paye
                 joueur.exitPrison();
                 InfoMessage.close();

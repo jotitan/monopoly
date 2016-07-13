@@ -162,9 +162,10 @@ function GestionDesImpl(){
 			return;
 		} else {
 			if (j.nbDouble == 2) {
-				MessageDisplayer.write(j, message + " et sort de prison en payant " + CURRENCY + " 5.000");
-				var buttons = InfoMessage.create(j,"Libere de prison", "lightblue", "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " 5.000 !", function () {
-					j.payerParcGratuit(InitMonopoly.plateau.parcGratuit,5000, function () {
+				MessageDisplayer.write(j, message + " et sort de prison en payant " + CURRENCY + " " + InitMonopoly.plateau.infos.montantPrison);
+            var messagePrison = "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " " + InitMonopoly.plateau.infos.montantPrison+ " !";
+				var buttons = InfoMessage.create(j,"Libere de prison", "lightblue", messagePrison, function () {
+					j.payerParcGratuit(InitMonopoly.plateau.parcGratuit,InitMonopoly.plateau.infos.montantPrison, function () {
 						j.exitPrison();
 						gd.endLancer();
 					});
@@ -503,6 +504,7 @@ var InitMonopoly = {
 			DrawerFactory.addInfo('backgroundColor',this.infos.backgroundColor || '#FFFFFF');
 			this.infos.argentJoueurDepart = this.infos.argent || 150000
 			this.infos.montantDepart = this.infos.depart || 20000;
+         this.infos.montantPrison = this.infos.prison || 5000;
 			if(this.infos.colors){
 				GestionJoueur.colorsJoueurs = this.infos.colors;
 			}

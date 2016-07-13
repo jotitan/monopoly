@@ -20,6 +20,7 @@ var GestionEnchere = {
     /* @param miseDepart : prix de depart */
     /* @param ventePerte : si vrai, permet de baisser la mise de depart (cas d'une vente obligee pour payer une dette) */
     init: function (terrain, miseDepart, ventePerte, callback) {
+      this.pasVente = InitMonopoly.plateau.infos.montantDepart / 10;
         this.terrain = terrain;
         this.callback = callback;
         this.miseDepart = miseDepart;

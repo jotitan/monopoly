@@ -140,7 +140,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 	/* TODO : dans le cas d'enchere immediate, empecher de tomber sur un terrain qui interesse un autre ? */
 	this._analyseCase = function(fiche){
 		var interet = 0;
-		if(fiche.isTerrain() == true){
+		if(fiche.isPropriete() == true){
 			interet = fiche.statut == ETAT_LIBRE ? 
 				this.strategie.interetGlobal(fiche,this,false).interet :
 				fiche.getLoyerFor(this) / -1000;
@@ -241,10 +241,10 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 				prop.compensation = 0;
 				// Calcule les monnaies d'echange
 				prop.deals = maison.joueurPossede.findOthersInterestProprietes(this,maison);
-				if (prop.deals.length == 0) {
+           	if (prop.deals.length == 0) {
 					// On ajoute les terrains non importants (gare seule, compagnie)
 					var othersProprietes = this.findUnterestsProprietes();
-					var montant = 0;
+           		var montant = 0;
 					if (othersProprietes != null && othersProprietes.proprietes != null && othersProprietes.proprietes.length > 0) {
 						// On en ajoute. En fonction de la strategie, on n'ajoute que les terrains seuls dans le groupe (peu important)
 						for (var i = 0; i < othersProprietes.proprietes.length && montant / maison.achat < 0.7; i++) {
@@ -258,6 +258,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 							}
 						}
 					}
+
 					// Permettre calcul compensation quand traitement fournit des terrains < 80% du montant
 					if (montant / maison.achat < 0.8) {
 						prop.compensation = this.evalueCompensation(joueur, maison, interetEchange, last) - montant;
@@ -273,17 +274,18 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 						prop.deals = monnaies;
 					}
 				}
-				// Si aucune proposition, on ajoute les autres terrains dont on se moque (terrains constructibles mais non intéressant)                        
+				// Si aucune proposition, on ajoute les autres terrains dont on se moque (terrains constructibles mais non intéressant)
+            // Potentiellement un terrain de la strategie peut tout de meme etre proposee (une gare par exemple)
 				if ((prop.deals == null || prop.deals.length == 0) && prop.compensation == 0) {
 					var terrains = this.findOthersProperties(proprietes);
-					var montant = 0;
+               var montant = 0;
 					for (var i = 0; i < terrains.length && montant / maison.achat < 0.7; i++) {
 						var terrain = terrains[i];
 						if (!this.strategie.interetPropriete(terrain)) {
 							if (prop.deals == null) {
 								prop.deals = [];
 							}
-							// On le refourgue
+							// On le propose
 							prop.deals.push(terrain);
 							montant += terrain.achat;
 						}
@@ -555,7 +557,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 		// Critere 1, nombre de maison par terrain pouvant etre achete
 		var nbMaison = (this.argent / groupe.maisons[0].prixMaison) / groupe.fiches.length;
 		// compte les autres groupes
-		var criterePrix = (groupe.maisons[0].loyers[nbMaison]) / 100000;
+		var criterePrix = (groupe.maisons[0].loyers[nbMaison]) / (InitMonopoly.plateau.infos.montantDepart*5);
 		// Ligne presente
 		var groups = this.findGroupes();
 		var isLigne = false;
@@ -931,7 +933,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 	this.buildConstructions = function () {
 		var budget = this.comportement.getBudget(this);
 		// Pas d'argent
-		if (budget < 5000) {
+		if (budget < InitMonopoly.plateau.infos.montantDepart / 4) {
 			return;
 		}
 		var sortedGroups = [];
@@ -1850,14 +1852,14 @@ function Joueur(numero, nom, color,argent) {
 	 * @param interestTerrains : terrains qui interessent, on filtre
 	 */
 	this.findOthersProperties = function (interestTerrains) {
-		var terrains = [];
+      var terrains = [];
 		var mapInterests = [];
 		for (var i in interestTerrains) {
-			mapInterests[interestTerrains[i].id] = 1;
+			mapInterests[interestTerrains[i].maison.color] = 1;
 		}
-		for (var f in this.maisons) {
+      for (var f in this.maisons) {
 			var maison = this.maisons[f];
-			if (maison.isTerrain() && !maison.isGroupee() && mapInterests[maison.id] == null) {
+         if (maison.isTerrain() && !maison.isGroupee() && mapInterests[maison.color] == null) {
 				terrains.push(maison);
 			}
 		}
@@ -1911,8 +1913,10 @@ var GestionJoueur = {
 	getJoueurCourant:function(){
 		return this.joueurCourant;
 	},
+   // renvoi le nombre de joueur dans la partie
 	getNb:function(){
-		return this.joueurs.length;
+      return this.joueurs.reduce(function(somme,j){return somme+=!j.defaite?1:0;},0);
+		//return this.joueurs.length;
 	},
 	createAndLoad:function(isRobot,i,nom,data){
 		var joueur = this.create(isRobot,i,nom);

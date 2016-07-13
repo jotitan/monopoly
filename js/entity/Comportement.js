@@ -32,8 +32,8 @@ function Comportement(risque, name, id) {
         var marge = strategieValue / (risque / 100 + 1);
         // On ajoute un random sur 10% du prix => moins previsible
         var montant = this.findCoutFromFixMarge(joueur, marge);
-        montant+=Math.round((montant*0.1)*(((Math.random()*1000)%10 -5)/10));
-        return Math.min(montant, joueur.montant - 5000);
+        montant+=Math.round((montant*0.1)*(((Math.random()* 1000)%10 -5)/10));
+        return Math.min(montant, joueur.montant - (InitMonopoly.plateau.infos.montantDepart / 4));
     }
 
     /* Appele lorsqu'une proposition a deja ete faite et qu'elle etait insuffisante */
@@ -122,7 +122,7 @@ function Comportement(risque, name, id) {
 
     // calcul le loyer le plus fort du joueur (et n'appartenant pas au joueur). Permet de connaitre la treso max que le joueur peut posseder sur lui
     this.plusFortLoyer = function (joueur) {
-        var max = 20000; // Prix de la taxe de luxe
+        var max = InitMonopoly.plateau.infos.montantDepart; // Prix de l'impot sur le revenu, comme le depart
         var it = GestionFiche.iteratorTerrains();
         while (it.hasNext()) {
             var f = it.next();
@@ -135,7 +135,7 @@ function Comportement(risque, name, id) {
 
     // calcul le loyer moyen que peut rencontrer le joueur
     this.getLoyerMoyen = function (joueur) {
-        var montant = 20000; // Prix de la taxe de luxe
+        var montant = InitMonopoly.plateau.infos.montantDepart; // Prix de l'impot sur le revenu, comme le depart
         var nb = 1;
         var it = GestionFiche.iteratorTerrains();
         while (it.hasNext()) {

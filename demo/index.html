@@ -10,15 +10,33 @@
 		<script type="text/javascript" src="lib/jquery.mousewheel.js"></script>
 		<script type="text/javascript" src="lib/jquery.arctext.js"></script>
    
-		
+		<!--(if target dev)><!-->
+		<script type="text/javascript" src="js/Sauvegarde.js"></script>
+		<script type="text/javascript" src="js/Utils.js"></script>
+		<script type="text/javascript" src="js/GestionConstructions.js"></script>
+		<script type="text/javascript" src="js/GestionTerrains.js"></script>
+		<script type="text/javascript" src="js/Enchere.js"></script>
+		<script type="text/javascript" src="js/ui/Graphics.js"></script>
+		<script type="text/javascript" src="js/ui/SquareGraphics.js"></script>
+		<script type="text/javascript" src="js/ui/CircleGraphics.js"></script>
+		<script type="text/javascript" src="js/display/Message.js"></script>
+		<script type="text/javascript" src="js/entity/Comportement.js"></script>
+		<script type="text/javascript" src="js/entity/Strategie.js"></script>
+		<script type="text/javascript" src="js/entity/Pion.js"></script>
+		<script type="text/javascript" src="js/entity/Joueur.js"></script>
+		<script type="text/javascript" src="js/entity/CartesAction.js"></script>
+		<script type="text/javascript" src="js/display/Displayers.js"></script>
+		<script type="text/javascript" src="js/display/CaseJeu.js"></script>
+		<script type="text/javascript" src="monopoly.js"></script>
+		<!--<!(endif)-->
 
-		
+		<!--(if target prod)><!-->
 		<script type="text/javascript" src="monopoly-min.js"></script>
-		
-		
+		<!--<!(endif)-->
+
 		<style></style>
 		<link rel="stylesheet" type="text/css" href="css/style.css"/>
-  
+
 	</head>
   
 	<body>
@@ -60,7 +78,12 @@
 			</div>
 		</td>
 		<td style="vertical-align:top">    
-			
+			<!--(if target dev)><!-->
+			<div id="idDebug" style="display:none">
+			   case : <input type="text" size="3" id="nb"/><input type="button" onclick="GestionJoueur.getJoueurCourant().joueDes(parseInt($('#nb').val()))" value="click"/><br/>
+			   Goto : <input type="text" size="3" id="ide"/><input type="text" size="3" id="idp"/><input type="button" onclick="GestionJoueur.getJoueurCourant().pion.goto($('#ide').val(),$('#idp').val(),doActions)" value="goto"/><br/>
+			</div>	   			
+			<!--<!(endif)-->
 			<div id="informations" class="panneau_joueur"></div>
 		</td>
 	</tr></table>
@@ -162,7 +185,7 @@
 		</div>
  	</div>
  
-	<div style="display:none" id="idPanelCreatePartie">
+	<div style="display:none;background-color:#CEE6D0" id="idPanelCreatePartie">
 	  <fieldset>
 		<legend style="font-weight:bold">Plateau</legend>
 		Choisir : <select id="idSelectPlateau"></select>
@@ -206,6 +229,8 @@
 			  <input type="checkbox" name="echangeApresVente" id="idOptCaseEchange"/> <label for="idOptCaseEchange">Echange quand terrains vendus</label><br/>
 			  <input type="checkbox" name="desRapide" id="idOptDesRapide"/> <label for="idOptDesRapide">Dés rapide</label><br/>
               <input type="checkbox" name="tourAchat" id="idOptTourAchat"/> <label for="idOptTourAchat">Un tour avant achat (not yet)</label>
+			<hr/>
+			<input type="checkbox" name="quickMove" id="idQuickMove"/> <label for="idQuickMove">Jeu rapide</label><br/>
 	    </fieldset>
 	    </fieldset>
 	  <fieldset>
@@ -263,17 +288,11 @@
 	  nomPlateau = "data-monopoly-" + location.href.substring(location.href.indexOf("plateau=")+8) + ".json";
 	}
 	var debug = false;
-	
 	$(function(){
 		$('#idMontantParc').hide();
 		InitMonopoly.init(debug);
-		//init(nomPlateau,debug);
 	});
-	
-	
-	
    </script>
- 
- 	 
+
 	</body>
 </html>

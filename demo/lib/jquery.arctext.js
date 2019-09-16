@@ -339,7 +339,7 @@
 	$.fn.arctext			= function( options ) {
 	
 		if ( typeof options === 'string' ) {
-			
+
 			var args = Array.prototype.slice.call( arguments, 1 );
 			
 			this.each(function() {
@@ -367,9 +367,9 @@
 			this.each(function() {
 			
 				var instance = $.data( this, 'arctext' );
-				if ( !instance ) {
+				//if ( !instance ) {
 					$.data( this, 'arctext', new $.Arctext( options, this ) );
-				}
+				//}
 			});
 		
 		}

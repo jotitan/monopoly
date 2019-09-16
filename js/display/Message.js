@@ -5,10 +5,13 @@ var MessageDisplayer = {
     div: null,
     order: 0,
     init: function (id) {
-        this.div = $('#' + id);
-        this.bindEvents();
+        if(this.div === null){
+            // Not init already, create div and bind events
+            this.div = $('#' + id);
+            this.bindEvents();
+        }
+        this.div.empty();
     },
-
     write: function (joueur, message) {
         MessageDisplayer.order++;
         var orderMessage = (DEBUG) ? (' (' + MessageDisplayer.order + ')') : '';
@@ -174,14 +177,20 @@ var InfoMessage = {
             this.div.dialog('open');
         }
         return buttons;
-	},	
-	create:function(joueur,titre, background, message, call, param, forceshow){
+	},
+    /* @params buttons : additonal buttons */
+	create:function(joueur,titre, background, message, call, param, forceshow,buttons){
 		this._initMessage(background,titre,message);
         var button = {
             "Ok": function () {
                 InfoMessage.close();
             }
         };
+        if(buttons != null){
+            for(var title in buttons){
+                button[title] = buttons[title];
+            }
+        }
         this.div.unbind('dialogclose.message').bind('dialogclose.message', function () {
             InfoMessage.div.unbind('dialogclose.message');
             if (call != null) {

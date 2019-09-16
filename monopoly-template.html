@@ -33,10 +33,10 @@
 		<!--(if target prod)><!-->
 		<script type="text/javascript" src="monopoly-min.js"></script>
 		<!--<!(endif)-->
-		
+
 		<style></style>
 		<link rel="stylesheet" type="text/css" href="css/style.css"/>
-  
+
 	</head>
   
 	<body>
@@ -185,7 +185,7 @@
 		</div>
  	</div>
  
-	<div style="display:none" id="idPanelCreatePartie">
+	<div style="display:none;background-color:#CEE6D0" id="idPanelCreatePartie">
 	  <fieldset>
 		<legend style="font-weight:bold">Plateau</legend>
 		Choisir : <select id="idSelectPlateau"></select>
@@ -229,6 +229,8 @@
 			  <input type="checkbox" name="echangeApresVente" id="idOptCaseEchange"/> <label for="idOptCaseEchange">Echange quand terrains vendus</label><br/>
 			  <input type="checkbox" name="desRapide" id="idOptDesRapide"/> <label for="idOptDesRapide">Dés rapide</label><br/>
               <input type="checkbox" name="tourAchat" id="idOptTourAchat"/> <label for="idOptTourAchat">Un tour avant achat (not yet)</label>
+			<hr/>
+			<input type="checkbox" name="quickMove" id="idQuickMove"/> <label for="idQuickMove">Jeu rapide</label><br/>
 	    </fieldset>
 	    </fieldset>
 	  <fieldset>
@@ -286,22 +288,11 @@
 	  nomPlateau = "data-monopoly-" + location.href.substring(location.href.indexOf("plateau=")+8) + ".json";
 	}
 	var debug = false;
-	<!--(if target dev)><!-->
-	if (location.href.indexOf("debug=1")!=-1) {
-	  $('#idDebug').show();
-	  debug = true;
-	}
-	<!--<!(endif)-->
 	$(function(){
 		$('#idMontantParc').hide();
 		InitMonopoly.init(debug);
-		//init(nomPlateau,debug);
 	});
-	
-	
-	
    </script>
- 
- 	 
+
 	</body>
 </html>

@@ -45,6 +45,9 @@ function PionJoueur(color, largeur,img) {
 	
 	// Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
 	this.goto = function (axe, pos, callback,init) {
+		if(VARIANTES.quickMove){
+			return this.gotoDirect(axe,pos,callback);
+		}
 		if (this.currentInterval != null) {
 			throw "Impossible de realiser ce deplacement primaire";
 		}
@@ -206,6 +209,10 @@ function Case(pos, axe, color, title, prix, img) {
             }
             if (img != null) {
                 var image = new Image();
+                // When image is well loaded, reload base canvas
+                image.addEventListener('load',()=>{
+					$.trigger('refreshPlateau');
+				});
                 image.src = img.src;
                 image.height = img.height;
                 image.width = img.width;
@@ -453,18 +460,18 @@ function DesRapide(x,y,width){
 		if (this.value == null) {
 			return;
 		}
-		if (this.value == 1 || this.value == 3) {
+		if (this.value === 1 || this.value === 3) {
 			this.drawPoint(canvas, x + width / 2, y + width / 2, width / 5, this.color);
 		}
-		if (this.value == 2 || this.value == 3) {
+		if (this.value === 2 || this.value === 3) {
 			this.drawPoint(canvas, x + width * 0.25, y + width * 0.75, width / 5, this.color);
 			this.drawPoint(canvas, x + width * 0.75, y + width * 0.25, width / 5, this.color);
 		}
-		if(this.value == 4 || this.value == 6){
+		if(this.value === 4 || this.value === 6){
 			// Bus
 			DrawerHelper.drawImage(canvas, this.imgBus, x + this.margin, y + this.margin, width - this.margin, width - this.margin, 0);
 		}
-		if(this.value == 5){
+		if(this.value === 5){
 			// Mr monopoly
 			DrawerHelper.drawImage(canvas, this.imgMr, x + this.margin, y + this.margin, width - this.margin, width - this.margin, 0);
 		}
@@ -581,7 +588,7 @@ function initSquareInstance(){
 		desRapide:DesRapide,
 		plateau:Plateau,
 		endPlateau:null
-	}
+	};
 	DrawerFactory.addInstance(instance);
 	DrawerFactory.type = instance.type;
 }

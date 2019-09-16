@@ -174,16 +174,25 @@ var DrawerFactory = {
 
 // Gere les dessins
 var Drawer = {
-    components: new Array(),	// Un ordre est ajoute lors de l'insertion
+    components: [],	// Un ordre est ajoute lors de l'insertion
     height: 0,
     width: 0,
     interval: null,
     intervalRT: null,
     canvas: null,
-    intervals: [], // Stocke les flags d'arret du refresh
-    canvasRT: null, //Canvas de temps reel
-    // ajoute un composant. On indique le canvas sur lequel il s'affiche
+	canvasRT: null, //Canvas de temps reel
+	// ajoute un composant. On indique le canvas sur lequel il s'affiche
+	intervals: [], // Stocke les flags d'arret du refresh
 	/* @param order : Si present, indique l'ordre d'affichage. Le plus petit en premier */
+	reset:function(){
+		this.components = [];
+		if(this.canvas) {
+			this.clear(this.canvas);
+		}
+		if(this.canvasRT) {
+			this.clear(this.canvasRT);
+		}
+	},
     add: function (component, order) {
 		if(component == null){return;}
         component.getId = function () {

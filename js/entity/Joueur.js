@@ -1923,6 +1923,11 @@ var GestionJoueur = {
 		joueur.load(data);
 		return joueur;
 	},
+	init:function(){
+		$('.panneau_joueur').empty();
+		this.joueurs = [];
+		this.joueurCourant = null;
+	},
 	create:function(isRobot, i, nom){
 		var id = 'joueur' + i;			
 		var color = this.colorsJoueurs[i];
@@ -1985,7 +1990,7 @@ var GestionJoueur = {
 		// On affiche les resultats complets
 		var perdants = this.joueurs.filter(function(j){return j.defaite;});
 		perdants.sort(function(a,b){
-			if(a.tourDefaite == b.tourDefaite){
+			if(a.tourDefaite === b.tourDefaite){
 				return b.numero - a.numero;
 			}
 			return b.tourDefaite - a.tourDefaite;
@@ -1997,8 +2002,7 @@ var GestionJoueur = {
 			message+= (i+2) + " - " + perdants[i].nom + "<br/>";
 		}
 		var score = this._calculateScore(gagnant);
-		InfoMessage.create(this.joueurCourant,"Fin de partie : " + score + " Points", "green", message, null, null, true);
-		//console.log("stats terrains",writePositions(stats.positions));
+		InfoMessage.create(this.joueurCourant,"Fin de partie : " + score + " Points", "green", message, ()=>{}, null, true,{"Recommencer":()=>InitMonopoly.init()});
 	},
 	/* Calcule un score de victoire */
 	/* Prend en compte l'argent, le nombre de terrains, le nombre de constructions, le nombre de tours des joueurs adverses */

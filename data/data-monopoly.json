@@ -1,7 +1,7 @@
 {
 	"plateau":{
 		"subtitle":"Classique",
-		"backgroundColor": "#A7E9DB",
+		"backgroundColor": "#cee6d0",
 		"textColor": "#000000",
 		"nomsJoueurs":["Chat","Voiture","Chapeau","Brouette","Dés à Coudre","Chien","Navire"],
 		"rollColor":"#999999"

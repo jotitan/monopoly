@@ -43,23 +43,13 @@ function CirclePionJoueur(color, largeur,img) {
 		var centre = getCoords((this.pos+this._angle)*pasAngle,this._rayon);
 		if(this.isSelected){
 			DrawerHelper.drawCircle(canvas,"#FFFFFF",(this.largeur+2) / 2,{x:centre.x+centrePlateau,y:centre.y+centrePlateau},"#FF0000");
-			/*canvas.beginPath();
-			canvas.fillStyle = '#FFFFFF';
-			canvas.arc(centre.x+centrePlateau,centre.y+centrePlateau,this.largeur+2,0,2*Math.PI);
-			canvas.fill();
-			canvas.closePath();*/
-		}		
+		}
 		if(this.img!=null){
 			DrawerHelper.drawImage(canvas, this.img, centre.x+centrePlateau-this.largeur/2, centre.y+centrePlateau-this.largeur/2, this.largeur, this.largeur, 0);
 		}
 		else{
 			DrawerHelper.drawCircle(canvas,this.color,this.largeur,{x:centre.x+centrePlateau,y:centre.y+centrePlateau},"#FF0000");
 		}		
-		/*canvas.beginPath();
-		canvas.fillStyle = this.color;
-		canvas.arc(centre.x+centrePlateau,centre.y+centrePlateau,this.largeur,0,2*Math.PI);
-		canvas.fill();
-		canvas.closePath();*/
 	}
 	this.setSelected = function(value){
 		this.isSelected = value;
@@ -88,6 +78,9 @@ function CirclePionJoueur(color, largeur,img) {
 	
 	// Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
 	this.goto = function (axe, pos, callback) {
+		if(VARIANTES.quickMove){
+			return this.gotoDirect(axe,pos,callback);
+		}
 		var ciblePos = convertAxePos(axe,pos);
 		this._moveTo(ciblePos,callback,0.1);			
 	}
@@ -131,6 +124,9 @@ function CircleCase(pos, axe, color, title, prix, img){
 		if (this.img != null) {		
 			this.img = $.extend(true,{},DrawerFactory.infos.defaultImage || {},this.img);
 			var image = new Image();
+			image.addEventListener('load',()=>{
+				$.trigger('refreshPlateau');
+			});
 			image.src = this.img.src;
 			image.height = Math.min(this.img.height,30);
 			image.width = Math.min(this.img.width,40);

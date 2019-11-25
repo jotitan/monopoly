@@ -1073,11 +1073,17 @@
           joueurCourant = joueurs[0];
           selectJoueurCourant();
         
-          $('#message').dialog({autoOpen:false});
+          $('#message').dialog({
+            autoOpen:false,
+            position: { my: "center top", at: "center top", of: window }
+          });
           $('#message').prev().css("background","url()");
       
           // panneau de création
-          $('#achatMaisons').dialog({autoOpen:false,title:"Achat de maisons / hôtels",width:500,height:300});
+          $('#achatMaisons').dialog({
+            autoOpen:false,
+            position: { my: "center top", at: "center top", of: window },
+            title:"Achat de maisons / hôtels",width:500,height:300});
 
          // Detail fiche
          initDetailFiche();
@@ -1175,6 +1181,7 @@ function loadDetailFiche(fiche){
        $('#fiche').dialog({
             autoOpen:false,
             title:"Fiche",
+            position: { my: "center top", at: "center top", of: window },
             width:280,
             height:400,
             modal:true,
@@ -1185,6 +1192,7 @@ function loadDetailFiche(fiche){
 
            $('#ficheCompagnie').dialog({
             autoOpen:false,
+            position: { my: "center top", at: "center top", of: window },
             title:"Fiche",
             width:280,
             height:350,

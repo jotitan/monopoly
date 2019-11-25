@@ -323,6 +323,7 @@ function Fiche(axe, pos, colors, nom, achat, loyers, prixMaison, img) {
 		this.joueurPossede = joueur;
 		this.drawing.setJoueur(joueur);
 		this.joueurPossede.maisons.push(this);
+		this.joueurPossede.updateMaisonsByGroup();
 		if(!noRefresh){
 			$.trigger('refreshPlateau');
 		}
@@ -531,7 +532,8 @@ function Fiche(axe, pos, colors, nom, achat, loyers, prixMaison, img) {
 		this.fiche.dialog('option', 'buttons', buttons);
 		FicheDisplayer.loadFiche(this);
 		if (GestionJoueur.getJoueurCourant().canPlay) {
-			this.fiche.dialog('open');
+			//this.fiche.dialog('open');
+			wrapDialog(this.fiche,'open');
 		}
 		return buttons;
 	}
@@ -548,7 +550,6 @@ function Fiche(axe, pos, colors, nom, achat, loyers, prixMaison, img) {
 				return {
 					"Acheter": function () {
 						var j = GestionJoueur.getJoueurCourant();
-						var id = j.pion.axe + "-" + j.pion.position;
 						j.acheteMaison(current);
 						FicheDisplayer.closeFiche();
 					},
@@ -667,6 +668,14 @@ var GestionFiche = {
 	},
 	getNextTerrain:function(from){
 		return this._getNextFiche(from,function(f){return f.isPropriete();});
+	},
+	// Return all groups with name and color
+	getGroups:function(){
+		let groups = [];
+		this.fiches
+			.filter(m=>m.groupe!=null)
+			.forEach(m=>groups[m.groupe.nom]=m.groupe.color);
+		return groups;
 	},
 	_getNextFiche:function(from,condition){
 		var info = {position:from.pos,axe:from.axe};

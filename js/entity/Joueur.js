@@ -1169,7 +1169,7 @@ function Joueur(numero, nom, color,argent) {
 	this.nom = nom || '';
 	this.color = color;
 	this.montant = argent;
-	this.maisons = new Array();
+	this.maisons = [];
 	this.enPrison = false;
 	this.pion = null;
 	this.nbDouble = 0;	// Nombre de tour en prison
@@ -1182,7 +1182,7 @@ function Joueur(numero, nom, color,argent) {
 		if (joueur == null) {
 			return false;
 		}
-		return this.numero == joueur.numero;
+		return this.numero === joueur.numero;
 	}
 
 	/* Sauvegarde un joueur */
@@ -1216,6 +1216,12 @@ function Joueur(numero, nom, color,argent) {
 		// Position initiale, aucune action
 		this.pion.goDirectToCell(data.axe, data.position);
 		// Cas des cartes de prison
+
+		// Cas ou le joueur est mort
+		if(this.defaite) {
+			$('.joueurCourant', this.div).removeAttr('style').addClass('defaite');
+		}
+		return this;
 	}
 
 	/* Template Method : les enfants peuvent la reimplementer */
@@ -1509,6 +1515,7 @@ function Joueur(numero, nom, color,argent) {
 				return;
 			}
 		}
+		this.updateMaisonsByGroup();
 	}
 
 	// Envoi le joueur (et le pion) en prison
@@ -1587,7 +1594,6 @@ function Joueur(numero, nom, color,argent) {
 		/* Verifie si le joueur peut payer */
 		if (montant > this.montant) {
 			this.bloque = true;
-			var _self = this;
 			this.resolveProblemeArgent(montant, callback);
 		} else {
 			this.setArgent(this.montant - montant);
@@ -1601,7 +1607,7 @@ function Joueur(numero, nom, color,argent) {
 	/* Si le joueur ne peut pas payer, une exception est lancee (il a perdu). On recupere le peut d'argent a prendre */
 	/* Payer est potentiellement asynchrone (resolve manuel), on indique l'etape suivante en cas de reussite */
 	this.payerTo = function (montant, joueur,callback) {
-		argentDispo = this.getStats().argentDispo;
+		let argentDispo = this.getStats().argentDispo;
 		try {
 			this.payer(montant, function () {
 				joueur.gagner(montant);
@@ -1632,6 +1638,7 @@ function Joueur(numero, nom, color,argent) {
 		}
 		$.trigger('refreshPlateau'); // Pour supprimer les terrains
 		this.maisons = [];
+		this.updateMaisonsByGroup();
 		$('input', this.div).remove();
 		this.pion.remove();
 		// On affiche un style sur la liste
@@ -1673,6 +1680,20 @@ function Joueur(numero, nom, color,argent) {
 
 	this.getFichePosition = function () {
 		return GestionFiche.getById(this.pion.axe + "-" + this.pion.position);
+	}
+
+	/**
+	 * Renvoie la liste des maisons regroupées par groupe
+	 */
+	this.findMaisonsByGroup = function(){
+		let groups = [];
+		this.maisons.forEach(m=>{
+			if(groups[m.groupe.nom] ==null) {
+				groups[m.groupe.nom] = [];
+			}
+			groups[m.groupe.nom].push(m);
+		});
+		return groups;
 	}
 
 	/** Renvoie la liste des terrains hypothecables : sans construction sur le terrain et ceux de la famille, pas deja hypotheques
@@ -1902,6 +1923,15 @@ function Joueur(numero, nom, color,argent) {
 		}
 		return mc;
 	}
+	this.updateMaisonsByGroup = function(){
+		let groups = this.findMaisonsByGroup();
+		let div = $('.count-property',this.div);
+		$(".counter-group",div).html(0);
+		for(var group in groups){
+			let color = group.replace(/ /g,"");
+			$(`.counter-group.${color}`,div).html(groups[group].size());
+		}
+	}
 }
 
 /* Gere les joueurs : creation, changement... */
@@ -1919,24 +1949,37 @@ var GestionJoueur = {
 		//return this.joueurs.length;
 	},
 	createAndLoad:function(isRobot,i,nom,data){
-		var joueur = this.create(isRobot,i,nom);
-		joueur.load(data);
-		return joueur;
+		return this.create(isRobot,i,nom,data.defaite).load(data);
 	},
 	init:function(){
 		$('.panneau_joueur').empty();
 		this.joueurs = [];
 		this.joueurCourant = null;
 	},
-	create:function(isRobot, i, nom){
-		var id = 'joueur' + i;			
+	displayLineByGroups:function(){
+		let groups = GestionFiche.getGroups();
+		let sizeBlock = 50 / groups.size();
+		let div = $('<div style="width:100%" class="count-property"></div>')
+		for(var name in groups){
+			let color = name.replace(/ /g,"");
+			div.append(`<span style="width:${sizeBlock}vw;background-color:${groups[name]}"></span> : <span class="counter-group ${color}">0</span>`);
+		}
+		return div;
+	},
+	create:function(isRobot, i, nom,defaite){
+		var id = `joueur${i}`;
 		var color = this.colorsJoueurs[i];
 		var img = this.imgJoueurs[i];
 		var argent = InitMonopoly.plateau.infos.argentJoueurDepart
-		var joueur = isRobot ? new JoueurOrdinateur(i, nom, color,argent) : joueur = new Joueur(i, nom, color,argent);
-		var div = $('<hr/><div id=\"' + id + '\"><div class="joueur-bloc"><span class="joueur-name">' + joueur.nom + '</span> : <span class="compte-banque"></span> ' + CURRENCY + '<span class="info-joueur" title="Info joueur" data-idjoueur="' + i + '"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div></div>');
+		var joueur = isRobot ? new JoueurOrdinateur(i, nom, color,argent) : new Joueur(i, nom, color,argent);
+		var isDefaite = defaite ? " class=\"defaite\" ":"";
+		var div = $(`<hr style="border:solid 2px darkgray"/><div id="${id}"${isDefaite}></div>`);
+		$(div).append(`<div class="joueur-bloc"><span class="joueur-name">${joueur.nom}</span> : <span class="compte-banque"></span> ${CURRENCY}<span class="info-joueur" title="Info joueur" data-idjoueur="${i}"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div>`)
+		$(div).append(this.displayLineByGroups());
 		$('.panneau_joueur').append(div);
-		
+
+
+
 		joueur.setDiv($('div[id="' + id + '"]'));
 		joueur.setPion(color,img);
 		// On defini la couleurs

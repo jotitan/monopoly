@@ -1,5 +1,2 @@
 7) Ajout de messages sympas lors de l'echange
 8) Module reseau
-
-1) Probleme variantes chargement partie
-3) joueur mort n'apparait pas mort (style) à la reprise

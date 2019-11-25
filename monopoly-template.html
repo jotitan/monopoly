@@ -1,136 +1,137 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-		<title>Monopoly FULL JS</title>
-		<link type="text/css" href="css/sunny/jquery-ui-1.10.3.custom.min.css" rel="stylesheet" />
-		<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
-		<script type="text/javascript" src="lib/jquery-1.11.0.min.js"></script>
-		<script type="text/javascript" src="lib/jquery-ui-1.10.3.custom.min.js"></script>
-		<script type="text/javascript" src="lib/jquery.mousewheel.js"></script>
-		<script type="text/javascript" src="lib/jquery.arctext.js"></script>
-   
-		<!--(if target dev)><!-->
-		<script type="text/javascript" src="js/Sauvegarde.js"></script>
-		<script type="text/javascript" src="js/Utils.js"></script>
-		<script type="text/javascript" src="js/GestionConstructions.js"></script>
-		<script type="text/javascript" src="js/GestionTerrains.js"></script>
-		<script type="text/javascript" src="js/Enchere.js"></script>
-		<script type="text/javascript" src="js/ui/Graphics.js"></script>
-		<script type="text/javascript" src="js/ui/SquareGraphics.js"></script>
-		<script type="text/javascript" src="js/ui/CircleGraphics.js"></script>
-		<script type="text/javascript" src="js/display/Message.js"></script>
-		<script type="text/javascript" src="js/entity/Comportement.js"></script>
-		<script type="text/javascript" src="js/entity/Strategie.js"></script>
-		<script type="text/javascript" src="js/entity/Pion.js"></script>
-		<script type="text/javascript" src="js/entity/Joueur.js"></script>
-		<script type="text/javascript" src="js/entity/CartesAction.js"></script>
-		<script type="text/javascript" src="js/display/Displayers.js"></script>
-		<script type="text/javascript" src="js/display/CaseJeu.js"></script>
-		<script type="text/javascript" src="monopoly.js"></script>
-		<!--<!(endif)-->
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>Monopoly FULL JS</title>
+	<link type="text/css" href="css/sunny/jquery-ui-1.10.3.custom.min.css" rel="stylesheet" />
+	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+	<script type="text/javascript" src="lib/jquery-1.11.0.min.js"></script>
+	<script type="text/javascript" src="lib/jquery-ui-1.10.3.custom.min.js"></script>
+	<script type="text/javascript" src="lib/jquery.mousewheel.js"></script>
+	<script type="text/javascript" src="lib/jquery.arctext.js"></script>
 
-		<!--(if target prod)><!-->
-		<script type="text/javascript" src="monopoly-min.js"></script>
-		<!--<!(endif)-->
+	<!--(if target dev)><!-->
+	<script type="text/javascript" src="js/Sauvegarde.js"></script>
+	<script type="text/javascript" src="js/Utils.js"></script>
+	<script type="text/javascript" src="js/GestionConstructions.js"></script>
+	<script type="text/javascript" src="js/GestionTerrains.js"></script>
+	<script type="text/javascript" src="js/Enchere.js"></script>
+	<script type="text/javascript" src="js/ui/Graphics.js"></script>
+	<script type="text/javascript" src="js/ui/SquareGraphics.js"></script>
+	<script type="text/javascript" src="js/ui/CircleGraphics.js"></script>
+	<script type="text/javascript" src="js/display/Message.js"></script>
+	<script type="text/javascript" src="js/entity/Comportement.js"></script>
+	<script type="text/javascript" src="js/entity/Strategie.js"></script>
+	<script type="text/javascript" src="js/entity/Pion.js"></script>
+	<script type="text/javascript" src="js/entity/Joueur.js"></script>
+	<script type="text/javascript" src="js/entity/CartesAction.js"></script>
+	<script type="text/javascript" src="js/display/Displayers.js"></script>
+	<script type="text/javascript" src="js/display/CaseJeu.js"></script>
+	<script type="text/javascript" src="monopoly.js"></script>
+	<!--<!(endif)-->
 
-		<style></style>
-		<link rel="stylesheet" type="text/css" href="css/style.css"/>
+	<!--(if target prod)><!-->
+	<!--script type="text/javascript" src="monopoly-min.js"></script-->
+	<!--<!(endif)-->
 
-	</head>
-  
-	<body>
-	
-	<table><tr>
-		<td style="vertical-align:top">
-			<div id="informations-left" class="panneau_joueur"></div>
-		</td>
-		<td>
-			<div style="width:810px;height:810px;position:relative" id="plateau" class="graphic_element">
-			  <canvas id="canvas" width="810" height="810" style="top:0px;left:0px;position:absolute"></canvas>
-			  <canvas id="canvas_rt" width="810" height="810" style="top:0px;left:0px;position:absolute"></canvas>
-				<div>
-				   <img src="img/reload_dice.png" style="display:none;" id="idReloadDice" title="Relancez" class="graphic_element"/>
-				   <button style="position:absolute;top:260px;left:135px;" title="Lancez les dés" id="idLancerDes" class="action-joueur" disabled="disabled">
-						<img src="img/dice.png" style="width:24px;padding:0px;"/>
-				   </button>
-				   <button style="position:absolute;top:260px;left:190px;" title="Achat maisons" class="action-joueur" onclick="GestionTerrains.open()" disabled="disabled">
-						<img src="img/house.png" style="width:24px;padding:0px;"/>
+	<style></style>
+	<link rel="stylesheet" type="text/css" href="css/style.css"/>
+
+</head>
+
+<body>
+
+<table><tr>
+	<td style="vertical-align:top">
+		<div id="informations-left" class="panneau_joueur"></div>
+	</td>
+	<td>
+		<div style="width:810px;height:810px;position:relative" id="plateau" class="graphic_element">
+			<canvas id="canvas" width="810" height="810" style="top:0px;left:0px;position:absolute"></canvas>
+			<canvas id="canvas_rt" width="810" height="810" style="top:0px;left:0px;position:absolute"></canvas>
+			<div>
+				<img src="img/reload_dice.png" style="display:none;" id="idReloadDice" title="Relancez" class="graphic_element"/>
+				<div id="idActions">
+					<button title="Lancez les dés" id="idLancerDes" class="action-joueur" disabled="disabled">
+						<img src="img/dices.png"/>
 					</button>
-				   <button style="position:absolute;top:260px;left:245px;" title="Echange terrains" id="idEchangeTerrains" class="action-joueur" onclick="EchangeDisplayer.open(GestionJoueur.getJoueurCourant())" disabled="disabled">
-						<img src="img/swap.png" style="width:24px;padding:0px;"/>
+					<button title="Achat maisons" class="action-joueur" onclick="GestionTerrains.open()" disabled="disabled">
+						<img src="img/house2.png"/>
 					</button>
-				   <button style="position:absolute;top:260px;left:300px;" title="Terrains libres" class="action-joueur" onclick="$('#idTerrainsLibres').dialog('open');" disabled="disabled">
-						<img src="img/list.png" style="width:24px;padding:0px;"/>
+					<button title="Echange terrains" id="idEchangeTerrains" class="action-joueur" onclick="EchangeDisplayer.open(GestionJoueur.getJoueurCourant())" disabled="disabled">
+						<img src="img/swap.png"/>
 					</button>
-				   
-				   <div style="position:absolute;top:300px;left:150px;border:solid 1px black;border-radius:10px;width:175px;padding:5px" id="idMontantParc">
-						   Parc Gratuit : Frs <span></span>
-					 </div>
-				   <div id="idTitle" class="title" style="position: absolute; left: 400px; top: 180px;">
-						<h1 id="idSavePanel" title="Cliquez pour sauvegarder">MONOPOLY</h1>
-						<h2 id="idSubTitle"></h2>
-					</div>	
-				   <div class="info_box graphic_element" id="idInfoBox">
+					<button title="Terrains libres" class="action-joueur" onclick="$('#idTerrainsLibres').dialog('open');" disabled="disabled">
+						<img src="img/list.png"/>
+					</button>
+				</div>
+				<div style="position:absolute;top:300px;left:150px;border:solid 1px black;border-radius:10px;width:175px;padding:5px" id="idMontantParc">
+					Parc Gratuit : Frs <span></span>
+				</div>
+				<div id="idTitle" class="title" style="position: absolute; left: 400px; top: 180px;">
+					<h1 id="idSavePanel" title="Cliquez pour sauvegarder">MONOPOLY</h1>
+					<h2 id="idSubTitle"></h2>
+				</div>
+				<div class="info_box graphic_element" id="idInfoBox">
 					<div></div><div></div><div></div><div></div>
-				   </div>
-			   </div>			  
+				</div>
 			</div>
-		</td>
-		<td style="vertical-align:top">    
-			<!--(if target dev)><!-->
-			<div id="idDebug" style="display:none">
-			   case : <input type="text" size="3" id="nb"/><input type="button" onclick="GestionJoueur.getJoueurCourant().joueDes(parseInt($('#nb').val()))" value="click"/><br/>
-			   Goto : <input type="text" size="3" id="ide"/><input type="text" size="3" id="idp"/><input type="button" onclick="GestionJoueur.getJoueurCourant().pion.goto($('#ide').val(),$('#idp').val(),doActions)" value="goto"/><br/>
-			</div>	   			
-			<!--<!(endif)-->
-			<div id="informations" class="panneau_joueur"></div>
-		</td>
-	</tr></table>
- 
-	<div id="informations-bottom" class="panneau_joueur" style="width:100%"></div>
- 
-	<div id="fiche" style="background-color:white;font-size:12px">
+		</div>
+	</td>
+	<td style="vertical-align:top">
+		<!--(if target dev)><!-->
+		<div id="idDebug" style="display:none">
+			case : <input type="text" size="3" id="nb"/><input type="button" onclick="GestionJoueur.getJoueurCourant().joueDes(parseInt($('#nb').val()))" value="click"/><br/>
+			Goto : <input type="text" size="3" id="ide"/><input type="text" size="3" id="idp"/><input type="button" onclick="GestionJoueur.getJoueurCourant().pion.goto($('#ide').val(),$('#idp').val(),doActions)" value="goto"/><br/>
+		</div>
+		<!--<!(endif)-->
+		<div id="informations" class="panneau_joueur"></div>
+	</td>
+</tr></table>
+
+<div id="informations-bottom" class="panneau_joueur" style="width:100%"></div>
+
+<div id="fiche" style="background-color:white;font-size:12px">
 	<table>
-	  <tr><td></td><td>€</td></tr>
-	  <tr><td>ACHAT</td><td id="achat" name="achat"></td></tr>
-	  <tr><td>LOYER terrain nu</td><td id="loyer0"></td></tr>
-	  <tr class="maison"><td> - 1 maison</td><td id="loyer1" name="loyer1"></td></tr>
-	  <tr class="maison"><td> - 2 maisons</td><td id="loyer2" name="loyer2"></td></tr>
-	  <tr class="maison"><td> - 3 maisons</td><td id="loyer3" name="loyer3"></td></tr>
-	  <tr class="maison"><td> - 4 maisons</td><td id="loyer4" name="loyer4"></td></tr>
-	  <tr class="maison"><td> - Hotel</td><td id="loyer5" name="loyer5"></td></tr>
+		<tr><td></td><td>€</td></tr>
+		<tr><td>ACHAT</td><td id="achat" name="achat"></td></tr>
+		<tr><td>LOYER terrain nu</td><td id="loyer0"></td></tr>
+		<tr class="maison"><td> - 1 maison</td><td id="loyer1" name="loyer1"></td></tr>
+		<tr class="maison"><td> - 2 maisons</td><td id="loyer2" name="loyer2"></td></tr>
+		<tr class="maison"><td> - 3 maisons</td><td id="loyer3" name="loyer3"></td></tr>
+		<tr class="maison"><td> - 4 maisons</td><td id="loyer4" name="loyer4"></td></tr>
+		<tr class="maison"><td> - Hotel</td><td id="loyer5" name="loyer5"></td></tr>
 	</table>
 	<hr/>
 	<div class="infos-group">
-		Loyer double si <span style="font-weight:bold">TOUS</span> les terrains du groupe de Couleur.  
+		Loyer double si <span style="font-weight:bold">TOUS</span> les terrains du groupe de Couleur.
 	</div>
 	<hr/>
 	<div>
-	Prix des Maisons  F <span id="prixMaison" name="prixMaison"></span><br/>
-	Prix d'un H&ocirc;tel&nbsp; F <span id="prixHotel" name="prixMaison"></span><br/>
+		Prix des Maisons  F <span id="prixMaison" name="prixMaison"></span><br/>
+		Prix d'un H&ocirc;tel&nbsp; F <span id="prixHotel" name="prixMaison"></span><br/>
 	</div>
 	Valeur hypotécaire : Frs <span id="hypotheque" name="montantHypotheque"></span>
-	
-   </div>
-   
-	<div id="ficheCompagnie" style="background-color:white">
+
+</div>
+
+<div id="ficheCompagnie" style="background-color:white">
 	<br/>
 	Si l'on poss&eagrave;de UNE carte de compagnie de Service Public, le loyer est 400 fois le montant indiqué par les d&eacute;s.<br/><br/>
 	Si l'on poss&eagrave;de les DEUX cartes de compagnies de Service Public, le loyer est MILLE fois le montant indiqué par les d&eacute;s.<br/><br/>
 	Valeur hypot&eacute;caire : Frs 7.500
-   </div>
-   
-	<div id="achatMaisons" style="background-color:white;"></div>
-	<div id="message" style="display:none;background-color:white"></div>
- 
- 	<div style="display:none" id="housesPanel">
- 	<div style="width:50%;height:calc(100% - 45px);background-color:white;float:left">
- 		<div class="title-dialog">Hypotheque</div>
+</div>
+
+<div id="achatMaisons" style="background-color:white;"></div>
+<div id="message" style="display:none;background-color:white"></div>
+
+<div style="display:none" id="housesPanel">
+	<div style="width:50%;height:calc(100% - 45px);background-color:white;float:left">
+		<div class="title-dialog">Hypotheque</div>
 		<fieldset id="idTerrainsHypotheques" style="border:solid 1px darkgrey;margin-top:10px;">
 			<legend>Terrains hypothéqués</legend>
 			<div>
-			
+
 			</div>
 		</fieldset>
 		<fieldset id="idTerrains" style="border:solid 1px darkgrey;margin-top:10px;">
@@ -138,161 +139,165 @@
 			<select></select>
 			<button id="idHypothequeAction">Hypothéquer</button>
 			<div id="toHypotheque"></div>
-		</fieldset>			
- 	</div>
- 	<div style="width:50%;height:calc(100% - 45px);background-color:white;float:right">
- 		<div class="title-dialog">Constructions</div>
+		</fieldset>
+	</div>
+	<div style="width:50%;height:calc(100% - 45px);background-color:white;float:right">
+		<div class="title-dialog">Constructions</div>
 		<div id="idTerrainsConstructibles" class="constructions" style="padding-left: 10px"></div>
 		<hr style="margin-right:10px;width:150px;float:right;"/>
 		<div style="clear:both"></div>
 		<div style="margin-right:40px;float:right" id="coutAchats">
-		 <img src="img/maison.png" style="width:15px;"/> x <span name="nbMaison">0</span>
-		 <img src="img/hotel.png" style="width:15px;"/> x <span name="nbHotel">0</span>
-		 <span name="cout" style="margin-left: 10px"></span> <span class="currency-value"></span>
+			<img src="img/maison.png" style="width:15px;"/> x <span name="nbMaison">0</span>
+			<img src="img/hotel.png" style="width:15px;"/> x <span name="nbHotel">0</span>
+			<span name="cout" style="margin-left: 10px"></span> <span class="currency-value"></span>
 		</div>
 		<div style="clear:both"></div>
 		<div style="margin-right:40px;float:right" id="resteConstructions">
-		 Reste <img src="img/maison.png" style="width:15px;"/> x <span name="nbMaison">0</span>
-		 <img src="img/hotel.png" style="width:15px;"/> x <span name="nbHotel">0</span>
+			Reste <img src="img/maison.png" style="width:15px;"/> x <span name="nbMaison">0</span>
+			<img src="img/hotel.png" style="width:15px;"/> x <span name="nbHotel">0</span>
 		</div>
- 	</div>
-	<div id="idTest" style="clear:both;width:100%;height:40px">
-	  <table style="height:100%;width:100%;border:0;border-collapse: collapse"><tr>
-	  <td style="width:37%;height:100%;border-top:solid 1px black;"></td>
-	  <td style="width:26%;border:solid 1px black;padding:5px;background-color:white">
-	    Resultat : <span id="idCoutTotal"></span><br/>
-	    Porte-monnaie : <span id="idArgentRestant"></span>
-	  </td>
-	  <td style="width:37%;border-top:solid 1px black;"></td>
-	  </tr></table>
 	</div>
-	
- 	</div>
- 	
-	<div id="idTerrainsLibres"></div>
-	
- 	<div style="display:none" id="infoJoueur">
- 		<div style="font-size:12px">
- 			<span class="info-label"><img src="img/strategy.png" style="width:18px;"/></span> : <span name="strategie"></span><br/>
- 			<span class="info-label"><img src="img/behaviour.png" style="width:18px;"/></span> : <span name="comportement"></span><br/>
-			<span class="info-label"><img src="img/money.png" style="width:18px;"/></span> : <span name="argent"></span><br/>
-			<span class="info-label"><img src="img/money.png" style="width:18px;"/><img src="img/money.png" style="width:18px;"/></span> : <span name="argentDispoHypo"></span><br/>
-			<span class="info-label"><img src="img/money.png" style="width:18px;"/><img src="img/money.png" style="width:18px;"/><img src="img/money.png" style="width:18px;"/></span> : <span name="argentDispo"></span><br/>
-			<span class="info-label"><img src="img/maison.png" style="width:15px;"/></span> : <span name="maison"></span><br/>
-			<span class="info-label"><img src="img/hotel.png" style="width:15px;"/></span> : <span name="hotel"></span><br/>
-			<span class="info-label"><img src="img/jail.jpg" style="width:18px;"/></span> : <span name="prison"></span> fois<br/>
-			<span class="info-label"><img src="img/tour.png" style="width:18px;"/></span> : <span name="tour"></span> tour(s)		
-		</div>
- 	</div>
- 
-	<div style="display:none;background-color:#CEE6D0" id="idPanelCreatePartie">
-	  <fieldset>
-		<legend style="font-weight:bold">Plateau</legend>
-		Choisir : <select id="idSelectPlateau"></select>
-	  </fieldset>
-	  <fieldset>
-	    <legend style="font-weight:bold">Créer une partie</legend>
-	    <fieldset id="idPartie"><legend>Joueurs</legend>
-		<input type="text" id="idNomJoueur" name="joueur" placeholder="Nom"/><br/>
-	    Nombre de joueur :
-	    <select name="nbPlayers">
-		 <option value="2">2</option>
-		 <option value="3">3</option>
-		 <option value="4">4</option>
-		 <option value="5">5</option>
-		 <option value="6">6</option>
-	    </select><br/>
-		Nombre de robots :
-	    <select name="nbRobots">
-		 <option value="0">0</option>
-		 <option value="1">1</option>
-		 <option value="2">2</option>
-		 <option value="3">3</option>
-		 <option value="4">4</option>
-		 <option value="5">5</option>
-		 <option value="6">6</option>
-	    </select><br/>
-	    Rapidité des robots :
-	    <select name="waitTimeIA">
-		  <option value="100">0s</option>
-		  <option value="1000" selected>1s</option>
-		  <option value="1500">1.5s</option>
-		  <option value="2000">2s</option>
-		  <option value="4000">4s</option>
-	    </select>
-	    </fieldset>
-	    <fieldset id="idVariantes">
-		  <legend>Variantes</legend>
-			  <input type="checkbox" name="parcGratuit" id="idOptParcGratuit"/> <label for="idOptParcGratuit">Jouer avec le parc gratuit</label><br/>
-			  <input type="checkbox" name="caseDepart" id="idOptCaseDepart"/> <label for="idOptCaseDepart">Toucher 40000 sur la case depart</label><br/>
-			  <input type="checkbox" name="enchereAchat" id="idOptCaseEnchere"/> <label for="idOptCaseEnchere">Banque met terrain aux enchères</label><br/>
-			  <input type="checkbox" name="echangeApresVente" id="idOptCaseEchange"/> <label for="idOptCaseEchange">Echange quand terrains vendus</label><br/>
-			  <input type="checkbox" name="desRapide" id="idOptDesRapide"/> <label for="idOptDesRapide">Dés rapide</label><br/>
-              <input type="checkbox" name="tourAchat" id="idOptTourAchat"/> <label for="idOptTourAchat">Un tour avant achat (not yet)</label>
-			<hr/>
-			<input type="checkbox" name="quickMove" id="idQuickMove"/> <label for="idQuickMove">Jeu rapide</label><br/>
-	    </fieldset>
-	    </fieldset>
-	  <fieldset>
-	    <legend style="font-weight:bold">Charger une sauvegarde</legend>
-	    <select id="idSauvegardes">
-		 <option value="">---</option>
-	    </select>
-	    <button id="idDeleteSauvegarde">Supprimer</button>
-		<button id="idLoadSauvegarde">Charger</button>
-	  </fieldset>
+	<div id="idTest" style="clear:both;width:100%;height:40px">
+		<table style="height:100%;width:100%;border:0;border-collapse: collapse"><tr>
+			<td style="width:37%;height:100%;border-top:solid 1px black;"></td>
+			<td style="width:26%;border:solid 1px black;padding:5px;background-color:white">
+				Resultat : <span id="idCoutTotal"></span><br/>
+				Porte-monnaie : <span id="idArgentRestant"></span>
+			</td>
+			<td style="width:37%;border-top:solid 1px black;"></td>
+		</tr></table>
 	</div>
 
-	<div id="idPanelEchange">
-		Joueur : 
-		<select id="idSelectJoueurs">
+</div>
+
+<div id="idTerrainsLibres"></div>
+
+<div style="display:none" id="infoJoueur">
+	<div style="font-size:12px">
+		<span class="info-label"><img src="img/strategy.png" style="width:18px;"/></span> : <span name="strategie"></span><br/>
+		<span class="info-label"><img src="img/behaviour.png" style="width:18px;"/></span> : <span name="comportement"></span><br/>
+		<span class="info-label"><img src="img/money.png" style="width:18px;"/></span> : <span name="argent"></span><br/>
+		<span class="info-label"><img src="img/money.png" style="width:18px;"/><img src="img/money.png" style="width:18px;"/></span> : <span name="argentDispoHypo"></span><br/>
+		<span class="info-label"><img src="img/money.png" style="width:18px;"/><img src="img/money.png" style="width:18px;"/><img src="img/money.png" style="width:18px;"/></span> : <span name="argentDispo"></span><br/>
+		<span class="info-label"><img src="img/maison.png" style="width:15px;"/></span> : <span name="maison"></span><br/>
+		<span class="info-label"><img src="img/hotel.png" style="width:15px;"/></span> : <span name="hotel"></span><br/>
+		<span class="info-label"><img src="img/jail.jpg" style="width:18px;"/></span> : <span name="prison"></span> fois<br/>
+		<span class="info-label"><img src="img/tour.png" style="width:18px;"/></span> : <span name="tour"></span> tour(s)
+	</div>
+</div>
+
+<div style="display:none;background-color:#CEE6D0" id="idPanelCreatePartie">
+	<fieldset>
+		<legend style="font-weight:bold">Plateau</legend>
+		Choisir : <select id="idSelectPlateau"></select>
+	</fieldset>
+	<fieldset>
+		<legend style="font-weight:bold">Créer une partie</legend>
+		<fieldset id="idPartie"><legend>Joueurs</legend>
+			<input type="text" id="idNomJoueur" name="joueur" placeholder="Nom"/><br/>
+			Nombre de joueur :
+			<select name="nbPlayers">
+				<option value="2">2</option>
+				<option value="3">3</option>
+				<option value="4">4</option>
+				<option value="5">5</option>
+				<option value="6">6</option>
+			</select><br/>
+			Nombre de robots :
+			<select name="nbRobots">
+				<option value="0">0</option>
+				<option value="1">1</option>
+				<option value="2">2</option>
+				<option value="3">3</option>
+				<option value="4">4</option>
+				<option value="5">5</option>
+				<option value="6">6</option>
+			</select><br/>
+			Rapidité des robots :
+			<select name="waitTimeIA">
+				<option value="100">0s</option>
+				<option value="1000" selected>1s</option>
+				<option value="1500">1.5s</option>
+				<option value="2000">2s</option>
+				<option value="4000">4s</option>
+			</select>
+		</fieldset>
+		<fieldset id="idVariantes">
+			<legend>Variantes</legend>
+			<input type="checkbox" name="parcGratuit" id="idOptParcGratuit"/> <label for="idOptParcGratuit">Jouer avec le parc gratuit</label><br/>
+			<input type="checkbox" name="caseDepart" id="idOptCaseDepart"/> <label for="idOptCaseDepart">Toucher 40000 sur la case depart</label><br/>
+			<input type="checkbox" name="enchereAchat" id="idOptCaseEnchere"/> <label for="idOptCaseEnchere">Banque met terrain aux enchères</label><br/>
+			<input type="checkbox" name="echangeApresVente" id="idOptCaseEchange"/> <label for="idOptCaseEchange">Echange quand terrains vendus</label><br/>
+			<input type="checkbox" name="desRapide" id="idOptDesRapide"/> <label for="idOptDesRapide">Dés rapide</label><br/>
+			<input type="checkbox" name="tourAchat" id="idOptTourAchat"/> <label for="idOptTourAchat">Un tour avant achat (not yet)</label>
+			<hr/>
+			<input type="checkbox" name="quickMove" id="idQuickMove"/> <label for="idQuickMove">Jeu rapide</label><br/>
+		</fieldset>
+	</fieldset>
+	<fieldset>
+		<legend style="font-weight:bold">Charger une sauvegarde</legend>
+		<select id="idSauvegardes">
 			<option value="">---</option>
 		</select>
-		<fieldset>
-			<legend>Liste de ses terrains</legend>
-			<select id="idListTerrainsAdversaire"><option value="">---</option></select>
-		</fieldset>
-		<fieldset>
-			<legend>Proposition</legend>
-			<div id="idListTerrainsJoueur"></div>
-			Argent : <input type="text" id="idArgentProposition"/>
-		</fieldset>
+		<button id="idDeleteSauvegarde">Supprimer</button>
+		<button id="idLoadSauvegarde">Charger</button>
+	</fieldset>
+</div>
+
+<div id="idPanelEchange">
+	Joueur :
+	<select id="idSelectJoueurs">
+		<option value="">---</option>
+	</select>
+	<fieldset>
+		<legend>Liste de ses terrains</legend>
+		<select id="idListTerrainsAdversaire"><option value="">---</option></select>
+	</fieldset>
+	<fieldset>
+		<legend>Proposition</legend>
+		<div id="idListTerrainsJoueur"></div>
+		Argent : <input type="text" id="idArgentProposition"/>
+	</fieldset>
+</div>
+
+<div id="idCommunicationEchange">
+	<div class="proposition"></div>
+	<div class="communications"></div>
+</div>
+
+<div id="idEncherePanel">
+	<div><span class="proprietaire"></span> met en Vente <span class="terrain" style="font-weight:bold"></span></div>
+	<div>
+		FR.
+		<span style="font-size:34px;font-weight:bold" class="montant"></span>
+		- <span class="last_encherisseur"></span>
 	</div>
-	
-	<div id="idCommunicationEchange">
-		<div class="proposition"></div>
-		<div class="communications"></div>
+
+	<hr/>
+	<div>
+		<div style="font-size:10px;width:49%;float:left" class="list_encherisseurs"></div>
+		<div style="font-size:10px;width:49%;float:right;color:darkgrey" class="list_exit"></div>
 	</div>
- 
-	<div id="idEncherePanel">
-		<div><span class="proprietaire"></span> met en Vente <span class="terrain" style="font-weight:bold"></span></div>
-		<div>
-			FR. 
-			<span style="font-size:34px;font-weight:bold" class="montant"></span>
-			- <span class="last_encherisseur"></span> 			
-		</div>
-		
-		<hr/>
-		<div>
-			<div style="font-size:10px;width:49%;float:left" class="list_encherisseurs"></div>
-			<div style="font-size:10px;width:49%;float:right;color:darkgrey" class="list_exit"></div>
-		</div>
-		<div class="messages"></div>
-		
-	</div>
- 
-	<script language="javascript">
+	<div class="messages"></div>
+
+</div>
+<div id="actions"></div>
+<div class="mobile"></div>
+<script language="javascript">
 	// On detecte le type de donnees a charger
 	var nomPlateau = "data-monopoly.json";
-	if (location.href.indexOf("plateau=")!=-1) {
-	  nomPlateau = "data-monopoly-" + location.href.substring(location.href.indexOf("plateau=")+8) + ".json";
+	if (location.href.indexOf("plateau=")!==-1) {
+		nomPlateau = "data-monopoly-" + location.href.substring(location.href.indexOf("plateau=")+8) + ".json";
 	}
 	var debug = false;
 	$(function(){
 		$('#idMontantParc').hide();
 		InitMonopoly.init(debug);
+		if($('.mobile').is(':visible')) {
+			DrawerFactory.setSize(950);
+		}
 	});
-   </script>
+</script>
 
-	</body>
+</body>
 </html>

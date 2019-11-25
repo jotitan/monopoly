@@ -74,7 +74,8 @@
 	font-variant:small-caps;
 }
 .joueur-bloc{
-    height:22px;            
+    height:22px;
+    margin-bottom:5px;
 }
 .joueurCourant > div { padding-left: 0px }
 .defaite { background-color: grey;padding-left:10px;color:lightgrey;text-decoration:line-through }
@@ -228,4 +229,97 @@ div.ui-tooltip {
 .hypotheque {
     background-color: lightgrey;
     color:black;
+}
+
+@media screen and (max-height: 1000px) {
+    #idActions > button {
+        top:260px;
+        position:absolute;
+    }
+    #idActions > button > img{
+        width:24px;
+        padding:0px;
+    }
+    #idActions > button:nth-child(1) {
+        left:135px;
+    }
+    #idActions > button:nth-child(2) {
+        left:190px;
+    }
+    #idActions > button:nth-child(3) {
+        left:245px;
+    }
+    #idActions > button:nth-child(4) {
+        left:300px;
+    }
+    .mobile {
+        display:none;
+    }
+    .count-property {
+        display:none;
+    }
+}
+
+@media screen and (min-height: 1000px) {
+    .jail > div {
+        width:calc(100% - 25px);
+    }
+
+    #actions {
+        display:block;
+        position:fixed;
+        bottom:0;
+        width:100%;
+        z-index:1000;
+    }
+    .ui-dialog-buttonpane {
+        display:none;
+    }
+
+    .count-property {
+        display:block;
+    }
+
+    .count-property > span:nth-child(2n+1) {
+        display:inline-block;
+        border-radius:5px;
+        margin-left:10px;
+        height:14px;
+    }
+
+    .panneau_joueur > div {
+        width:90%;
+        margin-bottom:5px;
+    }
+
+    #actions > button{
+        height: 13vw;
+        width: 100%;
+        font-size: 7vw;
+        font-weight: 800;
+    }
+
+    /* Change bioc joueur */
+    input.fiche {
+        display:none;
+    }
+
+    .mobile {
+        display:block;
+
+    }
+    #idActions {
+        position: fixed;
+        bottom: 0px;
+    }
+
+    #idActions > button {
+        width: 24.4vw;
+        height: 24.4vw;
+    }
+
+    #idActions > button > img {
+        width: 24vw;
+    }
+
 }

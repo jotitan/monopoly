@@ -147,7 +147,7 @@ var InfoMessage = {
 		this.div = $('#' + id);
 	},
 	_initMessage:function(color,titre,message){
-		$.trigger('monopoly.debug', {
+	    $.trigger('monopoly.debug', {
             message: message
         });
         this.div.prev().css("background-color", color);
@@ -174,7 +174,7 @@ var InfoMessage = {
         this.div.dialog('option', 'buttons', buttons);
 
         if (joueur.canPlay || forceshow) {
-            this.div.dialog('open');
+            wrapDialog(this.div,'open');
         }
         return buttons;
 	},
@@ -203,7 +203,7 @@ var InfoMessage = {
         }
         /* On affiche pas le panneau si le timeout est à 0 (partie rapide) */
         if (joueur.canPlay || forceshow) {
-            this.div.dialog('open');
+            wrapDialog(this.div,'open');
         }
         return button;
 	},
@@ -244,7 +244,7 @@ var InfoMessage = {
             callback();
         });
         if (joueur.canPlay) {
-            this.div.dialog('open');
+            wrapDialog(this.div,'open');
         }
         return buttons;
 	}

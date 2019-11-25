@@ -121,6 +121,14 @@ var DrawerFactory = {
 		plateauSize:800,
 		innerPlateauSize:220
 	},
+	setSize(size){
+		$('#plateau').height(size+10).width(size+10);
+		$('#canvas').width(size+10).height(size+10).attr('width',size+10).attr('height',size+10);
+		$('#canvas_rt').width(size+10).height(size+10).attr('width',size+10).attr('height',size+10);
+		this.dimensions.plateauSize = size;
+		this.dimensions.largeur = (size-20)/12;
+		this.dimensions.hauteur = this.dimensions.largeur*3/2;
+	},
 	init:function(){
 		return this;
 	},

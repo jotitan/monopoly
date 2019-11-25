@@ -1,7 +1,7 @@
 {
 	"plateau":{
 		"subtitle":"Classique",
-		"backgroundColor": "#A7E9DB",
+		"backgroundColor": "#cee6d0",
 		"textColor": "#000000",
 		"nomsJoueurs":["Chat","Voiture","Chapeau","Brouette","Dés à Coudre","Chien","Navire"],
 		"rollColor":"#999999"
@@ -67,10 +67,10 @@
             "height": 60
 		},
 		"compagnie":{
-			"src": "img/light.png",
-            "width": 50,
-            "height": 35,
-			"margin": 5
+			"src": "img/light2.png",
+            "width": 28,
+            "height": 28,
+			"margin": 17
 		},
 		"gare":{
 			"src": "img/big_train.png",

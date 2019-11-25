@@ -8,7 +8,8 @@
 		"imgJoueurs":["img/starwars/r2_d2.png","img/starwars/darth_vader.png","img/starwars/jango_fett.png","img/starwars/stormtrooper.png","img/starwars/boba_fett.png","img/starwars/clone_2.png"],
 		"rollColor":"#999999",
 		"depart":200,
-		"argent":1500
+		"argent":1500,
+      "prison":50
 	},
 	"currency":"7",
 	"background-image":"",
@@ -51,7 +52,7 @@
 		{"type": "gare","axe": 1,"pos": 5,"nom": "Super Star destroyer","colors": ["#000000", "#ABABAB"],"prix": 200,"loyers": [25, 50, 100, 200]},
 		{"type": "chance","axe": 1,"pos": 6},				
 		{"type": "propriete","groupe": "Bleu","axe": 1,"pos": 7,"nom": "Coruscant Jedi Temple","colors": ["#132450", "#808EB0"],"prix": 350,"loyers": [35, 175, 500, 1100, 1300, 1500],"prixMaison": 200},
-		{"type": "taxe","axe": 1,"pos": 8,"nom": "Taxe de luxe","prix": 10000},		
+		{"type": "taxe","axe": 1,"pos": 8,"nom": "Taxe de luxe","prix": 100},
 		{"type": "propriete","groupe": "Bleu","axe": 1,"pos": 9,"nom": "Coruscant Senate","colors": ["#132450", "#808EB0"],"prix": 400,"loyers": [50, 200, 600, 1400, 1700, 2000],"prixMaison": 200}						
 	],
 	"images":{
@@ -93,7 +94,7 @@
 			{"nom":"Payer le carburant du landspeeder 7 150","type":"taxe","montant":150},
 			{"nom":"Amande pour excès de vitesse : 7 15","type":"taxe","montant":15},
 			{"nom":"Vous avez gagné le prix de tir. Recevez 7 100","type":"prime","montant":100},
-			{"nom":"La banque vous verse un dividende de 7 5.000","type":"prime","montant":50},
+			{"nom":"La banque vous verse un dividende de 7 50","type":"prime","montant":50},
 			{"nom":"Votre immeuble et votre prêt rapportent. Vous devez toucher 7 150","type":"prime","montant":150},
 			{"nom":"Amande pour ivresse : 7 20","type":"taxe","montant":20},
 			{"nom":"Rendez vous à Ord Mantell. Si vous passez par la case Départ, recevez 7 200","type":"goto","axe":0,"pos":4},

@@ -308,7 +308,7 @@ function GestionDesRapideImpl(){
 
 	this.init = function(rollColor){
 		this._init(rollColor);
-		this.cube.desRapide = DrawerFactory.getDesRapide(112, 210, 35);
+		this.cube.desRapide = DrawerFactory.getDesRapide(270, 210, 35);
 		Drawer.addRealTime(this.cube.desRapide);
 	}
 
@@ -495,7 +495,10 @@ var InitMonopoly = {
 		},
 		_build:function(data,callback){
 			$(':checkbox[name]', '#idVariantes').each(function () {
-				VARIANTES[$(this).attr('name')] = $(this).is(':checked');
+				// Si existe, ne surcharge pas
+				if(VARIANTES[$(this).attr('name')] == null) {
+					VARIANTES[$(this).attr('name')] = $(this).is(':checked');
+				}
 			});
 			this.infos = data.plateau;
 			var plateauSize = DrawerFactory.dimensions.plateauSize;
@@ -660,19 +663,21 @@ var InitMonopoly = {
 	showPanel:function(){
 		this._loadPlateaux();
 		this._configSauvegardePanel();
-		this.panelPartie.dialog({
+		wrapDialog(this.panelPartie,{
 			title: "Monopoly",
 			closeOnEscape: false,
 			modal: true,
 			width: 400,
+			position: { my: "center top", at: "center top", of: window },
 			buttons: [{
 				text: "Valider",
 				click: function(){InitMonopoly._loadOrCreateGame();}
 			}]
-		});
+		})
 	},
 	_loadOrCreateGame:function(){
 		/* Chargement d'une partie */
+		VARIANTES = {};
 		if (this.listSauvegarde.val() != "") {
 			Sauvegarde.load(this.listSauvegarde.val());
 			this.panelPartie.dialog('close');
@@ -695,7 +700,6 @@ var InitMonopoly = {
 	_createGame:function(options){
 		var j = this.plateau.infos.nomsJoueurs.length > 0 ? this.plateau.infos.nomsJoueurs[0] : "";
 		options = $.extend({},{nbPlayers:0,nbRobots:0,waitTimeIA:1,joueur:j},options);
-
 
 		for (var i = 0; i < options.nbPlayers; i++) {
 			var nom = "Joueur " + (i+1);
@@ -769,8 +773,10 @@ var InitMonopoly = {
 		}
 	},
 	initPanels:function(){
-		$('#message').dialog({
-			autoOpen: false
+		//$('#message').dialog({
+		wrapDialog($('#message'),{
+			autoOpen: false,
+			position: { my: "center top", at: "center top", of: window },
 		});
 		$('#message').prev().css("background", "url()");
 		/* Gestion de la sauvegarde */
@@ -779,15 +785,19 @@ var InitMonopoly = {
 			Sauvegarde.save(name);
 		});
 		// panneau d'achats de maisons
-		$('#achatMaisons').dialog({
+		//$('#achatMaisons').dialog({
+		wrapDialog($('#achatMaisons'),{
 			autoOpen: false,
+			position: { my: "center top", at: "center top", of: window },
 			title: "Achat de maisons /hotels",
 			width: 500,
 			height: 300
 		});
 		// Liste des terrains libres
-		$('#idTerrainsLibres').dialog({
+		//$('#idTerrainsLibres').dialog({
+		wrapDialog($('#idTerrainsLibres'),{
 			autoOpen:false,
+			position: { my: "center top", at: "center top", of: window },
 			title:"Liste des terrains libre",
 			width:350,
 			height:300,

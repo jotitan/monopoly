@@ -39,9 +39,11 @@ var GestionTerrains = {
         this.LeverHypotheque.init(config.idTerrainsHypotheque);
         this.Constructions.init(config.idTerrainsConstructibles,config.idCoutAchat,config.idConstructions);
         this.panel = $(config.idPanel);
-        this.panel.dialog({
+        //this.panel.dialog({
+        wrapDialog(this.panel,{
             width: 800,
             height: 600,
+            position: { my: "center top", at: "center top", of: window },
             title: 'Gestion des maisons',
             modal: true,
             buttons: {

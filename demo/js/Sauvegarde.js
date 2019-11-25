@@ -34,11 +34,11 @@ var Sauvegarde = {
         this.currentSauvegardeName = name;
         var data = this._getStorage(name);
         // On charge le plateau
+        VARIANTES = data.variantes || VARIANTES;
         InitMonopoly.plateau.load(data.plateau || "data-monopoly.json",function(){
             data.joueurs.forEach(function(j,i){GestionJoueur.createAndLoad(!j.canPlay, i,j.nom,j);});
             data.fiches.forEach(function(f){GestionFiche.getById(f.id).load(f);});
             $.trigger('refreshPlateau');
-            VARIANTES = data.variantes || VARIANTES;
             globalStats.nbTours = data.nbTours || 0;
             InitMonopoly.afterCreateGame();
             GestionJoueur.change(data.joueurCourant);

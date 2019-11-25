@@ -9,7 +9,7 @@ function Pion(color, joueur,img) {
 		prison: 0,
 		positions:[]
 	}; // stat du joueur		
-	this.pion = DrawerFactory.getPionJoueur(color,DrawerFactory.dimensions.largeurPion,img);
+	this.pion = DrawerFactory.getPionJoueur(color,DrawerFactory.dimensions.largeurPion,img,this.joueur);
 	Drawer.addRealTime(this.pion);
 
 	/* Supprime le pion en cas de defaite */

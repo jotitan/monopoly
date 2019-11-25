@@ -187,8 +187,10 @@ var GestionEnchereDisplayer = {
     displayer: null, // Joueur qui affiche le panneau
     init: function (id) {
         this.panel = $('#' + id);
-        this.panel.dialog({
+        //this.panel.dialog({
+        wrapDialog(this.panel,{
             title: 'Mise au enchere',
+            position: { my: "center top", at: "center top", of: window },
             autoOpen: false
         });
     },
@@ -297,9 +299,10 @@ var EchangeDisplayer = {
         this.listTerrainsJoueur = $('#' + idListTerrainsJoueur);
         this.listTerrainsAdversaire = $('#' + idListTerrainsAdversaire);
 
-        this.panel.dialog({
+        wrapDialog(this.panel,{
             title: "Echange de terrains",
             autoOpen: false,
+            position: { my: "center top", at: "center top", of: window },
             width: 400,
             buttons: {
                 "Annuler": function () {

@@ -277,7 +277,8 @@ function GestionDesImpl(){
 		var interval = setInterval(function () {
 			if (nb-- < 0) {
 				clearInterval(interval);
-				gd._drawCubes(gd.des1,gd.des2,gd.desRapide);
+				// If double, desRapide is empty, only on end
+				gd._drawCubes(gd.des1,gd.des2,gd.isDouble() ? 0 : gd.desRapide);
 				gd.after();
 				return;
 			}
@@ -411,7 +412,7 @@ function GestionDesRapideImpl(){
 			this.desRapide = 0
 		}
 		GestionJoueur.getJoueurCourant().joueDes(this.total());
-	}
+	};
 
 	this._drawCubes = function(val1,val2,desRapide,color){
 		this.cube.des1.setValue(val1, color);

@@ -154,7 +154,7 @@ body { margin: 0 }
 	height:25px;
 	position:absolute;
 	top:215px;
-	left:270px;
+	left:275px;
 }
 
 #idReloadDice.circle {
@@ -264,6 +264,13 @@ div.ui-tooltip {
     .jail > div {
         width:calc(100% - 25px);
     }
+    .joueur-id {
+        font-size:3vw;
+    }
+
+    .joueur-bloc {
+        height:auto;
+    }
 
     #actions {
         display:block;
@@ -284,7 +291,7 @@ div.ui-tooltip {
         display:inline-block;
         border-radius:5px;
         margin-left:10px;
-        height:14px;
+        height:16px;
     }
 
     .panneau_joueur > div {

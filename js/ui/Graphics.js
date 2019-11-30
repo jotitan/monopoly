@@ -4,6 +4,10 @@ var CURRENT_ID_COMPONENT = 0; // Permet de generer un numero de composant unique
 
 /* Fournit des methodes de dessins */
 var DrawerHelper = {
+	fontWeight:200,
+	setFontWeight(font){
+		this.fontWeight = font;
+	},
 	fromDegresToRad:function(angle){
 		return (angle/180)*Math.PI;
 	},
@@ -53,8 +57,8 @@ var DrawerHelper = {
         var width = specificWidth || DrawerFactory.dimensions.largeur;
 		//canvas.strokeStyle=DrawerFactory.getInfo('textColor') || '#000000';
 		canvas.fillStyle=DrawerFactory.getInfo('textColor') || '#000000';
-        canvas.font = "200 " + ((size != null) ? size : "7") + "pt Arial";
-        
+        canvas.font = `${this.fontWeight} ` + ((size != null) ? size : "7") + "pt Arial";
+
 		var mots = this._splitLine([text])
 		
 		var mots2 = [];
@@ -128,6 +132,7 @@ var DrawerFactory = {
 		this.dimensions.plateauSize = size;
 		this.dimensions.largeur = (size-20)/12;
 		this.dimensions.hauteur = this.dimensions.largeur*3/2;
+		DrawerHelper.setFontWeight(800);
 	},
 	init:function(){
 		return this;

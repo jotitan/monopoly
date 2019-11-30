@@ -1958,7 +1958,7 @@ var GestionJoueur = {
 	},
 	displayLineByGroups:function(){
 		let groups = GestionFiche.getGroups();
-		let sizeBlock = 50 / groups.size();
+		let sizeBlock = 45 / groups.size();
 		let div = $('<div style="width:100%" class="count-property"></div>')
 		for(var name in groups){
 			let color = name.replace(/ /g,"");
@@ -1973,10 +1973,10 @@ var GestionJoueur = {
 		var argent = InitMonopoly.plateau.infos.argentJoueurDepart
 		var joueur = isRobot ? new JoueurOrdinateur(i, nom, color,argent) : new Joueur(i, nom, color,argent);
 		var isDefaite = defaite ? " class=\"defaite\" ":"";
-		var div = $(`<hr style="border:solid 2px darkgray"/><div id="${id}"${isDefaite}></div>`);
-		$(div).append(`<div class="joueur-bloc"><span class="joueur-name">${joueur.nom}</span> : <span class="compte-banque"></span> ${CURRENCY}<span class="info-joueur" title="Info joueur" data-idjoueur="${i}"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div>`)
+		var div = $(`<div id="${id}"${isDefaite}></div>`);
+		$(div).append(`<div class="joueur-bloc"><span class="joueur-id"><span class="joueur-name">${joueur.nom}</span> : <span class="compte-banque"></span> ${CURRENCY}</span><span class="info-joueur" title="Info joueur" data-idjoueur="${i}"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div>`)
 		$(div).append(this.displayLineByGroups());
-		$('.panneau_joueur').append(div);
+		$('.panneau_joueur').append('<hr style="border:solid 2px darkgray"/>').append(div);
 
 
 

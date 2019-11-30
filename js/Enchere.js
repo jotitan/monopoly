@@ -227,6 +227,7 @@ var GestionEnchereDisplayer = {
                 GestionEnchereDisplayer.close();
             }
         }]);
+        initWrapButtons(this.panel);
 
     },
 	/* Nettoie l'affichage */
@@ -280,8 +281,10 @@ var GestionEnchereDisplayer = {
                 }
             }];
             this.panel.dialog('option', 'buttons', buttons);
+            initWrapButtons(this.panel);
         } else {
             this.panel.dialog('option', 'buttons', []);
+            initWrapButtons(this.panel);
         }
     }
 }
@@ -344,10 +347,10 @@ var EchangeDisplayer = {
         for (var g in groups) {
             // ne pas affiche si construit )groups[g].isConstructed()
             var group = groups[g];
-            var div = $('<div style="font-weight:bold;color:' + group.color + '">Groupe ' + group.groupe + '<br/></div>');
+            var div = $(`<div style="font-weight:bold;color:${group.color}">Groupe ${group.groupe}<br/></div>`);
             for (var f in group.terrains) {
                 var fiche = group.terrains[f];
-                div.append('<input type="checkbox" value="' + fiche.id + '" id="chk_id_' + fiche.id + '"/><label for="chk_id_' + fiche.id + '">' + fiche.nom + '</label><br/>');
+                div.append(`<input type="checkbox" value="${fiche.id}" id="chk_id_${fiche.id}"/><label for="chk_id_${fiche.id}">${fiche.nom}</label><br/>`);
             }
             EchangeDisplayer.listTerrainsJoueur.append(div);
         }
@@ -356,7 +359,6 @@ var EchangeDisplayer = {
     propose: function () {
         var proprietaire = GestionJoueur.getById(EchangeDisplayer.selectJoueurs.val());
         var terrain = GestionFiche.getById(this.listTerrainsAdversaire.val());
-        //var terrain = getFicheById(this.listTerrainsAdversaire.val());
         if (proprietaire == null || terrain == null) {
             return;
         }
@@ -370,7 +372,7 @@ var EchangeDisplayer = {
         $(':checkbox:checked', this.listTerrainsJoueur).each(function () {
             proposition.terrains.push(GestionFiche.getById($(this).val()));
         });
-        if ($('#idArgentProposition').val() != "") {
+        if ($('#idArgentProposition').val() !== "") {
             proposition.compensation = parseInt($('#idArgentProposition').val());
         }
         this.close();

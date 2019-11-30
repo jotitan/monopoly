@@ -1,6 +1,8 @@
 /* Displayers d'information */
 
 function initWrapButtons(bloc){
+    currentDialogId++;
+    bloc.data('inner-open-id',currentDialogId);
     // Create specific button for mobile version
     $('#actions').empty();
 
@@ -20,10 +22,20 @@ function initWrapButtons(bloc){
     }
 }
 
+let currentDialogId = 0;
+
+function closeActions(event){
+    if(currentDialogId !== $(event.currentTarget).data('inner-open-id')){
+        return;
+    }
+    $('#actions').empty();
+}
+
 function openWrapDialog(bloc){
     // Detect buttons
     initWrapButtons(bloc);
-    bloc.off("dialogclose.wrapper").on("dialogclose.wrapper",()=>$('#actions').empty())
+    // When open bloc, generate id and set in global and in panel. When close, check if same, if not, do not delete actions
+    bloc.off("dialogclose.wrapper").on("dialogclose.wrapper",e=>closeActions(e))
     bloc.dialog('open');
 }
 
@@ -34,7 +46,7 @@ function wrapDialog(bloc,parameters){
     bloc.off("dialogopen.wrapper").on("dialogopen.wrapper",()=>initWrapButtons(bloc));
 
     // Intercept close and clean actions bloc
-    bloc.off("dialogclose.wrapper").on("dialogclose.wrapper",()=>$('#actions').empty())
+    bloc.off("dialogclose.wrapper").on("dialogclose.wrapper",e=>closeActions(e));
     bloc.dialog(parameters);
 }
 
@@ -204,7 +216,6 @@ var CommunicationDisplayer = {
 
         this._showProposition($('.proposition', this.panel), proposition);
         $('.communications', this.panel).empty();
-        this.panel.dialog('open');
     },
     /* Affiche le panneau de saisie d'une contreproposition */
     _showContrePanel: function (joueur, joueurAdverse) {
@@ -244,7 +255,6 @@ var CommunicationDisplayer = {
         };
         $('.contreProposition:last :checkbox:checked', this.panel).each(function () {
             var terrain = GestionFiche.getById($(this).val());
-            //var terrain = getFicheById($(this).val());
             if (terrain != null) {
                 proposition.terrains.push(terrain);
             }

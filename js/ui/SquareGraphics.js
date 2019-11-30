@@ -168,6 +168,61 @@ function PionJoueur(color, largeur,img,joueur) {
 	this.init(2,0);
 }
 
+let axeDrawer = [
+	{
+		axe:0,
+		color:(canvas,x,y,width,b,l,h)=>canvas.fillRect(x, y + h - b, width, b),
+		title:(canvas,x,y,title,dec,l,h)=>DrawerHelper.writeText(title, x + l, y + h- dec, Math.PI, canvas),
+		prix:(canvas,x,y,prix,dec,l)=>DrawerHelper.writeText(prix, x + l, y + dec, Math.PI, canvas),
+		image:(canvas,x,y,image,dec,l,lng,h,r)=>DrawerHelper.drawImage(canvas, image, x + l - lng, y + h - dec, image.width, image.height,r),
+		maison:(canvas,x,y,img,i,l,h)=>DrawerHelper.drawImage(canvas, img, x + l - 15 * i - 3, y + h - 2, 15, 15, -Math.PI),
+		hotel:(canvas,x,y,img,l,pad,h)=>DrawerHelper.drawImage(canvas, img, x + l - pad, y + h, 18, 18, -Math.PI),
+		possede:(canvas,x,y,color,rayon,l)=>{
+			DrawerHelper.drawArcCircle(canvas,color,rayon,{x:x+l, y:y},Math.PI/2,Math.PI);
+			DrawerHelper.drawArcCircle(canvas,color,rayon,{x:x, y:y},0,Math.PI/2);
+		}
+	},
+	{
+		axe:1,
+		color:(canvas,x,y,width,b,l)=>canvas.fillRect(x, y, b, l),
+		title:(canvas,x,y,title,dec,l)=>DrawerHelper.writeText(title, x + dec, y + l, -Math.PI / 2, canvas),
+		prix:(canvas,x,y,prix,dec,l,h)=>DrawerHelper.writeText(prix, x + h - dec, y + l, -Math.PI / 2, canvas),
+		image:(canvas,x,y,image,dec,l,lng,h,r)=>DrawerHelper.drawImage(canvas, image, x + dec, y + l - lng, image.width, image.height, r),
+		maison:(canvas,x,y,img,i,l)=>DrawerHelper.drawImage(canvas, img,x + 3, y + l - 2 - 15 * i, 15, 15, -Math.PI / 2),
+		hotel:(canvas,x,y,img,l,pad)=>DrawerHelper.drawImage(canvas, img,y,y + l - pad, 18, 18, -Math.PI / 2),
+		possede:(canvas,x,y,color,rayon,l,h)=>{
+			DrawerHelper.drawArcCircle(canvas,color,rayon,{x:x+h, y:y+l},Math.PI,3*Math.PI/2);
+			DrawerHelper.drawArcCircle(canvas,color,rayon,{x:x+h, y:y},Math.PI/2,Math.PI);
+		}
+	},
+	{
+		axe:2,
+		color:(canvas,x,y,width,b)=>canvas.fillRect(x,y, width, b),
+		title:(canvas,x,y,title,dec)=>DrawerHelper.writeText(title, x,y + dec, 0, canvas),
+		prix:(canvas,x,y,prix,dec,l,h)=>DrawerHelper.writeText(prix, x,y + h - dec, 0, canvas),
+		image:(canvas,x,y,image,dec,l,lng,h,r)=>DrawerHelper.drawImage(canvas, image, x + lng, y + dec, image.width, image.height, r),
+		maison:(canvas,x,y,img,i)=>DrawerHelper.drawImage(canvas, img,x + 3 + 15 * i, y + 2, 15, 15, 0),
+		hotel:(canvas,x,y,img,l,pad)=>DrawerHelper.drawImage(canvas, img,x + pad, y, 18, 18, 0),
+		possede:(canvas,x,y,color,rayon,l,h)=>{
+			DrawerHelper.drawArcCircle(canvas,color,rayon,{x:x, y:y+h},3*Math.PI/2,0);
+			DrawerHelper.drawArcCircle(canvas,color,rayon,{x:x+l, y:y+h},Math.PI,3*Math.PI/2);
+		}
+	},
+	{
+		axe:3,
+		color:(canvas,x,y,width,b,l,h)=>canvas.fillRect(x + h - b, y, b,l),
+		title:(canvas,x,y,title,dec,l,h)=>DrawerHelper.writeText(title, x + h - dec, y, Math.PI / 2, canvas),
+		prix:(canvas,x,y,prix,dec)=>DrawerHelper.writeText(prix, x + dec, y, Math.PI / 2, canvas),
+		image:(canvas,x,y,image,dec,l,lng,h,r)=>DrawerHelper.drawImage(canvas, image, x + h - dec, y + lng, image.width, image.height, r),
+		maison:(canvas,x,y,img,i,l,h)=>DrawerHelper.drawImage(canvas, img,x + h - 3, y + 2 + 15 * i, 15, 15, Math.PI / 2),
+		hotel:(canvas,x,y,img,l,pad,h)=>DrawerHelper.drawImage(canvas, img,x + h, y + pad, 18, 18, Math.PI / 2),
+		possede:(canvas,x,y,color,rayon,l)=>{
+			DrawerHelper.drawArcCircle(canvas,color,rayon,{x:x, y:y+l},3*Math.PI/2,0);
+			DrawerHelper.drawArcCircle(canvas,color,rayon,{x:x,y:y},0,Math.PI/2);
+		}
+	},
+];
+
 /* Representation graphique d'une fiche */
 /* Image contient src, height et width */
 function Case(pos, axe, color, title, prix, img) {
@@ -236,101 +291,45 @@ function Case(pos, axe, color, title, prix, img) {
 		};
 	};
 
-	this.axeDrawer = [
-		{
-			axe:0,
-			color:(canvas,b,l,h)=>canvas.fillRect(this.data.x, this.data.y + h - b, this.data.width, b),
-			title:(canvas,title,dec,l,h)=>DrawerHelper.writeText(title, this.data.x + l, this.data.y + h- dec, Math.PI, canvas),
-			prix:(canvas,prix,dec,l)=>DrawerHelper.writeText(prix, this.data.x + l, this.data.y + dec, Math.PI, canvas),
-			image:(canvas,dec,l,lng,h,r)=>DrawerHelper.drawImage(canvas, this.data.image, this.data.x + l - lng, this.data.y + h - dec, this.data.image.width, this.data.image.height,r),
-			maison:(canvas,i,l,h)=>DrawerHelper.drawImage(canvas, this.imgMaison, this.data.x + l - 15 * i - 3, this.data.y + h - 2, 15, 15, -Math.PI),
-			hotel:(canvas,l,pad,h)=>DrawerHelper.drawImage(canvas, this.imgHotel, this.data.x + l - pad, this.data.y + h, 18, 18, -Math.PI),
-			possede:(canvas,l)=>{
-				DrawerHelper.drawArcCircle(canvas,this.colorPossede,this.rayon,{x:this.data.x+l, y:this.data.y},Math.PI/2,Math.PI);
-				DrawerHelper.drawArcCircle(canvas,this.colorPossede,this.rayon,{x:this.data.x, y:this.data.y},0,Math.PI/2);
-			}
-		},
-		{
-			axe:1,
-			color:(canvas,b,l)=>canvas.fillRect(this.data.x, this.data.y, b, l),
-			title:(canvas,title,dec,l)=>DrawerHelper.writeText(title, this.data.x + dec, this.data.y + l, -Math.PI / 2, canvas),
-			prix:(canvas,prix,dec,l,h)=>DrawerHelper.writeText(prix, this.data.x + h - dec, this.data.y + l, -Math.PI / 2, canvas),
-			image:(canvas,dec,l,lng,h,r)=>DrawerHelper.drawImage(canvas, this.data.image, this.data.x + dec, this.data.y + l - lng, this.data.image.width, this.data.image.height, r),
-			maison:(canvas,i,l)=>DrawerHelper.drawImage(canvas, this.imgMaison, this.data.x + 3, this.data.y + l - 2 - 15 * i, 15, 15, -Math.PI / 2),
-			hotel:(canvas,l,pad)=>DrawerHelper.drawImage(canvas, this.imgHotel, this.data.x, this.data.y + l - pad, 18, 18, -Math.PI / 2),
-			possede:(canvas,l,h)=>{
-				DrawerHelper.drawArcCircle(canvas,this.colorPossede,this.rayon,{x:this.data.x+h, y:this.data.y+l},Math.PI,3*Math.PI/2);
-				DrawerHelper.drawArcCircle(canvas,this.colorPossede,this.rayon,{x:this.data.x+h, y:this.data.y},Math.PI/2,Math.PI);
-			}
-		},
-		{
-			axe:2,
-			color:(canvas,b)=>canvas.fillRect(this.data.x, this.data.y, this.data.width, b),
-			title:(canvas,title,dec)=>DrawerHelper.writeText(title, this.data.x, this.data.y + dec, 0, canvas),
-			prix:(canvas,prix,dec,l,h)=>DrawerHelper.writeText(prix, this.data.x, this.data.y + h - dec, 0, canvas),
-			image:(canvas,dec,l,lng,h,r)=>DrawerHelper.drawImage(canvas, this.data.image, this.data.x + lng, this.data.y + dec, this.data.image.width, this.data.image.height, r),
-			maison:(canvas,i)=>DrawerHelper.drawImage(canvas, this.imgMaison, this.data.x + 3 + 15 * i, this.data.y + 2, 15, 15, 0),
-			hotel:(canvas,l,pad)=>DrawerHelper.drawImage(canvas, this.imgHotel, this.data.x + pad, this.data.y, 18, 18, 0),
-			possede:(canvas,l,h)=>{
-				DrawerHelper.drawArcCircle(canvas,this.colorPossede,this.rayon,{x:this.data.x, y:this.data.y+h},3*Math.PI/2,0);
-				DrawerHelper.drawArcCircle(canvas,this.colorPossede,this.rayon,{x:this.data.x+l, y:this.data.y+h},Math.PI,3*Math.PI/2);
-			}
-		},
-		{
-			axe:3,
-			color:(canvas,b,l,h)=>canvas.fillRect(this.data.x + h - b, this.data.y, b,l),
-			title:(canvas,title,dec,l,h)=>DrawerHelper.writeText(title, this.data.x + h - dec, this.data.y, Math.PI / 2, canvas),
-			prix:(canvas,prix,dec)=>DrawerHelper.writeText(prix, this.data.x + dec, this.data.y, Math.PI / 2, canvas),
-			image:(canvas,dec,l,lng,h,r)=>DrawerHelper.drawImage(canvas, this.data.image, this.data.x + h - dec, this.data.y + lng, this.data.image.width, this.data.image.height, r),
-			maison:(canvas,i,l,h)=>DrawerHelper.drawImage(canvas, this.imgMaison, this.data.x + h - 3, this.data.y + 2 + 15 * i, 15, 15, Math.PI / 2),
-			hotel:(canvas,l,pad,h)=>DrawerHelper.drawImage(canvas, this.imgHotel, this.data.x + h, this.data.y + pad, 18, 18, Math.PI / 2),
-			possede:(canvas,l)=>{
-				DrawerHelper.drawArcCircle(canvas,this.colorPossede,this.rayon,{x:this.data.x, y:this.data.y+l},3*Math.PI/2,0);
-				DrawerHelper.drawArcCircle(canvas,this.colorPossede,this.rayon,{x:this.data.x, y:this.data.y},0,Math.PI/2);
-			}
-		},
-	];
-
-
 	this.draw = function (canvas) {
 		var bordure = DrawerFactory.dimensions.bordure/2;
 		var largeur = DrawerFactory.dimensions.largeur;
 		var hauteur = DrawerFactory.dimensions.hauteur;
 		canvas.strokeStyle = '#000000';
 		canvas.strokeRect(this.data.x, this.data.y, this.data.width, this.data.height);
-		var drawer = this.axeDrawer[axe];
+		var drawer = axeDrawer[axe];
 		if (color != null) {
 			canvas.fillStyle = color;
-			drawer.color(canvas,bordure,largeur,hauteur);
+			drawer.color(canvas,this.data.x,this.data.y,this.data.width,bordure,largeur,hauteur);
 		}
 
 		if (title != null) {
 			let dec = 10 + ((color != null) ? bordure : 0); // Uniquement si couleur
-			drawer.title(canvas,title,dec,largeur,hauteur);
+			drawer.title(canvas,this.data.x,this.data.y,title,dec,largeur,hauteur);
 		}
 		if (prix != null) {
-			drawer.prix(canvas,prix,5,largeur,hauteur);
+			drawer.prix(canvas,this.data.x,this.data.y,prix,5,largeur,hauteur);
 		}
 		if (this.data.image != null) {
 			var rotate = (Math.PI / 2) * ((this.axe + 2) % 4);
 			var lng = (largeur - this.data.image.width) / 2;
 			let dec = 10 + ((color != null) ? bordure : 10) + ((title != null) ? 10 : 0) + (this.data.image.margin || 0);
-			drawer.image(canvas,dec,largeur,lng,hauteur,rotate);
+			drawer.image(canvas,this.data.x,this.data.y,this.data.image,dec,largeur,lng,hauteur,rotate);
 		}
 		// Cas des maisons
 		if (this.nbMaison <= 4) {
 			// On ecrit de droite a gauche dans le cartouche
 			canvas.fillStyle = '#00FF00';
 			for (var i = 0; i < this.nbMaison; i++) {
-				drawer.maison(canvas,i,largeur,hauteur);
+				drawer.maison(canvas,this.data.x,this.data.y,this.imgMaison,i,largeur,hauteur);
 			}
 		} else {
 			// Cas de l'hotel, 5 maisons
 			let pad = (largeur - 18) / 2;
-			drawer.hotel(canvas,largeur,pad,hauteur);
+			drawer.hotel(canvas,this.data.x,this.data.y,this.imgHotel,largeur,pad,hauteur);
 		}
 		if (this.colorPossede != null) {
-			drawer.possede(canvas,largeur,hauteur);
+			drawer.possede(canvas,this.data.x,this.data.y,this.colorPossede,this.rayon,largeur,hauteur);
 		}
 	};
 

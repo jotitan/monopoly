@@ -62,7 +62,7 @@
     width:250px;
 }
 
-.joueurCourant > .joueur-name {
+.joueurCourant .joueur-name {
     padding-left: 35px;
     background-image: url("../img/dice.png");
     background-repeat: no-repeat;

@@ -21,7 +21,7 @@ function ReparationsCarte(tarifHotel,tarifMaison){
 function BirthdayCarte(montant){
 	CarteAction.call(this,"birthday");
 	this.action = function(joueur){
-		var nb = 0
+		var nb = 0;
 		GestionJoueur.joueurs.forEach(function(j){
 			if(!joueur.equals(j)){
 				j.payerTo(montant,joueur,function(){

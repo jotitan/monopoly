@@ -189,7 +189,7 @@ let axeDrawer = [
 		prix:(canvas,x,y,prix,dec,l,h)=>DrawerHelper.writeText(prix, x + h - dec, y + l, -Math.PI / 2, canvas),
 		image:(canvas,x,y,image,dec,l,lng,h,r)=>DrawerHelper.drawImage(canvas, image, x + dec, y + l - lng, image.width, image.height, r),
 		maison:(canvas,x,y,img,i,l)=>DrawerHelper.drawImage(canvas, img,x + 3, y + l - 2 - 15 * i, 15, 15, -Math.PI / 2),
-		hotel:(canvas,x,y,img,l,pad)=>DrawerHelper.drawImage(canvas, img,y,y + l - pad, 18, 18, -Math.PI / 2),
+		hotel:(canvas,x,y,img,l,pad)=>DrawerHelper.drawImage(canvas, img,x,y + l - pad, 18, 18, -Math.PI / 2),
 		possede:(canvas,x,y,color,rayon,l,h)=>{
 			DrawerHelper.drawArcCircle(canvas,color,rayon,{x:x+h, y:y+l},Math.PI,3*Math.PI/2);
 			DrawerHelper.drawArcCircle(canvas,color,rayon,{x:x+h, y:y},Math.PI/2,Math.PI);
@@ -421,7 +421,7 @@ function CaseSpeciale(axe, titre) {
 
 function NewImage(path){
 	let img = new Image();
-	img.src="img/bus.png";
+	img.src=path;
 	return img;
 }
 
@@ -432,23 +432,18 @@ function DesRapide(x,y,width){
 	this.margin = width*0.1;
 	this.draw = function(canvas){
 		this._drawCadre(canvas);
-		if (this.value == null) {
+		if (this.value === undefined) {
 			return;
 		}
 		if (this.value === 1 || this.value === 3) {
 			this.drawPoint(canvas, x + width / 2, y + width / 2, width / 5, this.color);
 		}
 		if (this.value === 2 || this.value === 3) {
-			this.drawPoint(canvas, x + width * 0.25, y + width * 0.75, width / 5, this.color);
-			this.drawPoint(canvas, x + width * 0.75, y + width * 0.25, width / 5, this.color);
+			this.draw2or3(canvas);
 		}
-		if(this.value === 4 || this.value === 6){
-			// Bus
-			DrawerHelper.drawImage(canvas, this.imgBus, x + this.margin, y + this.margin, width - this.margin, width - this.margin, 0);
-		}
-		if(this.value === 5){
-			// Mr monopoly
-			DrawerHelper.drawImage(canvas, this.imgMr, x + this.margin, y + this.margin, width - this.margin, width - this.margin, 0);
+		if(this.value >=4) {
+			let img = (this.value === 5)?this.imgMr:this.imgBus;
+			DrawerHelper.drawImage(canvas, img, x + this.margin, y + this.margin, width - this.margin, width - this.margin, 0);
 		}
 	}
 }
@@ -462,18 +457,21 @@ function Des(x, y, width) {
 		this.value = value;
 		this.color = color || '#000000';
 	};
+	this.draw2or3 = function(canvas){
+		this.drawPoint(canvas, x + width * 0.25, y + width * 0.75, width / 5, this.color);
+		this.drawPoint(canvas, x + width * 0.75, y + width * 0.25, width / 5, this.color);
+	};
 	this.draw = function (canvas) {
 		// Structure du des
 		this._drawCadre(canvas);
-		if (this.value == null) {
+		if (this.value === undefined) {
 			return;
 		}
 		if (this.value % 2 === 1) {
 			this.drawPoint(canvas, x + width / 2, y + width / 2, width / 5, this.color);
 		}
 		if (this.value !== 1) {
-			this.drawPoint(canvas, x + width * 0.25, y + width * 0.75, width / 5, this.color);
-			this.drawPoint(canvas, x + width * 0.75, y + width * 0.25, width / 5, this.color);
+			this.draw2or3(canvas);
 		}
 		if (this.value >= 4) {
 			this.drawPoint(canvas, x + width * 0.75, y + width * 0.75, width / 5, this.color);

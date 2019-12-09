@@ -5,7 +5,7 @@ var MessageDisplayer = {
     div: null,
     order: 0,
     init: function (id) {
-        if(this.div === null){
+        if(this.div == null){
             // Not init already, create div and bind events
             this.div = $('#' + id);
             this.bindEvents();

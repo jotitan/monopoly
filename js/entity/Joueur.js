@@ -19,8 +19,8 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 
 	/* Determine les caracteristiques d'un ordinateur*/
 	this.init = function (idStrategie, idComportement) {
-		this.strategie = (idStrategie == null) ? GestionStrategie.createRandom() : GestionStrategie.create(idStrategie);
-		this.comportement = (idComportement == null) ? GestionComportement.createRandom() : GestionComportement.create(idComportement);
+		this.strategie = (idStrategie === undefined) ? GestionStrategie.createRandom() : GestionStrategie.create(idStrategie);
+		this.comportement = (idComportement === undefined) ? GestionComportement.createRandom() : GestionComportement.create(idComportement);
 	}
 
 	this.saveMore = function (data) {
@@ -89,11 +89,11 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 	/* 2) Si pas de terrain libre, choisi la case prison (protege le plus) si besoin */	
 	this.choisiCase = function(callback){
 		var fiches = GestionFiche.getFreeFiches();
-		var maxInteret;
+		let maxInteret;
 		var maxFiche;
 		fiches.forEach(function(fiche){
 			var interet = this.strategie.interetGlobal(fiche,this,false).interet;
-			if(interet !=0 && (maxInteret == null || interet > maxInteret)){
+			if(interet !=0 && (maxInteret === undefined || interet > maxInteret)){
 				maxInteret = interet;
 				maxFiche = fiche;
 			}
@@ -140,8 +140,8 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 	/* TODO : dans le cas d'enchere immediate, empecher de tomber sur un terrain qui interesse un autre ? */
 	this._analyseCase = function(fiche){
 		var interet = 0;
-		if(fiche.isPropriete() == true){
-			interet = fiche.statut == ETAT_LIBRE ? 
+		if(fiche.isPropriete() === true){
+			interet = fiche.statut === ETAT_LIBRE ?
 				this.strategie.interetGlobal(fiche,this,false).interet :
 				fiche.getLoyerFor(this) / -1000;
 		}
@@ -155,7 +155,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 	
 	// Fonction appelee lorsque les des sont lances et que le pion est place
 	this.actionApresDes = function (buttons, propriete) {
-		if (buttons == null) {
+		if (buttons === undefined) {
 			return;
 		}
 		var _self = this;
@@ -192,7 +192,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 	this.notifyRejectProposition = function (callback, terrain, proposition) {
 		// On enregistre le refus du proprietaire : le terrain, la proposition et le numero de tour
 		// utiliser pour plus tard pour ne pas redemander immediatement
-		if (this.rejectedPropositions[terrain.id] == null) {
+		if (this.rejectedPropositions[terrain.id] === undefined) {
 			this.rejectedPropositions[terrain.id] = [];
 		}
 		this.rejectedPropositions[terrain.id].push({
@@ -221,7 +221,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 		}
 		// Proprietes qui interessent le joueur
 		var proprietes = this.findOthersInterestProprietes();
-		if (proprietes.length == 0) {
+		if (proprietes.length === 0) {
 			callback();	
 			return;
 		}
@@ -241,10 +241,10 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 				prop.compensation = 0;
 				// Calcule les monnaies d'echange
 				prop.deals = maison.joueurPossede.findOthersInterestProprietes(this,maison);
-           	if (prop.deals.length == 0) {
+           	if (prop.deals.length === 0) {
 					// On ajoute les terrains non importants (gare seule, compagnie)
 					var othersProprietes = this.findUnterestsProprietes();
-           		var montant = 0;
+					var montant = 0;
 					if (othersProprietes != null && othersProprietes.proprietes != null && othersProprietes.proprietes.length > 0) {
 						// On en ajoute. En fonction de la strategie, on n'ajoute que les terrains seuls dans le groupe (peu important)
 						for (var i = 0; i < othersProprietes.proprietes.length && montant / maison.achat < 0.7; i++) {
@@ -267,7 +267,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 					// Si trop couteux, on propose autre chose, comme de l'argent. On evalue le risque a echanger contre ce joueur.  
 					// On teste toutes les monnaies d'echanges
 					var monnaies = this.chooseMonnaiesEchange(prop, prop.monnaiesEchange, true, nbGroupesPossedes >= 2, last);
-					if (monnaies == null || monnaies.length == 0) {
+					if (monnaies === undefined || monnaies.length === 0) {
 						prop.compensation = this.evalueCompensation(joueur, maison, interetEchange, last);
 						prop.deals = null;
 					} else {
@@ -276,9 +276,9 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 				}
 				// Si aucune proposition, on ajoute les autres terrains dont on se moque (terrains constructibles mais non intéressant)
             // Potentiellement un terrain de la strategie peut tout de meme etre proposee (une gare par exemple)
-				if ((prop.deals == null || prop.deals.length == 0) && prop.compensation == 0) {
+				if ((prop.deals == null || prop.deals.length === 0) && prop.compensation === 0) {
 					var terrains = this.findOthersProperties(proprietes);
-               var montant = 0;
+             		var montant = 0;
 					for (var i = 0; i < terrains.length && montant / maison.achat < 0.7; i++) {
 						var terrain = terrains[i];
 						if (!this.strategie.interetPropriete(terrain)) {
@@ -301,7 +301,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 			}
 		}
 		// On choisit la propriete a demander en echange
-		if (proprietesFiltrees.length != 0) {
+		if (proprietesFiltrees.length !== 0) {
 			for (var idx in proprietesFiltrees) {
 				var p = proprietesFiltrees[idx];
 				var proposition = {
@@ -357,7 +357,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 	 */
 	this.traiteRequeteEchange = function (joueur, maison, proposition) {
 		// Si aucune compensation, on refuse
-		if ((proposition.terrains == null || proposition.terrains.length == 0) && (proposition.compensation == null || proposition.compensation == 0)) {
+		if ((proposition.terrains === undefined || proposition.terrains.length === 0) && (proposition.compensation === undefined || proposition.compensation === 0)) {
 			return GestionEchange.reject(this);
 		}
 		var others = this.findOthersInterestProprietes(joueur);
@@ -386,7 +386,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 	}
 
 	this._calculateContreProposition = function (joueur, proposition, contreProposition, recommandations, terrain, others) {
-		if (recommandations["TERRAIN_DISPO"] == 1 || recommandations["TERRAIN_NON_LISTE"] == 1) {
+		if (recommandations["TERRAIN_DISPO"] === 1 || recommandations["TERRAIN_NON_LISTE"] === 1) {
 			// terrain dispo non propose, on ajoute tant que la valeur du terrain n'est pas atteinte
 			var montant = 0;
 			for (var i = 0; i < others.length; i++) {
@@ -399,7 +399,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 				}
 			}
 			/* Ajout d'un terrain de la propal originale */
-			if (montant < terrain.achat && recommandations["TERRAIN_NON_LISTE"] == 1) {
+			if (montant < terrain.achat && recommandations["TERRAIN_NON_LISTE"] === 1) {
 				// On ajoute un terrain propose avant
 				var done = false;
 				for (var i = 0; i < proposition.length && !done; i++) {
@@ -417,7 +417,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 				}
 			}
 		}
-		if (recommandations["ARGENT_INSUFFISANT"] == 1) {
+		if (recommandations["ARGENT_INSUFFISANT"] === 1) {
 			contreProposition.compensation += terrain.achat / 2;
 		}
 		return contreProposition;
@@ -498,7 +498,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 	/* A la fin, on a accepte ou pas. Plus d'aller retour. */
 	/* Prendre en compte qu'on est a l'origine de la demande, un peu plus laxiste, en fonction du comportement */
 	this.traiteContreProposition = function (proposition, joueur, maison) {
-		if (proposition.terrains.length == 0 && proposition.compensation == 0) {
+		if (proposition.terrains.length === 0 && proposition.compensation === 0) {
 			return GestionEchange.reject(this);
 		}
 		/* On evalue la pertinence  */
@@ -578,7 +578,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 	/* @param strict : si strict est vrai, on ne relance pas l'algo en etant moins dangereux. Le joueur decide de ne pas faire de cadeau */
 	/* @param oldProposition : derniere proposition refusee qui a ete faite, plus laxiste dans ce cas */
 	this.chooseMonnaiesEchange = function (terrainVise, terrains, testDangerous, strict, oldProposition) {
-		if (terrains == null || terrains.length == 0) {
+		if (terrains === undefined || terrains.length === 0) {
 			return [];
 		}
 		var proposition = [];
@@ -587,7 +587,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 		for (var t in terrains) {
 			if (!terrainVise.joueurPossede.isDangerous(terrains[t].groupe) || !testDangerous) {
 				// On regarde si c'est necessaire de l'ajouter
-				if (valeur == 0) {
+				if (valeur === 0) {
 					proposition.push(terrains[t]);
 					valeur += terrains[t].achat;
 				} else {
@@ -599,7 +599,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 				}
 			}
 		}
-		if (proposition.length == 0 && !strict && (testDangerous || oldProposition != null)) {
+		if (proposition.length === 0 && !strict && (testDangerous || oldProposition != null)) {
 			// On relance sans etre strict
 			return this.chooseMonnaiesEchange(terrainVise, terrains, joueur, false, strict);
 		}
@@ -638,7 +638,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 		var timeout = IA_TIMEOUT * (Math.random() + 1);
 		var _self = this;
 		setTimeout(function () {
-			if(_self.currentEnchere == null){return;}
+			if(_self.currentEnchere === undefined){return;}
 			if (montant > _self.currentEnchere.budgetMax || 
 			(_self.currentEnchere.joueurInteresse!=null && !_self.currentEnchere.joueurInteresse.equals(lastEncherisseur))) {
 				// Exit enchere
@@ -714,7 +714,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 		for (var index in this.maisons) {
 			var maison = this.maisons[index];
 			// On prend les terrains non hypotheques et non construits
-			if (maison.statutHypotheque == false && !maison.isGroupeeAndBuild()) {
+			if (maison.statutHypotheque === false && !maison.isGroupeeAndBuild()) {
 				maisons.push(maison);
 			}
 		}
@@ -765,7 +765,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 				var proprietes = group.proprietes;
 				// On trie par nombre de maison
 				proprietes.sort(function (a, b) {
-					if (a.nbMaison == b.nbMaison) {
+					if (a.nbMaison === b.nbMaison) {
 						return 0;
 					}
 					return a.nbMaison < b.nbMaison ? 1 : -1;
@@ -776,7 +776,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 				var maisonVendues = 0;
 				while (this.montant < montant && nbNoHouse < proprietes.length && boucle++ < 100) {
 					var p = proprietes[currentId];
-					if (p.nbMaison == 0) {
+					if (p.nbMaison === 0) {
 						nbNoHouse++;
 					} else {
 						if (p.sellMaison(this)) {
@@ -804,7 +804,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 			for (var index in this.maisons) {
 				var maison = this.maisons[index];
 				// On prend les terrains non hypotheques
-				if (maison.statutHypotheque == false) {
+				if (maison.statutHypotheque === false) {
 					maisons.push(maison);
 				}
 			}
@@ -838,7 +838,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 		var tempGroup = [];
 		for (var idx in this.maisons) {
 			var maison = this.maisons[idx];
-			if (maison.isGroupee() && tempGroup[maison.groupe.nom] == null) {
+			if (maison.isGroupee() && tempGroup[maison.groupe.nom] === undefined) {
 				nb++;
 				tempGroup[maison.groupe.nom] = 1;
 			}
@@ -853,7 +853,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 	this.getGroupsToConstruct = function (sortType, level) {
 		var groups = this.findGroupes(); // structure : [color:{color,proprietes:[]}]
 		// Pas de terrains constructibles
-		if (groups.size() == 0) {
+		if (groups.size() === 0) {
 			throw "Impossible";
 		}
 		// On determine les terrains les plus rentables a court terme (selon la position des joueurs)
@@ -884,11 +884,11 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 			group.interetGlobal = group.proba + group.rentabilite + ((group.lessThree > 0) ? 0.5 : 0);
 			sortedGroups.push(group);
 		}
-		var GREATER_VALUE = (sortType == "ASC") ? 1 : -1;
-		var LESSER_VALUE = (sortType == "ASC") ? -1 : 1;
+		var GREATER_VALUE = (sortType === "ASC") ? 1 : -1;
+		var LESSER_VALUE = (sortType === "ASC") ? -1 : 1;
 
 		sortedGroups.sort(function (a, b) {
-			if (a.interetGlobal == b.interetGlobal) {
+			if (a.interetGlobal === b.interetGlobal) {
 				return 0;
 			}
 			if (a.interetGlobal > b.interetGlobal) {
@@ -917,7 +917,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 	this.rebuyHypotheque = function () {
 		// Hypotheque presentes
 		var terrains = this.findMaisonsHypothequees();
-		if (terrains == null || terrains.length == 0 && (this.getNbGroupConstructibles() > 0 && !this.hasConstructedGroups(3))) {
+		if (terrains === undefined || terrains.length === 0 && (this.getNbGroupConstructibles() > 0 && !this.hasConstructedGroups(3))) {
 			return;
 		}
 		var pos = 0;
@@ -942,8 +942,8 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 			// On tri les maisons de chaque groupe en fonction du prix et du nombre (le moins de maison en premier puis l'achat le plus eleve
 			for (var idGroup in sortedGroups) {
 				sortedGroups[idGroup].proprietes.sort(function (a, b) {
-					if (a.nbMaison == b.nbMaison) {
-						if (a.achat == b.achat) {
+					if (a.nbMaison === b.nbMaison) {
+						if (a.achat === b.achat) {
 							return 0;
 						}
 						return a.achat < b.achat ? 1 : -1
@@ -983,18 +983,18 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 			var maison = group.proprietes[currentMaison];
 			// Si le seuil est atteint, on construit sur une autre maison ou sur un autre group
 			if (maison.nbMaison >= seuil) {
-				if (group.treat == null) {
+				if (group.treat === undefined) {
 					group.treat = 1;
 				} else {
 					group.treat++;
 				}
 				// Le goupe est traite, on passe au suivant
-				if (group.treat == group.proprietes.length) {
+				if (group.treat === group.proprietes.length) {
 					currentGroup++;
 					currentMaison = 0;
 					// Soit on a fait le tour, on recommence en changeant le seuil
 					if (currentGroup >= sortedGroups.length) {
-						if (seuil == 3) {
+						if (seuil === 3) {
 							seuil = 5;
 							for (var color in sortedGroups) {
 								sortedGroups[color].treat = 0;
@@ -1015,7 +1015,7 @@ function JoueurOrdinateur(numero, nom, color, argent) {
 					maison.buyMaison(this, true);
 					budget -= maison.prixMaison;
 					this.payer(maison.prixMaison);
-					if (maison.nbMaison == 4) { //hotel
+					if (maison.nbMaison === 4) { //hotel
 						achats.hotel++;
 					} else {
 						achats.maison++;
@@ -1231,7 +1231,7 @@ function Joueur(numero, nom, color,argent) {
 
 	// Utilise la carte sortie de prison
 	this.utiliseCarteSortiePrison = function () {
-		if (this.cartesSortiePrison.length == 0) {
+		if (this.cartesSortiePrison.length === 0) {
 			throw "Impossible d'utiliser cette carte";
 		}
 		this.cartesSortiePrison[this.cartesSortiePrison.length - 1].joueurPossede = null;
@@ -1257,8 +1257,8 @@ function Joueur(numero, nom, color,argent) {
 		};
 		for (var index in this.maisons) {
 			var maison = this.maisons[index];
-			statsJ.hotel += parseInt(maison.hotel == true ? 1 : 0);
-			statsJ.maison += parseInt(maison.hotel == false ? maison.nbMaison : 0);
+			statsJ.hotel += parseInt(maison.hotel === true ? 1 : 0);
+			statsJ.maison += parseInt(maison.hotel === false ? maison.nbMaison : 0);
 			// Revente des constructions + hypotheque
 			statsJ.argentDispo += (maison.statutHypotheque) ? 0 : (((maison.isTerrain()) ? (maison.nbMaison * (maison.prixMaison / 2)) : 0) + maison.achat / 2);
 			// Revente uniquement des terrains non groupes
@@ -1343,7 +1343,7 @@ function Joueur(numero, nom, color,argent) {
 		for (var m in this.maisons) {
 			var maison = this.maisons[m];
 			if (maison.groupe == null) {
-				if (groups["others"] == null) {
+				if (groups["others"] === undefined) {
 					groups["others"] = {
 						groupe: 'Autres',
 						color: 'black',
@@ -1353,7 +1353,7 @@ function Joueur(numero, nom, color,argent) {
 					groups["others"].terrains.push(maison);
 				}
 			} else {
-				if (groups[maison.groupe.nom] == null) {
+				if (groups[maison.groupe.nom] === undefined) {
 					groups[maison.groupe.nom] = {
 						groupe: maison.groupe.nom,
 						color: maison.groupe.color,
@@ -1383,14 +1383,14 @@ function Joueur(numero, nom, color,argent) {
 				for (var id in maison.groupe.fiches) {
 					var f = maison.groupe.fiches[id];
 					if (!this.equals(f.joueurPossede)) {
-						if (f.statut == ETAT_LIBRE) {
+						if (f.statut === ETAT_LIBRE) {
 							stat.libre++;
 						} else {
 							stat.adversaire++;
 						}
 					}
 				}
-				if (stat.libre == 1 && stat.adversaire == 0) {
+				if (stat.libre === 1 && stat.adversaire === 0) {
 					groups.push(maison.color);
 				}
 			}
@@ -1401,7 +1401,7 @@ function Joueur(numero, nom, color,argent) {
 	// Cherche la position ou placer la nouvelle fiche (tri par couleur)
 	this.cherchePlacement = function (maison) {
 		for (var i = 0; i < this.maisons.length; i++) {
-			if (this.maisons[i].color == maison.color) {
+			if (this.maisons[i].color === maison.color) {
 				return this.maisons[i].input;
 			}
 		}
@@ -1451,7 +1451,7 @@ function Joueur(numero, nom, color,argent) {
 	this.acheteMaison = function (maison,montant) {
 		montant = montant || maison.achat;
 		// On verifie l'argent
-		if (maison == null || montant > this.montant) {
+		if (maison === undefined || montant > this.montant) {
 			throw "Achat de la maison impossible";
 		}
 		if (maison.isLibre()) {
@@ -1486,7 +1486,7 @@ function Joueur(numero, nom, color,argent) {
 			this.div.append(input);
 		}
 		maison.input = $('input[id="idInputFiche' + maison.id + '"]');
-        if (maison.statutHypotheque == true) {
+        if (maison.statutHypotheque === true) {
             maison.input.addClass('hypotheque');
         }
         maison.input.click(function () {
@@ -1548,7 +1548,7 @@ function Joueur(numero, nom, color,argent) {
 	}
 
 	this.setArgent = function (montant) {
-        if(montant == NaN){
+        if(montant === NaN){
             console.log("error montant")
         }
 		this.montant = montant;
@@ -1658,12 +1658,12 @@ function Joueur(numero, nom, color,argent) {
 		// On ouvre le panneau de resolution en empechant la fermeture
 		this.montant -= montant;
 		var _self = this;		
-		var button = InfoMessage.create(this,"Attention", "red", "Vous n'avez pas les fonds necessaires, il faut trouver de l'argent", function () {
+		InfoMessage.create(this,"Attention", "red", "Vous n'avez pas les fonds necessaires, il faut trouver de l'argent", function () {
 			// On attache un evenement a la fermeture
 			var onclose = function (e) {
 				if (_self.montant < 0) {
 					// Message d'erreur pas possible
-					InfoMessage.create(_self,"Attention", "red", "Impossible, il faut trouver les fonds avant de fermer");
+					InfoMessage.create(_self,"Attention", "red", "Impossible, il faut trouver les fond	s avant de fermer");
 					e.preventDefault();
 				} else {
 					_self.bloque = false;
@@ -1702,11 +1702,11 @@ function Joueur(numero, nom, color,argent) {
 		var proprietes = [];
 		for (var i = 0; i < this.maisons.length; i++) {
 			var propriete = this.maisons[i];
-			if (propriete.statutHypotheque == false && propriete.nbMaison == 0) {
+			if (propriete.statutHypotheque === false && propriete.nbMaison === 0) {
 				// Aucune propriete possedee de la couleur ne doit avoir de maison
 				var flag = true;
 				for (var j = 0; j < this.maisons.length; j++) {
-					if (this.maisons[j].color == propriete.color && this.maisons[j].nbMaison > 0) {
+					if (this.maisons[j].color === propriete.color && this.maisons[j].nbMaison > 0) {
 						flag = false;
 					}
 				}
@@ -1722,7 +1722,7 @@ function Joueur(numero, nom, color,argent) {
 	this.findMaisonsHypothequees = function () {
 		var proprietes = [];
 		for (var i = 0; i < this.maisons.length; i++) {
-			if (this.maisons[i].statutHypotheque == true) {
+			if (this.maisons[i].statutHypotheque === true) {
 				proprietes.push(this.maisons[i]);
 			}
 		}
@@ -1741,17 +1741,17 @@ function Joueur(numero, nom, color,argent) {
 
 		for (var i = 0; i < this.maisons.length; i++) {
 			var m = this.maisons[i];
-			if (m.isTerrain() == true && m.groupe != null) {
+			if (m.isTerrain() === true && m.groupe != null) {
 				// Deja traite, on possede la famille
-				if (colorsOK[m.color] == true) {
+				if (colorsOK[m.color] === true) {
 					//groups[m.color].proprietes.push(m);
 				} else {
-					if (colorsKO[m.color] == null) {
+					if (colorsKO[m.color] === undefined) {
 						// On recherche si on a toutes les proprietes du groupe
 						//var ok = true;
 						var infos = m.groupe.getInfos(this);
 						// Possede le groupe
-						if (infos.free == 0 && infos.adversaire == 0 && infos.hypotheque == 0) {
+						if (infos.free === 0 && infos.adversaire === 0 && infos.hypotheque === 0) {
 							colorsOK[m.color] = true;
 							groups[m.color] = {
 								color: m.color,
@@ -1779,16 +1779,16 @@ function Joueur(numero, nom, color,argent) {
 		// On parcourt les terrains du joueur. Pour chaque, on etudie le groupe
 		for (var index in this.maisons) {
 			var maison = this.maisons[index];
-			if (treatGroups[maison.groupe.color] == null) {
+			if (treatGroups[maison.groupe.color] === undefined) {
 				// Structure : free,joueur,adversaire,nbAdversaires
 				var infos = maison.groupe.getInfos(this);
 				// Si tous les terrains vendus et un terrain a l'adversaire ou deux terrains a deux adversaires differents, on peut echanger
-				if (infos.free == 0 && (infos.adversaire == 1 || infos.nbAdversaires > 1)) {
+				if (infos.free === 0 && (infos.adversaire === 1 || infos.nbAdversaires > 1)) {
 					for (var idx in infos.maisons) {
-						if ((joueur == null || joueur.equals(infos.maisons[idx].joueurPossede))
-							&& (exclude == null || !exclude.groupe.equals(infos.maisons[idx].groupe))) {
-							if(exclude && maison.groupe.color == exclude.groupe.color){
-								console.log("Meme groupe, rejet",maison.groupe.color,maison.groupe.color == exclude.groupe.color);
+						if ((joueur === undefined || joueur.equals(infos.maisons[idx].joueurPossede))
+							&& (exclude === undefined || !exclude.groupe.equals(infos.maisons[idx].groupe))) {
+							if(exclude && maison.groupe.color === exclude.groupe.color){
+								console.log("Meme groupe, rejet",maison.groupe.color,maison.groupe.color === exclude.groupe.color);
 							} else{
                                 interests.push({
                                     maison: infos.maisons[idx],
@@ -1854,7 +1854,7 @@ function Joueur(numero, nom, color,argent) {
 			var maison = this.maisons[m];
 			if (!maison.isTerrain()) {
 				proprietes.push(maison);
-				if (nbByGroups[maison.groupe.nom] == null) {
+				if (nbByGroups[maison.groupe.nom] === undefined) {
 					nbByGroups[maison.groupe.nom] = 1;
 				} else {
 					nbByGroups[maison.groupe.nom]++;
@@ -1880,7 +1880,7 @@ function Joueur(numero, nom, color,argent) {
 		}
       for (var f in this.maisons) {
 			var maison = this.maisons[f];
-         if (maison.isTerrain() && !maison.isGroupee() && mapInterests[maison.color] == null) {
+         if (maison.isTerrain() && !maison.isGroupee() && mapInterests[maison.color] === undefined) {
 				terrains.push(maison);
 			}
 		}
@@ -1896,18 +1896,18 @@ function Joueur(numero, nom, color,argent) {
 		// Si une maison est hypothequee, on ne peut plus construire sur le groupe
 		for (var i = 0; i < this.maisons.length; i++) {
 			var m = this.maisons[i];
-			if (m.isTerrain() == true) {
-				if (colorsOK[m.color] == true) {
+			if (m.isTerrain() === true) {
+				if (colorsOK[m.color] === true) {
 					mc.push(m); // on a la couleur, on ajoute
 				} else {
-					if (colorsKO[m.color] == null) {
+					if (colorsKO[m.color] === undefined) {
 						// On recherche si on a toutes les couleurs
 						var ok = true;
 						// On cherche une propriete qui n'appartient pas au joueur
 						for (var f in m.groupe.fiches) {
 							var fiche = m.groupe.fiches[f];
-							if (fiche.isTerrain() == true &&
-								(fiche.joueurPossede == null || !fiche.joueurPossede.equals(this) || fiche.statutHypotheque == true)) {
+							if (fiche.isTerrain() === true &&
+								(fiche.joueurPossede == null || !fiche.joueurPossede.equals(this) || fiche.statutHypotheque === true)) {
 								ok = false;
 							}
 						}
@@ -1993,7 +1993,7 @@ var GestionJoueur = {
 	getById:function(id){
 		var numero = parseInt(id);
 		for (var joueur in this.joueurs) {
-			if (this.joueurs[joueur].numero == numero) {
+			if (this.joueurs[joueur].numero === numero) {
 				return this.joueurs[joueur];
 			}
 		}
@@ -2002,7 +2002,7 @@ var GestionJoueur = {
 	/* @param idInitialJoueur : si present, joueur qui debute */
 	change:function(idInitialJoueur){
 		if(idInitialJoueur!=null){
-			var joueur = this.getById(idInitialJoueur);
+			let joueur = this.getById(idInitialJoueur);
 			if(joueur!=null){
 				return this._select(joueur);
 			}
@@ -2012,7 +2012,7 @@ var GestionJoueur = {
 			return;
 		}
 		// Joueur bloque, on le debloque avant de continuer
-		var joueur = null;
+		let joueur = null;
 		try {
 			joueur = this.next();
 		} catch (gagnant) {
@@ -2099,7 +2099,7 @@ var GestionJoueur = {
 				gagnantProbable = this.joueurs[index];
 			}
 		}
-		if (defaites == this.joueurs.length - 1) {
+		if (defaites === this.joueurs.length - 1) {
 			return gagnantProbable;
 		}
 		return null;
@@ -2122,7 +2122,7 @@ var GestionJoueur = {
 		if(!GestionDes.continuePlayer() && !GestionDes.isSpecificAction()){
 			var pos = 0;
 			joueur = this.joueurs[(joueur.numero + 1) % (this.joueurs.length)];
-			while (joueur.defaite == true & pos++ < this.joueurs.length) {
+			while (joueur.defaite === true & pos++ < this.joueurs.length) {
 				joueur = this.joueurs[(joueur.numero + 1) % (this.joueurs.length)];
 			}
 			// On incremente le nb de tours

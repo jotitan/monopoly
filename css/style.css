@@ -258,6 +258,9 @@ div.ui-tooltip {
     .count-property {
         display:none;
     }
+    #actions {
+        display: none;
+    }
 }
 
 @media screen and (min-height: 1000px) {

@@ -266,14 +266,17 @@ var GestionTerrains = {
                 GestionJoueur.getJoueurCourant().payer(data.cout);
             }
             // On modifie les quantites de maisons / hotels
-            if (this.simulation != null && (this.simulation.achat.maison!=0 || this.simulation.achat.hotel!=0)) {
+            this._doBuyConstructions();
+        },
+        _doBuyConstructions:function(){
+            if (this.simulation != null && (this.simulation.achat.maison!==0 || this.simulation.achat.hotel!==0)) {
                 GestionConstructions.buyHouses(this.simulation.achat.maison);
                 GestionConstructions.buyHotels(this.simulation.achat.hotel);
-                 $.trigger('monopoly.acheteConstructions', {
+                $.trigger('monopoly.acheteConstructions', {
                     joueur: GestionJoueur.getJoueurCourant(),
                     achats: this.simulation.achat
                 });
-            }           
+            }
         },
 		acheter: function () {
             for (var achat in this.table) {
@@ -284,14 +287,7 @@ var GestionTerrains = {
 				}
             }
             // On modifie les quantites de maisons / hotels
-            if (this.simulation != null && (this.simulation.achat.maison!=0 || this.simulation.achat.hotel!=0)) {
-                GestionConstructions.buyHouses(this.simulation.achat.maison);
-                GestionConstructions.buyHotels(this.simulation.achat.hotel);
-                 $.trigger('monopoly.acheteConstructions', {
-                    joueur: GestionJoueur.getJoueurCourant(),
-                    achats: this.simulation.achat
-                });
-            }           
+            this._doBuyConstructions();
         },
 		vendre: function () {
             for (var achat in this.table) {
@@ -368,68 +364,70 @@ var GestionTerrains = {
             }
             this.div.find(selectors).show();
         },
+        _displayProprietesOfGroup:function(group){
+            for (var index in group.proprietes) {
+                let propriete = group.proprietes[index];
+                let divTerrain = $(`<div class="propriete propriete-${propriete.color.substring(1)}"></div>`);
+                divTerrain.append(`<span style="color:${propriete.color}" class="title-propriete">${propriete.nom}</span>`);
+                let select = $(`<select data-color="${propriete.color}" class="${((propriete.nbMaison === 5) ? 'hotel' : 'maison')}"></select>`);
+                select.data("propriete", propriete);
+                select.data("group", group);
+                for (var j = 0; j <= ((GestionTerrains.banqueroute) ? propriete.nbMaison : 5); j++) {
+                    select.append("<option class=\"" + ((j === 5) ? "hotel" : "maison") + "\" value=\"" + j + "\" " + ((propriete.nbMaison === j) ? "selected" : "") + ">x " + ((j === 5) ? 1 : j) + "</option>");
+                }
+                var _self = this;
+                select.change(function () {
+                    var prop = $(this).data("propriete");
+                    // On verifie changement par rapport a l'origine
+                    if (prop.nbMaison === $(this).val()) {
+                        delete _self.table[prop.id];
+                        $('~span', this).text("");
+                        GestionTerrains.update();
+                        return;
+                    }
+                    var data = ($(this).val() === 5) ? {
+                        hotel: 1
+                    } : {
+                        maison: parseInt($(this).val()) - prop.nbMaison
+                    };
+                    data.propriete = prop;
+                    data.nbMaison = parseInt($(this).val());
+                    data.cout = ($(this).val() > prop.nbMaison) ? ($(this).val() - prop.nbMaison) * prop.prixMaison : ($(this).val() - prop.nbMaison) * prop.prixMaison / 2;
+                    $(this).removeClass().addClass(($(this).val() === 5) ? 'hotel' : 'maison');
+                    $('~span', this).text(data.cout);
+                    _self.table[prop.id] = data;
+                    GestionTerrains.update();
+
+                    // Si le groupe est vide, on permet l'hypotheque des terrains
+                    var nbMaisons = 0;
+                    var gr = $(this).data("group");
+                    GestionTerrains.Constructions.div.find(`select[data-color="${prop.color}"]`).each(function () {
+                        nbMaisons += parseInt($(this).val());
+                    });
+                    if (nbMaisons === 0) {
+                        // Le groupe est hypothecable
+                        GestionTerrains.Hypotheque.addGroup(gr);
+                    }
+                });
+                divTerrain.append(select).append(`<span></span> ${CURRENCY}`);
+                $(this.div).append(divTerrain);
+            }
+        },
         load: function () {
             var groups = GestionJoueur.getJoueurCourant().findGroupes();
             for (var color in groups) {
-                var divTitre = $('<div style="cursor:pointer" class="group-' + color.substring(1) + '">Groupe <span style="color:' + color + ';font-weight:bold">' + groups[color].proprietes[0].groupe.nom + '</span></div>');
+                let divTitre = $(`<div style="cursor:pointer" class="group-${color.substring(1)}">Groupe <span style="color:${color};font-weight:bold">${groups[color].proprietes[0].groupe.nom}'</span></div>`);
                 divTitre.data("color", color.substring(1));
                 divTitre.click(function () {
                     var id = 'div.propriete-' + $(this).data('color');
-                    if ($(id + ':visible', this.div).length == 0) {
+                    if ($(`${id}:visible`, this.div).length === 0) {
                         $(id, this.div).slideDown(); // On ouvre
                     } else {
                         $(id, this.div).slideUp();
                     }
                 });
                 this.div.append(divTitre);
-                var group = groups[color];
-                for (var index in group.proprietes) {
-                    var propriete = groups[color].proprietes[index];
-                    var divTerrain = $('<div class="propriete propriete-' + propriete.color.substring(1) + '"></div>');
-                    divTerrain.append('<span style="color:' + propriete.color + '" class="title-propriete">' + propriete.nom + '</span>');
-                    var select = $('<select data-color="' + propriete.color + '" class="' + ((propriete.nbMaison == 5) ? 'hotel' : 'maison') + '"></select>');
-                    select.data("propriete", propriete);
-                    select.data("group", group);
-                    for (var j = 0; j <= ((GestionTerrains.banqueroute) ? propriete.nbMaison : 5); j++) {
-                        select.append("<option class=\"" + ((j == 5) ? "hotel" : "maison") + "\" value=\"" + j + "\" " + ((propriete.nbMaison == j) ? "selected" : "") + ">x " + ((j == 5) ? 1 : j) + "</option>");
-                    }
-                    var _self = this;
-                    select.change(function () {
-                        var prop = $(this).data("propriete");
-                        // On verifie changement par rapport a l'origine
-                        if (prop.nbMaison == $(this).val()) {
-                            delete _self.table[prop.id];
-                            $('~span', this).text("");
-                            GestionTerrains.update();
-                            return;
-                        }
-                        var data = ($(this).val() == 5) ? {
-                            hotel: 1
-                        } : {
-                            maison: parseInt($(this).val()) - prop.nbMaison
-                        };
-                        data.propriete = prop;
-                        data.nbMaison = parseInt($(this).val());
-                        data.cout = ($(this).val() > prop.nbMaison) ? ($(this).val() - prop.nbMaison) * prop.prixMaison : ($(this).val() - prop.nbMaison) * prop.prixMaison / 2;
-                        $(this).removeClass().addClass(($(this).val() == 5) ? 'hotel' : 'maison');
-                        $('~span', this).text(data.cout);
-                        _self.table[prop.id] = data;
-                        GestionTerrains.update();
-
-                        // Si le groupe est vide, on permet l'hypotheque des terrains
-                        var nbMaisons = 0;
-                        var gr = $(this).data("group");
-                        GestionTerrains.Constructions.div.find('select[data-color="' + prop.color + '"]').each(function () {
-                            nbMaisons += parseInt($(this).val());
-                        });
-                        if (nbMaisons == 0) {
-                            // Le groupe est hypothecable
-                            GestionTerrains.Hypotheque.addGroup(gr);
-                        }
-                    });
-                    divTerrain.append(select).append('<span></span> ' + CURRENCY);
-                    $(this.div).append(divTerrain);
-                }
+                this._displayProprietesOfGroup(groups[color]);
             }
         }
     }

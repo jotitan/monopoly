@@ -34,7 +34,8 @@ function PionJoueur(color, largeur,img,joueur) {
 		// If dead, show nothing
 		if(this.joueur.defaite){return;}
 		if(this.isSelected){
-			DrawerHelper.drawCircle(canvas,"#FFFFFF",(this.largeur+6) / 2,{x:this.x,y:this.y},"#FF0000");
+			DrawerHelper.drawCircle(canvas,this.color,(this.largeur+22) / 2,{x:this.x,y:this.y},"#FF0000");
+			DrawerHelper.drawCircle(canvas,"#FFFFFF",(this.largeur+18) / 2,{x:this.x,y:this.y},"#FF0000");
 		}
 		if(this.img!=null){
 			DrawerHelper.drawImage(canvas, this.img, this.x-this.largeur/2, this.y-this.largeur/2, this.largeur, this.largeur, 0);
@@ -42,10 +43,11 @@ function PionJoueur(color, largeur,img,joueur) {
 		else{
 			DrawerHelper.drawCircle(canvas,this.color,this.largeur / 2,{x:this.x,y:this.y},"#FF0000");
 		}
-	}
+		DrawerHelper.drawCircle(canvas,"#FFFFFF",2,{x:this.x,y:this.y},"#FF0000");
+	};
 	this.setSelected = function(value){
 		this.isSelected = value;
-	}
+	};
 
 	// Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
 	this.goto = function (axe, pos, callback,init) {
@@ -62,7 +64,7 @@ function PionJoueur(color, largeur,img,joueur) {
 			this.y = center.y;
 		}
 		// Cas de la fin
-		if (this.axe == axe && this.pos == pos) {
+		if (this.axe === axe && this.pos === pos) {
 			var decalage = GestionFiche.getById(this.axe + "-" + this.pos).drawing._decalagePion();
 			this.x = decalage.x;
 			this.y = decalage.y;
@@ -74,7 +76,7 @@ function PionJoueur(color, largeur,img,joueur) {
 		var caseFiche = this._toNextCase();
 		var pas = 5;
 		var field = "x"; // On varie sur l'axe x
-		if (this.x == caseFiche.x) {
+		if (this.x === caseFiche.x) {
 			field = "y"; // On varie sur l'axe y
 		}
 		var _self = this;
@@ -109,8 +111,7 @@ function PionJoueur(color, largeur,img,joueur) {
 		var p1 = GestionFiche.getById(this.axe + "-" + this.pos).drawing.getCenter();
 		var p2 = GestionFiche.getById(axe + "-" + pos).drawing.getCenter();
 		// Si meme colonne, (x constant), on ne fait varier que y
-		if (p1.x == p2.x) {
-			var y = p1.y;
+		if (p1.x === p2.x) {
 			var sens = (p1.y > p2.y) ? -1 : 1;
 			// On fait varier x et on calcule y. Le pas est 30
 			var _self = this;
@@ -154,7 +155,7 @@ function PionJoueur(color, largeur,img,joueur) {
 			}, 30);
 		}
 
-	}
+	};
 
 	this._toNextCase = function () {
 		this.pos++;
@@ -163,7 +164,7 @@ function PionJoueur(color, largeur,img,joueur) {
 			this.pos = 0;
 		}
 		return GestionFiche.getById(this.axe + "-" + this.pos).drawing.getCenter();
-	}
+	};
 
 	this.init(2,0);
 }

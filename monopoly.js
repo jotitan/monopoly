@@ -278,7 +278,7 @@ function GestionDesImpl(){
 			if (nb-- < 0) {
 				clearInterval(interval);
 				// If double, desRapide is empty, only on end
-				gd._drawCubes(gd.des1,gd.des2,gd.isDouble() ? 0 : gd.desRapide);
+				gd._drawCubes(gd.des1,gd.des2,gd.desRapide);
 				gd.after();
 				return;
 			}
@@ -320,12 +320,12 @@ function GestionDesRapideImpl(){
 
 	this.doSpecificAction = function(){
 		// Apres son jeu, le joueur effectuera cette action
-		this.desRapide = 0 // annule le mr monopoly
+		this.desRapide = 0; // annule le mr monopoly
 		var pos = GestionJoueur.getJoueurCourant().getPosition();
 		var fiche = GestionFiche.isFreeFiches() ? GestionFiche.getNextFreeTerrain(pos) : GestionFiche.getNextTerrain(pos);
 		$.trigger('monopoly.derapide.mrmonopoly',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
 		GestionJoueur.getJoueurCourant().joueSurCase(fiche);
-	}
+	};
 
 	this._randDes = function(){
 		this.des1 = this._rand();
@@ -335,7 +335,7 @@ function GestionDesRapideImpl(){
 		}else{
 			this.desRapide = this._rand();
 		}
-	}
+	};
 
 	this.total = function(){
 		var total = this.des1 + this.des2;
@@ -343,16 +343,16 @@ function GestionDesRapideImpl(){
 			total+=this.desRapide;
 		}
 		return total;
-	}
+	};
 
 	this.continuePlayer = function(){
 		return this.isDouble() && !this.isTriple();
-	}
+	};
 
 	/* Le triple est vu comme un double (pour le traitement global) */
 	this.isTriple = function(){
-		return this.des1 == this.des2 && this.des2 == this.desRapide && this.des1 <=3;
-	}
+		return this.des1 === this.des2 && this.des2 === this.desRapide && this.des1 <=3;
+	};
 
 	/* Renvoie la combinaison des des */
 	this.combinaisonDes = function(){
@@ -364,7 +364,7 @@ function GestionDesRapideImpl(){
 			return msg
 		}
 		return msg + " et " +((this._isBus())?" Bus":(this._isMonopolyMan())?"Mr Monopoly":this.desRapide);
-	}
+	};
 
 	// Cas du triple : double + des rapide avec le meme chiffre (1, 2 ou 3) => Joueur place son pion ou il veut
 	// Cas du double : double + des rapide different. Seul le double est pris en compte => Double normal
@@ -375,24 +375,24 @@ function GestionDesRapideImpl(){
 				GestionJoueur.getJoueurCourant().joueSurCase(fiche);
 				$.trigger('monopoly.derapide.triple',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
 			});
-			return
+			return;
 		}else{
 			this.desRapide = 0
 			return this._doTreatDouble(message);
 		}
-	}
+	};
 
 	this._isBus = function(){
-		return this.desRapide == 4 || this.desRapide == 6;
-	}
+		return this.desRapide === 4 || this.desRapide === 6;
+	};
 
 	this._isMonopolyMan = function(){
-		return this.desRapide == 5;
-	}
+		return this.desRapide === 5;
+	};
 
 	this._isValue = function(){
 		return this.desRapide <=3;
-	}
+	};
 	/* Surcharge le comportement apres le lancer */
 	this.endLancer = function(){
 		this.showReload();
@@ -417,6 +417,9 @@ function GestionDesRapideImpl(){
 	this._drawCubes = function(val1,val2,desRapide,color){
 		this.cube.des1.setValue(val1, color);
 		this.cube.des2.setValue(val2, color);
+		if(this.isDouble() && !this.isTriple()){
+			desRapide = 0;
+		}
 		if(GestionJoueur.getJoueurCourant().enPrison){
 			this.cube.desRapide.setValue(0, color);
 		}else{

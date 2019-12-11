@@ -83,20 +83,19 @@ class PionJoueur extends Component{
 		if (this.x === caseFiche.x) {
 			field = "y"; // On varie sur l'axe y
 		}
-		var _self = this;
 		var distance = Math.abs(caseFiche[field] - this[field]);
 		var sens = (caseFiche[field] > this[field]) ? 1 : -1;
-		this.currentInterval = setInterval(function () {
+		this.currentInterval = setInterval(()=> {
 			if (distance > 0) {
-				_self[field] += pas * sens;
+				this[field] += pas * sens;
 				distance -= pas;
 			} else {
 				// Traitement fini
-				_self.y = caseFiche.y;
-				_self.x = caseFiche.x;
-				clearInterval(_self.currentInterval);
-				_self.currentInterval = null;
-				_self.goto(axe, pos, callback);
+				this.y = caseFiche.y;
+				this.x = caseFiche.x;
+				clearInterval(this.currentInterval);
+				this.currentInterval = null;
+				this.goto(axe, pos, callback);
 			}
 		}, 30);
 	}
@@ -107,56 +106,48 @@ class PionJoueur extends Component{
 		}
 		if (this.currentInterval != null) {
 			// Wait before retry
-			setTimeout(()=>this.gotoDirect(axe,pos,callback),500);
-			return;
-			//throw `Impossible de realiser ce deplacement direct axe:${axe}, pos:${pos}, interval:${this.currentInterval}`;
+			return setTimeout(()=>this.gotoDirect(axe,pos,callback),500);
 		}
 		// On calcule la fonction affine
-		var p1 = GestionFiche.getById(this.axe + "-" + this.pos).drawing.getCenter();
-		var p2 = GestionFiche.getById(axe + "-" + pos).drawing.getCenter();
+		let p1 = GestionFiche.getById(this.axe + "-" + this.pos).drawing.getCenter();
+		let p2 = GestionFiche.getById(axe + "-" + pos).drawing.getCenter();
 		// Si meme colonne, (x constant), on ne fait varier que y
 		if (p1.x === p2.x) {
-			var sens = (p1.y > p2.y) ? -1 : 1;
+			let sens = (p1.y > p2.y) ? -1 : 1;
 			// On fait varier x et on calcule y. Le pas est 30
-			var _self = this;
-			this.currentInterval = setInterval(function () {
-				if ((sens < 0 && _self.y <= p2.y) || (sens > 0 && _self.y >= p2.y)) {
-					_self.axe = axe;
-					_self.pos = pos;
-					clearInterval(_self.currentInterval);
-					_self.currentInterval = null;
-					if (callback) {
-						callback();
-					}
-					return;
+			this.currentInterval = setInterval(()=> {
+				if ((sens < 0 && this.y <= p2.y) || (sens > 0 && this.y >= p2.y)) {
+					return this._endMove(axe,pos,callback);
 				}
-				_self.y += 30 * ((sens < 0) ? -1 : 1);
+				this.y += 30 * ((sens < 0) ? -1 : 1);
 			}, 30);
 		} else {
-			var pente = (p1.y - p2.y) / (p1.x - p2.x);
-			var coef = p2.y - pente * p2.x;
-			var x = p1.x;
-			var sens = (p1.x > p2.x) ? -1 : 1;
+			let pente = (p1.y - p2.y) / (p1.x - p2.x);
+			let coef = p2.y - pente * p2.x;
+			let x = p1.x;
+			let sens = (p1.x > p2.x) ? -1 : 1;
 
 			// On fait varier x et on calcule y. Le pas est 30
-			var _self = this;
-			this.currentInterval = setInterval(function () {
+			this.currentInterval = setInterval(() =>{
 				if ((sens < 0 && x <= p2.x) || (sens > 0 && x >= p2.x)) {
-					_self.x = p2.x;
-					_self.y = p2.y;
-					_self.axe = axe;
-					_self.pos = pos;
-					clearInterval(_self.currentInterval);
-					_self.currentInterval = null;
-					if (callback) {
-						callback();
-					}
-					return;
+					this.x = p2.x;
+					this.y = p2.y;
+					return this._endMove(axe,pos,callback);
 				}
-				_self.x = x;
-				_self.y = pente * x + coef;
+				this.x = x;
+				this.y = pente * x + coef;
 				x += 30 * ((sens < 0) ? -1 : 1);
 			}, 30);
+		}
+	}
+	_endMove(axe,pos,callback){
+		this.axe = axe;
+		this.pos = pos;
+		clearInterval(this.currentInterval);
+		this.currentInterval = null;
+
+		if(callback){
+			callback();
 		}
 	}
 
@@ -231,7 +222,6 @@ class Case extends Component {
 	constructor(pos, axe, color, title, prix, img){
 		super();
 		this.data = {};
-		this.pos = pos;
 		this.axe = axe;
 		this.color = color;
 		this.title = title;
@@ -239,55 +229,57 @@ class Case extends Component {
 		this.nbMaison = 0; // Maisons a afficher sur la propriete
 		this.imgMaison = new Image();
 		this.imgHotel = new Image();
-		this.img = img;
 		this.colorPossede = null;	// Permet d'afficher une information sur le fait que le terrain est possede
 		this.rayon = 10;
-		this.init();
+		this.init(pos,axe,img);
 	}
 
 	setNbMaison(nbMaison){
 		this.nbMaison = nbMaison;
 	}
 
-	init() {
+	init(pos,axe,img) {
 		this.imgMaison.src = "img/maison.png";
 		this.imgHotel.src = "img/hotel.png";
-		var centre = DrawerFactory.dimensions.plateauSize/2;
-		var largeur = DrawerFactory.dimensions.largeur;
-		var hauteur = DrawerFactory.dimensions.hauteur;
-		var demiLargeurPlateau = (largeur * 9) / 2;
-		if (this.axe % 2 === 1) { // E et 0
+		let centre = DrawerFactory.dimensions.plateauSize/2;
+		let largeur = DrawerFactory.dimensions.largeur;
+		let hauteur = DrawerFactory.dimensions.hauteur;
+		let demiLargeurPlateau = (largeur * 9) / 2;
+		if (axe % 2 === 1) { // E et 0
 			// height et width inverse
 			this.data.height = largeur;
 			this.data.width = hauteur;
-			if (this.axe === 1) {
+			if (axe === 1) {
 				this.data.x = centre + demiLargeurPlateau;
-				this.data.y = centre + (this.pos - 5.5) * largeur;
+				this.data.y = centre + (pos - 5.5) * largeur;
 			} else {
 				this.data.x = centre - demiLargeurPlateau - hauteur;
-				this.data.y = centre + (4.5 - this.pos) * largeur;
+				this.data.y = centre + (4.5 - pos) * largeur;
 			}
 		} else { // N et S
 			this.data.height = hauteur;
 			this.data.width = largeur;
-			if (this.axe === 2) {
+			if (axe === 2) {
 				this.data.y = centre + demiLargeurPlateau;
-				this.data.x = centre + (4.5 - this.pos) * largeur;
+				this.data.x = centre + (4.5 - pos) * largeur;
 			} else {
 				this.data.y = centre - demiLargeurPlateau - hauteur;
-				this.data.x = centre + (this.pos - 5.5) * largeur;
+				this.data.x = centre + (pos - 5.5) * largeur;
 			}
 		}
-		if (this.img != null) {
-			var image = new Image();
+		this._initImage(img);
+	}
+	_initImage(img){
+		if (img != null) {
+			let image = new Image();
 			// When image is well loaded, reload base canvas
 			image.addEventListener('load',()=>{
 				$.trigger('refreshPlateau');
 			});
-			image.src = this.img.src;
-			image.height = this.img.height;
-			image.width = this.img.width;
-			image.margin = this.img.margin;
+			image.src = img.src;
+			image.height = img.height;
+			image.width = img.width;
+			image.margin = img.margin;
 			this.data.image = image;
 		}
 	}
@@ -368,8 +360,8 @@ class Case extends Component {
 		var pas = {
 			x: DrawerFactory.dimensions.largeurPion,
 			y: (this.data.height - dec) / 3
-		}
-		var nb = this.getNbJoueurs() - 1;
+		};
+		let nb = this.getNbJoueurs() - 1;
 		if (this.axe % 2 === 0) {
 			return {
 				x: (center.x + ((nb % 3) - 1) * pas.y),
@@ -465,13 +457,15 @@ class Des {
 			this.draw2or3(canvas);
 		}
 		if (this.value >= 4) {
-			Des.drawPoint(canvas, this.x + this.width * 0.75, this.y + this.width * 0.75, this.width / 5, this.color);
-			Des.drawPoint(canvas, this.x + this.width * 0.25, this.y + this.width * 0.25, this.width / 5, this.color);
+			this._drawBig(canvas,{c1:0.75,c2:0.25});
 		}
 		if (this.value === 6) {
-			Des.drawPoint(canvas, this.x + this.width * 0.75, this.y + this.width * 0.5, this.width / 5, this.color);
-			Des.drawPoint(canvas, this.x + this.width * 0.25, this.y + this.width * 0.5, this.width / 5, this.color);
+			this._drawBig(canvas,{c1:0.5,c2:0.5});
 		}
+	}
+	_drawBig(canvas,coeff){
+		Des.drawPoint(canvas, this.x + this.width * 0.75, this.y + this.width * coeff.c1, this.width / 5, this.color);
+		Des.drawPoint(canvas, this.x + this.width * 0.25, this.y + this.width * coeff.c2, this.width / 5, this.color);
 	}
 	_drawCadre(canvas){
 		canvas.strokeStyle = '#000000';

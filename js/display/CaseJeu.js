@@ -93,16 +93,16 @@ class SimpleCaseSpeciale extends PlateauCase {
 }
 
 class CaseChance extends PlateauCase {
-	constructor(axe, pos,img, cartes){
+	constructor(axe, pos,img, cartes, names={long:InitMonopoly.plateau.titles.chance,short:'carte chance'}){
 		super(axe,pos,"carte");
-		this.nom = "carte chance"
+		this.nom = names.short;
 		this.cartes = cartes;
-		this.drawing = DrawerFactory.getCase(pos, axe, null, InitMonopoly.plateau.titles.chance, null, img);
+		this.drawing = DrawerFactory.getCase(pos, axe, null, names.long, null, img);
 		Drawer.add(this.drawing);
 	}
     action() {
 		if (this.cartes.length === 0) {
-			throw "Aucune carte chance";
+			throw "Aucune " + this.nom;
 		}
 		var randomValue = Math.round((Math.random() * 1000)) % (this.cartes.length);
 		var c = this.cartes[randomValue];
@@ -115,26 +115,9 @@ class CaseChance extends PlateauCase {
 	}
 }
 
-class CaseCaisseDeCommunaute extends PlateauCase {
+class CaseCaisseDeCommunaute extends CaseChance {
     constructor(axe, pos, img, cartes){
-    	super(axe,pos,"carte");
-		this.nom = "carte caisse de communauté"
-		this.cartes = cartes;
-		this.drawing = DrawerFactory.getCase(pos, axe, null, InitMonopoly.plateau.titles.communaute, null, img );
-		Drawer.add(this.drawing);
-	}
-    action () {
-		if (this.cartes.length === 0) {
-			throw "Aucune carte caisse de communaute";
-		}
-		var randomValue = Math.round((Math.random() * 1000)) % (this.cartes.length);
-		var c = this.cartes[randomValue];
-		// On test si la carte est une carte sortie de prison est possedee par un joueur
-		if (c.carte.type === "prison" && !c.carte.isLibre()) {
-			// on prend la carte suivante
-			c = this.cartes[(randomValue + 1) % (this.cartes.length)];
-		}
-		return c.action();
+    	super(axe,pos,img,cartes,{short:InitMonopoly.plateau.titles.communaute,long:"carte caisse de communauté"});
 	}
 }
 
@@ -284,13 +267,11 @@ class Fiche extends PlateauCase {
 		this.fiche = $('#fiche');
 		this.nbMaison = 0; // Nombre de maison construite sur le terrain par le proprietaire
 		this.hotel = false; // Si un hotel est present
-		this.maisons = new Array();
+		this.maisons = [];
 		this.input = null; // Bouton
 		this.drawing = DrawerFactory.getCase(pos, axe, this.color, this.nom, CURRENCY + " " + achat, img);
 		Drawer.add(this.drawing);
 	}
-
-
 
 	equals(fiche) {
 		if (fiche == null) {
@@ -309,6 +290,16 @@ class Fiche extends PlateauCase {
 			nb: this.nbMaison,
 			hypotheque: this.statutHypotheque
 		};
+	}
+
+	getNbPropertiesOfType(){
+		var nb = -1;
+		for (var i = 0; i < this.joueurPossede.maisons.length; i++) {
+			if (this.joueurPossede.maisons[i].type === this.type) {
+				nb++;
+			}
+		}
+		return nb;
 	}
 
 	load(data) {
@@ -592,7 +583,7 @@ class Fiche extends PlateauCase {
 	/* Renvoie vrai si le groupe est complet et construit */
 	/* Renvoie vrai si le reste du groupe appartient au meme joueur.*/
 	isGroupeeAndBuild() {
-		if (this.joueurPossede == null) {
+		if (this.joueurPossede === null) {
 			return false;
 		}
 		// Renvoie les maisons constructibles (lorsque le groupe est complet)
@@ -611,16 +602,11 @@ class FicheGare extends Fiche{
 	constructor(axe, pos, color, nom, achat, loyers, img){
 		super (axe, pos, color, nom, achat, loyers, null, img);
 		this.type = "gare";
-
 	}
+
 	getLoyer() {
 		if (this.joueurPossede != null) {
-			var nb = -1;
-			for (var i = 0; i < this.joueurPossede.maisons.length; i++) {
-				if (this.joueurPossede.maisons[i].type === "gare") {
-					nb++;
-				}
-			}
+			let nb = this.getNbPropertiesOfType();
 			return this.loyer[nb];
 		}
 		return 0;
@@ -637,12 +623,7 @@ class FicheCompagnie extends Fiche {
 	getLoyer() {
 		var loyer = GestionDes.total();
 		if (this.joueurPossede != null) {
-			var nb = -1;
-			for (var i = 0; i < this.joueurPossede.maisons.length; i++) {
-				if (this.joueurPossede.maisons[i].type === "compagnie") {
-					nb++;
-				}
-			}
+			let nb = this.getNbPropertiesOfType();
 			return this.loyer[nb] * loyer;
 		}
 		return this.loyer[0] * loyer;

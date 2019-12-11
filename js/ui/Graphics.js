@@ -112,15 +112,6 @@ class Component{
 	}
 }
 
-/* Tout objet graphique etant de component */
-function Component2() {
-	// Genere un id unique
-	this.id = CURRENT_ID_COMPONENT++;
-	this.draw = function (canvas) {
-		console.log("Not implemented");
-	}
-}
-
 /* En fonction du type de plateau (square, circle), fournit les objets permettant de le construire */
 /* Renvoie uniquement des components (implemente draw) */
 var DrawerFactory = {

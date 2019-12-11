@@ -79,20 +79,17 @@ var GestionConstructions = {
 
         var actions = {
             venteMaison: function (p, simulation) {
-                if (p.from.type == "maison" && p.to.type == "maison" && p.from.nb > p.to.nb) {
-                    var nb = p.from.nb - p.to.nb;
-                    simulation.achat.maison -= nb;
-                    simulation.reste.maison += nb;
-                    p.done = true;
+                if (p.from.type === "maison" && p.to.type === "maison" && p.from.nb > p.to.nb) {
+                    this.changeMaison(p,simulation);
                 }
             },
             achatHotel: function (p, simulation) {
                 // Pour valider un hotel, il faut que les autres proprietes aient au moins 4 maisons. On les achete maintenant si on les trouve
-                if (p.from.type == "maison" && p.to.type == "hotel") {
+                if (p.from.type === "maison" && p.to.type === "hotel") {
                     // On achete les maisons sur le meme groupe s'il y en a
                     for (var project in projects) {
                         var p2 = projects[project];
-                        if (p2.color == p.color && p2.from.type == "maison" && p2.to.type == "maison" && p2.to.nb == 4) {
+                        if (p2.color === p.color && p2.from.type === "maison" && p2.to.type === "maison" && p2.to.nb === 4) {
                             // On les achete maintenant
                             actions.achatMaison(p2, simulation);
                         }
@@ -114,7 +111,7 @@ var GestionConstructions = {
                 }
             },
             venteHotel: function (p, simulation) {
-                if (p.from.type == "hotel" && p.to.type == "maison") {
+                if (p.from.type === "hotel" && p.to.type === "maison") {
                     // Verifie qu'il y a assez de maison disponible
                     if (p.to.nb > simulation.reste.maison) {
                         // Impossible, pas assez de maison, on renvoie un nombre de maison negatif et on sort
@@ -131,12 +128,15 @@ var GestionConstructions = {
                 }
             },
             achatMaison: function (p, simulation) {
-                if (p.from.type == "maison" && p.to.type == "maison" && p.from.nb < p.to.nb) {
-                    var nb = p.from.nb - p.to.nb;
-                    simulation.achat.maison -= nb;
-                    simulation.reste.maison += nb;
-                    p.done = true;
+                if (p.from.type === "maison" && p.to.type === "maison" && p.from.nb < p.to.nb) {
+                    this.changeMaison(p,simulation);
                 }
+            },
+            changeMaison(p,simulation){
+                let nb = p.from.nb - p.to.nb;
+                simulation.achat.maison -= nb;
+                simulation.reste.maison += nb;
+                p.done = true;
             }
         }
         for (var a in actions) {

@@ -2,35 +2,38 @@
 
 /* Represente un pion d'un joueur */
 // TODO : sortir GestionFiche
-function PionJoueur(color, largeur,img,joueur) {
-	Component.apply(this);
-	this.axe = 0;
-	this.pos = 0;
-	this.x = 0;
-	this.y = 0;
-	// Used to know status of gamer, like dead
-	this.joueur = joueur;
-	this.color = color;
-	this.isSelected = false;
-	this.largeur = largeur; // Largeur du pion
-	this.currentInterval = null;
+class PionJoueur extends Component{
+	constructor(color, largeur,img,joueur){
+		super();
+		this.axe = 0;
+		this.pos = 0;
+		this.x = 0;
+		this.y = 0;
+		// Used to know status of gamer, like dead
+		this.joueur = joueur;
+		this.color = color;
+		this.isSelected = false;
+		this.largeur = largeur; // Largeur du pion
+		this.currentInterval = null;
 
-	this.img = null;
-	if(img){
-		this.img = new Image();
-		this.img.src = img;
-		this.largeur+=6;
+		this.img = null;
+		if(img != null){
+			this.img = new Image();
+			this.img.src = img;
+			this.largeur+=6;
+		}
+		this.init(2,0);
 	}
 
-	this.init = function(axe,pos){
-		var id = axe + "-" + pos;
+	init(axe,pos){
+		let id = axe + "-" + pos;
 		this.axe = axe;
 		this.pos = pos;
 		this.x = GestionFiche.getById(id).drawing.getCenter().x;
 		this.y = GestionFiche.getById(id).drawing.getCenter().y;
 	}
 
-	this.draw = function (canvas) {
+	draw(canvas) {
 		// If dead, show nothing
 		if(this.joueur.defaite){return;}
 		if(this.isSelected){
@@ -44,13 +47,14 @@ function PionJoueur(color, largeur,img,joueur) {
 			DrawerHelper.drawCircle(canvas,this.color,this.largeur / 2,{x:this.x,y:this.y},"#FF0000");
 		}
 		DrawerHelper.drawCircle(canvas,"#FFFFFF",2,{x:this.x,y:this.y},"#FF0000");
-	};
-	this.setSelected = function(value){
+	}
+
+	setSelected(value){
 		this.isSelected = value;
-	};
+	}
 
 	// Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
-	this.goto = function (axe, pos, callback,init) {
+	goto(axe, pos, callback,init) {
 		if(VARIANTES.quickMove){
 			return this.gotoDirect(axe,pos,callback);
 		}
@@ -59,13 +63,13 @@ function PionJoueur(color, largeur,img,joueur) {
 		}
 		// Cas initial
 		if(init){
-			var center = GestionFiche.getById(this.axe + "-" + this.pos).drawing.getCenter();
+			let center = GestionFiche.getById(this.axe + "-" + this.pos).drawing.getCenter();
 			this.x = center.x;
 			this.y = center.y;
 		}
 		// Cas de la fin
 		if (this.axe === axe && this.pos === pos) {
-			var decalage = GestionFiche.getById(this.axe + "-" + this.pos).drawing._decalagePion();
+			let decalage = GestionFiche.getById(this.axe + "-" + this.pos).drawing._decalagePion();
 			this.x = decalage.x;
 			this.y = decalage.y;
 			if (callback) {
@@ -97,7 +101,7 @@ function PionJoueur(color, largeur,img,joueur) {
 		}, 30);
 	}
 
-	this.gotoDirect = function(axe, pos, callback){
+	gotoDirect(axe, pos, callback){
 		if (axe == null || pos == null) {
 			return;
 		}
@@ -154,19 +158,16 @@ function PionJoueur(color, largeur,img,joueur) {
 				x += 30 * ((sens < 0) ? -1 : 1);
 			}, 30);
 		}
+	}
 
-	};
-
-	this._toNextCase = function () {
+	_toNextCase() {
 		this.pos++;
 		if (this.pos >= 10) {
 			this.axe = (this.axe + 1) % 4;
 			this.pos = 0;
 		}
 		return GestionFiche.getById(this.axe + "-" + this.pos).drawing.getCenter();
-	};
-
-	this.init(2,0);
+	}
 }
 
 let axeDrawer = [
@@ -226,95 +227,102 @@ let axeDrawer = [
 
 /* Representation graphique d'une fiche */
 /* Image contient src, height et width */
-function Case(pos, axe, color, title, prix, img) {
-	Component.apply(this);
-	this.data = {};
-	this.pos = pos;
-	this.axe = axe;
-	this.nbMaison = 0; // Maisons a afficher sur la propriete
-	this.imgMaison = new Image();
-	this.imgHotel = new Image();
-	this.colorPossede = null;	// Permet d'afficher une information sur le fait que le terrain est possede
-	this.rayon = 10;
+class Case extends Component {
+	constructor(pos, axe, color, title, prix, img){
+		super();
+		this.data = {};
+		this.pos = pos;
+		this.axe = axe;
+		this.color = color;
+		this.title = title;
+		this.prix = prix;
+		this.nbMaison = 0; // Maisons a afficher sur la propriete
+		this.imgMaison = new Image();
+		this.imgHotel = new Image();
+		this.img = img;
+		this.colorPossede = null;	// Permet d'afficher une information sur le fait que le terrain est possede
+		this.rayon = 10;
+		this.init();
+	}
 
-	this.setNbMaison = function(nbMaison){
+	setNbMaison(nbMaison){
 		this.nbMaison = nbMaison;
 	}
 
-	this.init = function () {
+	init() {
 		this.imgMaison.src = "img/maison.png";
 		this.imgHotel.src = "img/hotel.png";
 		var centre = DrawerFactory.dimensions.plateauSize/2;
 		var largeur = DrawerFactory.dimensions.largeur;
 		var hauteur = DrawerFactory.dimensions.hauteur;
 		var demiLargeurPlateau = (largeur * 9) / 2;
-		if (axe % 2 === 1) { // E et 0
+		if (this.axe % 2 === 1) { // E et 0
 			// height et width inverse
 			this.data.height = largeur;
 			this.data.width = hauteur;
-			if (axe === 1) {
+			if (this.axe === 1) {
 				this.data.x = centre + demiLargeurPlateau;
-				this.data.y = centre + (pos - 5.5) * largeur;
+				this.data.y = centre + (this.pos - 5.5) * largeur;
 			} else {
 				this.data.x = centre - demiLargeurPlateau - hauteur;
-				this.data.y = centre + (4.5 - pos) * largeur;
+				this.data.y = centre + (4.5 - this.pos) * largeur;
 			}
 		} else { // N et S
 			this.data.height = hauteur;
 			this.data.width = largeur;
-			if (axe === 2) {
+			if (this.axe === 2) {
 				this.data.y = centre + demiLargeurPlateau;
-				this.data.x = centre + (4.5 - pos) * largeur;
+				this.data.x = centre + (4.5 - this.pos) * largeur;
 			} else {
 				this.data.y = centre - demiLargeurPlateau - hauteur;
-				this.data.x = centre + (pos - 5.5) * largeur;
+				this.data.x = centre + (this.pos - 5.5) * largeur;
 			}
 		}
-		if (img != null) {
+		if (this.img != null) {
 			var image = new Image();
 			// When image is well loaded, reload base canvas
 			image.addEventListener('load',()=>{
 				$.trigger('refreshPlateau');
 			});
-			image.src = img.src;
-			image.height = img.height;
-			image.width = img.width;
-			image.margin = img.margin;
+			image.src = this.img.src;
+			image.height = this.img.height;
+			image.width = this.img.width;
+			image.margin = this.img.margin;
 			this.data.image = image;
 		}
 	}
 
 	/* Recupere les coordonnees du centre de la case */
-	this.getCenter = function () {
+	getCenter() {
 		return {
 			x: this.data.x + this.data.width / 2,
 			y: this.data.y + this.data.height / 2
 		};
 	};
 
-	this.draw = function (canvas) {
+	draw (canvas) {
 		var bordure = DrawerFactory.dimensions.bordure/2;
 		var largeur = DrawerFactory.dimensions.largeur;
 		var hauteur = DrawerFactory.dimensions.hauteur;
 		canvas.strokeStyle = '#000000';
 		canvas.strokeRect(this.data.x, this.data.y, this.data.width, this.data.height);
-		var drawer = axeDrawer[axe];
-		if (color != null) {
-			canvas.fillStyle = color;
+		var drawer = axeDrawer[this.axe];
+		if (this.color != null) {
+			canvas.fillStyle = this.color;
 			drawer.color(canvas,this.data.x,this.data.y,this.data.width,bordure,largeur,hauteur);
 		}
 
-		if (title != null) {
-			let dec = 10 + ((color != null) ? bordure : 0); // Uniquement si couleur
-			drawer.title(canvas,this.data.x,this.data.y,title,dec,largeur,hauteur);
+		if (this.title != null) {
+			let dec = 10 + ((this.color != null) ? bordure : 0); // Uniquement si couleur
+			drawer.title(canvas,this.data.x,this.data.y,this.title,dec,largeur,hauteur);
 		}
-		if (prix != null) {
-			drawer.prix(canvas,this.data.x,this.data.y,prix,5,largeur,hauteur);
+		if (this.prix != null) {
+			drawer.prix(canvas,this.data.x,this.data.y,this.prix,5,largeur,hauteur);
 		}
 		if (this.data.image != null) {
 			var rotate = (Math.PI / 2) * ((this.axe + 2) % 4);
 			var lng = (largeur - this.data.image.width) / 2;
-			let dec = 10 + ((color != null) ? bordure : 10) + ((title != null) ? 10 : 0) + (this.data.image.margin || 0);
+			let dec = 10 + ((this.color != null) ? bordure : 10) + ((this.title != null) ? 10 : 0) + (this.data.image.margin || 0);
 			drawer.image(canvas,this.data.x,this.data.y,this.data.image,dec,largeur,lng,hauteur,rotate);
 		}
 		// Cas des maisons
@@ -334,7 +342,7 @@ function Case(pos, axe, color, title, prix, img) {
 		}
 	};
 
-	this.setJoueur = function(joueur){
+	setJoueur (joueur){
 		this.colorPossede = null;
 		if(joueur!=null){
 			this.colorPossede = joueur.color;
@@ -342,7 +350,7 @@ function Case(pos, axe, color, title, prix, img) {
 	}
 
 	// Nombre de joueur sur la case
-	this.getNbJoueurs = function () {
+	getNbJoueurs() {
 		var count = 0;
 		GestionJoueur.forEach(function(j){
 			count+=(j.pion.axe === this.axe && j.pion.position === this.pos)?1:0;
@@ -352,9 +360,9 @@ function Case(pos, axe, color, title, prix, img) {
 
 	// Retourne le decalage d'un pion sur la case
 	/* @param inverse : decalage inverse (remise en place) */
-	this._decalagePion = function () {
+	_decalagePion() {
 		var bordure = DrawerFactory.dimensions.bordure/2;
-		var dec = 20 + ((color != null) ? bordure : 0) + DrawerFactory.dimensions.largeurPion / 2;
+		var dec = 20 + ((this.color != null) ? bordure : 0) + DrawerFactory.dimensions.largeurPion / 2;
 		var center = this.getCenter();
 		center.x += 5;
 		var pas = {
@@ -362,7 +370,7 @@ function Case(pos, axe, color, title, prix, img) {
 			y: (this.data.height - dec) / 3
 		}
 		var nb = this.getNbJoueurs() - 1;
-		if (this.axe % 2 == 0) {
+		if (this.axe % 2 === 0) {
 			return {
 				x: (center.x + ((nb % 3) - 1) * pas.y),
 				y: ((nb < 3) ? center.y - pas.x : center.y + pas.x)
@@ -373,22 +381,23 @@ function Case(pos, axe, color, title, prix, img) {
 			y: (center.y + ((nb % 3) - 1) * pas.y)
 		};
 	}
-	this.init();
 }
 
 /* Represente une case speciale */
-function CaseSpeciale(axe, titre) {
-	Case.call(this, 0, axe, null, titre);
-	this.titre = titre;
-	this.data = {};
-	this.init = function () {
+class CaseSpeciale extends Case {
+	constructor(axe, title){
+		super(0,axe,null,title,null,null);
+		this.data = {};
+		this.init();
+	}
+	init() {
 		var largeur = DrawerFactory.dimensions.largeur;
 		var hauteur = DrawerFactory.dimensions.hauteur;
 		var centre = DrawerFactory.dimensions.plateauSize/2;
 		var demiLargeurPlateau = (largeur * 9) / 2;
-		if (axe % 2 === 1) { // E et 0
+		if (this.axe % 2 === 1) { // E et 0
 			// height et width inverse
-			if (axe === 1) {
+			if (this.axe === 1) {
 				this.data.x = centre + demiLargeurPlateau;
 				this.data.y = centre + -4.5 * largeur - hauteur;
 			} else {
@@ -396,7 +405,7 @@ function CaseSpeciale(axe, titre) {
 				this.data.y = centre + 4.5 * largeur;
 			}
 		} else { // N et S
-			if (axe === 2) {
+			if (this.axe === 2) {
 				this.data.y = centre + demiLargeurPlateau;
 				this.data.x = centre + 4.5 * largeur;
 			} else {
@@ -406,18 +415,17 @@ function CaseSpeciale(axe, titre) {
 		}
 		this.data.height = this.data.width = hauteur;
 	};
-	this.getCenter = function () {
+	getCenter () {
 		return {
 			x: this.data.x + this.data.height / 2,
 			y: this.data.y + this.data.height / 2
 		};
 	};
-	this.draw = function (canvas) {
+	draw(canvas) {
 		canvas.strokeStyle = '#000000';
 		canvas.strokeRect(this.data.x, this.data.y, this.data.width, this.data.height);
-		DrawerHelper.writeText(this.titre, this.data.x, this.data.y + DrawerFactory.dimensions.hauteur / 2, 0, canvas, 9, this.data.width);
+		DrawerHelper.writeText(this.title, this.data.x, this.data.y + DrawerFactory.dimensions.hauteur / 2, 0, canvas, 9, this.data.width);
 	};
-	this.init();
 }
 
 function NewImage(path){
@@ -426,81 +434,63 @@ function NewImage(path){
 	return img;
 }
 
-function DesRapide(x,y,width){
-	Des.call(this,x,y,width);
-	this.imgBus = NewImage('img/bus.png');
-	this.imgMr = NewImage('img/mr_monopoly.png');
-	this.margin = width*0.1;
-	this.draw = function(canvas){
-		this._drawCadre(canvas);
-		if (this.value === undefined) {
-			return;
-		}
-		if (this.value === 1 || this.value === 3) {
-			this.drawPoint(canvas, x + width / 2, y + width / 2, width / 5, this.color);
-		}
-		if (this.value === 2 || this.value === 3) {
-			this.draw2or3(canvas);
-		}
-		if(this.value >=4) {
-			let img = (this.value === 5)?this.imgMr:this.imgBus;
-			DrawerHelper.drawImage(canvas, img, x + this.margin, y + this.margin, width - this.margin, width - this.margin, 0);
-		}
-	}
-}
-
 /* Represente un dé physique */
-function Des(x, y, width) {
-	this.value = 0;
-	this.coin = 15;
-	this.width = width - 2 * this.coin;
-	this.setValue = function (value, color) {
+class Des {
+	constructor(x, y, width){
+		this.value = 0;
+		this.coin = 15;
+		this.width = width;
+		this.compute = width - 2 * this.coin;
+		this.x = x;
+		this.y = y;
+	}
+	setValue(value, color) {
 		this.value = value;
 		this.color = color || '#000000';
 	};
-	this.draw2or3 = function(canvas){
-		this.drawPoint(canvas, x + width * 0.25, y + width * 0.75, width / 5, this.color);
-		this.drawPoint(canvas, x + width * 0.75, y + width * 0.25, width / 5, this.color);
+	draw2or3(canvas){
+		Des.drawPoint(canvas, this.x + this.width * 0.25, this.y + this.width * 0.75, this.width / 5, this.color);
+		Des.drawPoint(canvas, this.x + this.width * 0.75, this.y + this.width * 0.25, this.width / 5, this.color);
 	};
-	this.draw = function (canvas) {
+	draw(canvas) {
 		// Structure du des
 		this._drawCadre(canvas);
 		if (this.value === undefined) {
 			return;
 		}
 		if (this.value % 2 === 1) {
-			this.drawPoint(canvas, x + width / 2, y + width / 2, width / 5, this.color);
+			Des.drawPoint(canvas, this.x + this.width / 2, this.y + this.width / 2, this.width / 5, this.color);
 		}
 		if (this.value !== 1) {
 			this.draw2or3(canvas);
 		}
 		if (this.value >= 4) {
-			this.drawPoint(canvas, x + width * 0.75, y + width * 0.75, width / 5, this.color);
-			this.drawPoint(canvas, x + width * 0.25, y + width * 0.25, width / 5, this.color);
+			Des.drawPoint(canvas, this.x + this.width * 0.75, this.y + this.width * 0.75, this.width / 5, this.color);
+			Des.drawPoint(canvas, this.x + this.width * 0.25, this.y + this.width * 0.25, this.width / 5, this.color);
 		}
 		if (this.value === 6) {
-			this.drawPoint(canvas, x + width * 0.75, y + width * 0.5, width / 5, this.color);
-			this.drawPoint(canvas, x + width * 0.25, y + width * 0.5, width / 5, this.color);
+			Des.drawPoint(canvas, this.x + this.width * 0.75, this.y + this.width * 0.5, this.width / 5, this.color);
+			Des.drawPoint(canvas, this.x + this.width * 0.25, this.y + this.width * 0.5, this.width / 5, this.color);
 		}
 	}
-	this._drawCadre = function(canvas){
+	_drawCadre(canvas){
 		canvas.strokeStyle = '#000000';
 		canvas.fillStyle = '#000000';
 		canvas.beginPath();
-		canvas.moveTo(x + this.coin, y);
-		canvas.lineTo(x + this.coin + this.width, y);
-		canvas.bezierCurveTo(x + this.coin * 2 + this.width, y, x + this.coin * 2 + this.width, y + this.coin, x + this.coin * 2 + this.width, y + this.coin);
-		canvas.lineTo(x + this.coin * 2 + this.width, y + this.coin + this.width);
-		canvas.bezierCurveTo(x + this.coin * 2 + this.width, y + this.coin * 2 + this.width, x + this.width + this.coin, y + this.coin * 2 + this.width, x + this.width + this.coin, y + this.coin * 2 + this.width);
-		canvas.lineTo(x + this.coin, y + this.coin * 2 + this.width);
-		canvas.bezierCurveTo(x, y + this.coin * 2 + this.width, x, y + this.coin + this.width, x, y + this.coin + this.width);
-		canvas.lineTo(x, y + this.coin);
-		canvas.bezierCurveTo(x, y, x + this.coin, y, x + this.coin, y);
+		canvas.moveTo(this.x + this.coin, this.y);
+		canvas.lineTo(this.x + this.coin + this.compute, this.y);
+		canvas.bezierCurveTo(this.x + this.coin * 2 + this.compute, this.y, this.x + this.coin * 2 + this.compute, this.y + this.coin, this.x + this.coin * 2 + this.compute, this.y + this.coin);
+		canvas.lineTo(this.x + this.coin * 2 + this.compute, this.y + this.coin + this.compute);
+		canvas.bezierCurveTo(this.x + this.coin * 2 + this.compute, this.y + this.coin * 2 + this.compute, this.x + this.compute + this.coin, this.y + this.coin * 2 + this.compute, this.x + this.compute + this.coin, this.y + this.coin * 2 + this.compute);
+		canvas.lineTo(this.x + this.coin, this.y + this.coin * 2 + this.compute);
+		canvas.bezierCurveTo(this.x, this.y + this.coin * 2 + this.compute, this.x, this.y + this.coin + this.compute, this.x, this.y + this.coin + this.compute);
+		canvas.lineTo(this.x, this.y + this.coin);
+		canvas.bezierCurveTo(this.x, this.y, this.x + this.coin, this.y, this.x + this.coin, this.y);
 		canvas.stroke();
 		canvas.closePath();
 	}
 	// Dessine un point
-	this.drawPoint = function (canvas, x, y, width, color) {
+	static drawPoint(canvas, x, y, width, color) {
 		canvas.strokeStyle = color || '#000000';
 		canvas.fillStyle = color || '#000000';
 		canvas.beginPath();
@@ -510,24 +500,52 @@ function Des(x, y, width) {
 	}
 }
 
-function Plateau(x,y,width,height,color){
-	Component.apply();
-	this.canvas = null;
-	this.data = {
-		x: x,
-		y: y,
-		width: width,
-		height: height
-	};
+class DesRapide extends Des{
+	constructor(x,y,width){
+		super(x,y,width);
+		this.imgBus = NewImage('img/bus.png');
+		this.imgMr = NewImage('img/mr_monopoly.png');
+		this.margin = width*0.1;
+	}
+	draw(canvas){
+		this._drawCadre(canvas);
+		if (this.value === undefined) {
+			return;
+		}
+		if (this.value === 1 || this.value === 3) {
+			Des.drawPoint(canvas, this.x + this.width / 2, this.y + this.width / 2, this.width / 5, this.color);
+		}
+		if (this.value === 2 || this.value === 3) {
+			this.draw2or3(canvas);
+		}
+		if(this.value >=4) {
+			let img = (this.value === 5)?this.imgMr:this.imgBus;
+			DrawerHelper.drawImage(canvas, img, this.x + this.margin, this.y + this.margin, this.width - this.margin, this.width - this.margin, 0);
+		}
+	}
+}
 
-	this.draw = function (canvas) {
+class Plateau extends Component{
+	constructor(x,y,width,height,color) {
+		super();
+		this.canvas = null;
+		this.data = {
+			x: x,
+			y: y,
+			width: width,
+			height: height,
+			color:color
+		};
+	}
+
+	draw(canvas) {
 		this.canvas = canvas;
-		canvas.fillStyle = color;
+		canvas.fillStyle = this.data.color;
 		canvas.fillRect(this.data.x, this.data.y, this.data.width, this.data.height);
 	};
 
-	this.enableCaseDetect = function(callback){
-		var plateau = this;
+	enableCaseDetect(callback){
+		let plateau = this;
 		$('canvas').unbind('mousedown').bind('mousedown',function(event){
 			var offset = $(this).offset();
 			var fiche = plateau._findFiche(event.clientX - offset.left,event.clientY - offset.top);
@@ -537,11 +555,11 @@ function Plateau(x,y,width,height,color){
 			}
 		});
 	}
-	this.disableCaseDetect = function(){
+	disableCaseDetect(){
 		$('canvas').unbind('mousedown');
 	}
-	this._findFiche = function(x,y){
-		var fiche = null;
+	_findFiche(x,y){
+		let fiche = null;
 		GestionFiche.fiches.forEach(function(f){
 			var data = f.drawing.data;
 			if(x >= data.x && x<= (data.x + data.width) && y >= data.y && y <= (data.y + data.height)){

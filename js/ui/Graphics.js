@@ -38,10 +38,10 @@ var DrawerHelper = {
     },
 	/* Detect les sauts de ligne */
 	_splitLine:function(mots){
-		if(mots.some(function(m){return m.indexOf('\n')!=-1;})){
+		if(mots.some(function(m){return m.indexOf('\n')!==-1;})){
 			var mots2 = [];
 			mots.forEach(function(m){
-				if(m.indexOf('\n')!=-1){
+				if(m.indexOf('\n')!==-1){
 					m.split('\n').forEach(function(mm){mots2.push(mm);});
 				}
 				else{
@@ -59,7 +59,7 @@ var DrawerHelper = {
 		canvas.fillStyle=DrawerFactory.getInfo('textColor') || '#000000';
         canvas.font = `${this.fontWeight} ` + ((size != null) ? size : "7") + "pt Arial";
 
-		var mots = this._splitLine([text])
+		var mots = this._splitLine([text]);
 		
 		var mots2 = [];
 		mots.forEach(function(m){
@@ -102,8 +102,18 @@ var DrawerHelper = {
     }
 }
 
+// Class which represent any component
+class Component{
+	constructor(){
+		this.id = CURRENT_ID_COMPONENT++;
+	}
+	draw(){
+		throw "Not implemented";
+	}
+}
+
 /* Tout objet graphique etant de component */
-function Component() {
+function Component2() {
 	// Genere un id unique
 	this.id = CURRENT_ID_COMPONENT++;
 	this.draw = function (canvas) {
@@ -179,13 +189,11 @@ var DrawerFactory = {
 		if(this.instances[this.type][method] == null){
 			return null;
 		}
-		var o = {};
-		this.instances[this.type][method].apply(o,params);
-		return o;
+		return new this.instances[this.type][method](...params);
 	}
 }.init();
 
-// Gere les dessins
+// Gere les dessins et les calques
 var Drawer = {
     components: [],	// Un ordre est ajoute lors de l'insertion
     height: 0,
@@ -223,7 +231,7 @@ var Drawer = {
     removeComponent: function (component) {
         // Boucle sur les composants et supprime si l'id est le meme
         for (var i = 0; i < this.components.length; i++) {
-            if (this.components[i].id == component.id) {
+            if (this.components[i].id === component.id) {
                 this.components.splice(i, 1);
                 return;
             }

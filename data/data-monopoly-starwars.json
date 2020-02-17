@@ -92,11 +92,11 @@
 	"chance":{
 		"cartes":[
 			{"nom":"Payer le carburant du landspeeder 7 150","type":"taxe","montant":150},
-			{"nom":"Amande pour excès de vitesse : 7 15","type":"taxe","montant":15},
+			{"nom":"Amende pour excès de vitesse : 7 15","type":"taxe","montant":15},
 			{"nom":"Vous avez gagné le prix de tir. Recevez 7 100","type":"prime","montant":100},
 			{"nom":"La banque vous verse un dividende de 7 50","type":"prime","montant":50},
 			{"nom":"Votre immeuble et votre prêt rapportent. Vous devez toucher 7 150","type":"prime","montant":150},
-			{"nom":"Amande pour ivresse : 7 20","type":"taxe","montant":20},
+			{"nom":"Amende pour ivresse : 7 20","type":"taxe","montant":20},
 			{"nom":"Rendez vous à Ord Mantell. Si vous passez par la case Départ, recevez 7 200","type":"goto","axe":0,"pos":4},
 			{"nom":"Rendez vous au Coruscant Senate","type":"goto","axe":1,"pos":9},
 			{"nom":"Reculez de 3 cases","type":"move","nb":-3},

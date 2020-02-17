@@ -3,30 +3,37 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<title>Monopoly FULL JS</title>
-	<link type="text/css" href="css/sunny/jquery-ui-1.10.3.custom.min.css" rel="stylesheet" />
+	<link type="text/css" href="css/ui/jquery-ui.min.css" rel="stylesheet" />
+	<link type="text/css" href="css/ui/jquery-ui.structure.min.css" rel="stylesheet" />
+	<link type="text/css" href="css/ui/jquery-ui.theme.min.css" rel="stylesheet" />
 	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
 	<script type="text/javascript" src="lib/jquery-1.11.0.min.js"></script>
-	<script type="text/javascript" src="lib/jquery-ui-1.10.3.custom.min.js"></script>
+	<script type="text/javascript" src="lib/jquery-ui.1.12.min.js"></script>
 	<script type="text/javascript" src="lib/jquery.mousewheel.js"></script>
 	<script type="text/javascript" src="lib/jquery.arctext.js"></script>
 
 	<!--(if target dev)><!-->
-	<script type="text/javascript" src="js/Sauvegarde.js"></script>
-	<script type="text/javascript" src="js/Utils.js"></script>
-	<script type="text/javascript" src="js/GestionConstructions.js"></script>
-	<script type="text/javascript" src="js/GestionTerrains.js"></script>
-	<script type="text/javascript" src="js/Enchere.js"></script>
-	<script type="text/javascript" src="js/ui/Graphics.js"></script>
-	<script type="text/javascript" src="js/ui/SquareGraphics.js"></script>
-	<script type="text/javascript" src="js/ui/CircleGraphics.js"></script>
-	<script type="text/javascript" src="js/display/Message.js"></script>
-	<script type="text/javascript" src="js/entity/Comportement.js"></script>
-	<script type="text/javascript" src="js/entity/Strategie.js"></script>
-	<script type="text/javascript" src="js/entity/Pion.js"></script>
-	<script type="text/javascript" src="js/entity/Joueur.js"></script>
-	<script type="text/javascript" src="js/entity/CartesAction.js"></script>
-	<script type="text/javascript" src="js/display/Displayers.js"></script>
-	<script type="text/javascript" src="js/display/CaseJeu.js"></script>
+	<script type="text/javascript" src="js/sauvegarde.js"></script>
+	<script type="text/javascript" src="js/utils.js"></script>
+	<script type="text/javascript" src="js/gestion_constructions.js"></script>
+	<script type="text/javascript" src="js/gestion_terrains.js"></script>
+	<script type="text/javascript" src="js/enchere.js"></script>
+	<script type="text/javascript" src="js/ui/graphics.js"></script>
+	<script type="text/javascript" src="js/ui/square_graphics.js"></script>
+	<script type="text/javascript" src="js/ui/circle_graphics.js"></script>
+	<script type="text/javascript" src="js/display/message.js"></script>
+	<script type="text/javascript" src="js/entity/comportement.js"></script>
+	<script type="text/javascript" src="js/entity/strategie.js"></script>
+	<script type="text/javascript" src="js/entity/pion.js"></script>
+	<script type="text/javascript" src="js/entity/joueur.js"></script>
+	<script type="text/javascript" src="js/entity/network/local_joueur.js"></script>
+	<script type="text/javascript" src="js/entity/network/remote_manager.js"></script>
+	<script type="text/javascript" src="js/entity/joueur_robot.js"></script>
+	<script type="text/javascript" src="js/gestion_joueurs.js"></script>
+	<script type="text/javascript" src="js/entity/cartes_action.js"></script>
+	<script type="text/javascript" src="js/display/displayers.js"></script>
+	<script type="text/javascript" src="js/display/case_jeu.js"></script>
+	<script type="text/javascript" src="js/entity/dices.js"></script>
 	<script type="text/javascript" src="monopoly.js"></script>
 	<!--<!(endif)-->
 
@@ -36,7 +43,6 @@
 
 	<style></style>
 	<link rel="stylesheet" type="text/css" href="css/style.css"/>
-
 </head>
 
 <body>
@@ -55,10 +61,10 @@
 					<button title="Lancez les dés" id="idLancerDes" class="action-joueur" disabled="disabled">
 						<img src="img/dices.png"/>
 					</button>
-					<button title="Achat maisons" class="action-joueur" onclick="GestionTerrains.open()" disabled="disabled">
+					<button title="Achat maisons" class="action-joueur action-normal" onclick="GestionTerrains.open()" disabled="disabled">
 						<img src="img/house2.png"/>
 					</button>
-					<button title="Echange terrains" id="idEchangeTerrains" class="action-joueur" onclick="EchangeDisplayer.open(GestionJoueur.getJoueurCourant())" disabled="disabled">
+					<button title="Echange terrains" id="idEchangeTerrains" class="action-normal action-joueur" onclick="EchangeDisplayer.open(GestionJoueur.getJoueurCourant())" disabled="disabled">
 						<img src="img/swap.png"/>
 					</button>
 					<button title="Terrains libres" class="action-joueur" onclick="$('#idTerrainsLibres').dialog('open');" disabled="disabled">
@@ -95,12 +101,12 @@
 	<table>
 		<tr><td></td><td>€</td></tr>
 		<tr><td>ACHAT</td><td id="achat" name="achat"></td></tr>
-		<tr><td>LOYER terrain nu</td><td id="loyer0"></td></tr>
-		<tr class="maison"><td> - 1 maison</td><td id="loyer1" name="loyer1"></td></tr>
-		<tr class="maison"><td> - 2 maisons</td><td id="loyer2" name="loyer2"></td></tr>
-		<tr class="maison"><td> - 3 maisons</td><td id="loyer3" name="loyer3"></td></tr>
-		<tr class="maison"><td> - 4 maisons</td><td id="loyer4" name="loyer4"></td></tr>
-		<tr class="maison"><td> - Hotel</td><td id="loyer5" name="loyer5"></td></tr>
+		<tr><td>LOYER terrain nu</td><td class="loyer0"></td></tr>
+		<tr class="maison"><td> - 1 maison</td><td class="loyer1" name="loyer1"></td></tr>
+		<tr class="maison"><td> - 2 maisons</td><td class="loyer2" name="loyer2"></td></tr>
+		<tr class="maison"><td> - 3 maisons</td><td class="loyer3" name="loyer3"></td></tr>
+		<tr class="maison"><td> - 4 maisons</td><td class="loyer4" name="loyer4"></td></tr>
+		<tr class="maison"><td> - Hotel</td><td class="loyer5" name="loyer5"></td></tr>
 	</table>
 	<hr/>
 	<div class="infos-group">
@@ -115,10 +121,24 @@
 
 </div>
 
+<div id="ficheJunior" style="background-color:white;font-size:12px">
+	<table>
+		<tr><td></td><td>€</td></tr>
+		<tr><td>ACHAT</td><td id="acht" name="achat"></td></tr>
+		<tr><td>LOYER</td><td class="loyer0"></td></tr>
+	</table>
+	<hr/>
+	<div class="infos-group">
+		Loyer double si <span style="font-weight:bold">TOUS</span> les terrains du groupe de Couleur.
+	</div>
+	<hr/>
+
+</div>
+
 <div id="ficheCompagnie" style="background-color:white">
 	<br/>
-	Si l'on poss&eagrave;de UNE carte de compagnie de Service Public, le loyer est 400 fois le montant indiqué par les d&eacute;s.<br/><br/>
-	Si l'on poss&eagrave;de les DEUX cartes de compagnies de Service Public, le loyer est MILLE fois le montant indiqué par les d&eacute;s.<br/><br/>
+	Si l'on possède UNE carte de compagnie de Service Public, le loyer est 400 fois le montant indiqué par les d&eacute;s.<br/><br/>
+	Si l'on possède les DEUX cartes de compagnies de Service Public, le loyer est MILLE fois le montant indiqué par les d&eacute;s.<br/><br/>
 	Valeur hypot&eacute;caire : Frs 7.500
 </div>
 
@@ -174,6 +194,7 @@
 
 <div style="display:none" id="infoJoueur">
 	<div style="font-size:12px">
+		<span class="info-label">Type</span> : <span name="type"></span><br/>
 		<span class="info-label"><img src="img/strategy.png" style="width:18px;"/></span> : <span name="strategie"></span><br/>
 		<span class="info-label"><img src="img/behaviour.png" style="width:18px;"/></span> : <span name="comportement"></span><br/>
 		<span class="info-label"><img src="img/money.png" style="width:18px;"/></span> : <span name="argent"></span><br/>
@@ -187,61 +208,78 @@
 </div>
 
 <div style="display:none;background-color:#CEE6D0" id="idPanelCreatePartie">
-	<fieldset>
-		<legend style="font-weight:bold">Plateau</legend>
-		Choisir : <select id="idSelectPlateau"></select>
-	</fieldset>
-	<fieldset>
-		<legend style="font-weight:bold">Créer une partie</legend>
-		<fieldset id="idPartie"><legend>Joueurs</legend>
-			<input type="text" id="idNomJoueur" name="joueur" placeholder="Nom"/><br/>
-			Nombre de joueur :
-			<select name="nbPlayers">
-				<option value="2">2</option>
-				<option value="3">3</option>
-				<option value="4">4</option>
-				<option value="5">5</option>
-				<option value="6">6</option>
-			</select><br/>
-			Nombre de robots :
-			<select name="nbRobots">
-				<option value="0">0</option>
-				<option value="1">1</option>
-				<option value="2">2</option>
-				<option value="3">3</option>
-				<option value="4">4</option>
-				<option value="5">5</option>
-				<option value="6">6</option>
-			</select><br/>
-			Rapidité des robots :
-			<select name="waitTimeIA">
-				<option value="100">0s</option>
-				<option value="1000" selected>1s</option>
-				<option value="1500">1.5s</option>
-				<option value="2000">2s</option>
-				<option value="4000">4s</option>
-			</select>
-		</fieldset>
-		<fieldset id="idVariantes">
-			<legend>Variantes</legend>
-			<input type="checkbox" name="parcGratuit" id="idOptParcGratuit"/> <label for="idOptParcGratuit">Jouer avec le parc gratuit</label><br/>
-			<input type="checkbox" name="caseDepart" id="idOptCaseDepart"/> <label for="idOptCaseDepart">Toucher 40000 sur la case depart</label><br/>
-			<input type="checkbox" name="enchereAchat" id="idOptCaseEnchere"/> <label for="idOptCaseEnchere">Banque met terrain aux enchères</label><br/>
-			<input type="checkbox" name="echangeApresVente" id="idOptCaseEchange"/> <label for="idOptCaseEchange">Echange quand terrains vendus</label><br/>
-			<input type="checkbox" name="desRapide" id="idOptDesRapide"/> <label for="idOptDesRapide">Dés rapide</label><br/>
-			<input type="checkbox" name="tourAchat" id="idOptTourAchat"/> <label for="idOptTourAchat">Un tour avant achat (not yet)</label>
-			<hr/>
-			<input type="checkbox" name="quickMove" id="idQuickMove"/> <label for="idQuickMove">Jeu rapide</label><br/>
-		</fieldset>
-	</fieldset>
-	<fieldset>
-		<legend style="font-weight:bold">Charger une sauvegarde</legend>
-		<select id="idSauvegardes">
-			<option value="">---</option>
-		</select>
-		<button id="idDeleteSauvegarde">Supprimer</button>
-		<button id="idLoadSauvegarde">Charger</button>
-	</fieldset>
+	<div id="idCreationGame">
+
+		<ul>
+			<li><a href="#create">Créer partie</a></li>
+			<li><a href="#join">Rejoindre</a></li>
+		</ul>
+
+		<div id="create">
+			Joueur : <input type="text" id="idNomJoueur" name="joueur" placeholder="Nom"/><br/>
+			<fieldset id="idGameType">
+				<legend style="font-weight:bold">Plateau</legend>
+				<div style="display:inline-block;width:75px;">Plateau</div>
+				<select id="idSelectPlateau"></select><br/>
+				<div style="display:inline-block;width:75px;">Type</div>
+				<input type="radio" name="typeGame" value="classic" id="idClassiqueGame" checked/><label for="idClassiqueGame">Classique</label>
+				<input type="radio" name="typeGame" value="quick" id="idQuickGame"/><label for="idQuickGame">Rapide</label><br/>
+				<div style="display:inline-block;width:75px;">Réseau</div>
+				<input type="radio" name="networkGame" value="false" id="idLocalTypeGame" checked/><label for="idLocalTypeGame">Non (local)</label>
+				<input type="radio" name="networkGame" value="true" id="idNetworkTypeGame"/><label for="idNetworkTypeGame">Oui</label>
+			</fieldset>
+			<fieldset>
+				<legend style="font-weight:bold">Créer une partie</legend>
+				<fieldset id="idPartie"><legend>Joueurs</legend>
+
+					<div>
+						<div style="display:inline-block;width:75px;">Total</div>
+						<div id="sliderJoueur" style="width:180px;display:inline-block">
+							<div id="valueSliderJoueur" class="ui-slider-handle"></div>
+						</div>
+					</div>
+					<div>
+						<div style="display:inline-block;width:75px;">Robots</div>
+						<div id="sliderRobot" style="width:180px;display:inline-block">
+							<div id="valueSliderRobot" class="ui-slider-handle"></div>
+						</div>
+					</div>
+					<!--Rapidité des robots :
+                    <select name="waitTimeIA">
+                        <option value="100" selected>0s</option>
+                        <option value="1000">1s</option>
+                        <option value="1500">1.5s</option>
+                        <option value="2000">2s</option>
+                        <option value="4000">4s</option>
+                    </select>
+                    -->
+				</fieldset>
+				<fieldset id="idVariantes">
+					<legend>Variantes</legend>
+					<input type="checkbox" name="parcGratuit" id="idOptParcGratuit"/> <label for="idOptParcGratuit">Toucher le parc gratuit</label><br/>
+					<input type="checkbox" name="caseDepart" id="idOptCaseDepart"/> <label for="idOptCaseDepart">Toucher double sur la case depart</label><br/>
+					<input type="checkbox" name="enchereAchat" id="idOptCaseEnchere"/> <label for="idOptCaseEnchere">Banque met terrain aux enchères</label><br/>
+					<input type="checkbox" name="echangeApresVente" id="idOptCaseEchange"/> <label for="idOptCaseEchange">Echange quand terrains vendus</label><br/>
+					<!--input type="checkbox" name="tourAchat" id="idOptTourAchat"/> <label for="idOptTourAchat">Un tour avant achat (not yet)</label-->
+					<hr/>
+					<input type="checkbox" name="quickMove" id="idQuickMove"/> <label for="idQuickMove">Jeu rapide</label><br/>
+				</fieldset>
+			</fieldset>
+			<fieldset>
+				<legend style="font-weight:bold">Charger une sauvegarde</legend>
+				<select id="idSauvegardes">
+					<option value="">---</option>
+				</select>
+				<button id="idDeleteSauvegarde">Supprimer</button>
+				<button id="idLoadSauvegarde">Charger</button>
+			</fieldset>
+		</div>
+		<div id="join">
+			Joueur : <input type="text" id="idRemoteNomJoueur" name="joueur" placeholder="Nom"/><br/>
+			Partie : <input type="text" id="idRemoteGame" placeholder="ID Partie"/><br/>
+		</div>
+
+	</div>
 </div>
 
 <div id="idPanelEchange">
@@ -285,12 +323,13 @@
 <div class="mobile"></div>
 <script language="javascript">
 	// On detecte le type de donnees a charger
-	var nomPlateau = "data-monopoly.json";
+	let nomPlateau = "data-monopoly.json";
 	if (location.href.indexOf("plateau=")!==-1) {
 		nomPlateau = "data-monopoly-" + location.href.substring(location.href.indexOf("plateau=")+8) + ".json";
 	}
 	var debug = false;
 	$(function(){
+		$('#idCreationGame').tabs();
 		$('#idMontantParc').hide();
 		InitMonopoly.init(debug);
 		if($('.mobile').is(':visible')) {

@@ -317,8 +317,8 @@ var GestionTerrains = {
             };
             var projects = [];
             for (var achat in this.table) {
-                var fiche = GestionFiche.getById(achat);
-                var project = {
+                let fiche = GestionFiche.getById(achat);
+                let project = {
                     from: {},
                     to: {},
                     group: fiche.color
@@ -375,34 +375,35 @@ var GestionTerrains = {
                 for (var j = 0; j <= ((GestionTerrains.banqueroute) ? propriete.nbMaison : 5); j++) {
                     select.append("<option class=\"" + ((j === 5) ? "hotel" : "maison") + "\" value=\"" + j + "\" " + ((propriete.nbMaison === j) ? "selected" : "") + ">x " + ((j === 5) ? 1 : j) + "</option>");
                 }
-                var _self = this;
-                select.change(function () {
-                    var prop = $(this).data("propriete");
+                select.change( (e) =>{
+                    let target = $(e.currentTarget);
+                    var prop = target.data("propriete");
                     // On verifie changement par rapport a l'origine
-                    if (prop.nbMaison === $(this).val()) {
-                        delete _self.table[prop.id];
-                        $('~span', this).text("");
+                    let value = parseInt(target.val());
+                    if (prop.nbMaison === value) {
+                        delete this.table[prop.id];
+                        $('~span', target).text("");
                         GestionTerrains.update();
                         return;
                     }
-                    var data = ($(this).val() === 5) ? {
+                    let data = (value === 5) ? {
                         hotel: 1
                     } : {
-                        maison: parseInt($(this).val()) - prop.nbMaison
+                        maison: value - prop.nbMaison
                     };
                     data.propriete = prop;
-                    data.nbMaison = parseInt($(this).val());
-                    data.cout = ($(this).val() > prop.nbMaison) ? ($(this).val() - prop.nbMaison) * prop.prixMaison : ($(this).val() - prop.nbMaison) * prop.prixMaison / 2;
-                    $(this).removeClass().addClass(($(this).val() === 5) ? 'hotel' : 'maison');
-                    $('~span', this).text(data.cout);
-                    _self.table[prop.id] = data;
+                    data.nbMaison = value;
+                    data.cout = (value > prop.nbMaison) ? (value - prop.nbMaison) * prop.prixMaison : (value - prop.nbMaison) * prop.prixMaison / 2;
+                    target.removeClass().addClass((value === 5) ? 'hotel' : 'maison');
+                    $('~span', target).text(data.cout);
+                    this.table[prop.id] = data;
                     GestionTerrains.update();
 
                     // Si le groupe est vide, on permet l'hypotheque des terrains
                     var nbMaisons = 0;
-                    var gr = $(this).data("group");
+                    var gr = target.data("group");
                     GestionTerrains.Constructions.div.find(`select[data-color="${prop.color}"]`).each(function () {
-                        nbMaisons += parseInt($(this).val());
+                        nbMaisons += value;
                     });
                     if (nbMaisons === 0) {
                         // Le groupe est hypothecable

@@ -5,16 +5,18 @@
 /* Objet qui gere la strategie. IL y a differentes implementations */
 /* @colors : liste des groupes qui interessent le joueur */
 /* @param agressif : plus il est eleve, plus le joueur fait de l'antijeu (achat des terrains recherches par les adversaires) */
-function Strategie(colors, agressif, name, id, interetGare) {
-    this.groups = colors;
-    this.agressif = agressif;
-    this.interetGare = (interetGare == null) ? ((Math.round(Math.random() * 1000) % 3 == 0) ? true : false) : interetGare; // Interet pour gare
-    this.name = name;
-    this.id = id;
+class Strategie {
+    constructor(colors, agressif, name, id, interetGare=(Math.round(Math.random() * 1000) % 3 === 0)) {
+        this.groups = colors;
+        this.agressif = agressif;
+        this.interetGare = interetGare; // Interet pour gare
+        this.name = name;
+        this.id = id;
+    }
 
-    this.groups.contains = function (value) {
-        for (var val in this) {
-            if (this[val] == value) {
+    _containGroup(value) {
+        for (let val in this.groups) {
+            if (this.groups[val] === value) {
                 return true;
             }
         }
@@ -22,7 +24,7 @@ function Strategie(colors, agressif, name, id, interetGare) {
     }
 
     /* Renvoie des stats sur les proprietes concernees par cette strategie : nombre de propriete, nombre de libre... */
-    this.getStatsProprietes = function () {
+    getStatsProprietes(){
         var stats = {
             color: {
                 total: 0,
@@ -37,19 +39,19 @@ function Strategie(colors, agressif, name, id, interetGare) {
                 pourcent: 0
             }
         };
-        var it = GestionFiche.iteratorTerrains();
+        let it = GestionFiche.iteratorTerrains();
         while (it.hasNext()) {
             var fiche = it.next();
             if (fiche.statut != null) {
                 stats.all.total++;
-                if (fiche.statut == ETAT_LIBRE) {
+                if (fiche.statut === ETAT_LIBRE) {
                     stats.all.libre++;
                 } else {
                     stats.all.achete++;
                 }
-                if (this.groups.contains(fiche.color)) {
+                if (this._containGroup(fiche.color)) {
                     stats.color.total++;
-                    if (fiche.statut == ETAT_LIBRE) {
+                    if (fiche.statut === ETAT_LIBRE) {
                         stats.color.libre++;
                     } else {
                         stats.color.achete++;
@@ -67,27 +69,27 @@ function Strategie(colors, agressif, name, id, interetGare) {
     /* Si ce n'est pas un terrain (gare, compagnie), la valeur est plus faible */
 	/* @param isEnchere : indique que la mesure est faite pour une enchere */
 	/* Cas des encheres, on ajoute un critere qui determine si le terrain est indispensable pour la strategie : autre groupe, autre terrain... */
-	this.interetGlobal = function (propriete, joueur, isEnchere) {
+	interetGlobal(propriete, joueur, isEnchere) {
         var i1 = this.interetPropriete(propriete);
         var statutGroup = this.statutGroup(propriete, joueur, isEnchere);
 		var i2 = statutGroup.statut;
         var interet = {interet:1};
-		if (i1 == false && i2 == 0) {
+		if (i1 === false && i2 === 0) {
             interet = {interet:0.2};	// Permet en cas de situation tres confortable de continuer a investir
         }
 		// Realise un blocage
-        if (i1 == false && i2 == 2) {
+        if (i1 === false && i2 === 2) {
             interet = {interet:this.agressif,joueur:statutGroup.joueur};
         }
-        if (i1 == true && i2 == 3) {
+        if (i1 === true && i2 === 3) {
             interet = {interet:4};
         }
 		// Pas dans la strategie mais permet de completer le groupe et de construire
-		if (i1 == false && i2 == 3) {
+		if (i1 === false && i2 === 3) {
             interet = {interet:2};
         }
 		// En possede deja
-		if(i1 == true && i2 == 5){
+		if(i1 === true && i2 === 5){
             interet = {interet:1.5};
 		}
         if(isEnchere){
@@ -102,16 +104,16 @@ function Strategie(colors, agressif, name, id, interetGare) {
 
 	/* Determine l'interet de la propriete par rapport a l'etat de la strategie */
     /* @return : un nombre inférieur à 1 */
-	this.interetProprieteInStrategie = function(propriete){
+	interetProprieteInStrategie (propriete){
 		var stats = this.getStatsProprietes();
         /* Si les terrains sont presques tous libres, renvoie un calcul logarithmique (entre 67 et 100% de terrain libre) */
         return 0.5 + parseFloat((Math.log(((Math.min(100-stats.color.pourcent,32.5))/50)+1)).toFixed(2));    
 	}
 	
     /* Calcul l'interet pour la maison (a partir des groupes interessant) */
-    this.interetPropriete = function (propriete) {
+    interetPropriete (propriete) {
         for (var color in this.groups) {
-            if (this.groups[color] == propriete.color || (propriete.type == 'gare' && this.interetGare)) {
+            if (this.groups[color] === propriete.color || (propriete.type === 'gare' && this.interetGare)) {
                 return true;
             }
         }
@@ -126,7 +128,7 @@ function Strategie(colors, agressif, name, id, interetGare) {
           4 : autres 
 		  5 : joueur en possede deja une de la famille */
     /* @param isEnchere : achat du terrain a un autre joueur, on ne prend pas en compte le statut libre */
-    this.statutGroup = function (propriete, joueur, isEnchere) {
+    statutGroup (propriete, joueur, isEnchere) {
         var nbTotal = 0;
         var nbLibre = 0;
         var dernierJoueur = null;
@@ -135,7 +137,7 @@ function Strategie(colors, agressif, name, id, interetGare) {
         for (var id in propriete.groupe.fiches) {
             var fiche = propriete.groupe.fiches[id];
             nbTotal++;
-            if (fiche.statut == ETAT_LIBRE) {
+            if (fiche.statut === ETAT_LIBRE) {
                 nbLibre++;
             } else {
                 if (fiche.joueurPossede.equals(joueur)) {
@@ -148,15 +150,15 @@ function Strategie(colors, agressif, name, id, interetGare) {
                 dernierJoueur = fiche.joueurPossede;
             }
         }
-        if (nbLibre == nbTotal) {
+        if (nbLibre === nbTotal) {
             return {statut:0};
         }
 
-        if (nbLibre == 1 && nbEquals == nbTotal - 1) {
+        if (nbLibre === 1 && nbEquals === nbTotal - 1) {
             return {statut:2,joueur:dernierJoueur};
         }
         /* Cas ou seul terrain manquant */
-        if ((nbLibre == 1 || isEnchere) && nbPossede == nbTotal - 1) {
+        if ((nbLibre === 1 || isEnchere) && nbPossede === nbTotal - 1) {
             return {statut:3};
         }
 		/* Cas ou on en possede deja 1 */
@@ -175,11 +177,11 @@ function Strategie(colors, agressif, name, id, interetGare) {
      * @param otherInteresets : autres terrains qui interesent le joueur
      * @param interestGroupe : indique que le groupe interesse aussi le joueur
      */
-    this.acceptSwapTerrain = function (terrain, joueur, otherInterests, interestGroupe) {
+    acceptSwapTerrain (terrain, joueur, otherInterests, interestGroupe) {
         /* Calcule si le proprio est le seul fournisseur */
         var alone = GestionJoueur.getNb() > 2; // Faux si seulement 2 joueurs
         /* Seul groupe qui m'interesse, on refuse */
-        if ((interestGroupe == true && otherInterests.length == 1) || terrain.isGroupee()) {
+        if ((interestGroupe === true && otherInterests.length === 1) || terrain.isGroupee()) {
             return 0;
         }
         for (var idx in otherInterests) {
@@ -189,8 +191,8 @@ function Strategie(colors, agressif, name, id, interetGare) {
         }
         var nbGroups = joueur.findGroupes().size();
         /* Le proprio est le seul a pouvoir aider le demandeur et il n'a pas encore de groupe */
-        if (nbGroups == 0 && otherInterests.length == 0 && alone) {
-            return this.agressif == 2 ? 0.5 : 1;
+        if (nbGroups === 0 && otherInterests.length === 0 && alone) {
+            return this.agressif === 2 ? 0.5 : 1;
         }
         /* Beaucoup de groupe et seul fournisseur, on bloque si on est vicieux, on monte sinon */
         if (nbGroups >= 2 && alone) {
@@ -198,7 +200,7 @@ function Strategie(colors, agressif, name, id, interetGare) {
         }
 
         /* Personne n'a de groupe et pas seul fournisseur */
-        if (nbGroups == 0) {
+        if (nbGroups === 0) {
             return 1.5;
         }
 
@@ -209,34 +211,44 @@ function Strategie(colors, agressif, name, id, interetGare) {
         return 1;
     }
 	
-	this.toString = function(){
+	toString(){
 		return this.name + ((this.interetGare)?' <img src="img/little_train.png" style="width:20px;height:16px;"/>':'');
 	}
 }
 
 /* Achete en priorite les terrains les moins chers : bleu marine-812B5C, bleu clair-119AEB, violet-73316F et orange-D16E2D */
-function CheapStrategie() {
-    Strategie.call(this, ["#812B5C", "#119AEB", "#73316F", "#D16E2D"], 0, "Econome", 0);
+class CheapStrategie extends Strategie {
+    constructor() {
+        super(["#812B5C", "#119AEB", "#73316F", "#D16E2D"], 0, "Econome", 0);
+    }
 }
 
 /* Achete en priorite les terrains moyennement chers : violet-73316F, orange-D16E2D, rouge-D32C19 et jaune-E6E018 */
-function MediumStrategie() {
-    Strategie.call(this, ["#73316F", "#D16E2D", "#D32C19", "#E6E018"], 1, "Normal", 1);
+class MediumStrategie extends Strategie {
+    constructor() {
+        super(["#73316F", "#D16E2D", "#D32C19", "#E6E018"], 1, "Normal", 1);
+    }
 }
 
 /* Achete en priorite les terrains les plus chers : rouge-D32C19, jaune-E6E018, vert-11862E et bleu fonce-132450 */
-function HardStrategie() {
-    Strategie.call(this, ["#D32C19", "#E6E018", "#11862E", "#132450"], 2, "Luxe", 2);
+class HardStrategie extends Strategie {
+    constructor() {
+        super(["#D32C19", "#E6E018", "#11862E", "#132450"], 2, "Luxe", 2);
+    }
 }
 
 /* Achete en priorite les terrains les meilleurs (gare, orange-D16E2D, rouge-D32C19, jaune-E6E018) */
-function SmartStrategie() {
-    Strategie.call(this, ["#D16E2D", "#D32C19", "#E6E018"], 2, "Futé", 3, true);
+class SmartStrategie extends Strategie {
+    constructor() {
+        super(["#D16E2D", "#D32C19", "#E6E018"], 2, "Futé", 3, true);
+    }
 }
 
 /* Achete tout */
-function CrazyStrategie() {
-    Strategie.call(this, ["#812B5C", "#119AEB", "#73316F", "#D16E2D", "#D32C19", "#E6E018", "#11862E", "#132450"], 4, "Dingue", 3,true);
+class CrazyStrategie extends Strategie {
+    constructor() {
+        super(["#812B5C", "#119AEB", "#73316F", "#D16E2D", "#D32C19", "#E6E018", "#11862E", "#132450"], 4, "Dingue", 3, true);
+    }
 }
 
 var GestionStrategie = {
@@ -253,4 +265,4 @@ var GestionStrategie = {
 	length:function(){
 		return this.strategies.length;
 	}
-}
+};

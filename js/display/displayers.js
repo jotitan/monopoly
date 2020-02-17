@@ -53,17 +53,22 @@ function wrapDialog(bloc,parameters){
 /* Affiche les fiches de terrains */
 var FicheDisplayer = {
     detailFiche:null,
+    detailJunior:null,
     fiche:null,
+    ficheJunior:null,
     ficheCompagnie:null,
     currentFiche:null,
     init:function(){
         this.fiche = $('#fiche');
+        this.ficheJunior = $('#ficheJunior');
         this.detailFiche = this.fiche.clone();
-        this.detailFiche.attr('id', 'idDetailFiche').hide();
+        this.detailFicheJunior = this.ficheJunior.clone();
+        this.detailFiche.attr('id', 'idDetailFiche').addClass('detail-fiche').hide();
+        this.detailFicheJunior.attr('id', 'idDetailFicheJunior').addClass('detail-fiche').hide();
         $('body').append(this.detailFiche);
+        $('body').append(this.detailFicheJunior);
         this.ficheCompagnie = $('#ficheCompagnie');
 
-        //this.fiche.dialog({
         wrapDialog(this.fiche,{
             autoOpen: false,
             title: "Fiche",
@@ -78,7 +83,20 @@ var FicheDisplayer = {
         });
         this.fiche.prev().css("background", "url()");
 
-        //this.ficheCompagnie.dialog({
+        wrapDialog(this.ficheJunior,{
+            autoOpen: false,
+            title: "Fiche",
+            width: 280,
+            height: 410,
+            modal: true,
+            position: { my: "center top", at: "center top", of: window },
+            resizable: false,
+            close: function () {
+                FicheDisplayer.close();
+            }
+        });
+        this.ficheJunior.prev().css("background", "url()");
+
         wrapDialog(this.ficheCompagnie,{
             autoOpen: false,
             title: "Fiche",
@@ -94,38 +112,34 @@ var FicheDisplayer = {
         this.ficheCompagnie.prev().css("background", "url()");
     },
     openDetail:function(fiche,input){
+        let detailFiche = fiche.type === "junior" ? this.detailFicheJunior : this.detailFiche;
         if (this.currentFiche != null && this.currentFiche.axe === fiche.axe && this.currentFiche.pos === fiche.pos) {
-            if ($(':visible',this.detailFiche).length === 0) {
-                this.detailFiche.slideDown();
-            } else {
-                this.detailFiche.slideUp();
+            if (detailFiche.is(':visible')) {
+                return detailFiche.slideUp();
             }
-            return;
+            return detailFiche.slideDown();
         }
         if (this.currentFiche != null && (this.currentFiche.axe !== fiche.axe || this.currentFiche.pos !== fiche.pos)) {
             this.currentFiche = null;
-            this.detailFiche.slideUp(300, function () {
+            detailFiche.slideUp(300, function () {
                 FicheDisplayer.openDetail(fiche, input);
             });
             return;
         }
-        this.loadDetailFiche(fiche);
-        input.after(this.detailFiche);
-        this.detailFiche.slideDown();
+        this.loadDetailFiche(fiche,detailFiche);
+        input.after(detailFiche);
+        detailFiche.slideDown();
         this.currentFiche = fiche;
     },
     close:function(){
         GestionJoueur.change();
     },
-    closeDetail:function(){
-        this.detailFiche.slideUp();
-    },
     loadFiche:function(fiche){
-        this._load(fiche, this.fiche, 'FFFFFF');
+        this._load(fiche,fiche.type === "junior" ? this.ficheJunior : this.fiche, 'FFFFFF');
         fiche.fiche.prev().css("background-color", fiche.color);
     },
-    loadDetailFiche:function(fiche){
-        this._load(fiche, this.detailFiche, fiche.secondColor);
+    loadDetailFiche:function(fiche,detailFiche){
+        this._load(fiche, detailFiche, fiche.secondColor);
     },
     _load:function(fiche,div,color){
         $('td[name^="loyer"]', div).each(function () {
@@ -138,33 +152,40 @@ var FicheDisplayer = {
 
         // Cas des gare
         if(fiche.type === 'gare'){
-            $('#loyer0', div).text(parseInt(fiche.getLoyer()));
+            $('.loyer0', div).text(parseInt(fiche.getLoyer()));
         }
         else{
-            $('#loyer0', div).text((fiche.isGroupee() === true) ? parseInt(fiche.loyer[0]) * 2 : fiche.loyer[0]);
+            $('.loyer0', div).text((fiche.isGroupee() === true) ? parseInt(fiche.loyer[0]) * 2 : fiche.loyer[0]);
         }
 
         $('tr', div).removeClass("nbMaisons");
         $('.infos-group', div).removeClass("nbMaisons");
-        $('#loyer' + fiche.nbMaison, div).parent().addClass("nbMaisons");
-        if (fiche.nbMaison == 0 && fiche.isGroupee() == true) { // possede la serie
+        $('.loyer' + fiche.nbMaison, div).parent().addClass("nbMaisons");
+        if (fiche.nbMaison === 0 && fiche.isGroupee() === true) { // possede la serie
             $('.infos-group', div).addClass("nbMaisons");
         }
-        if (fiche.type == 'gare') {
+        if (fiche.type === 'gare') {
             $('.maison', div).hide();
         } else {
             $('.maison', div).show();
         }
     },
     closeFiche:function(){
+        var close = false;
         if(this.fiche.dialog('isOpen')) {
             this.fiche.dialog('close');
-        } else {
-            if (this.ficheCompagnie.dialog('isOpen')) {
-                this.ficheCompagnie.dialog('close');
-            } else {
-                this.close();
-            }
+            close = true;
+        }
+        if (this.ficheCompagnie.dialog('isOpen')) {
+            this.ficheCompagnie.dialog('close');
+            close = true;
+        }
+        if (this.ficheJunior.dialog('isOpen')) {
+            this.ficheJunior.dialog('close');
+            close = true;
+        }
+        if(!close) {
+            this.close();
         }
     }
 }

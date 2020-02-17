@@ -54,12 +54,13 @@ class PionJoueur extends Component{
 	}
 
 	// Se dirige vers une cellule donnee. Se deplace sur la case suivante et relance l'algo
-	goto(axe, pos, callback,init) {
-		if(VARIANTES.quickMove){
+	goto(axe, pos, callback,init,direct=VARIANTES.quickMove) {
+		if(direct){
 			return this.gotoDirect(axe,pos,callback);
 		}
 		if (this.currentInterval != null) {
-			throw "Impossible de realiser ce deplacement primaire";
+			return setTimeout(()=>this.goto(axe,pos,callback,init),500);
+			//throw "Impossible de realiser ce deplacement primaire";
 		}
 		// Cas initial
 		if(init){
@@ -140,20 +141,17 @@ class PionJoueur extends Component{
 			}, 30);
 		}
 	}
-	_endMove(axe,pos,callback){
+	_endMove(axe,pos,callback = ()=>{}){
 		this.axe = axe;
 		this.pos = pos;
 		clearInterval(this.currentInterval);
 		this.currentInterval = null;
-
-		if(callback){
-			callback();
-		}
+		callback();
 	}
 
 	_toNextCase() {
 		this.pos++;
-		if (this.pos >= 10) {
+		if (this.pos >= DrawerFactory.dimensions.nbCases) {
 			this.axe = (this.axe + 1) % 4;
 			this.pos = 0;
 		}
@@ -165,8 +163,8 @@ let axeDrawer = [
 	{
 		axe:0,
 		color:(canvas,x,y,width,b,l,h)=>canvas.fillRect(x, y + h - b, width, b),
-		title:(canvas,x,y,title,dec,l,h)=>DrawerHelper.writeText(title, x + l, y + h- dec, Math.PI, canvas),
-		prix:(canvas,x,y,prix,dec,l)=>DrawerHelper.writeText(prix, x + l, y + dec, Math.PI, canvas),
+		title:(canvas,x,y,title,dec,l,h)=>DrawerHelper.writeText(title, x + l, y + h- dec, Math.PI, canvas,DrawerFactory.dimensions.textSize),
+		prix:(canvas,x,y,prix,dec,l)=>DrawerHelper.writeText(prix, x + l, y + dec, Math.PI, canvas,DrawerFactory.dimensions.textSize),
 		image:(canvas,x,y,image,dec,l,lng,h,r)=>DrawerHelper.drawImage(canvas, image, x + l - lng, y + h - dec, image.width, image.height,r),
 		maison:(canvas,x,y,img,i,l,h)=>DrawerHelper.drawImage(canvas, img, x + l - 15 * i - 3, y + h - 2, 15, 15, -Math.PI),
 		hotel:(canvas,x,y,img,l,pad,h)=>DrawerHelper.drawImage(canvas, img, x + l - pad, y + h, 18, 18, -Math.PI),
@@ -178,8 +176,8 @@ let axeDrawer = [
 	{
 		axe:1,
 		color:(canvas,x,y,width,b,l)=>canvas.fillRect(x, y, b, l),
-		title:(canvas,x,y,title,dec,l)=>DrawerHelper.writeText(title, x + dec, y + l, -Math.PI / 2, canvas),
-		prix:(canvas,x,y,prix,dec,l,h)=>DrawerHelper.writeText(prix, x + h - dec, y + l, -Math.PI / 2, canvas),
+		title:(canvas,x,y,title,dec,l)=>DrawerHelper.writeText(title, x + dec, y + l, -Math.PI / 2, canvas,DrawerFactory.dimensions.textSize),
+		prix:(canvas,x,y,prix,dec,l,h)=>DrawerHelper.writeText(prix, x + h - dec, y + l, -Math.PI / 2, canvas,DrawerFactory.dimensions.textSize),
 		image:(canvas,x,y,image,dec,l,lng,h,r)=>DrawerHelper.drawImage(canvas, image, x + dec, y + l - lng, image.width, image.height, r),
 		maison:(canvas,x,y,img,i,l)=>DrawerHelper.drawImage(canvas, img,x + 3, y + l - 2 - 15 * i, 15, 15, -Math.PI / 2),
 		hotel:(canvas,x,y,img,l,pad)=>DrawerHelper.drawImage(canvas, img,x,y + l - pad, 18, 18, -Math.PI / 2),
@@ -191,8 +189,8 @@ let axeDrawer = [
 	{
 		axe:2,
 		color:(canvas,x,y,width,b)=>canvas.fillRect(x,y, width, b),
-		title:(canvas,x,y,title,dec)=>DrawerHelper.writeText(title, x,y + dec, 0, canvas),
-		prix:(canvas,x,y,prix,dec,l,h)=>DrawerHelper.writeText(prix, x,y + h - dec, 0, canvas),
+		title:(canvas,x,y,title,dec)=>DrawerHelper.writeText(title, x,y + dec, 0, canvas,DrawerFactory.dimensions.textSize),
+		prix:(canvas,x,y,prix,dec,l,h)=>DrawerHelper.writeText(prix, x,y + h - dec, 0, canvas,DrawerFactory.dimensions.textSize),
 		image:(canvas,x,y,image,dec,l,lng,h,r)=>DrawerHelper.drawImage(canvas, image, x + lng, y + dec, image.width, image.height, r),
 		maison:(canvas,x,y,img,i)=>DrawerHelper.drawImage(canvas, img,x + 3 + 15 * i, y + 2, 15, 15, 0),
 		hotel:(canvas,x,y,img,l,pad)=>DrawerHelper.drawImage(canvas, img,x + pad, y, 18, 18, 0),
@@ -204,8 +202,8 @@ let axeDrawer = [
 	{
 		axe:3,
 		color:(canvas,x,y,width,b,l,h)=>canvas.fillRect(x + h - b, y, b,l),
-		title:(canvas,x,y,title,dec,l,h)=>DrawerHelper.writeText(title, x + h - dec, y, Math.PI / 2, canvas),
-		prix:(canvas,x,y,prix,dec)=>DrawerHelper.writeText(prix, x + dec, y, Math.PI / 2, canvas),
+		title:(canvas,x,y,title,dec,l,h)=>DrawerHelper.writeText(title, x + h - dec, y, Math.PI / 2, canvas,DrawerFactory.dimensions.textSize),
+		prix:(canvas,x,y,prix,dec)=>DrawerHelper.writeText(prix, x + dec, y, Math.PI / 2, canvas,DrawerFactory.dimensions.textSize),
 		image:(canvas,x,y,image,dec,l,lng,h,r)=>DrawerHelper.drawImage(canvas, image, x + h - dec, y + lng, image.width, image.height, r),
 		maison:(canvas,x,y,img,i,l,h)=>DrawerHelper.drawImage(canvas, img,x + h - 3, y + 2 + 15 * i, 15, 15, Math.PI / 2),
 		hotel:(canvas,x,y,img,l,pad,h)=>DrawerHelper.drawImage(canvas, img,x + h, y + pad, 18, 18, Math.PI / 2),
@@ -244,27 +242,28 @@ class Case extends Component {
 		let centre = DrawerFactory.dimensions.plateauSize/2;
 		let largeur = DrawerFactory.dimensions.largeur;
 		let hauteur = DrawerFactory.dimensions.hauteur;
-		let demiLargeurPlateau = (largeur * 9) / 2;
+		let nbHalfCases = (DrawerFactory.dimensions.nbCases-1) / 2;
+		let demiLargeurPlateau = largeur * nbHalfCases;
 		if (axe % 2 === 1) { // E et 0
 			// height et width inverse
 			this.data.height = largeur;
 			this.data.width = hauteur;
 			if (axe === 1) {
 				this.data.x = centre + demiLargeurPlateau;
-				this.data.y = centre + (pos - 5.5) * largeur;
+				this.data.y = centre + (pos - nbHalfCases - 1) * largeur;
 			} else {
 				this.data.x = centre - demiLargeurPlateau - hauteur;
-				this.data.y = centre + (4.5 - pos) * largeur;
+				this.data.y = centre + (nbHalfCases - pos) * largeur;
 			}
 		} else { // N et S
 			this.data.height = hauteur;
 			this.data.width = largeur;
 			if (axe === 2) {
 				this.data.y = centre + demiLargeurPlateau;
-				this.data.x = centre + (4.5 - pos) * largeur;
+				this.data.x = centre + (nbHalfCases - pos) * largeur;
 			} else {
 				this.data.y = centre - demiLargeurPlateau - hauteur;
-				this.data.x = centre + (pos - 5.5) * largeur;
+				this.data.x = centre + (pos - nbHalfCases- 1) * largeur;
 			}
 		}
 		this._initImage(img);
@@ -305,7 +304,7 @@ class Case extends Component {
 		}
 
 		if (this.title != null) {
-			let dec = 10 + ((this.color != null) ? bordure : 0); // Uniquement si couleur
+			let dec = 12 + ((this.color != null) ? bordure : 0); // Uniquement si couleur
 			drawer.title(canvas,this.data.x,this.data.y,this.title,dec,largeur,hauteur);
 		}
 		if (this.prix != null) {
@@ -357,11 +356,11 @@ class Case extends Component {
 		var dec = 20 + ((this.color != null) ? bordure : 0) + DrawerFactory.dimensions.largeurPion / 2;
 		var center = this.getCenter();
 		center.x += 5;
-		var pas = {
+		let pas = {
 			x: DrawerFactory.dimensions.largeurPion,
 			y: (this.data.height - dec) / 3
 		};
-		let nb = this.getNbJoueurs() - 1;
+		let nb = this.getNbJoueurs() ;
 		if (this.axe % 2 === 0) {
 			return {
 				x: (center.x + ((nb % 3) - 1) * pas.y),
@@ -383,35 +382,30 @@ class CaseSpeciale extends Case {
 		this.init();
 	}
 	init() {
-		var largeur = DrawerFactory.dimensions.largeur;
-		var hauteur = DrawerFactory.dimensions.hauteur;
-		var centre = DrawerFactory.dimensions.plateauSize/2;
-		var demiLargeurPlateau = (largeur * 9) / 2;
+		let largeur = DrawerFactory.dimensions.largeur;
+		let hauteur = DrawerFactory.dimensions.hauteur;
+		let centre = DrawerFactory.dimensions.plateauSize/2;
+		let nbHalfCases = (DrawerFactory.dimensions.nbCases-1) / 2;
+		let demiLargeurPlateau = largeur * nbHalfCases;
 		if (this.axe % 2 === 1) { // E et 0
 			// height et width inverse
 			if (this.axe === 1) {
 				this.data.x = centre + demiLargeurPlateau;
-				this.data.y = centre + -4.5 * largeur - hauteur;
+				this.data.y = centre + -nbHalfCases * largeur - hauteur;
 			} else {
 				this.data.x = centre - demiLargeurPlateau - hauteur;
-				this.data.y = centre + 4.5 * largeur;
+				this.data.y = centre + nbHalfCases * largeur;
 			}
 		} else { // N et S
 			if (this.axe === 2) {
 				this.data.y = centre + demiLargeurPlateau;
-				this.data.x = centre + 4.5 * largeur;
+				this.data.x = centre + nbHalfCases * largeur;
 			} else {
 				this.data.y = centre - demiLargeurPlateau - hauteur;
-				this.data.x = centre - 4.5 * largeur - hauteur;
+				this.data.x = centre - nbHalfCases * largeur - hauteur;
 			}
 		}
 		this.data.height = this.data.width = hauteur;
-	};
-	getCenter () {
-		return {
-			x: this.data.x + this.data.height / 2,
-			y: this.data.y + this.data.height / 2
-		};
 	};
 	draw(canvas) {
 		canvas.strokeStyle = '#000000';
@@ -436,9 +430,9 @@ class Des {
 		this.x = x;
 		this.y = y;
 	}
-	setValue(value, color) {
+	setValue(value, color='#000000') {
 		this.value = value;
-		this.color = color || '#000000';
+		this.color = color;
 	};
 	draw2or3(canvas){
 		Des.drawPoint(canvas, this.x + this.width * 0.25, this.y + this.width * 0.75, this.width / 5, this.color);
@@ -484,9 +478,9 @@ class Des {
 		canvas.closePath();
 	}
 	// Dessine un point
-	static drawPoint(canvas, x, y, width, color) {
-		canvas.strokeStyle = color || '#000000';
-		canvas.fillStyle = color || '#000000';
+	static drawPoint(canvas, x, y, width, color='#000000') {
+		canvas.strokeStyle = color;
+		canvas.fillStyle = color;
 		canvas.beginPath();
 		canvas.arc(x, y, width / 2, 0, 2 * Math.PI);
 		canvas.fill();
@@ -513,7 +507,7 @@ class DesRapide extends Des{
 			this.draw2or3(canvas);
 		}
 		if(this.value >=4) {
-			let img = (this.value === 5)?this.imgMr:this.imgBus;
+			let img = (this.value === 5)?this.imgBus:this.imgMr;
 			DrawerHelper.drawImage(canvas, img, this.x + this.margin, this.y + this.margin, this.width - this.margin, this.width - this.margin, 0);
 		}
 	}

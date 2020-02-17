@@ -15,7 +15,7 @@ var IA_TIMEOUT = 1000; // Temps d'attente pour les actions de l'ordinateur
 
 /* Gestion des variantes, case depart (touche 40000) et parc gratuit (touche la somme des amendes) */
 /* Conf classique : false,false,true,true */
-var VARIANTES = {
+let VARIANTES = {
 	caseDepart: false, 		// Double la prime sur la case depart
 	parcGratuit: false, 	// Toutes les taxes sont verses au parc gratuit
 	enchereAchat: false, 	// Permet la mise aux encheres d'un terrain qu'un joueur ne veut pas acheter
@@ -41,391 +41,50 @@ var globalStats = {	// Statistiques
 
 var CURRENCY = "F.";
 
-function CarteAction(libelle,carte,title,color,triggerLabel){
-	this.carte = carte;
-	this.action = function(){
-		return InfoMessage.create(GestionJoueur.getJoueurCourant(),title, color, libelle, function (param) {
-			$.trigger('monopoly.' + triggerLabel + '.message', {
+class CarteActionWrapper{
+	constructor(libelle,carte,title,color,triggerLabel){
+		this.title = title;
+		this.libelle = libelle;
+		this.color = color;
+		this.triggerLabel = triggerLabel;
+		this.actionCarte = carte;
+	}
+	action (){
+		return InfoMessage.create(GestionJoueur.getJoueurCourant(),this.title, this.color, this.libelle, ()=>{
+			let name = `monopoly.${this.triggerLabel}.message`;
+			$.trigger('event.network',{kind:'message',player:GestionJoueur.getJoueurCourant().id,libelle:this.libelle,name:name});
+			$.trigger(name, {
 				joueur: GestionJoueur.getJoueurCourant(),
-				message: libelle
+				message: this.libelle
 			});
-			carte.action(GestionJoueur.getJoueurCourant());
+			this.actionCarte.action(GestionJoueur.getJoueurCourant());
 		}, {});
 	}
 }
 
-function CarteChance(libelle, carte) {
-	CarteAction.call(this,libelle,carte,InitMonopoly.plateau.titles.chance,"lightblue","chance");
+class CarteChance extends CarteActionWrapper{
+	constructor(libelle, carte) {
+		super(libelle, carte, InitMonopoly.plateau.titles.chance, "lightblue", "chance");
+	}
 }
 
-function CarteCaisseDeCommunaute(libelle, carte) {
-	CarteAction.call(this,libelle,carte,InitMonopoly.plateau.titles.communaute,"pink","caissecommunaute");
+class CarteCaisseDeCommunaute extends CarteActionWrapper {
+	constructor(libelle, carte) {
+		super(libelle, carte, InitMonopoly.plateau.titles.communaute, "pink", "caissecommunaute");
+	}
 }
 
 // Cree le comportement lorsque le joueur arrive sur la carte
-function doActions() {
-	var fiche = GestionFiche.getById(GestionJoueur.getJoueurCourant().pion.axe + "-" + GestionJoueur.getJoueurCourant().pion.position);
+function doActions(joueur=GestionJoueur.getJoueurCourant()) {
+	let fiche = GestionFiche.getById(joueur.pion.axe + "-" + joueur.pion.position);
 	if (fiche == null) {
-		GestionJoueur.change();
-		return;
+		return GestionJoueur.change();
 	}
-	var buttons = fiche.action(); // Recupere les actions jouables en tombant sur cette case 
+	let buttons = fiche.action(); // Recupere les actions jouables en tombant sur cette case
 	// une fois l'action cree, le joueur doit faire une action
-	GestionJoueur.getJoueurCourant().actionApresDes(buttons, fiche);
-}
-
-var GestionDes = {
-	gestionDes:null,
-
-	init:function(rollColor){
-		this.gestionDes.init(rollColor);
-	},
-	lancer:function(){
-		this.gestionDes.lancer();
-	},
-	isDouble:function(){
-		return this.gestionDes.isDouble();
-	},
-	// Joueur continue (cas du double)
-	continuePlayer:function(){
-		return this.gestionDes.continuePlayer();
-	},
-	resetDouble:function(){
-		return this.gestionDes.resetDouble();
-	},
-	total:function(){
-		return this.gestionDes.total();
-	},
-	isSpecificAction:function(){
-		return this.gestionDes.isSpecificAction()
-	},
-	doSpecificAction:function(){
-		return this.gestionDes.doSpecificAction()
-	}
-}
-
-function GestionDesImpl(){
-	this.nbAnimation = 8;
-	this.cube = {des1:null,des2:null};
-	this.des1 = 0;
-	this.des2 = 0;
-	this.nbDouble = 0;	// Nombre de double de suite pour le joueur en cours
-	this.rollColor = '#000000';
-	this.init = function(rollColor){
-		this._init(rollColor);
-	}
-
-	this._init = function(rollColor){
-		this.cube.des1 = DrawerFactory.getDes(150, 200, 50);
-		this.cube.des2 = DrawerFactory.getDes(210, 200, 50);
-		Drawer.addRealTime(this.cube.des1);
-		Drawer.addRealTime(this.cube.des2);
-
-		this.rollColor = rollColor;
-	}
-	this.resetDouble = function(){
-		this.nbDouble = 0;
-	}
-	this._rand = function(){
-		return Math.round((Math.random() * 1000)) % 6 + 1;
-	}
-	this.isSpecificAction = function(){
-		return false;
-	}
-
-	this.doSpecificAction = function(){}
-
-	/* Action avant le lancement du des */
-	this.before = function(callback){
-		if (GestionJoueur.getJoueurCourant().enPrison) {
-			// Propose au joueur de payer ou utiliser une carte
-			var buttons = InfoMessage.createPrison(GestionJoueur.getJoueurCourant(),GestionJoueur.getJoueurCourant().nbDouble, function () {
-				callback();
-			});
-			GestionJoueur.getJoueurCourant().actionAvantDesPrison(buttons);
-		} else {
-			callback();
-		}
-	}
-	/* Cas lorsque le joueur est en prison */
-	this.treatPrison = function(message){
-		var j = GestionJoueur.getJoueurCourant();
-		var gd = this;
-		if (this.isDouble()) {
-			MessageDisplayer.write(GestionJoueur.getJoueurCourant(), message + " et sort de prison");
-			var buttons = InfoMessage.create(GestionJoueur.getJoueurCourant(),"Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", function () {
-				GestionJoueur.getJoueurCourant().exitPrison();
-				gd.endLancer();
-			}, {});
-			GestionJoueur.getJoueurCourant().actionApresDes(buttons, null);
-			return;
-		} else {
-			if (j.nbDouble == 2) {
-				MessageDisplayer.write(j, message + " et sort de prison en payant " + CURRENCY + " " + InitMonopoly.plateau.infos.montantPrison);
-				var messagePrison = "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " " + InitMonopoly.plateau.infos.montantPrison+ " !";
-				var buttons = InfoMessage.create(j,"Libere de prison", "lightblue", messagePrison, function () {
-					j.payerParcGratuit(InitMonopoly.plateau.parcGratuit,InitMonopoly.plateau.infos.montantPrison, function () {
-						j.exitPrison();
-						gd.endLancer();
-					});
-				}, {});
-				j.actionApresDes(buttons, null);
-				return;
-			} else {
-				MessageDisplayer.write(j, message + " et reste en prison");
-				j.nbDouble++;
-				var buttons = InfoMessage.create(j,"Tour " + j.nbDouble, "red", "Vous restez en prison, vous n'avez pas fait de double.", function () {
-					GestionJoueur.change();
-				}, {});
-				j.actionApresDes(buttons, null);
-				return;
-			}
-		}
-	}
-	/* Action apres le lancement des des */
-	/* Regle de gestion 
-	 * 1 - Le joueur peut payer 5000 Frs ou utiliser une carte sortie de prison avant de lancer les des
-	 * 2 : Le joueur fait un double ou a payer, il sort
-	 * 3 - Le joueur atteint sont 3eme lancer, il paie
-	 * 4 - Pas de double, il reste en prison
-	 * */
-	this.after = function(){
-		var message = "lance les dés et fait " + (this.total()) + " (" + this.combinaisonDes() + ") ";
-		if (GestionJoueur.getJoueurCourant().enPrison === true) {
-			this.treatPrison(message);
-			return;
-		} else {
-			// Gere le cas du triple (de rapide) egalement
-			if (this.isDouble()) {
-				if(!this.treatDouble(message)){
-					return; // Si 3 doubles, prison et on ne continue pas le deplacement du jeu
-				};
-			}else{
-				MessageDisplayer.write(GestionJoueur.getJoueurCourant(), message);
-			}
-		}
-		this.endLancer();
-	}
-
-	/* Renvoie la combinaison des des */
-	this.combinaisonDes = function(){
-		return this.des1 + " et " + this.des2;
-	}
-
-	/* Gere le comportement des doubles */
-	this.treatDouble = function(message){
-		return this._doTreatDouble(message);
-	}
-
-	this._doTreatDouble = function(message){
-		var gd = this;
-		if (this.nbDouble >= 2) {
-			var buttons = InfoMessage.create(GestionJoueur.getJoueurCourant(),"Allez en prison", "red", "Vous avez fait 3 doubles, vous allez en prison", function () {
-				MessageDisplayer.write(GestionJoueur.getJoueurCourant(), message + ", a fait 3 doubles et va en prison");
-				$('#informationsCentrale').text("3eme double, allez en PRISON");
-				// On met des valeurs differentes pour les des pour que le joueur ne rejoue pas
-				gd.des2++;
-				// Le changement de joueur lorsque le deplacement est termine
-				GestionJoueur.getJoueurCourant().goPrison();
-			}, {});
-			GestionJoueur.getJoueurCourant().actionApresDes(buttons, null);
-			return false;
-		} else {
-			this.nbDouble++;
-			MessageDisplayer.write(GestionJoueur.getJoueurCourant(), message + " et rejoue");
-		}
-		return true;
-	}
-
-	this.endLancer = function(){
-		GestionJoueur.getJoueurCourant().joueDes(this.total());
-		this.showReload();
-	}
-
-	this.showReload = function(){
-		if (this.isDouble()) {
-			$('#idReloadDice').show();
-		}else{
-			$('#idReloadDice').hide();
-		}
-	}
-
-	this.continuePlayer = function(){
-		return this.isDouble()
-	}
-
-	this.isDouble = function(){
-		return this.des1 === this.des2;
-	}
-	/* lancement du des */
-	this.lancer = function(){
-		var gd = this;
-		this.before(function(){
-			gd._randDes();
-			$('#idReloadDice').hide();
-			gd._anime();
-		});
-	}
-	this._randDes = function(){
-		this.des1 = this._rand();
-		this.des2 = this._rand();
-	}
-	this._anime = function(){
-		$('.action-joueur').attr('disabled', 'disabled').addClass('disabled');
-		var nb = VARIANTES.quickMove ? -1 : this.nbAnimation;
-		var gd = this;
-		var interval = setInterval(function () {
-			if (nb-- < 0) {
-				clearInterval(interval);
-				// If double, desRapide is empty, only on end
-				gd._drawCubes(gd.des1,gd.des2,gd.desRapide);
-				gd.after();
-				return;
-			}
-			gd._drawCubes(gd._rand(),gd._rand(),gd._rand()%3+1,gd.rollColor);
-		}, 100);
-	}
-	this._drawCubes = function(val1,val2,desRapide,color){
-		this.cube.des1.setValue(val1, color);
-		this.cube.des2.setValue(val2, color);
-	}
-	/* Renvoie le total des dés */
-	this.total = function(){
-		return this.des1 + this.des2;
-	}
-}
-
-/* Implementation pour le des rapide */
-/* DES RAPIDE */
-/* Si le des fait 1, 2 ou 3, on ajoute le score au des */
-/* Si on obtient un triple, on se deplace ou l'on souhaite (IA : trouver meilleure case : terrain a acheter (finir un groupe), passer une zone a risque) */
-/* Si on obtient le bus, on utilise l'un ou l'autre des des ou les deux (IA : chercher la cause la plus avantageuse / moins risque (terrain interessant, loyer le moins cher)) */
-/* Si on obtient un Mr Monopoly, on se place sur la prochaine propriété vide. Si tout vendu, on se deplace sur la premiere */
-
-function GestionDesRapideImpl(){
-	GestionDesImpl.call(this);
-	this.cube.desRapide=null;
-	this.desRapide;
-
-	this.init = function(rollColor){
-		this._init(rollColor);
-		this.cube.desRapide = DrawerFactory.getDesRapide(270, 210, 35);
-		Drawer.addRealTime(this.cube.desRapide);
-	}
-
-	this.isSpecificAction = function(){
-		// Pas de Mr monopoly quand le joueur est en prison
-		return !GestionJoueur.joueurCourant.enPrison && this._isMonopolyMan();
-	}
-
-	this.doSpecificAction = function(){
-		// Apres son jeu, le joueur effectuera cette action
-		this.desRapide = 0; // annule le mr monopoly
-		var pos = GestionJoueur.getJoueurCourant().getPosition();
-		var fiche = GestionFiche.isFreeFiches() ? GestionFiche.getNextFreeTerrain(pos) : GestionFiche.getNextTerrain(pos);
-		$.trigger('monopoly.derapide.mrmonopoly',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
-		GestionJoueur.getJoueurCourant().joueSurCase(fiche);
-	};
-
-	this._randDes = function(){
-		this.des1 = this._rand();
-		this.des2 = this._rand();
-		if(GestionJoueur.getJoueurCourant().enPrison){
-			this.desRapide = 0;
-		}else{
-			this.desRapide = this._rand();
-		}
-	};
-
-	this.total = function(){
-		var total = this.des1 + this.des2;
-		if(!this.isDouble() && this._isValue()){
-			total+=this.desRapide;
-		}
-		return total;
-	};
-
-	this.continuePlayer = function(){
-		return this.isDouble() && !this.isTriple();
-	};
-
-	/* Le triple est vu comme un double (pour le traitement global) */
-	this.isTriple = function(){
-		return this.des1 === this.des2 && this.des2 === this.desRapide && this.des1 <=3;
-	};
-
-	/* Renvoie la combinaison des des */
-	this.combinaisonDes = function(){
-		if(this.isTriple()){
-			return "triple " + this.des1;
-		}
-		var msg = this.des1 + ", " + this.des2
-		if(this.isDouble()){
-			return msg
-		}
-		return msg + " et " +((this._isBus())?" Bus":(this._isMonopolyMan())?"Mr Monopoly":this.desRapide);
-	};
-
-	// Cas du triple : double + des rapide avec le meme chiffre (1, 2 ou 3) => Joueur place son pion ou il veut
-	// Cas du double : double + des rapide different. Seul le double est pris en compte => Double normal
-	this.treatDouble = function(message){
-		// Cas triple
-		if(this.isTriple()){
-			GestionJoueur.getJoueurCourant().choisiCase(function(fiche){
-				GestionJoueur.getJoueurCourant().joueSurCase(fiche);
-				$.trigger('monopoly.derapide.triple',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
-			});
-			return;
-		}else{
-			this.desRapide = 0
-			return this._doTreatDouble(message);
-		}
-	};
-
-	this._isBus = function(){
-		return this.desRapide === 4 || this.desRapide === 6;
-	};
-
-	this._isMonopolyMan = function(){
-		return this.desRapide === 5;
-	};
-
-	this._isValue = function(){
-		return this.desRapide <=3;
-	};
-	/* Surcharge le comportement apres le lancer */
-	this.endLancer = function(){
-		this.showReload();
-		if(this.isTriple()){    // Joueur a choisi la case
-			return;
-		}
-		/* Cas du bus, le joueur choisi quel des il utilise */
-		if(!this.isDouble() && this._isBus()){
-			GestionJoueur.getJoueurCourant().choisiDes(this.des1,this.des2,function(total){
-				$.trigger('monopoly.derapide.bus',{joueur:GestionJoueur.getJoueurCourant(),total:total});
-				GestionJoueur.getJoueurCourant().joueDes(total);
-			});
-			return
-		}
-
-		if(this.isDouble()){
-			this.desRapide = 0
-		}
-		GestionJoueur.getJoueurCourant().joueDes(this.total());
-	};
-
-	this._drawCubes = function(val1,val2,desRapide,color){
-		this.cube.des1.setValue(val1, color);
-		this.cube.des2.setValue(val2, color);
-		if(this.isDouble() && !this.isTriple()){
-			desRapide = 0;
-		}
-		if(GestionJoueur.getJoueurCourant().enPrison){
-			this.cube.desRapide.setValue(0, color);
-		}else{
-			this.cube.desRapide.setValue(desRapide, color);
-		}
-	}
+	joueur.actionApresDes(buttons, fiche);
+	// Notify end play
+	$.trigger('move.end',{});
 }
 
 var InitMonopoly = {
@@ -456,12 +115,24 @@ var InitMonopoly = {
 			idCoutAchat:'#coutAchats',
 			idConstructions:'#resteConstructions'
 		});
-
+		$('.action-joueur').attr('disabled', 'disabled').addClass('disabled');
 		if (!DEBUG) {
 			this.showPanel();
 		} else {
 			this.plateau.load('data-monopoly.json',function(){InitMonopoly._createGame({}, {});});
 		}
+	},
+	initSlider(id,min,value){
+		$( `#${id}` ).slider({
+			min:min,max:6,value:value,
+			create: function() {
+				this.handle = $('.ui-slider-handle',this);
+				this.handle.text( $( this ).slider( "value" ) );
+			},
+			slide: function( event, ui ) {
+				this.handle.text( ui.value );
+			}
+		});
 	},
 	plateau:{
 		infos:null,
@@ -470,14 +141,14 @@ var InitMonopoly = {
 		parcGratuit:null,
 		cartes:{caisseCommunaute:[],chance:[]},
 		drawing:null,
-		load:function(nomPlateau,callback,dataExtend){
+		load:function(nomPlateau,options,callback,dataExtend){
 			this._temp_load_data = dataExtend;
 			// On charge le plateau
 			$.ajax({
 				url: 'data/' + nomPlateau,
 				dataType: 'json',
 				context:this,
-				success: function (data) {
+				success: (data) => {
 					if(data.plateau == null){
 						throw "Erreur avec le plateau " + nomPlateau;
 					}
@@ -488,68 +159,82 @@ var InitMonopoly = {
 						this.load(data.extend,callback,dataExtend);
 					}
 					else{
-						this._build(dataExtend,callback);
+						this._build(dataExtend,options,callback);
 					}
 				},
-				error: function (a, b, c) {
-					alert("Le plateau " + nomPlateau + " n'existe pas (" + 'data/' + nomPlateau + ")");
-					return;
-				}
+				error:() =>alert("Le plateau " + nomPlateau + " n'existe pas (" + 'data/' + nomPlateau + ")")
 			});
 		},
-		_build:function(data,callback){
+		loadVariantes:function(){
 			$(':checkbox[name]', '#idVariantes').each(function () {
 				// Si existe, ne surcharge pas
 				if(VARIANTES[$(this).attr('name')] == null) {
 					VARIANTES[$(this).attr('name')] = $(this).is(':checked');
 				}
 			});
+		},
+		// From monopoly plateau definition, create plateau
+		_build:function(data,options,callback=()=>{}){
 			this.infos = data.plateau;
-			var plateauSize = DrawerFactory.dimensions.plateauSize;
+			this.options = options;
+			this.loadVariantes();
+
+			DrawerFactory.setNbCases(this.infos.nbCases);
 			DrawerFactory.addInfo('defaultImage',data.images.default || {});
 			DrawerFactory.addInfo('textColor',this.infos.textColor || '#000000');
 			DrawerFactory.addInfo('backgroundColor',this.infos.backgroundColor || '#FFFFFF');
-			this.infos.argentJoueurDepart = this.infos.argent || 150000
+
+			this.infos.argentJoueurDepart = this.infos.argent || 150000;
 			this.infos.montantDepart =this.infos.depart || 20000;
 			this.infos.montantPrison = this.infos.prison || 5000;
-			if(this.infos.colors){
-				GestionJoueur.colorsJoueurs = this.infos.colors;
+
+			if(this.infos.hideConstructions === true){
+				$('.action-normal').hide();
+			}else{
+				$('.action-normal').show();
 			}
-			if(this.infos.imgJoueurs){
-				GestionJoueur.imgJoueurs = this.infos.imgJoueurs;
-			}
+			GestionJoueur.setColors(this.infos.colors);
+			GestionJoueur.setImgJoueurs(this.infos.imgJoueurs);
 
 			if(this.infos.type === 'circle'){
-				DrawerFactory.setType('circle');
-				$('.graphic_element,.title').addClass('circle');
-				$('#idSavePanel').arctext({radius: 80,dir:1})
-				$('#idSubTitle').hide();
-				$('#idInfoBox').unbind('mousewheel').bind('mousewheel',function(e,sens){
-					var scroll=$('#idInfoBox').scrollTop() + (sens * e.deltaFactor * -0.7);
-					$('#idInfoBox').scrollTop(scroll)
-					e.preventDefault();
-				});
+				this._configureCircle();
 			}else{
-				DrawerFactory.setType('square');
-				$('#idSavePanel').arctext({radius: -1,dir:1})
-				$('.graphic_element,.title').removeClass('circle');
+				this.configureSquare();
 			}
 			CURRENCY = data.currency;
 			this.titles = data.titles;
 			this.infos.nomsJoueurs = this.infos.nomsJoueurs || [];
 
-			GestionDes.gestionDes = VARIANTES.desRapide ? new GestionDesRapideImpl():new GestionDesImpl();
+			GestionDes.gestionDes = this.isQuickDice() ? new GestionDesRapideImpl():new GestionDesImpl();
 			GestionDes.init(this.infos.rollColor);
-			$('#idLancerDes').unbind('click').bind('click',()=>GestionDes.lancer());
+			let plateauSize = DrawerFactory.dimensions.plateauSize;
+			$('#idLancerDes').unbind('click').bind('click',()=>GestionJoueur.lancerDes());
 			this.drawing = DrawerFactory.getPlateau(0, 0, plateauSize, plateauSize, this.infos.backgroundColor);
 			Drawer.add(this.drawing, 0);
 			this._draw(data);
 			Drawer.add(DrawerFactory.endPlateau(),2);
 			Drawer.init(plateauSize, plateauSize);
 
-			if (callback) {
-				callback();
-			}
+			callback();
+		},
+		isQuickDice(){
+			return this.options.typeGame === "quick";
+		},
+		_configureCircle(){
+			DrawerFactory.setType('circle');
+			$('.graphic_element,.title').addClass('circle');
+			$('#idSavePanel').arctext({radius: 80,dir:1})
+			$('#idSubTitle').hide();
+			$('#idInfoBox').unbind('mousewheel').bind('mousewheel',function(e,sens){
+				let scroll=$('#idInfoBox').scrollTop() + (sens * e.deltaFactor * -0.7);
+				$('#idInfoBox').scrollTop(scroll);
+				e.preventDefault();
+			});
+		},
+		configureSquare(){
+			DrawerFactory.setType('square');
+			$('#idSavePanel').arctext({radius: -1,dir:1})
+			$('.graphic_element,.title').removeClass('circle');
 		},
 		_buildCartes:function(data,Instance){
 			return data!=null ? data.cartes.map(function(c){
@@ -574,6 +259,10 @@ var InitMonopoly = {
 				switch (this.type) {
 					case "propriete":
 						fiche = new Fiche(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers, this.prixMaison);
+						groups[this.colors[0]].add(fiche);
+						break;
+					case "propriete-junior":
+						fiche = new FicheJunior(this.axe, this.pos, this.colors, this.nom, this.prix);
 						groups[this.colors[0]].add(fiche);
 						break;
 					case "compagnie":
@@ -611,7 +300,7 @@ var InitMonopoly = {
 						break;
 					case "depart":
 						fiche = new CaseActionSpeciale(this.nom, function () {
-							var montant = VARIANTES.caseDepart ? (InitMonopoly.plateau.infos.montantDepart)*2 : InitMonopoly.plateau.infos.montantDepart;
+							let montant = (VARIANTES.caseDepart ? 2:1) * InitMonopoly.plateau.infos.montantDepart;
 							GestionJoueur.getJoueurCourant().gagner(montant);
 
 							$.trigger('monopoly.depart', {
@@ -627,22 +316,23 @@ var InitMonopoly = {
 					if (fiche.color != null) {
 						if (colors[fiche.color] == null) {
 							// On genere un style
-							$('style', 'head').prepend('.color_' + fiche.color.substring(1) + '{color:white;font-weight:bold;background-color:' + fiche.color + ';}\n');
+							$('style', 'head').prepend(`.color_${fiche.color.substring(1)}{color:white;font-weight:bold;background-color:${fiche.color};}\n`);
 							colors[fiche.color] = 1;
 						}
 					}
 				}
 			});
-			this._calculateVoisins();
+			this._calculateVoisins(data.plateau.nbCases);
 
 		},
 		/* Calcule les voisins de chaque groupe */
-		_calculateVoisins:function(){
+		_calculateVoisins:function(nbCases = 10){
 			var currentGroupe = null;
+			let totalCases = nbCases * 4;
 			// Parcourt les fiches. On enregistre le groupe courant, quand changement, on defini le groupe precedent et calcule le suivant du precedent
-			for (var i = 0; i < 42; i++) {
-				var axe = Math.floor(i / 10) % 4;
-				var pos = i % 40 - (axe * 10);
+			for (var i = 0; i < totalCases +2; i++) {
+				var axe = Math.floor(i / nbCases) % 4;
+				var pos = i % totalCases - (axe * nbCases);
 				var fiche = GestionFiche.get({
 					axe: axe,
 					pos: pos
@@ -665,6 +355,8 @@ var InitMonopoly = {
 		}
 	},
 	showPanel:function(){
+		this.initSlider('sliderJoueur',2,4);
+		this.initSlider('sliderRobot',0,2);
 		this._loadPlateaux();
 		this._configSauvegardePanel();
 		wrapDialog(this.panelPartie,{
@@ -680,53 +372,90 @@ var InitMonopoly = {
 		})
 	},
 	_loadOrCreateGame:function(){
+		// Network feature
+		if($('#idCreationGame').tabs('option','active') === 1){
+			return InitMonopoly.joinGame();
+		}
 		/* Chargement d'une partie */
 		VARIANTES = {};
-		if (this.listSauvegarde.val() != "") {
+		if (this.listSauvegarde.val() !== "") {
 			Sauvegarde.load(this.listSauvegarde.val());
-			this.panelPartie.dialog('close');
 		} else {
-			this.plateau.load($('#idSelectPlateau').val(),function(){
-				var options = {};
-				$('#idPartie',this.panelPartie).find('select[name],:text[name]').each(function(){
-					options[$(this).attr('name')] = $(this).val();
-				});
-				$('#idPartie',this.panelPartie).find(':checkbox[name]').each(function(){
-					options[$(this).attr('name')] = $(this).is(':checked');
-				});
-
-				InitMonopoly._createGame(options);
-			});
-			this.panelPartie.dialog('close');
+			let options = this._extractOptions();
+			this.plateau.load($('#idSelectPlateau').val(),options,()=>InitMonopoly._createGame(options));
 		}
+		this.panelPartie.dialog('close');
+	},
+	_extractOptions(){
+		var options = {
+			nbRobots:$('#sliderRobot').slider('value'),
+			nbPlayers:$('#sliderJoueur').slider('value')
+		};
+		$('#idPartie',this.panelPartie).find('select[name],:text[name]').each(function(){
+			options[$(this).attr('name')] = $(this).val();
+		});
+		$('#idPartie',this.panelPartie).find(':checkbox[name]').each(function(){
+			options[$(this).attr('name')] = $(this).is(':checked');
+		});
+		$('#idGameType',this.panelPartie).find(':radio:checked').each(function(){
+			options[$(this).attr('name')] = $(this).val();
+		});
+		return options;
+	},
+	joinGame(){
+		this._joinNetworkGame($('#idRemoteNomJoueur').val(),$('#idRemoteGame').val());
+	},
+	_joinNetworkGame(name,game){
+		this.remoteManager = new RemoteManager(name,game);
+		this.panelPartie.dialog('close');
+	},
+	// Create a network game as master
+	_createNetworkGame(options){
+		// Create game on server then load
+		$.ajax({url:"/createGame"}).then((data)=> {
+			this.remoteManager = new MasterRemoteManager(options.joueur,data.game);
+			let players = this.remoteManager.create(options.nbPlayers,options.nbRobots,options.joueur,this.plateau.infos.nomsJoueurs);
+			this.afterCreateGame(players);
+		});
 	},
 	/* Creer la partie apres le chargement du plateau */
 	_createGame:function(options){
-		var j = this.plateau.infos.nomsJoueurs.length > 0 ? this.plateau.infos.nomsJoueurs[0] : "";
+		let j = $('#idNomJoueur').val() !== "" ? $('#idNomJoueur').val():"";
 		options = $.extend({},{nbPlayers:0,nbRobots:0,waitTimeIA:1,joueur:j},options);
-
-		for (var i = 0; i < options.nbPlayers; i++) {
-			var nom = "Joueur " + (i+1);
-			if(i == 0 && options.joueur != "" ){
+		if(options.networkGame === "true"){
+			return this._createNetworkGame(options);
+		}else{
+			return this._createLocalGame(options);
+		}
+	},
+	_createLocalGame(options){
+		let playerNames = new Array(options.nbPlayers);
+		for (let i = 0; i < options.nbPlayers; i++) {
+			let nom = `Joueur ${i+1}`;
+			if(i === 0 && options.joueur !== "" ){
 				nom = options.joueur;
 			}else{
 				if(this.plateau.infos.nomsJoueurs.length > i){
 					nom = this.plateau.infos.nomsJoueurs[i];
 				}
 			}
-			GestionJoueur.create(i >= options.nbPlayers - options.nbRobots, i,nom);
+			playerNames[i] = nom;
+			let isRobot = i >= options.nbPlayers - options.nbRobots;
+			let clazzPlayer = isRobot ? JoueurFactory.getRobotPlayer():JoueurFactory.getCurrentPlayer()
+			GestionJoueur.create(clazzPlayer, i,nom);
 		}
-		this.afterCreateGame();
+		this.afterCreateGame(playerNames);
 		GestionJoueur.change();
 
 		/* Gestion des options */
 
 		IA_TIMEOUT = VARIANTES.quickMove?10 : options.waitTimeIA || IA_TIMEOUT;
 	},
-	afterCreateGame:function(){
+	afterCreateGame:function(players=this.plateau.infos.nomJoueurs){
+		this.plateau.infos.realNames=players;
 		$('.info-joueur').tooltip({
 			content: function () {
-				var stats = GestionJoueur.getById($(this).data('idjoueur')).getStats();
+				let stats = GestionJoueur.getById($(this).data('idjoueur')).getStats();
 				$('span[name]', '#infoJoueur').each(function () {
 					$(this).html(stats[$(this).attr('name')]);
 				});
@@ -752,7 +481,7 @@ var InitMonopoly = {
 		});
 	},
 	_configSauvegardePanel:function(){
-		var sauvegardes = Sauvegarde.findSauvegardes();
+		let sauvegardes = Sauvegarde.findSauvegardes();
 		this.listSauvegarde = $('#idSauvegardes');
 		$('option:not(:first)',this.listSauvegarde).remove();
 		var _self = this;

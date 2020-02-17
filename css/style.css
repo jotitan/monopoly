@@ -44,11 +44,11 @@
 	width:250px;
 }
 
-#idDetailFiche {
+.detail-fiche{
 	width:240px;
 }
 
-#idDetailFiche > table{
+.detail-fiche > table{
 	width:240px;
 }
 
@@ -57,9 +57,10 @@
     width: 240px;
 }
 
-
 .panneau_joueur  {
     width:250px;
+    height:800px;
+    overflow: auto;
 }
 
 .joueurCourant .joueur-name {
@@ -137,8 +138,8 @@ body { margin: 0 }
     border:solid grey 2px;
     background-color:#FFFFFF;
     position:absolute;
-    top:350px;
-    left:130px;
+    top:338px;
+    left:125px;
     width:540px;
     height:330px;
     overflow:auto;
@@ -332,4 +333,10 @@ div.ui-tooltip {
         width: 24vw;
     }
 
+}
+
+.ui-state-default {
+    text-align:center;
+    padding-left:5px;
+    padding-right:5px;
 }

@@ -66,7 +66,7 @@ var GestionConstructions = {
     // Chaque projet contient la couleur du groupe, le from (nb, type) et le to (nb, type)
     simulateBuy: function (projects) {
         // Projects est un tableau de from:{type,nb},to:{type,nb}
-        var simulation = {
+        let simulation = {
             achat: {
                 maison: 0,
                 hotel: 0
@@ -76,19 +76,18 @@ var GestionConstructions = {
                 hotel: this.nbInitHotel - this.nbSellHotel
             }
         };
-
-        var actions = {
+        let actions = {
             venteMaison: function (p, simulation) {
                 if (p.from.type === "maison" && p.to.type === "maison" && p.from.nb > p.to.nb) {
-                    this.changeMaison(p,simulation);
+                    actions.changeMaison(p,simulation);
                 }
             },
             achatHotel: function (p, simulation) {
                 // Pour valider un hotel, il faut que les autres proprietes aient au moins 4 maisons. On les achete maintenant si on les trouve
                 if (p.from.type === "maison" && p.to.type === "hotel") {
                     // On achete les maisons sur le meme groupe s'il y en a
-                    for (var project in projects) {
-                        var p2 = projects[project];
+                    for (let project in projects) {
+                        let p2 = projects[project];
                         if (p2.color === p.color && p2.from.type === "maison" && p2.to.type === "maison" && p2.to.nb === 4) {
                             // On les achete maintenant
                             actions.achatMaison(p2, simulation);
@@ -129,7 +128,7 @@ var GestionConstructions = {
             },
             achatMaison: function (p, simulation) {
                 if (p.from.type === "maison" && p.to.type === "maison" && p.from.nb < p.to.nb) {
-                    this.changeMaison(p,simulation);
+                    actions.changeMaison(p,simulation);
                 }
             },
             changeMaison(p,simulation){
@@ -138,17 +137,17 @@ var GestionConstructions = {
                 simulation.reste.maison += nb;
                 p.done = true;
             }
-        }
-        for (var a in actions) {
-            var action = actions[a];
-            for (var index in projects) {
-                var p = projects[index];
+        };
+        for (let a in actions) {
+            let action = actions[a];
+            for (let index in projects) {
+                let p = projects[index];
                 if (p.done == null) {
                     try {
                         action(p, simulation);
                     } catch (e) {
                         // Exception levee si le traitement doit etre interrompu
-                        console.log("exception");
+                        console.log("exception",e);
                         return simulation;
                     }
                 }

@@ -28,11 +28,11 @@ function Pion(color, joueur,img) {
 		var pos = this.position + des;
 		var axe = this.axe;
 		while(pos<0){
-			pos+=10;
+			pos+=DrawerFactory.dimensions.nbCases;
 			axe= (axe + 3)%4;
 		}
-		while (pos >= 10) {
-			pos -= 10;
+		while (pos >= DrawerFactory.dimensions.nbCases) {
+			pos -= DrawerFactory.dimensions.nbCases;
 			axe = (axe + 1) % 4;
 		}
 		return {
@@ -41,8 +41,8 @@ function Pion(color, joueur,img) {
 		}
 	}
 
-	this.goto = function (axe, pos, call) {
-		var id = axe+"-"+pos;
+	this.goto = function (axe, pos, call,direct=true,primeDepart=true) {
+		let id = axe+"-"+pos;
 
 		if(this.stats.positions[id] == null){
 			this.stats.positions[id] = 1;
@@ -54,14 +54,15 @@ function Pion(color, joueur,img) {
 			message: GestionJoueur.getJoueurCourant().nom + " est en " + this.axe + "-" + this.position + " et va en " + id
 		});
 		// On gere le cas de la case depart (si elle est sur le trajet)
-		var depart = this.axe*10 + this.position;
-		var cible = axe*10 + pos;
-		if((depart < 20 && cible > 20) || (depart > cible && (depart < 20 || cible > 20))){
+		let depart = this.axe*DrawerFactory.dimensions.nbCases + this.position;
+		let cible = axe*DrawerFactory.dimensions.nbCases + pos;
+		let caseDepart = 2*DrawerFactory.dimensions.nbCases;
+		if(primeDepart && ((depart < caseDepart && cible > caseDepart) || (depart > cible && (depart < caseDepart	 || cible > caseDepart)))){
 			this.treatCaseDepart();
 		}
 		this.axe = axe;
 		this.position = pos;
-		this.pion.goto(axe, pos, call,true);
+		this.pion.goto(axe, pos, call,false,direct);
 	}
 
 	// Si on passe par la case depart, on prend 20000 Francs

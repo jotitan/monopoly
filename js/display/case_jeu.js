@@ -16,7 +16,7 @@ class PlateauCase{
     }
 
     isPropriete(){
-        return this.type === "terrain" || this.type === "gare" || this.type === "compagnie";
+        return this.type === "terrain" || this.type === "junior" || this.type === "gare" || this.type === "compagnie";
     }
 }
 
@@ -26,6 +26,7 @@ class ParcGratuit extends PlateauCase {
 		super(axe, pos, "parc");
 		this.montant = null;
 		this._titre = "Parc Gratuit";
+		this.nom = this._titre;
 		this.drawing = DrawerFactory.getCaseSpeciale(0, this._titre);
 		Drawer.add(this.drawing);
 		this.setMontant(0);
@@ -59,6 +60,7 @@ class CaseActionSpeciale extends PlateauCase {
 	constructor(titre, actionSpeciale, axe, pos,type) {
 		super(axe, pos, type);
 		this.titre = titre;
+		this.nom = titre;
 		this.actionSpeciale = actionSpeciale;
 		this.drawing = DrawerFactory.getCaseSpeciale(axe, titre);
 		Drawer.add(this.drawing);
@@ -104,12 +106,12 @@ class CaseChance extends PlateauCase {
 		if (this.cartes.length === 0) {
 			throw "Aucune " + this.nom;
 		}
-		var randomValue = Math.round((Math.random() * 1000)) % (this.cartes.length);
-		var c = this.cartes[randomValue];
+		let randomValue = Math.round((Math.random() * 1000)) % (this.cartes.length);
+		let c = this.cartes[randomValue];
 		// On test si la carte est une carte sortie de prison est possedee par un joueur
-		if (c.carte.type === "prison" && !c.carte.isLibre()) {
+		if (c.actionCarte.type === "prison" && !c.actionCarte.isLibre()) {
 			// on prend la carte suivante
-			c = this.cartes[randomValue + 1 % (this.cartes.length)];
+			c = this.cartes[(randomValue + 1) % (this.cartes.length)];
 		}
 		return c.action();
 	}
@@ -117,7 +119,7 @@ class CaseChance extends PlateauCase {
 
 class CaseCaisseDeCommunaute extends CaseChance {
     constructor(axe, pos, img, cartes){
-    	super(axe,pos,img,cartes,{short:InitMonopoly.plateau.titles.communaute,long:"carte caisse de communauté"});
+    	super(axe,pos,img,cartes,{long:InitMonopoly.plateau.titles.communaute,short:"carte caisse de communauté"});
 	}
 }
 
@@ -339,7 +341,6 @@ class Fiche extends PlateauCase {
 	vendu(joueur) {
 		this.statut = ETAT_ACHETE;
 		this.setJoueurPossede(joueur);
-		
 		$.trigger("monopoly.acheteMaison", {
 			joueur: joueur,
 			maison: this
@@ -383,25 +384,34 @@ class Fiche extends PlateauCase {
 		if (this.input == null || this.statut !== ETAT_ACHETE || this.nbMaison > 0) {
 			throw "Impossible d'hypothequer ce terrain";
 		}
+		this.joueurPossede.gagner(this.montantHypotheque);
+		this.joueurPossede.notifyHypotheque(this);
+		this.doHypotheque();
+	}
+
+	doHypotheque(){
 		this.statutHypotheque = true;
 		this.input.addClass('hypotheque');
-		this.joueurPossede.gagner(this.montantHypotheque);
 		$.trigger('monopoly.hypothequeMaison', {
 			joueur: this.joueurPossede,
 			maison: this
 		});
 	}
-
 	leveHypotheque() {
 		if (this.input == null || this.statut !== ETAT_ACHETE || this.statutHypotheque === false) {
 			return;
 		}
-		var cout = Math.round(this.achatHypotheque);
+		let cout = Math.round(this.achatHypotheque);
 		if (this.joueurPossede.montant < cout) {
 			throw "Impossible de lever l'hypotheque";
 		}
-		this.statutHypotheque = false;
 		this.joueurPossede.payer(cout);
+		this.notifyLeveHypotheque();
+		this.doLeveHypotheque();
+	}
+	notifyLeveHypotheque(){}
+	doLeveHypotheque(){
+		this.statutHypotheque = false;
 		this.input.removeClass('hypotheque');
 		$.trigger('monopoly.leveHypothequeMaison', {
 			joueur: this.joueurPossede,
@@ -442,8 +452,7 @@ class Fiche extends PlateauCase {
 			return this.payerLoyer();
 		}
         if(this.statutHypotheque === true){
-            GestionJoueur.change();
-            return;
+            return GestionJoueur.change();
         }
 		return this.openFiche();
 	}
@@ -520,6 +529,7 @@ class Fiche extends PlateauCase {
 				joueur: param.joueurPaye,
 				maison: param.maison
 			});
+			$.trigger('event.network',{kind:'loyer',player:GestionJoueur.getJoueurCourant().id,maison:GestionFiche.buildId(param.maison)});
 			param.joueurPaye.payerTo(param.loyer, param.joueurLoyer);
 		}, {
 			loyer: this.getLoyer(),
@@ -529,9 +539,7 @@ class Fiche extends PlateauCase {
 		});
 	}
 
-	noArgent() {
-		
-	}
+	noArgent() {}
 
 	// Ouvre la fiche d'une propriete
 	openFiche() {
@@ -539,7 +547,6 @@ class Fiche extends PlateauCase {
 		this.fiche.dialog('option', 'buttons', buttons);
 		FicheDisplayer.loadFiche(this);
 		if (GestionJoueur.getJoueurCourant().canPlay) {
-			//this.fiche.dialog('open');
 			wrapDialog(this.fiche,'open');
 		}
 		return buttons;
@@ -598,6 +605,15 @@ class Fiche extends PlateauCase {
 	}
 }
 
+// Represent a case for junior game (no hypotheque, no builds...)
+class FicheJunior extends Fiche {
+	constructor(axe,pos,colors,nom,achat){
+		super(axe,pos,colors,nom,achat,[achat],null);
+		this.fiche = $('#ficheJunior');
+		this.type = "junior";
+	}
+}
+
 class FicheGare extends Fiche{
 	constructor(axe, pos, color, nom, achat, loyers, img){
 		super (axe, pos, color, nom, achat, loyers, null, img);
@@ -634,11 +650,14 @@ class FicheCompagnie extends Fiche {
 var GestionFiche = {
     fiches: [],
     keys: [], // Cles des fiches
+	buildId(fiche){
+    	return fiche.axe + "-" + fiche.pos;
+	},
 	_calculateStrId:function(id){
-		return parseInt(id.substr(0,1))*10 + parseInt(id.substr(2,3));
+		return parseInt(id.substr(0,1))*DrawerFactory.dimensions.nbCases + parseInt(id.substr(2,3));
 	},
 	_calculateId:function(info){
-		return info.axe*10 + info.pos;
+		return info.axe*DrawerFactory.dimensions.nbCases + info.pos;
 	},
     getById: function (id) {
 		return this.fiches[this._calculateStrId(id)];

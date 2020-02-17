@@ -11,9 +11,9 @@ var DrawerHelper = {
 	fromDegresToRad:function(angle){
 		return (angle/180)*Math.PI;
 	},
-	drawCircle:function(canvas,color,rayon,center,strokeColor){
+	drawCircle:function(canvas,color,rayon,center,strokeColor=color){
 		canvas.fillStyle=color;
-		canvas.strokeColor = strokeColor || color;
+		canvas.strokeColor = strokeColor;
 		canvas.beginPath();
 		canvas.arc(center.x,center.y,rayon,0,2*Math.PI);
 		canvas.fill();
@@ -53,11 +53,9 @@ var DrawerHelper = {
 		return mots;
 	},
     /* @param align : si null, center, sinon 'left' ou 'right' */
-    writeText: function (text, x, y, rotate, canvas, size, specificWidth, align) {
-        var width = specificWidth || DrawerFactory.dimensions.largeur;
-		//canvas.strokeStyle=DrawerFactory.getInfo('textColor') || '#000000';
+    writeText: function (text, x, y, rotate, canvas, size="7", width = DrawerFactory.dimensions.largeur, align) {
 		canvas.fillStyle=DrawerFactory.getInfo('textColor') || '#000000';
-        canvas.font = `${this.fontWeight} ` + ((size != null) ? size : "7") + "pt Arial";
+        canvas.font = `${this.fontWeight} ` + size + "pt Arial";
 
 		var mots = this._splitLine([text]);
 		
@@ -114,7 +112,7 @@ class Component{
 
 /* En fonction du type de plateau (square, circle), fournit les objets permettant de le construire */
 /* Renvoie uniquement des components (implemente draw) */
-var DrawerFactory = {
+let DrawerFactory = {
 	instances:[],
 	type:null,
 	infos:{},	// Infos communes
@@ -124,16 +122,28 @@ var DrawerFactory = {
 		hauteur:100,
 		bordure:40,
 		plateauSize:800,
-		innerPlateauSize:220
+		innerPlateauSize:220,
+		nbCases:10,
+		textSize:7
 	},
 	setSize(size){
 		$('#plateau').height(size+10).width(size+10);
 		$('#canvas').width(size+10).height(size+10).attr('width',size+10).attr('height',size+10);
 		$('#canvas_rt').width(size+10).height(size+10).attr('width',size+10).attr('height',size+10);
 		this.dimensions.plateauSize = size;
-		this.dimensions.largeur = (size-20)/12;
-		this.dimensions.hauteur = this.dimensions.largeur*3/2;
 		DrawerHelper.setFontWeight(800);
+		this.computeDimensions();
+	},
+	setNbCases(nbCases = 10){
+		this.dimensions.nbCases = nbCases;
+		this.computeDimensions();
+	},
+	computeDimensions(){
+		let targetWidth = 570;
+		// Width of a case if computed for minimum size divide by nb inside cases
+		this.dimensions.largeur = targetWidth/(this.dimensions.nbCases -1)+2;
+		this.dimensions.hauteur = (this.dimensions.plateauSize - targetWidth -20)/2;
+		this.dimensions.textSize = Math.round(this.dimensions.largeur/10);
 	},
 	init:function(){
 		return this;

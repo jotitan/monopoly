@@ -75,6 +75,6 @@ var Sauvegarde = {
         return list;
     },
     getSauvegardeName: function (name) {
-        return this.prefix + ((name == null || name == "") ? new Date().getTime() : name) + this.suffix;
+        return this.prefix + ((name == null || name === "") ? new Date().getTime() : name) + this.suffix;
     }
 }

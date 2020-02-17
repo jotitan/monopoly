@@ -86,7 +86,7 @@
     fiches["1-9"] = new Fiche(1,9,["#132450","#808EB0"],"Rue de la Paix",40000,5000,20000,60000,140000,170000,200000,20000);
     
     cartesChance = [new CarteChance("Payer pour frais de scolarité F 15.000",new PayerCarte(15000)),
-                    new CarteChance("Amande pour excès de vitesse : F 1.500",new PayerCarte(1500)),
+                    new CarteChance("Amende pour excès de vitesse : F 1.500",new PayerCarte(1500)),
                     new CarteChance("Vous avez gagné le prix de mots croisés. Recevez F 10.000",new GagnerCarte(10000)),
                     new CarteChance("La banque vous verse un dividende de F 5.000",new GagnerCarte(5000)),
                     new CarteChance("Votre immeuble et votre prêt rapportent. Vous devez toucher F 15.000",new GagnerCarte(15000)),
@@ -707,7 +707,7 @@
       this.action = function(){
         this.fiche.dialog('option','title',nom);
         // si on est chez soit, on affiche pas
-        if(this.joueurPossede!=null && this.joueurPossede.numero == joueurCourant.numero){
+        if(this.joueurPossede!=null && this.joueurPossede.numero === joueurCourant.numero){
           return this.chezSoi();
         }
         if(this.joueurPossede!=null){ // on doit payer un loyer

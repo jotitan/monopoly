@@ -50,16 +50,16 @@ module.exports = function(grunt){
 				},
 				files:{
 					'build/monopoly-min.js':[
-						'js/ui/Graphics.js',
-						'js/ui/SquareGraphics.js',
-						'js/ui/CircleGraphics.js',
+						'js/ui/graphics.js',
+						'js/ui/square_graphics.js',
+						'js/ui/circle_graphics.js',
 						'js/entity/*.js',
 						'js/display/*.js',
-						'js/Utils.js',
-						'js/Enchere.js',
-						'js/GestionConstructions.js',
-						'js/GestionTerrains.js',
-						'js/Sauvegarde.js',
+						'js/utils.js',
+						'js/enchere.js',
+						'js/gestion_constructions.js',
+						'js/gestion_terrains.js',
+						'js/sauvegarde.js',
 						'monopoly.js']
 				}
 			}

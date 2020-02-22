@@ -102,31 +102,32 @@ class PlateauDetails {
 		this.drawing =null;
 	}
 	load(nomPlateau,options,callback,dataExtend){
-		return this.loadFullPath('data/' + nomPlateau,nomPlateau,options,callback,dataExtend);
+		options.nomPlateau = nomPlateau;
+		return this.loadFullPath('data/' + nomPlateau,options,callback,dataExtend);
 	}
-	loadFullPath(path,nomPlateau,options,callback,dataExtend){
+	loadFullPath(path,options,callback,dataExtend){
 		this._temp_load_data = dataExtend;
 		// On charge le plateau
 		$.ajax({
 			url: path,
 			dataType: 'json',
-			context:this,
-			success: (data) => {
-				if(data.plateau == null){
-					throw "Erreur avec le plateau " + nomPlateau;
-				}
-				this.name = nomPlateau;
-				// Gestion de l'heritage
-				var dataExtend = $.extend(true,{},data,this._temp_load_data || {});
-				if(data.extend){
-					this.load(data.extend,callback,dataExtend);
-				}
-				else{
-					this._build(dataExtend,options,callback);
-				}
-			},
-			error:() =>alert("Le plateau " + nomPlateau + " n'existe pas (" + 'data/' + nomPlateau + ")")
-		});
+			context:this})
+			.done(data => this.managePlateauConfig(data,options,callback))
+			.fail(() =>alert(`Le plateau ${nomPlateau} n'existe pas (data/${nomPlateau})`));
+	}
+	managePlateauConfig(data,options,callback){
+		if(data.plateau == null){
+			throw "Erreur avec le plateau " + options.nomPlateau;
+		}
+		this.name = options.nomPlateau;
+		// Gestion de l'heritage
+		let dataExtend = $.extend(true,{},data,this._temp_load_data || {});
+		if(data.extend){
+			this.load(data.extend,callback,dataExtend);
+		}
+		else{
+			this._build(dataExtend,options,callback);
+		}
 	}
 	loadVariantes(){
 		$(':checkbox[name]', '#idVariantes').each(function () {
@@ -202,6 +203,54 @@ class PlateauDetails {
 	_buildCartes(data,Instance,title){
 		return data!=null ? data.cartes.map(c=>new Instance(c.nom, CarteActionFactory.get(c,this),title)):[];
 	}
+	addToGroup(groups,def,name,fiche){
+		groups[def.colors[0]].nom = name;
+		groups[def.colors[0]].add(fiche);
+		return fiche;
+	}
+	_createFiche(def,groups,data){
+		switch (def.type) {
+			case "propriete":
+				return this.addToGroup(groups,def,'Terrain',new Fiche(def.axe, def.pos, def.colors, def.nom, def.prix, def.loyers, def.prixMaison));
+			case "propriete-junior":
+				return this.addToGroup(groups,def,'Junior',new FicheJunior(def.axe, def.pos, def.colors, def.nom, def.prix));
+			case "compagnie":
+				return this.addToGroup(groups,def,'Compagnie',
+					new FicheCompagnie(def.axe, def.pos, def.colors, def.nom, def.prix, def.loyers,data.images[def.img] || data.images.compagnie));
+			case "gare":
+				return this.addToGroup(groups,def,'Gare',
+					new FicheGare(def.axe, def.pos, def.colors, def.nom, def.prix, def.loyers, data.images.gare));
+			case "chance":
+				return new CaseChance(def.axe, def.pos,data.images.chance,this.cartes.chance,this.titles.chance);
+			case "communaute":
+				return new CaseCaisseDeCommunaute(def.axe, def.pos,data.images.caisseDeCommunaute,this.cartes.caisseCommunaute,this.titles.communaute);
+			case "taxe":
+				return new SimpleCaseSpeciale(def.nom, def.prix, def.axe, def.pos, "taxe",data.images.taxe,this);
+			case "prison":
+				return new CaseActionSpeciale(def.nom, function () {
+					GestionJoueur.getJoueurCourant().goPrison();
+				}, def.axe, def.pos,"prison");
+			case "special":
+				return new CaseActionSpeciale(def.nom, function () {
+					GestionJoueur.change();
+				}, def.axe, def.pos,"special");
+			case "parc":
+				this.parcGratuit = new ParcGratuit(def.axe, def.pos);
+				return this.parcGratuit;
+			case "depart":
+				return new CaseActionSpeciale(def.nom, () =>{
+					let montant = (VARIANTES.caseDepart ? 2:1) * this.infos.montantDepart;
+					GestionJoueur.getJoueurCourant().gagner(montant);
+
+					$.trigger('monopoly.depart', {
+						joueur: GestionJoueur.getJoueurCourant(),
+						montant:montant
+					});
+					GestionJoueur.change();
+				}, def.axe, def.pos,"depart");
+		}
+		throw "Impossible case";
+	}
 	_draw(data){
 		$('#idSubTitle').text(this.infos.subtitle);
 		this.parcGratuit = null;
@@ -211,65 +260,10 @@ class PlateauDetails {
 		this.cartes.caisseCommunaute = this._buildCartes(data.communaute,CarteCaisseDeCommunaute,this.titles.communaute);
 
 		$(data.fiches).each((e,ficheDef) =>{
-			let fiche = null;
 			if (ficheDef.colors != null && ficheDef.colors.length > 0 && groups[ficheDef.colors[0]] == null) {
 				groups[ficheDef.colors[0]] = new Groupe(ficheDef.groupe, ficheDef.colors[0]);
 			}
-			switch (ficheDef.type) {
-				case "propriete":
-					fiche = new Fiche(ficheDef.axe, ficheDef.pos, ficheDef.colors, ficheDef.nom, ficheDef.prix, ficheDef.loyers, ficheDef.prixMaison);
-					groups[ficheDef.colors[0]].add(fiche);
-					break;
-				case "propriete-junior":
-					fiche = new FicheJunior(ficheDef.axe, ficheDef.pos, ficheDef.colors, ficheDef.nom, ficheDef.prix);
-					groups[ficheDef.colors[0]].add(fiche);
-					break;
-				case "compagnie":
-					fiche = new FicheCompagnie(ficheDef.axe, ficheDef.pos, ficheDef.colors, ficheDef.nom, ficheDef.prix, ficheDef.loyers,data.images[ficheDef.img] || data.images.compagnie);
-					groups[ficheDef.colors[0]].nom = 'Compagnie';
-					groups[ficheDef.colors[0]].add(fiche);
-					break;
-				case "gare":
-					fiche = new FicheGare(ficheDef.axe, ficheDef.pos, ficheDef.colors, ficheDef.nom, ficheDef.prix, ficheDef.loyers, data.images.gare);
-					groups[ficheDef.colors[0]].nom = 'Gare';
-					groups[ficheDef.colors[0]].add(fiche);
-					break;
-				case "chance":
-					fiche = new CaseChance(ficheDef.axe, ficheDef.pos,data.images.chance,this.cartes.chance,this.titles.chance);
-					break;
-				case "communaute":
-					fiche = new CaseCaisseDeCommunaute(ficheDef.axe, ficheDef.pos,data.images.caisseDeCommunaute,this.cartes.caisseCommunaute,this.titles.communaute);
-					break;
-				case "taxe":
-					fiche = new SimpleCaseSpeciale(ficheDef.nom, ficheDef.prix, ficheDef.axe, ficheDef.pos, "taxe",data.images.taxe,this);
-					break;
-				case "prison":
-					fiche = new CaseActionSpeciale(ficheDef.nom, function () {
-						GestionJoueur.getJoueurCourant().goPrison();
-					}, ficheDef.axe, ficheDef.pos,"prison");
-					break;
-				case "special":
-					fiche = new CaseActionSpeciale(ficheDef.nom, function () {
-						GestionJoueur.change();
-					}, ficheDef.axe, ficheDef.pos,"special");
-					break;
-				case "parc":
-					this.parcGratuit = new ParcGratuit(ficheDef.axe, ficheDef.pos);
-					fiche = this.parcGratuit;
-					break;
-				case "depart":
-					fiche = new CaseActionSpeciale(ficheDef.nom, () =>{
-						let montant = (VARIANTES.caseDepart ? 2:1) * this.infos.montantDepart;
-						GestionJoueur.getJoueurCourant().gagner(montant);
-
-						$.trigger('monopoly.depart', {
-							joueur: GestionJoueur.getJoueurCourant(),
-							montant:montant
-						});
-						GestionJoueur.change();
-					}, ficheDef.axe, ficheDef.pos,"depart");
-					break;
-			}
+			let fiche = this._createFiche(ficheDef,groups,data);
 			if(fiche!=null){
 				GestionFiche.add(fiche);
 				if (fiche.color != null) {

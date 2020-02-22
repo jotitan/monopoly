@@ -37,21 +37,21 @@ class JoueurOrdinateur extends Joueur {
 		data.strategie = this.strategie.id;
 		// Charge l'historique des propositions (derniere proposition du terrain)
 		data.rejectedPropositions = [];
-        for (var id in this.rejectedPropositions) {
-			var proposition = this.rejectedPropositions[id][this.rejectedPropositions[id].length -1].proposition;
-			var terrains = [];	// On ne garde que les ids des fiches pour eviter les cycles a la sauvegarde
-            // TODO map
-			for(var t in proposition.terrains){
-                terrains.push(proposition.terrains[t].id);
-            }
-            data.rejectedPropositions.push({
+		for (let id in this.rejectedPropositions) {
+			let proposition = this.rejectedPropositions[id][this.rejectedPropositions[id].length -1].proposition;
+			let terrains = [];	// On ne garde que les ids des fiches pour eviter les cycles a la sauvegarde
+			// TODO map
+			for(let t in proposition.terrains){
+				terrains.push(proposition.terrains[t].id);
+			}
+			data.rejectedPropositions.push({
 				id: id,
 				proposition: {
 					compensation:proposition.compensation,
 					terrains:terrains
 				}
 			});
-		}			
+		}
 	}
 
 	loadMore(data) {
@@ -69,9 +69,9 @@ class JoueurOrdinateur extends Joueur {
 				// On ajoute la proposition dans le tableau
 				this.rejectedPropositions[data.rejectedPropositions[id].id] = [{
 					proposition:{
-                        compensation:p.compensation,
-					    terrains:terrains
-                    }
+						compensation:p.compensation,
+						terrains:terrains
+					}
 				}];
 			}
 		}
@@ -95,7 +95,7 @@ class JoueurOrdinateur extends Joueur {
 
 	/* Choisi la case qui l'interesse le plus */
 	/* 1) Cherche dans les terrains libres celui qu'il prefere */
-	/* 2) Si pas de terrain libre, choisi la case prison (protege le plus) si besoin */	
+	/* 2) Si pas de terrain libre, choisi la case prison (protege le plus) si besoin */
 	choisiCase(callback){
 		var fiches = GestionFiche.getFreeFiches();
 		let maxInteret;
@@ -118,7 +118,7 @@ class JoueurOrdinateur extends Joueur {
 			}
 		}
 	}
-	
+
 	/* Pour le de rapide, choisi la meilleure configuration */
 	/* 1) Prefere les terrains libres qui l'interessent */
 	/* 2) Prefere les terrains libres */
@@ -128,7 +128,7 @@ class JoueurOrdinateur extends Joueur {
 		var f1 = {fiche:this.pion.deplaceValeursDes(des1),total:des1};
 		var f2 = {fiche:this.pion.deplaceValeursDes(des2),total:des2};
 		var f3 = {fiche:this.pion.deplaceValeursDes(des1 + des2),total:des1+des2};
-		
+
 		var maxInteret = -1000;
 		var total = 0;
 		[f1,f2,f3].forEach(function(f){
@@ -140,7 +140,7 @@ class JoueurOrdinateur extends Joueur {
 		},this);
 		callback(total);
 	}
-	
+
 	/* Determine l'interet d'une case. Plus il est elevé, plus il est important */
 	/* Interet pour taxe depend du montant. */
 	/* Case depart mieux que terrain inutile mais moins que terrain utile */
@@ -158,10 +158,10 @@ class JoueurOrdinateur extends Joueur {
 			case "prison" : interet = this.getOutPrison() ? -2 : 1;break;
 			case "taxe" : interet = -1 * fiche.montant / 1000;break;
 			case "depart": interet = 0.5;break;
-		}		
+		}
 		return interet;
 	}
-	
+
 	// Fonction appelee lorsque les des sont lances et que le pion est place
 	actionApresDes(buttons, propriete) {
 		if (buttons === undefined || buttons == null) {
@@ -211,6 +211,27 @@ class JoueurOrdinateur extends Joueur {
 		callback();
 	}
 
+
+	addIsolateHouse(maison,proposition){
+		let data = this.findUnterestsProprietes();
+		let montant = 0;
+		if (data != null && data.proprietes != null && data.proprietes.length > 0) {
+			let proprietes = data.proprietes;
+			// On en ajoute. En fonction de la strategie, on n'ajoute que les terrains seuls dans le groupe (peu important)
+			for (let i = 0; i < proprietes.length && montant / maison.achat < 0.7; i++) {
+				let terrain = proprietes[i];
+				// Il ne faut pas proposer un terrain du meme groupe que le terrain demande car pas forcement de la strategie
+				// Deux terrains qui ne sont pas de la strategie sont potentiellement interessant a garder
+				if (!this.strategie.interetPropriete(terrain) && (terrain.groupe == null || !terrain.groupe.equals(maison.groupe))) {
+					// On le refourgue
+					proposition.deals.push(terrain);
+					montant += terrain.achat;
+				}
+			}
+		}
+		return montant;
+	}
+
 	/* Cherche a echanger des proprietes. Methode bloquante car negociation avec d'autres joueurs
 	 * Se deroule en plusieurs etapes :
 	 * Calcule les terrains qui l'interessent chez les adversaires
@@ -226,8 +247,7 @@ class JoueurOrdinateur extends Joueur {
 		// Proprietes qui interessent le joueur
 		var proprietes = this.findOthersInterestProprietes();
 		if (proprietes.length === 0) {
-			callback();	
-			return;
+			return callback();
 		}
 		var nbGroupesPossedes = this.findGroupes().length;
 		/* On calcule l'importance d'echanger (si des groupes sont presents ou non) */
@@ -236,32 +256,18 @@ class JoueurOrdinateur extends Joueur {
 		/* On cherche les monnaies d'echanges. */
 		var proprietesFiltrees = [];
 		for (var p in proprietes) {
-			var prop = proprietes[p];
-			var maison = prop.maison;
+			let prop = proprietes[p];
+			let maison = prop.maison;
 			// On verifie si une demande n'a pas ete faite trop recemment
 			if (this._canAskTerrain(maison)) {
-				var last = this._getLastProposition(maison);
-				var joueur = maison.joueurPossede;
+				let last = this._getLastProposition(maison);
+				let joueur = maison.joueurPossede;
 				prop.compensation = 0;
 				// Calcule les monnaies d'echange
 				prop.deals = maison.joueurPossede.findOthersInterestProprietes(this,maison);
-           	if (prop.deals.length === 0) {
+				if (prop.deals.length === 0) {
 					// On ajoute les terrains non importants (gare seule, compagnie)
-					var othersProprietes = this.findUnterestsProprietes();
-					var montant = 0;
-					if (othersProprietes != null && othersProprietes.proprietes != null && othersProprietes.proprietes.length > 0) {
-						// On en ajoute. En fonction de la strategie, on n'ajoute que les terrains seuls dans le groupe (peu important)
-						for (var i = 0; i < othersProprietes.proprietes.length && montant / maison.achat < 0.7; i++) {
-							var terrain = othersProprietes.proprietes[i];
-							// Il ne faut pas proposer un terrain du meme groupe que le terrain demande car pas forcement de la strategie
-							// Deux terrains qui ne sont pas de la strategie sont potentiellement interessant a garder
-							if (!this.strategie.interetPropriete(terrain) && (terrain.groupe == null || !terrain.groupe.equals(maison.groupe))) {
-								// On le refourgue
-								prop.deals.push(terrain);
-								montant += terrain.achat;
-							}
-						}
-					}
+					let montant = this.addIsolateHouse(maison,prop);
 
 					// Permettre calcul compensation quand traitement fournit des terrains < 80% du montant
 					if (montant / maison.achat < 0.8) {
@@ -279,10 +285,10 @@ class JoueurOrdinateur extends Joueur {
 					}
 				}
 				// Si aucune proposition, on ajoute les autres terrains dont on se moque (terrains constructibles mais non intéressant)
-            // Potentiellement un terrain de la strategie peut tout de meme etre proposee (une gare par exemple)
+				// Potentiellement un terrain de la strategie peut tout de meme etre proposee (une gare par exemple)
 				if ((prop.deals == null || prop.deals.length === 0) && prop.compensation === 0) {
 					var terrains = this.findOthersProperties(proprietes);
-             		var montant = 0;
+					var montant = 0;
 					for (var i = 0; i < terrains.length && montant / maison.achat < 0.7; i++) {
 						var terrain = terrains[i];
 						if (!this.strategie.interetPropriete(terrain)) {
@@ -304,11 +310,13 @@ class JoueurOrdinateur extends Joueur {
 				});
 			}
 		}
-		// On choisit la propriete a demander en echange
-		if (proprietesFiltrees.length !== 0) {
-			for (var idx in proprietesFiltrees) {
-				var p = proprietesFiltrees[idx];
-				var proposition = {
+		this.doPropositionToPlayer(proprietesFiltrees,callback);
+	}
+	doPropositionToPlayer(proprietes,callback){
+		if (proprietes.length !== 0) {
+			for (let idx in proprietes) {
+				let p = proprietes[idx];
+				let proposition = {
 					terrains: (p.deals == null) ? [] : p.deals,
 					compensation: p.compensation
 				};
@@ -320,13 +328,13 @@ class JoueurOrdinateur extends Joueur {
 				} catch (e) {
 					console.log(e);
 					// Deja en cours quelque part, on continue
-					callback();
-					return;
+					return callback();
 				}
 			}
+		}else{
+			// Aucun echange n'est fait, on continue
+			return callback();
 		}
-		// Aucun echange n'est fait, on continue
-		callback();
 	}
 
 	/* Verifie que le terrain peut etre demande a l'echange (si une precedente demande n'a pas été faite trop recemment) */
@@ -640,8 +648,8 @@ class JoueurOrdinateur extends Joueur {
 		var _self = this;
 		setTimeout(function () {
 			if(_self.currentEnchere === undefined){return;}
-			if (montant > _self.currentEnchere.budgetMax || 
-			(_self.currentEnchere.joueurInteresse!=null && !_self.currentEnchere.joueurInteresse.equals(lastEncherisseur))) {
+			if (montant > _self.currentEnchere.budgetMax ||
+				(_self.currentEnchere.joueurInteresse!=null && !_self.currentEnchere.joueurInteresse.equals(lastEncherisseur))) {
 				// Exit enchere
 				GestionEnchere.exitEnchere(_self);
 			} else {
@@ -714,14 +722,14 @@ class JoueurOrdinateur extends Joueur {
 
 		var findInfo = function (maison) {
 			switch (maison.type) {
-			case "gare":
-				return -1;
-				break;
-			case "compagnie":
-				return -2;
-				break;
-			default:
-				return (maison.isTerrain()) ? maison.groupe.getInfos(joueur) : 0;
+				case "gare":
+					return -1;
+					break;
+				case "compagnie":
+					return -2;
+					break;
+				default:
+					return (maison.isTerrain()) ? maison.groupe.getInfos(joueur) : 0;
 			}
 		}
 		maisons.sort(function (a, b) {
@@ -998,7 +1006,7 @@ class JoueurOrdinateur extends Joueur {
 					} else {
 						achats.maison++;
 					}
-					achats.terrains[group.proprietes[currentMaison].id] = group.proprietes[currentMaison];                        
+					achats.terrains[group.proprietes[currentMaison].id] = group.proprietes[currentMaison];
 					currentMaison = (currentMaison + 1) % group.proprietes.length;
 				} catch (e) {
 					// Plus de maison ou d'hotel (on peut potentiellement continuer en achetant des maisons ?)                  
@@ -1046,7 +1054,7 @@ class JoueurOrdinateur extends Joueur {
 			// On garde la meme si aucune n'est interessante
 		}
 	}
-   
+
 	/* Compte le nombre de maison possedee correspondant a la strategie */
 	countInterestProperties() {
 		return this.maisons.filter(m=>this.strategie.groups.contains(m.color)).length;

@@ -40,9 +40,9 @@ function Pion(color, joueur,img, montantDepart = 20000) {
 			pos: pos,
 			axe: axe
 		}
-	}
+	};
 
-	this.goto = function (axe, pos, call,direct=true,primeDepart=true) {
+	this.goto = function (axe, pos, call,direct=VARIANTES.quickMove,primeDepart=true) {
 		let id = axe+"-"+pos;
 
 		if(this.stats.positions[id] == null){
@@ -64,7 +64,7 @@ function Pion(color, joueur,img, montantDepart = 20000) {
 		this.axe = axe;
 		this.position = pos;
 		this.pion.goto(axe, pos, call,false,direct);
-	}
+	};
 
 	// Si on passe par la case depart, on prend 20000 Francs
 	this.treatCaseDepart = function () {

@@ -35,7 +35,7 @@ class Comportement {
         // On ajoute un random sur 10% du prix => moins previsible
         let montant = this.findCoutFromFixMarge(joueur, marge);
         montant+=Math.round((montant*0.1)*(((Math.random()* 1000)%10 -5)/10));
-        return Math.min(montant, joueur.montant - (InitMonopoly.plateau.infos.montantDepart / 4));
+        return Math.min(montant, joueur.montant - joueur.minimumPriceHouse());
     }
 
     /* Appele lorsqu'une proposition a deja ete faite et qu'elle etait insuffisante */
@@ -120,7 +120,7 @@ class Comportement {
 
     // calcul le loyer le plus fort du joueur (et n'appartenant pas au joueur). Permet de connaitre la treso max que le joueur peut posseder sur lui
     plusFortLoyer (joueur) {
-        var max = InitMonopoly.plateau.infos.montantDepart; // Prix de l'impot sur le revenu, comme le depart
+        var max = joueur.montantDepart; // Prix de l'impot sur le revenu, comme le depart
         var it = GestionFiche.iteratorTerrains();
         while (it.hasNext()) {
             var f = it.next();
@@ -133,7 +133,7 @@ class Comportement {
 
     // calcul le loyer moyen que peut rencontrer le joueur
     getLoyerMoyen (joueur) {
-        var montant = InitMonopoly.plateau.infos.montantDepart; // Prix de l'impot sur le revenu, comme le depart
+        var montant = joueur.montantDepart; // Prix de l'impot sur le revenu, comme le depart
         var nb = 1;
         var it = GestionFiche.iteratorTerrains();
         while (it.hasNext()) {
@@ -169,7 +169,6 @@ class HardComportement extends Comportement {
         super(0.8, "Fou", 2);
     }
 }
-
 
 var GestionComportement = {
     comportements : [CheapComportement,MediumComportement,HardComportement],

@@ -1,9 +1,10 @@
 /* Objet PION */
 
-function Pion(color, joueur,img) {
+function Pion(color, joueur,img, montantDepart = 20000) {
 	this.axe = 2;
 	this.position = 0;
 	this.joueur = joueur;
+	this.montantDepart = montantDepart;
 	this.stats = {
 		tour: 0,
 		prison: 0,
@@ -68,7 +69,7 @@ function Pion(color, joueur,img) {
 	// Si on passe par la case depart, on prend 20000 Francs
 	this.treatCaseDepart = function () {
 		this.stats.tour++;
-		this.joueur.gagner(InitMonopoly.plateau.infos.montantDepart || 20000);
+		this.joueur.gagner(this.montantDepart);
 	}    
 
 	this.goDirectToCell = function (axe, pos, callback) {

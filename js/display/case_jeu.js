@@ -74,17 +74,19 @@ class CaseActionSpeciale extends PlateauCase {
 
  /* Case speciale, comme la taxe de luxe */
 class SimpleCaseSpeciale extends PlateauCase {
-    constructor(titre, montant, axe, pos, type, img){
+    constructor(titre, montant, axe, pos, type, img, plateauMonopoly){
     	super(axe,pos,type);
 		this.montant = montant;
 		this.titre = titre;
+		// Used to pay to parc gratuit if necessary
+		this.plateauMonopoly = plateauMonopoly;
 		this.drawing = DrawerFactory.getCase(pos, axe, null, titre, CURRENCY + " " + montant, img);
 		Drawer.add(this.drawing);
 	}
 
 	action () {
-		return InfoMessage.create(GestionJoueur.getJoueurCourant(),this.titre, "lightblue", "Vous devez payer la somme de " + this.montant + " " + CURRENCY, function (param) {
-			param.joueur.payerParcGratuit(InitMonopoly.plateau.parcGratuit,param.montant, function () {
+		return InfoMessage.create(GestionJoueur.getJoueurCourant(),this.titre, "lightblue", "Vous devez payer la somme de " + this.montant + " " + CURRENCY, param=> {
+			param.joueur.payerParcGratuit(this.plateauMonopoly.parcGratuit,param.montant, function () {
 				GestionJoueur.change();
 			});
 		}, {
@@ -95,11 +97,11 @@ class SimpleCaseSpeciale extends PlateauCase {
 }
 
 class CaseChance extends PlateauCase {
-	constructor(axe, pos,img, cartes, names={long:InitMonopoly.plateau.titles.chance,short:'carte chance'}){
+	constructor(axe, pos,img, cartes, longTitle,shortTitle='carte chance'){
 		super(axe,pos,"carte");
-		this.nom = names.short;
+		this.nom = shortTitle;
 		this.cartes = cartes;
-		this.drawing = DrawerFactory.getCase(pos, axe, null, names.long, null, img);
+		this.drawing = DrawerFactory.getCase(pos, axe, null, longTitle, null, img);
 		Drawer.add(this.drawing);
 	}
     action() {
@@ -118,8 +120,8 @@ class CaseChance extends PlateauCase {
 }
 
 class CaseCaisseDeCommunaute extends CaseChance {
-    constructor(axe, pos, img, cartes){
-    	super(axe,pos,img,cartes,{long:InitMonopoly.plateau.titles.communaute,short:"carte caisse de communauté"});
+    constructor(axe, pos, img, cartes,longTitle){
+    	super(axe,pos,img,cartes,longTitle,"carte caisse de communauté");
 	}
 }
 
@@ -221,6 +223,7 @@ function Groupe(nom, color) {
 			hypotheque: 0
 		};
 		var adversaires = []; // Liste des adversaires possedant un terrains
+		let sumAdversaires = 0;
 		for (var i = 0; i < this.fiches.length; i++) {
 			var f = this.fiches[i];
 			if (f.statut === ETAT_LIBRE) {
@@ -234,11 +237,14 @@ function Groupe(nom, color) {
 				} else {
 					infos.adversaire++;
 					infos.maisons.push(f);
+					if(adversaires[f.joueurPossede.id] !== 1){
+						sumAdversaires++;
+					}
 					adversaires[f.joueurPossede.id] = 1;
 				}
 			}
 		}
-		infos.nbAdversaires = adversaires.size();
+		infos.nbAdversaires = sumAdversaires;
 		return infos;
 	}
 
@@ -333,7 +339,7 @@ class Fiche extends PlateauCase {
 		this.drawing.setJoueur(joueur);
 		this.joueurPossede.maisons.push(this);
 		this.joueurPossede.updateMaisonsByGroup();
-		if(!noRefresh){
+		if(!noRefresh && $.trigger){
 			$.trigger('refreshPlateau');
 		}
 	}
@@ -341,10 +347,12 @@ class Fiche extends PlateauCase {
 	vendu(joueur) {
 		this.statut = ETAT_ACHETE;
 		this.setJoueurPossede(joueur);
-		$.trigger("monopoly.acheteMaison", {
-			joueur: joueur,
-			maison: this
-		});			
+		if ($.trigger) {
+			$.trigger("monopoly.acheteMaison", {
+				joueur: joueur,
+				maison: this
+			});
+		}
 	}
 
 	/* Le terrain est rendu (manque d'argent) */

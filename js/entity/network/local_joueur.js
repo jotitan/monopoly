@@ -1,8 +1,8 @@
 /* Represent a local player in remote game */
 /* Extend joueur but override many methods, no action, only receive events */
 class LocalPlayer extends NetworkJoueur {
-    constructor(numero, nom, color,argent){
-        super(numero,nom,color,argent);
+    constructor(numero, nom, color,argent,montantDepart){
+        super(numero,nom,color,argent,montantDepart);
     }
     lancerDes() {
         // Send event to get score for dices
@@ -17,8 +17,8 @@ class LocalPlayer extends NetworkJoueur {
 }
 
 class RemotePlayer extends Joueur{
-    constructor(numero,nom,color,argent){
-        super(numero,nom,color,argent);
+    constructor(numero,nom,color,argent,montantDepart){
+        super(numero,nom,color,argent,montantDepart);
         this.canPlay = false;
         this.type = "Distant";
         this.free = true;
@@ -39,8 +39,8 @@ class RemotePlayer extends Joueur{
 
 // Remote manage by master, must send his events
 class MasterRemotePlayer extends RemotePlayer{
-    constructor(numero,nom,color,argent) {
-        super(numero, nom, color, argent);
+    constructor(numero,nom,color,argent,montantDepart) {
+        super(numero, nom, color, argent,montantDepart);
     }
     // Send event when set as player
     notifySelect(){

@@ -66,13 +66,14 @@ let DiceThrower = {
 };
 
 class GestionDesImpl{
-    constructor() {
+    constructor(montantPrison, parcGratuit) {
         this.nbAnimation = 8;
         this.cube = {des1: null, des2: null};
         this.des1 = 0;
         this.des2 = 0;
         this.nbDouble = 0;	// Nombre de double de suite pour le joueur en cours
         this.rollColor = '#000000';
+        this.montantPrison = montantPrison;
     }
     init(rollColor){
         this._init(rollColor);
@@ -102,7 +103,7 @@ class GestionDesImpl{
     before(callback){
         if (GestionJoueur.getJoueurCourant().enPrison) {
             // Propose au joueur de payer ou utiliser une carte
-            var buttons = InfoMessage.createPrison(GestionJoueur.getJoueurCourant(),GestionJoueur.getJoueurCourant().nbDouble, function () {
+            let buttons = InfoMessage.createPrison(this.montantPrison,GestionJoueur.getJoueurCourant(),GestionJoueur.getJoueurCourant().nbDouble, function () {
                 callback();
             });
             GestionJoueur.getJoueurCourant().actionAvantDesPrison(buttons);
@@ -113,32 +114,32 @@ class GestionDesImpl{
     /* Cas lorsque le joueur est en prison */
     treatPrison(){
         let j = GestionJoueur.getJoueurCourant();
-        var gd = this;
+        let gd = this;
         if (this.isDouble()) {
             let buttons = InfoMessage.create(GestionJoueur.getJoueurCourant(),"Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", function () {
                 GestionJoueur.getJoueurCourant().exitPrison({notrigger:true});
                 gd.endLancer();
             }, {});
-            GestionJoueur.getJoueurCourant().actionApresDes(buttons, null);
-            return {sortie:true,montant:0,end:true};
+            j.actionApresDes(buttons, null);
+            return {prison:{sortie:true,montant:0},end:true};
         } else {
             if (j.nbDouble === 2) {
-                let messagePrison = "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " " + InitMonopoly.plateau.infos.montantPrison+ " !";
-                let buttons = InfoMessage.create(j,"Libere de prison", "lightblue", messagePrison, function () {
-                    j.payerParcGratuit(InitMonopoly.plateau.parcGratuit,InitMonopoly.plateau.infos.montantPrison, function () {
+                let messagePrison = "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " " + this.montantPrison+ " !";
+                let buttons = InfoMessage.create(j,"Libere de prison", "lightblue", messagePrison,  ()=> {
+                    j.payerParcGratuit(this.parcGratuit,this.montantPrison, function () {
                         j.exitPrison({notrigger:true});
                         gd.endLancer();
                     });
                 }, {});
                 j.actionApresDes(buttons, null);
-                return {sortie:true,montant:InitMonopoly.plateau.infos.montantPrison,end:true};
+                return {prison:{sortie:true,montant:this.montantPrison},end:true};
             } else {
                 j.nbDouble++;
                 let buttons = InfoMessage.create(j,"Tour " + j.nbDouble, "red", "Vous restez en prison, vous n'avez pas fait de double.", function () {
                     GestionJoueur.change();
                 }, {});
                 j.actionApresDes(buttons, null);
-                return {sortie:false,end:true};
+                return {prison:{sortie:false},end:true};
             }
         }
     }
@@ -152,11 +153,11 @@ class GestionDesImpl{
     after(){
         let event = {total:this.total(),combinaison:this.combinaisonDes(),joueur:GestionJoueur.getJoueurCourant()};
         if (GestionJoueur.getJoueurCourant().enPrison === true) {
-            event.prison = this.treatPrison();
+            event = $.extend(event,this.treatPrison());
         } else {
             // Gere le cas du triple (de rapide) egalement
             if (this.isDouble()) {
-                event.double = this.treatDouble();
+                event = $.extend(event,this.treatDouble());
                 if(event.double.status === false){}
             }
         }
@@ -188,10 +189,10 @@ class GestionDesImpl{
                 GestionJoueur.getJoueurCourant().goPrison();
             }, {});
             GestionJoueur.getJoueurCourant().actionApresDes(buttons, null);
-            return {status:false,triple:true,end:true};
+            return {double:{status:false,triple:true},end:true};
         }
         this.nbDouble++;
-        return {status:true,replay:true};
+        return {double:{status:true,replay:true}};
     }
 
     endLancer(){
@@ -273,8 +274,8 @@ class GestionDesImpl{
 /* Si on obtient un Mr Monopoly, on se place sur la prochaine propriété vide. Si tout vendu, on se deplace sur la premiere */
 
 class GestionDesRapideImpl extends GestionDesImpl{
-    constructor() {
-        super();
+    constructor(montantPrison,parcGratuit) {
+        super(montantPrison,parcGratuit);
         this.cube.desRapide = null;
         this.desRapide = 0;
     }
@@ -293,8 +294,8 @@ class GestionDesRapideImpl extends GestionDesImpl{
     doSpecificAction(){
         // Apres son jeu, le joueur effectuera cette action
         this.desRapide = 0; // annule le mr monopoly
-        var pos = GestionJoueur.getJoueurCourant().getPosition();
-        var fiche = GestionFiche.isFreeFiches() ? GestionFiche.getNextFreeTerrain(pos) : GestionFiche.getNextTerrain(pos);
+        let pos = GestionJoueur.getJoueurCourant().getPosition();
+        let fiche = GestionFiche.isFreeFiches() ? GestionFiche.getNextFreeTerrain(pos) : GestionFiche.getNextTerrain(pos);
         $.trigger('monopoly.derapide.mrmonopoly',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
         GestionJoueur.getJoueurCourant().joueSurCase(fiche);
     }
@@ -352,7 +353,7 @@ class GestionDesRapideImpl extends GestionDesImpl{
                 GestionJoueur.getJoueurCourant().joueSurCase(fiche);
                 $.trigger('monopoly.derapide.triple',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
             });
-            return {status:true};
+            return {double:{status:true}};
         }else{
             this.desRapide = 0
             return this._doTreatDouble();
@@ -388,7 +389,7 @@ class GestionDesRapideImpl extends GestionDesImpl{
                 $.trigger('monopoly.derapide.bus',{joueur:GestionJoueur.getJoueurCourant(),total:total});
                 GestionJoueur.getJoueurCourant().joueDes(total);
             });
-            return
+            return;
         }
         if(this.isDouble()){
             this.desRapide = 0;

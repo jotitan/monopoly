@@ -11,9 +11,11 @@ const terrainDispo = "TERRAIN_DISPO";
 const argentInsuffisant = "ARGENT_INSUFFISANT";
 
 class JoueurOrdinateur extends Joueur {
-	constructor(numero, nom, color, argent){
-		super(numero, nom, color,argent);
+	constructor(numero, nom, color, argent,montantDepart){
+		super(numero, nom, color,argent,montantDepart);
 		this.type = "Ordinateur";
+		// Threashold when detecting dangerous case
+		this.threasholdMontant = argent*0,65;
 		this.canPlay = false;
 		/* Strategie : definit le comportement pour l'achat des maisons */
 		this.strategie = null;
@@ -556,7 +558,7 @@ class JoueurOrdinateur extends Joueur {
 		// Critere 1, nombre de maison par terrain pouvant etre achete
 		var nbMaison = (this.argent / groupe.maisons[0].prixMaison) / groupe.fiches.length;
 		// compte les autres groupes
-		var criterePrix = (groupe.maisons[0].loyers[nbMaison]) / (InitMonopoly.plateau.infos.montantDepart*5);
+		var criterePrix = (groupe.maisons[0].loyers[nbMaison]) / this.threasholdMontant;
 		// Ligne presente
 		var groups = this.findGroupes();
 		var isLigne = false;
@@ -896,14 +898,20 @@ class JoueurOrdinateur extends Joueur {
 		}
 	}
 
-	/* Construit des maisons / hotels 
+	// Return the minimum price to build an house
+	minimumPriceHouse(){
+		return this.maisons.reduce((a,b)=>a.prixMaison < b.prixMaison ? a:b).prixMaison;
+	}
+
+	/* Construit des maisons / hotels
 	 * Calcul les groupes constructibles, verifie l'argent disponible. Construit sur les proprietes ou peuvent tomber les adversaires (base sur leur position et les stats au des)
 	 * Possibilite d'enregistrer tous les deplacements des joueurs pour affiner les cases les plus visitees
 	 */
 	buildConstructions() {
+		if(this.maisons.length === 0){return;}
 		var budget = this.comportement.getBudget(this);
 		// Pas d'argent
-		if (budget < InitMonopoly.plateau.infos.montantDepart / 4) {
+		if (budget < this.minimumPriceHouse()) {
 			return;
 		}
 		var sortedGroups = [];
@@ -1123,8 +1131,8 @@ class JoueurOrdinateur extends Joueur {
 }
 
 class NetworkJoueurOrdinateur extends JoueurOrdinateur{
-	constructor(numero, nom, color,argent){
-		super(numero,nom,color,argent);
+	constructor(numero, nom, color,argent,montantDepart){
+		super(numero,nom,color,argent,montantDepart);
 	}
 	moveTo(nb){
 		let nextCase = this.pion.deplaceValeursDes(nb);

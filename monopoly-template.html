@@ -323,15 +323,15 @@
 <div class="mobile"></div>
 <script language="javascript">
 	// On detecte le type de donnees a charger
-	let nomPlateau = "data-monopoly.json";
+	/*let nomPlateau = "data-monopoly.json";
 	if (location.href.indexOf("plateau=")!==-1) {
 		nomPlateau = "data-monopoly-" + location.href.substring(location.href.indexOf("plateau=")+8) + ".json";
-	}
-	var debug = false;
+	}*/
+	let debug = false;
 	$(function(){
 		$('#idCreationGame').tabs();
 		$('#idMontantParc').hide();
-		InitMonopoly.init(debug);
+		startMonopoly(debug)
 		if($('.mobile').is(':visible')) {
 			DrawerFactory.setSize(950);
 		}

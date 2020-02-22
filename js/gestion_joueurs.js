@@ -46,12 +46,13 @@ let GestionJoueur = {
         }
         return div;
     },
-    create(clazz, i, nom,defaite){
+    create(clazz, i, nom,defaite, argentDepart, montantDepart){
         let id = `joueur${i}`;
         let color = this.colorsJoueurs[i];
         let img = this.imgJoueurs[i];
-        let argent = InitMonopoly.plateau.infos.argentJoueurDepart;
-        let joueur = new clazz(i, nom, color,argent);
+        let argent = argentDepart;
+        let joueur = new clazz(i, nom, color,argent,montantDepart);
+        joueur.setEnableMouseFunction(JoueurFactory.mouseFunction);
         let isDefaite = defaite ? ' class="defaite" ':'';
         let div = $(`<div id="${id}"${isDefaite}></div>`);
         $(div).append(`<div class="joueur-bloc"><span class="joueur-id"><span class="joueur-name">${joueur.nom}</span> : <span class="compte-banque"></span> ${CURRENCY}</span><span class="info-joueur" title="Info joueur" data-idjoueur="${i}"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div>`)
@@ -59,7 +60,7 @@ let GestionJoueur = {
         $('.panneau_joueur').append('<hr style="border:solid 2px darkgray"/>').append(div);
 
         joueur.setDiv($(`div[id="${id}"]`));
-        joueur.setPion(color,img);
+        joueur.setPion(color,img,montantDepart);
         // On defini la couleurs
         $('#' + id + ' > div.joueur-bloc').css('backgroundImage', 'linear-gradient(to right,white 50%,' + color + ')');
         $.trigger('monopoly.newPlayer', {
@@ -91,9 +92,14 @@ let GestionJoueur = {
         let joueur = null;
         try {
             joueur = this.next();
+            if(joueur != null) {
+                $.trigger('monopoly.debug', {
+                    message: `Change player to ${joueur.nom}`
+                });
+            }
         } catch (gagnant) {
             this._showVainqueur(gagnant);
-            return gagnant;
+            return null;
         }
         if (joueur == null) {
             return null;
@@ -123,7 +129,7 @@ let GestionJoueur = {
             message+= (i+2) + " - " + perdants[i].nom + "<br/>";
         }
         let score = this._calculateScore(gagnant);
-        InfoMessage.create(this.joueurCourant,"Fin de partie : " + score + " Points", "green", message, ()=>{}, null, true,{"Recommencer":()=>InitMonopoly.init()});
+        InfoMessage.create(this.joueurCourant,`Fin de partie : ${score} Points`, "green", message, ()=>{}, null, true,{"Recommencer":()=>startMonopoly()});
     },
     /* Calcule un score de victoire */
     /* Prend en compte l'argent, le nombre de terrains, le nombre de constructions, le nombre de tours des joueurs adverses */
@@ -161,7 +167,7 @@ let GestionJoueur = {
         }
         if (!joueur.equals(this.joueurCourant)) {
             $('.joueurCourant').removeClass('joueurCourant');
-            if(this.joueurCourant!=null){
+            if(this.joueurCourant!=null && this.joueurCourant.pion !=null){
                 this.joueurCourant.pion.pion.setSelected(false);
             }
         }
@@ -230,6 +236,9 @@ let JoueurFactory = {
     network:false,
     // Current instance is master of network game
     master:true,
+    setMouseFunction(fct){
+        this.mouseFunction = fct;
+    },
     useNetwork(){
         this.network = true;
     },

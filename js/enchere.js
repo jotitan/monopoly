@@ -16,11 +16,14 @@ var GestionEnchere = {
     endAckJoueurs: [], // Liste des joueurs ayant accuse de la fin des encheres
     transaction: 0, // Permet d'authentifier la transaction
 
+    setPasVente(pas){
+        this.pasVente = pas;
+    },
+
     /* Initialise une mise aux enchere */
     /* @param miseDepart : prix de depart */
     /* @param ventePerte : si vrai, permet de baisser la mise de depart (cas d'une vente obligee pour payer une dette) */
     init: function (terrain, miseDepart, ventePerte, callback) {
-      this.pasVente = InitMonopoly.plateau.infos.montantDepart / 10;
         this.terrain = terrain;
         this.callback = callback;
         this.miseDepart = miseDepart;
@@ -44,20 +47,20 @@ var GestionEnchere = {
         var encherisseurs = [];
         var observers = [];
         // exclure les joueurs qui ont perdus
-		GestionJoueur.forEach(function(j){
-			if (!j.equals(this.terrain.joueurPossede) && !j.equals(this.joueurLastEnchere) && this.joueursExit[j.nom] == null && j.defaite == false) {
+        GestionJoueur.forEach(function(j){
+            if (!j.equals(this.terrain.joueurPossede) && !j.equals(this.joueurLastEnchere) && this.joueursExit[j.nom] == null && j.defaite == false) {
                 encherisseurs.push(j);
             } else {
                 observers.push(j);
             }
-		},this);
+        },this);
         return {
             encherisseurs: encherisseurs,
             observers: observers
         };
     },
     /* On lance aux joueurs les encheres, le premier qui repond prend la main, on relance a chaque fois (et on invalide le resultat des autres) */
-	/* @param newEnchere : quand l'enchere, on notifie les joueurs (ca peut les interesse) */
+    /* @param newEnchere : quand l'enchere, on notifie les joueurs (ca peut les interesse) */
     runEnchere: function (newEnchere) {
         var joueurs = this.computeEncherisseurs();
         for (var i = 0; i < joueurs.encherisseurs.length; i++) {
@@ -69,7 +72,7 @@ var GestionEnchere = {
     },
     /* Appele par un joueur  */
     exitEnchere: function (joueur) {
-		if(this.joueursExit[joueur.nom] != null){return;}
+        if(this.joueursExit[joueur.nom] != null){return;}
         this.joueursExit[joueur.nom] = joueur;
         GestionJoueur.forEach(function(j){j.notifyExitEnchere(joueur)});
         /*for (var j in joueurs) {
@@ -79,15 +82,15 @@ var GestionEnchere = {
             this.manageEndEnchere();
         }
     },
-	/* Verifie si l'enchere est terminee */
+    /* Verifie si l'enchere est terminee */
     checkEndEnchere: function () {
         // 1) Vente par banque, pas d'enchere
-		// 2) Vente par joueur, pas d'enchere ou vente par banque avec une enchere
-		// 3) Vente par joueur avec enchere
-        if (this.joueursExit.size() >= GestionJoueur.getNb() || 
-			(this.joueursExit.size() >= GestionJoueur.getNb() - 1 && (this.terrain.joueurPossede != null ||this.joueurLastEnchere !=null)) || 
-			(this.joueursExit.size() >= GestionJoueur.getNb() - 2 && this.joueurLastEnchere != null && this.terrain.joueurPossede != null)
-			) {
+        // 2) Vente par joueur, pas d'enchere ou vente par banque avec une enchere
+        // 3) Vente par joueur avec enchere
+        if (this.joueursExit.size() >= GestionJoueur.getNb() ||
+            (this.joueursExit.size() >= GestionJoueur.getNb() - 1 && (this.terrain.joueurPossede != null ||this.joueurLastEnchere !=null)) ||
+            (this.joueursExit.size() >= GestionJoueur.getNb() - 2 && this.joueurLastEnchere != null && this.terrain.joueurPossede != null)
+        ) {
             return true;
         }
         return false;
@@ -126,8 +129,8 @@ var GestionEnchere = {
             // On relance les encheres en diminuant la mise de depart
             if (this.ventePerte && (this.nextMontantEnchere -  this.pasVente) > this.miseDepart / 2) {
                 this.nextMontantEnchere -= this.pasVente;
-				// On force les joueurs a reparticiper (le nouveau tarif peut interesser)
-				this.joueursExit = [];
+                // On force les joueurs a reparticiper (le nouveau tarif peut interesser)
+                this.joueursExit = [];
                 this.runEnchere(true);
             } else {
                 //pas de vente
@@ -141,17 +144,17 @@ var GestionEnchere = {
             // La mise aux encheres est terminee, on procede a l'echange
             // Correspond a un terrain
             if(this.terrain.joueurPossede == null){
-				this.joueurLastEnchere.acheteMaison(this.terrain,this.lastEnchere);
+                this.joueurLastEnchere.acheteMaison(this.terrain,this.lastEnchere);
             }
             else{
                 this.joueurLastEnchere.payerTo(this.lastEnchere, this.terrain.joueurPossede);
                 this.joueurLastEnchere.getSwapProperiete(this.terrain);
             }
-            
+
             $.trigger('monopoly.enchere.success', {
                 joueur: this.joueurLastEnchere,
                 maison: this.terrain,
-				montant:this.lastEnchere
+                montant:this.lastEnchere
             });
 
             this.endEnchere();
@@ -201,7 +204,7 @@ var GestionEnchereDisplayer = {
         $('.terrain', this.panel).text(terrain.nom).css('color', terrain.color);
         $('.list_exit', this.panel).empty();
         $('.list_encherisseurs', this.panel).empty();
-		$('.messages', this.panel).empty();
+        $('.messages', this.panel).empty();
         this.panel.dialog('open');
     },
     /* Affiche l'option pour fermer le panneau */
@@ -230,10 +233,10 @@ var GestionEnchereDisplayer = {
         initWrapButtons(this.panel);
 
     },
-	/* Nettoie l'affichage */
-	clean:function(){
-		$('.list_exit', this.panel).empty();
-	},
+    /* Nettoie l'affichage */
+    clean:function(){
+        $('.list_exit', this.panel).empty();
+    },
     /* Affiche le depart d'un joueur des encheres */
     showJoueurExit: function (joueur) {
         $('.list_exit', this.panel).append(joueur.nom + ' est sorti<br/>');
@@ -248,7 +251,7 @@ var GestionEnchereDisplayer = {
     },
     /* Si canDoEnchere est vrai, le contexte doit etre present */
     updateInfo: function (montant, encherisseur, canDoEnchere, contexte) {
-	    if (canDoEnchere && contexte == null) {
+        if (canDoEnchere && contexte == null) {
             throw "Impossible de gerer l'enchere";
         }
         if (this.currentMontant != null && this.currentEncherisseur != null) {
@@ -317,7 +320,7 @@ var EchangeDisplayer = {
             }
         });
         // On charge les joueurs
-		GestionJoueur.forEach(function(j){this.selectJoueurs.append('<option value="' + j.id + '">' + j.nom + '</option>');},this)
+        GestionJoueur.forEach(function(j){this.selectJoueurs.append('<option value="' + j.id + '">' + j.nom + '</option>');},this)
         this.selectJoueurs.change(function () {
             $('option:not(:first),optgroup', EchangeDisplayer.listTerrainsAdversaire).remove();
             var joueur = GestionJoueur.getById(EchangeDisplayer.selectJoueurs.val());
@@ -393,7 +396,7 @@ var GestionEchange = {
     proprietaire: null,
     terrain: null,
     proposition: null,
-	initialProposition: null,
+    initialProposition: null,
     /* Derniere proposition faite. */
     endCallback: null,
     /* Methode appelee a la fin de la transaction */
@@ -428,7 +431,7 @@ var GestionEchange = {
     propose: function (proposition) {
         // On transmet la demande au proprietaire
         this.proposition = proposition;
-		this.initialProposition = proposition;
+        this.initialProposition = proposition;
         $.trigger('monopoly.echange.propose', {
             joueur: GestionEchange.demandeur,
             proposition: proposition
@@ -487,11 +490,11 @@ var GestionEchange = {
             joueur: joueurReject
         });
         // On notifie le joueur et on lui donne le callback(end) pour lancer la suite du traitement
-		// Cas de la contreproposition
-        if (joueurReject.equals(this.demandeur)) {            
-			this.proprietaire.notifyRejectProposition(function () {
+        // Cas de la contreproposition
+        if (joueurReject.equals(this.demandeur)) {
+            this.proprietaire.notifyRejectProposition(function () {
                 GestionEchange.end();
-            }, this.terrain, this.initialProposition);			
+            }, this.terrain, this.initialProposition);
         } else {
             this.demandeur.notifyRejectProposition(function () {
                 GestionEchange.end();

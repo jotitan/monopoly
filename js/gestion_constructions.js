@@ -79,7 +79,7 @@ var GestionConstructions = {
         let actions = {
             venteMaison: function (p, simulation) {
                 if (p.from.type === "maison" && p.to.type === "maison" && p.from.nb > p.to.nb) {
-                    actions.changeMaison(p,simulation);
+                    changeMaison(p,simulation);
                 }
             },
             achatHotel: function (p, simulation) {
@@ -128,16 +128,16 @@ var GestionConstructions = {
             },
             achatMaison: function (p, simulation) {
                 if (p.from.type === "maison" && p.to.type === "maison" && p.from.nb < p.to.nb) {
-                    actions.changeMaison(p,simulation);
+                    changeMaison(p,simulation);
                 }
-            },
-            changeMaison(p,simulation){
-                let nb = p.from.nb - p.to.nb;
-                simulation.achat.maison -= nb;
-                simulation.reste.maison += nb;
-                p.done = true;
             }
         };
+        let changeMaison = (p,simulation)=>{
+            let nb = p.from.nb - p.to.nb;
+            simulation.achat.maison -= nb;
+            simulation.reste.maison += nb;
+            p.done = true;
+        }
         for (let a in actions) {
             let action = actions[a];
             for (let index in projects) {

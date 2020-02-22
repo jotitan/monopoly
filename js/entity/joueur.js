@@ -1,6 +1,6 @@
 /* Represente un joueur humain */
 class Joueur {
-	constructor(numero, nom = '', color,argent){
+	constructor(numero, nom = '', color,argent,montantDepart=0){
 		this.numero = numero;
 		this.type = "Local";
 		this.id = numero;
@@ -19,6 +19,12 @@ class Joueur {
 		this.cartesSortiePrison = []; // Cartes sortie de prison
 		// Indique que c'est un vrai joueur, pas un robot
 		this.canPlay = true;
+		this.montantDepart = montantDepart;	// Montant sur la case depart
+		this.enableMouseFunction = ()=>{};
+	}
+
+	setEnableMouseFunction(fct){
+		this.enableMouseFunction = fct;
 	}
 	equals(joueur) {
 		return joueur != null && this.numero === joueur.numero;
@@ -267,7 +273,7 @@ class Joueur {
 	}
 
 	/* Joueur sur une case donnees */
-	joueSurCase(fiche,direct=false, primeDepart=true){
+	joueSurCase(fiche,direct, primeDepart=true){
 		this.pion.goto(fiche.axe, fiche.pos, ()=>doActions(this),direct,primeDepart);
 	}
 
@@ -288,8 +294,8 @@ class Joueur {
 	}
 	/* Le joueur se deplace sur la case qu'il souhaite */
 	choisiCase(callback){
-		InfoMessage.create(this,"Triple dé","green","Choisissez votre case",function(){
-			InitMonopoly.plateau.enableMouse(callback);
+		InfoMessage.create(this,"Triple dé","green","Choisissez votre case",()=>{
+			this.enableMouseFunction(callback);
 		});
 	}
 
@@ -407,6 +413,7 @@ class Joueur {
 	setArgent(montant) {
 		if(montant === undefined){
 			console.log("error montant")
+			throw "error"
 		}
 		this.montant = montant;
 		$('.compte-banque', this.div).text(montant);
@@ -425,8 +432,8 @@ class Joueur {
 		}
 	}
 
-	setPion(color,img) {
-		this.pion = new Pion(color, this,img);
+	setPion(color,img,montantDepart) {
+		this.pion = new Pion(color, this,img,montantDepart);
 	}
 
 	/* Verifie si le joueur peut payer ses dettes */
@@ -446,11 +453,11 @@ class Joueur {
 
 		/* Verifie si le joueur peut payer */
 		this.notifyPay(montant);
-		this.setArgent(this.montant - montant);
-		if (this.montant < 0) {
+		if (this.montant - montant < 0) {
 			this.bloque = true;
 			this.resolveProblemeArgent(montant, callback);
 		} else {
+			this.setArgent(this.montant - montant);
 			callback();
 		}
 	}
@@ -586,11 +593,9 @@ class Joueur {
 			if (m.isTerrain() === true && m.groupe != null) {
 				// Deja traite, on possede la famille
 				if (colorsOK[m.color] === true) {
-					//groups[m.color].proprietes.push(m);
 				} else {
 					if (colorsKO[m.color] === undefined) {
 						// On recherche si on a toutes les proprietes du groupe
-						//var ok = true;
 						var infos = m.groupe.getInfos(this);
 						// Possede le groupe
 						if (infos.free === 0 && infos.adversaire === 0 && infos.hypotheque === 0) {
@@ -769,7 +774,7 @@ class Joueur {
 		$(".counter-group",div).html(0);
 		for(var group in groups){
 			let color = group.replace(/ /g,"");
-			$(`.counter-group.${color}`,div).html(groups[group].size());
+			$(`.counter-group.${color}`,div).html(groups[group].length);
 		}
 	}
 
@@ -779,8 +784,8 @@ class Joueur {
 
 // Used only when master play
 class NetworkJoueur extends Joueur{
-	constructor(numero, nom, color,argent){
-		super(numero,nom,color,argent);
+	constructor(numero, nom, color,argent,montantDepart){
+		super(numero,nom,color,argent,montantDepart);
 	}
 	moveTo(nb){
 		var nextCase = this.pion.deplaceValeursDes(nb);

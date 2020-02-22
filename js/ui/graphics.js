@@ -260,6 +260,9 @@ var Drawer = {
         }, time);
     },
     init: function (width, height) {
+    	if(document.getElementById('canvas') == null){
+    		return;
+		}
 		// On tri les composants qui ont ete ajoutes
 		this.components.sort(function(a,b){
 			return a.order - b.order;

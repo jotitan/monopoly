@@ -307,12 +307,12 @@ var InfoMessage = {
             this.div.trigger('dialogclose.prison');
         }
     },
-    createPrison:function(joueur,nbTours, callback){
+    createPrison:function(montantPrison,joueur,nbTours, callback){
         this._initMessage("red","Vous êtes en prison depuis " + nbTours + " tours.","Vous êtes en prison, que voulez vous faire");
 
         var buttons = {
             "Payer": function () {
-                joueur.payer(InitMonopoly.plateau.infos.montantPrison);
+                joueur.payer(montantPrison);
                 // TODO : Ajouter message pour indiquer qu'il paye
                 joueur.exitPrison({paye:true});
                 InfoMessage.close();

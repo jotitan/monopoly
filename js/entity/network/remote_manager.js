@@ -46,17 +46,19 @@ class RemoteManager {
     }
     // Create the game
     // @param position : position of player in game
-    create(nbJoueurs,position,name,data){
+    create(nbJoueurs,position,name,data,argentDepart, montantDepart){
         let options = {typeGame:data.quickDice ? "quick":"classic"};
-        InitMonopoly.plateau.load(data.plateau,options,()=> {
+        // Create a monopoly instance here @TODO
+        let monopoly = startMonopoly();
+        monopoly.plateau.load(data.plateau,options,()=> {
             JoueurFactory.useNetwork();
             JoueurFactory.setSlave();
             for (let i = 0; i < nbJoueurs; i++) {
                 let player = i === position ? JoueurFactory.getCurrentPlayer() : JoueurFactory.getOtherPlayer();
-                GestionJoueur.create(player, i, i === position ? name : data.playersName[i]);
+                GestionJoueur.create(player, i, i === position ? name : data.playersName[i],argentDepart,montantDepart);
             }
             this.queueEvents.end(data);
-            InitMonopoly.afterCreateGame(data.playersName)
+            monopoly.afterCreateGame(data.playersName)
         });
     }
     debug(){
@@ -101,7 +103,7 @@ class RemoteManager {
     }
     connect(event,joueur){
         if(event.playerID === this.playerID){
-            this.create(event.nb,event.posPlayer,event.name,event);
+            this.create(event.nb,event.posPlayer,event.name,event,event.argentDepart,event.montantDepart);
         }else{
             if(joueur != null){
                 joueur.setPlayer(event.name);
@@ -152,10 +154,12 @@ class RemoteManager {
 
 // Manage more events cause manage game
 class MasterRemoteManager extends RemoteManager{
-    constructor(name,game){
+    constructor(name,game,plateau){
         super(name,game);
+        // Plateau monopoly
+        this.plateau = plateau;
     }
-    create(nbJoueurs, nbRobots,playerName,players=new Array(nbJoueurs)){
+    create(nbJoueurs, nbRobots,playerName,players,argentDepart,montantDepart){
         JoueurFactory.useNetwork();
         JoueurFactory.setMaster();
         let nbRemote = nbJoueurs - nbRobots - 1;
@@ -179,7 +183,7 @@ class MasterRemoteManager extends RemoteManager{
                 }
             }
             players[i] = pName;
-            GestionJoueur.create(player, i, pName);
+            GestionJoueur.create(player, i, pName,false,argentDepart,montantDepart);
         }
         if(nbRemote > 0) {
             $.trigger("monopoly.waitingPlayers", {nb: nbRemote,idGame:this.game});
@@ -220,13 +224,15 @@ class MasterRemoteManager extends RemoteManager{
         MessageDisplayer.write(player, "is joining the game");
         this.eventSender.sendEvent({
             player:player.id,
-            playersName:InitMonopoly.plateau.infos.realNames,
-            plateau:InitMonopoly.plateau.name,
+            playersName:this.plateau.infos.realNames,
+            plateau:this.plateau.name,
             posPlayer:player.numero,
             playerID:event.playerID,
             name:player.nom,
             kind:'connected',
-            quickDice:InitMonopoly.plateau.isQuickDice(),
+            argentDepart:this.plateau.infos.argentJoueurDepart,
+            montantDepart:this.plateau.infos.montantDepart,
+            quickDice:this.plateau.isQuickDice(),
             nb:GestionJoueur.getNbJoueurs()});
         // If last available, start game
         if(availables.length === 1){

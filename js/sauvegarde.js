@@ -6,7 +6,7 @@ var Sauvegarde = {
     isSauvegarde:function(){
         return this.currentSauvegardeName!=null;
     },
-    save: function (name) {
+    save: function (name, namePlateau) {
         this.currentSauvegardeName = name !=null ? this.getSauvegardeName(name) : this.currentSauvegardeName || this.getSauvegardeName();
         // On recupere la liste des joueurs
         var saveJoueurs = [];
@@ -23,24 +23,24 @@ var Sauvegarde = {
             joueurCourant: GestionJoueur.getJoueurCourant().id,
             variantes: VARIANTES,
             nbTours: globalStats.nbTours,
-            plateau:InitMonopoly.plateau.name
+            plateau:namePlateau
         };
         this._putStorage(this.currentSauvegardeName, data);
         $.trigger("monopoly.save", {
             name: this.currentSauvegardeName
         });
     },
-    load: function (name) {
+    load: function (name, monopoly) {
         this.currentSauvegardeName = name;
         var data = this._getStorage(name);
         // On charge le plateau
         VARIANTES = data.variantes || VARIANTES;
-        InitMonopoly.plateau.load(data.plateau || "data-monopoly.json",function(){
+        monopoly.plateau.load(data.plateau || "data-monopoly.json",function(){
             data.joueurs.forEach(function(j,i){GestionJoueur.createAndLoad(!j.canPlay, i,j.nom,j);});
             data.fiches.forEach(function(f){GestionFiche.getById(f.id).load(f);});
             $.trigger('refreshPlateau');
             globalStats.nbTours = data.nbTours || 0;
-            InitMonopoly.afterCreateGame();
+            monopoly.afterCreateGame();
             GestionJoueur.change(data.joueurCourant);
         });
     },

@@ -30,17 +30,14 @@ class BirthdayCarte extends CarteAction{
 		this.montant = montant;
 	}
 	action(joueur){
-		var nb = 0;
-		GestionJoueur.joueurs.forEach(j=>{
-			if(!joueur.equals(j) && !j.defaite){
-				j.payerTo(this.montant,joueur,()=>{
-					if(++nb >=GestionJoueur.joueurs.length -1){
-						// End
-						GestionJoueur.change()
-					}
-				});
-			}
-		})		
+		let payers = GestionJoueur.joueurs.filter(j=>!joueur.equals(j) && !j.defaite);
+		payers.forEach((j,i)=>{
+			j.payerTo(this.montant,joueur,()=>{
+				if(i === payers.length -1){
+					GestionJoueur.change();
+				}
+			});
+		});
 	}
 }
 
@@ -91,13 +88,13 @@ class MoveNbCarte extends CarteAction {
 
 /* Action de gain d'argent pour une carte */
 class PayerCarte extends CarteAction {
-	constructor(montant,parc) {
+	constructor(montant,plateauMonopoly) {
 		super("taxe");
-		this.parc = parc;
+		this.plateauMonopoly = plateauMonopoly;
 		this.montant = montant;
 	}
 	action(joueur) {
-		joueur.payerParcGratuit(this.parc,this.montant,  ()=>GestionJoueur.change());
+		joueur.payerParcGratuit(this.plateauMonopoly.parcGratuit,this.montant,  ()=>GestionJoueur.change());
 	}
 }
 
@@ -114,28 +111,28 @@ class GagnerCarte extends CarteAction {
 }
 
 let CarteActionFactory = {
-	get:function(data) {
+	get:function(data, plateauMonopoly) {
 		switch (data.type) {
-		/* Amende a payer */
-		case "taxe":
-			return new PayerCarte(data.montant,InitMonopoly.plateau.parcGratuit);
-		/* Argent a toucher */
-		case "prime":
-			return new GagnerCarte(data.montant);
-		/* Endroit ou aller */
-		case "goto":
-			return new GotoCarte(data.axe, data.pos, data.direct,data.primeDepart);
-		/* Deplacement a effectuer */
-		case "move":
-			return new MoveNbCarte(data.nb,data.direct,data.primeDepart);
-		/* Carte prison */
-		case "prison":
-			return new PrisonCarte();
-		/* Carte anniversaire */
-		case "birthday":
-			return new BirthdayCarte(data.montant);
-		case "repair":
-			return new ReparationsCarte(data.hotel,data.maison)
+			/* Amende a payer */
+			case "taxe":
+				return new PayerCarte(data.montant,plateauMonopoly);
+			/* Argent a toucher */
+			case "prime":
+				return new GagnerCarte(data.montant);
+			/* Endroit ou aller */
+			case "goto":
+				return new GotoCarte(data.axe, data.pos, data.direct,data.primeDepart);
+			/* Deplacement a effectuer */
+			case "move":
+				return new MoveNbCarte(data.nb,data.direct,data.primeDepart);
+			/* Carte prison */
+			case "prison":
+				return new PrisonCarte();
+			/* Carte anniversaire */
+			case "birthday":
+				return new BirthdayCarte(data.montant);
+			case "repair":
+				return new ReparationsCarte(data.hotel,data.maison)
 		}
 		throw "Type inconnu";
 	}

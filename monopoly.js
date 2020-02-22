@@ -63,14 +63,14 @@ class CarteActionWrapper{
 }
 
 class CarteChance extends CarteActionWrapper{
-	constructor(libelle, carte) {
-		super(libelle, carte, InitMonopoly.plateau.titles.chance, "lightblue", "chance");
+	constructor(libelle, carte,title) {
+		super(libelle, carte, title, "lightblue", "chance");
 	}
 }
 
 class CarteCaisseDeCommunaute extends CarteActionWrapper {
-	constructor(libelle, carte) {
-		super(libelle, carte, InitMonopoly.plateau.titles.communaute, "pink", "caissecommunaute");
+	constructor(libelle, carte,title) {
+		super(libelle, carte, title, "pink", "caissecommunaute");
 	}
 }
 
@@ -86,17 +86,240 @@ function doActions(joueur=GestionJoueur.getJoueurCourant()) {
 	// Notify end play
 	$.trigger('move.end',{});
 }
+function startMonopoly(debug = false){
+	let monopoly = new Monopoly(debug);
+	monopoly.init();
+	return monopoly;
+}
 
-var InitMonopoly = {
-	plateaux:null,
-	listSauvegarde :null,
-	panelPartie:null,
-	plateauName:null,
-	infoPlateau:null,
-	init:function(debugValue){
-		DEBUG = debugValue;
+class PlateauDetails {
+	constructor(){
+		this.infos = null;
+		this.titles = {};
+		this.name = null;
+		this.parcGratuit = null;
+		this.cartes ={caisseCommunaute:[],chance:[]};
+		this.drawing =null;
+	}
+	load(nomPlateau,options,callback,dataExtend){
+		return this.loadFullPath('data/' + nomPlateau,nomPlateau,options,callback,dataExtend);
+	}
+	loadFullPath(path,nomPlateau,options,callback,dataExtend){
+		this._temp_load_data = dataExtend;
+		// On charge le plateau
+		$.ajax({
+			url: path,
+			dataType: 'json',
+			context:this,
+			success: (data) => {
+				if(data.plateau == null){
+					throw "Erreur avec le plateau " + nomPlateau;
+				}
+				this.name = nomPlateau;
+				// Gestion de l'heritage
+				var dataExtend = $.extend(true,{},data,this._temp_load_data || {});
+				if(data.extend){
+					this.load(data.extend,callback,dataExtend);
+				}
+				else{
+					this._build(dataExtend,options,callback);
+				}
+			},
+			error:() =>alert("Le plateau " + nomPlateau + " n'existe pas (" + 'data/' + nomPlateau + ")")
+		});
+	}
+	loadVariantes(){
+		$(':checkbox[name]', '#idVariantes').each(function () {
+			// Si existe, ne surcharge pas
+			if(VARIANTES[$(this).attr('name')] == null) {
+				VARIANTES[$(this).attr('name')] = $(this).is(':checked');
+			}
+		});
+	}
+	// From monopoly plateau definition, create plateau
+	_build(data,options,callback=()=>{}){
+		this.infos = data.plateau;
+		this.options = options;
+		this.loadVariantes();
+
+		DrawerFactory.setNbCases(this.infos.nbCases);
+		DrawerFactory.addInfo('defaultImage',data.images.default || {});
+		DrawerFactory.addInfo('textColor',this.infos.textColor || '#000000');
+		DrawerFactory.addInfo('backgroundColor',this.infos.backgroundColor || '#FFFFFF');
+
+		this.infos.argentJoueurDepart = this.infos.argent || 150000;
+		this.infos.montantDepart =this.infos.depart || 20000;
+		this.infos.montantPrison = this.infos.prison || 5000;
+
+		if(this.infos.hideConstructions === true){
+			$('.action-normal').hide();
+		}else{
+			$('.action-normal').show();
+		}
+		GestionJoueur.setColors(this.infos.colors);
+		GestionJoueur.setImgJoueurs(this.infos.imgJoueurs);
+
+		if(this.infos.type === 'circle'){
+			this._configureCircle();
+		}else{
+			this.configureSquare();
+		}
+		CURRENCY = data.currency;
+		this.titles = data.titles || {};
+		this.infos.nomsJoueurs = this.infos.nomsJoueurs || [];
+
+		GestionDes.gestionDes = this.isQuickDice() ? new GestionDesRapideImpl(this.infos.montantPrison,this.parcGratuit):new GestionDesImpl(this.infos.montantPrison,this.parcGratuit);
+		GestionDes.init(this.infos.rollColor);
+		let plateauSize = DrawerFactory.dimensions.plateauSize;
+		$('#idLancerDes').unbind('click').bind('click',()=>GestionJoueur.lancerDes());
+		this.drawing = DrawerFactory.getPlateau(0, 0, plateauSize, plateauSize, this.infos.backgroundColor);
+		Drawer.add(this.drawing, 0);
+		this._draw(data);
+		Drawer.add(DrawerFactory.endPlateau(),2);
+		Drawer.init(plateauSize, plateauSize);
+		GestionEnchere.setPasVente(this.infos.montantDepart / 10);
+		callback();
+	}
+	isQuickDice(){
+		return this.options.typeGame === "quick";
+	}
+	_configureCircle(){
+		DrawerFactory.setType('circle');
+		$('.graphic_element,.title').addClass('circle');
+		$('#idSavePanel').arctext({radius: 80,dir:1})
+		$('#idSubTitle').hide();
+		$('#idInfoBox').unbind('mousewheel').bind('mousewheel',function(e,sens){
+			let scroll=$('#idInfoBox').scrollTop() + (sens * e.deltaFactor * -0.7);
+			$('#idInfoBox').scrollTop(scroll);
+			e.preventDefault();
+		});
+	}
+	configureSquare(){
+		DrawerFactory.setType('square');
+		$('#idSavePanel').arctext({radius: -1,dir:1})
+		$('.graphic_element,.title').removeClass('circle');
+	}
+	_buildCartes(data,Instance,title){
+		return data!=null ? data.cartes.map(c=>new Instance(c.nom, CarteActionFactory.get(c,this),title)):[];
+	}
+	_draw(data){
+		$('#idSubTitle').text(this.infos.subtitle);
+		this.parcGratuit = null;
+		let colors = [];
+		let groups = [];
+		this.cartes.chance = this._buildCartes(data.chance,CarteChance,this.titles.chance);
+		this.cartes.caisseCommunaute = this._buildCartes(data.communaute,CarteCaisseDeCommunaute,this.titles.communaute);
+
+		$(data.fiches).each((e,ficheDef) =>{
+			let fiche = null;
+			if (ficheDef.colors != null && ficheDef.colors.length > 0 && groups[ficheDef.colors[0]] == null) {
+				groups[ficheDef.colors[0]] = new Groupe(ficheDef.groupe, ficheDef.colors[0]);
+			}
+			switch (ficheDef.type) {
+				case "propriete":
+					fiche = new Fiche(ficheDef.axe, ficheDef.pos, ficheDef.colors, ficheDef.nom, ficheDef.prix, ficheDef.loyers, ficheDef.prixMaison);
+					groups[ficheDef.colors[0]].add(fiche);
+					break;
+				case "propriete-junior":
+					fiche = new FicheJunior(ficheDef.axe, ficheDef.pos, ficheDef.colors, ficheDef.nom, ficheDef.prix);
+					groups[ficheDef.colors[0]].add(fiche);
+					break;
+				case "compagnie":
+					fiche = new FicheCompagnie(ficheDef.axe, ficheDef.pos, ficheDef.colors, ficheDef.nom, ficheDef.prix, ficheDef.loyers,data.images[ficheDef.img] || data.images.compagnie);
+					groups[ficheDef.colors[0]].nom = 'Compagnie';
+					groups[ficheDef.colors[0]].add(fiche);
+					break;
+				case "gare":
+					fiche = new FicheGare(ficheDef.axe, ficheDef.pos, ficheDef.colors, ficheDef.nom, ficheDef.prix, ficheDef.loyers, data.images.gare);
+					groups[ficheDef.colors[0]].nom = 'Gare';
+					groups[ficheDef.colors[0]].add(fiche);
+					break;
+				case "chance":
+					fiche = new CaseChance(ficheDef.axe, ficheDef.pos,data.images.chance,this.cartes.chance,this.titles.chance);
+					break;
+				case "communaute":
+					fiche = new CaseCaisseDeCommunaute(ficheDef.axe, ficheDef.pos,data.images.caisseDeCommunaute,this.cartes.caisseCommunaute,this.titles.communaute);
+					break;
+				case "taxe":
+					fiche = new SimpleCaseSpeciale(ficheDef.nom, ficheDef.prix, ficheDef.axe, ficheDef.pos, "taxe",data.images.taxe,this);
+					break;
+				case "prison":
+					fiche = new CaseActionSpeciale(ficheDef.nom, function () {
+						GestionJoueur.getJoueurCourant().goPrison();
+					}, ficheDef.axe, ficheDef.pos,"prison");
+					break;
+				case "special":
+					fiche = new CaseActionSpeciale(ficheDef.nom, function () {
+						GestionJoueur.change();
+					}, ficheDef.axe, ficheDef.pos,"special");
+					break;
+				case "parc":
+					this.parcGratuit = new ParcGratuit(ficheDef.axe, ficheDef.pos);
+					fiche = this.parcGratuit;
+					break;
+				case "depart":
+					fiche = new CaseActionSpeciale(ficheDef.nom, () =>{
+						let montant = (VARIANTES.caseDepart ? 2:1) * this.infos.montantDepart;
+						GestionJoueur.getJoueurCourant().gagner(montant);
+
+						$.trigger('monopoly.depart', {
+							joueur: GestionJoueur.getJoueurCourant(),
+							montant:montant
+						});
+						GestionJoueur.change();
+					}, ficheDef.axe, ficheDef.pos,"depart");
+					break;
+			}
+			if(fiche!=null){
+				GestionFiche.add(fiche);
+				if (fiche.color != null) {
+					if (colors[fiche.color] == null) {
+						// On genere un style
+						$('style', 'head').prepend(`.color_${fiche.color.substring(1)}{color:white;font-weight:bold;background-color:${fiche.color};}\n`);
+						colors[fiche.color] = 1;
+					}
+				}
+			}
+		});
+		this._calculateVoisins(data.plateau.nbCases);
+
+	}
+	/* Calcule les voisins de chaque groupe */
+	_calculateVoisins(nbCases = 10){
+		var currentGroupe = null;
+		let totalCases = nbCases * 4;
+		// Parcourt les fiches. On enregistre le groupe courant, quand changement, on defini le groupe precedent et calcule le suivant du precedent
+		for (var i = 0; i < totalCases +2; i++) {
+			var axe = Math.floor(i / nbCases) % 4;
+			var pos = i % totalCases - (axe * nbCases);
+			var fiche = GestionFiche.get({
+				axe: axe,
+				pos: pos
+			});
+			if (fiche != null && fiche.groupe != null && fiche.isTerrain()) {
+				if (currentGroupe == null) {
+					// initialisation
+					currentGroupe = fiche.groupe;
+				}
+				if (!currentGroupe.equals(fiche.groupe)) { // Changement de groupe
+					fiche.groupe.groupePrecedent = currentGroupe;
+					currentGroupe.groupeSuivant = fiche.groupe;
+					currentGroupe = fiche.groupe;
+				}
+			}
+		}
+	}
+	enableMouse(callback){
+		this.drawing.enableCaseDetect(callback);
+	}
+}
+
+class Monopoly {
+	constructor(debug){
+		DEBUG = debug;
+		this.plateaux = null;
+		this.listSauvegarde = null;
 		this.panelPartie = $('#idPanelCreatePartie');
-		MessageDisplayer.init('idInfoBox');
 		InfoMessage.init('message');
 		FicheDisplayer.init();
 		this.initPanels();
@@ -115,13 +338,20 @@ var InitMonopoly = {
 			idCoutAchat:'#coutAchats',
 			idConstructions:'#resteConstructions'
 		});
+		this.plateau = new PlateauDetails();
+
+	}
+	init(){
+		MessageDisplayer.init('idInfoBox');
+
 		$('.action-joueur').attr('disabled', 'disabled').addClass('disabled');
+		JoueurFactory.setMouseFunction(this.plateau.enableMouse);
 		if (!DEBUG) {
 			this.showPanel();
 		} else {
-			this.plateau.load('data-monopoly.json',function(){InitMonopoly._createGame({}, {});});
+			this.plateau.load('data-monopoly.json',()=>this._createGame({}, {}));
 		}
-	},
+	}
 	initSlider(id,min,value){
 		$( `#${id}` ).slider({
 			min:min,max:6,value:value,
@@ -133,228 +363,9 @@ var InitMonopoly = {
 				this.handle.text( ui.value );
 			}
 		});
-	},
-	plateau:{
-		infos:null,
-		titles:{},
-		name:null,
-		parcGratuit:null,
-		cartes:{caisseCommunaute:[],chance:[]},
-		drawing:null,
-		load:function(nomPlateau,options,callback,dataExtend){
-			this._temp_load_data = dataExtend;
-			// On charge le plateau
-			$.ajax({
-				url: 'data/' + nomPlateau,
-				dataType: 'json',
-				context:this,
-				success: (data) => {
-					if(data.plateau == null){
-						throw "Erreur avec le plateau " + nomPlateau;
-					}
-					this.name = nomPlateau;
-					// Gestion de l'heritage
-					var dataExtend = $.extend(true,{},data,this._temp_load_data || {});
-					if(data.extend){
-						this.load(data.extend,callback,dataExtend);
-					}
-					else{
-						this._build(dataExtend,options,callback);
-					}
-				},
-				error:() =>alert("Le plateau " + nomPlateau + " n'existe pas (" + 'data/' + nomPlateau + ")")
-			});
-		},
-		loadVariantes:function(){
-			$(':checkbox[name]', '#idVariantes').each(function () {
-				// Si existe, ne surcharge pas
-				if(VARIANTES[$(this).attr('name')] == null) {
-					VARIANTES[$(this).attr('name')] = $(this).is(':checked');
-				}
-			});
-		},
-		// From monopoly plateau definition, create plateau
-		_build:function(data,options,callback=()=>{}){
-			this.infos = data.plateau;
-			this.options = options;
-			this.loadVariantes();
+	}
 
-			DrawerFactory.setNbCases(this.infos.nbCases);
-			DrawerFactory.addInfo('defaultImage',data.images.default || {});
-			DrawerFactory.addInfo('textColor',this.infos.textColor || '#000000');
-			DrawerFactory.addInfo('backgroundColor',this.infos.backgroundColor || '#FFFFFF');
-
-			this.infos.argentJoueurDepart = this.infos.argent || 150000;
-			this.infos.montantDepart =this.infos.depart || 20000;
-			this.infos.montantPrison = this.infos.prison || 5000;
-
-			if(this.infos.hideConstructions === true){
-				$('.action-normal').hide();
-			}else{
-				$('.action-normal').show();
-			}
-			GestionJoueur.setColors(this.infos.colors);
-			GestionJoueur.setImgJoueurs(this.infos.imgJoueurs);
-
-			if(this.infos.type === 'circle'){
-				this._configureCircle();
-			}else{
-				this.configureSquare();
-			}
-			CURRENCY = data.currency;
-			this.titles = data.titles;
-			this.infos.nomsJoueurs = this.infos.nomsJoueurs || [];
-
-			GestionDes.gestionDes = this.isQuickDice() ? new GestionDesRapideImpl():new GestionDesImpl();
-			GestionDes.init(this.infos.rollColor);
-			let plateauSize = DrawerFactory.dimensions.plateauSize;
-			$('#idLancerDes').unbind('click').bind('click',()=>GestionJoueur.lancerDes());
-			this.drawing = DrawerFactory.getPlateau(0, 0, plateauSize, plateauSize, this.infos.backgroundColor);
-			Drawer.add(this.drawing, 0);
-			this._draw(data);
-			Drawer.add(DrawerFactory.endPlateau(),2);
-			Drawer.init(plateauSize, plateauSize);
-
-			callback();
-		},
-		isQuickDice(){
-			return this.options.typeGame === "quick";
-		},
-		_configureCircle(){
-			DrawerFactory.setType('circle');
-			$('.graphic_element,.title').addClass('circle');
-			$('#idSavePanel').arctext({radius: 80,dir:1})
-			$('#idSubTitle').hide();
-			$('#idInfoBox').unbind('mousewheel').bind('mousewheel',function(e,sens){
-				let scroll=$('#idInfoBox').scrollTop() + (sens * e.deltaFactor * -0.7);
-				$('#idInfoBox').scrollTop(scroll);
-				e.preventDefault();
-			});
-		},
-		configureSquare(){
-			DrawerFactory.setType('square');
-			$('#idSavePanel').arctext({radius: -1,dir:1})
-			$('.graphic_element,.title').removeClass('circle');
-		},
-		_buildCartes:function(data,Instance){
-			return data!=null ? data.cartes.map(function(c){
-				return new Instance(c.nom, CarteActionFactory.get(c));
-			}):[];
-		},
-		_draw:function(data){
-			$('#idSubTitle').text(this.infos.subtitle);
-			this.parcGratuit = null;
-			var colors = [];
-			var groups = [];
-			var _self = this;
-
-			this.cartes.chance = this._buildCartes(data.chance,CarteChance);
-			this.cartes.caisseCommunaute = this._buildCartes(data.communaute,CarteCaisseDeCommunaute);
-
-			$(data.fiches).each(function () {
-				var fiche = null;
-				if (this.colors != null && this.colors.length > 0 && groups[this.colors[0]] == null) {
-					groups[this.colors[0]] = new Groupe(this.groupe, this.colors[0]);
-				}
-				switch (this.type) {
-					case "propriete":
-						fiche = new Fiche(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers, this.prixMaison);
-						groups[this.colors[0]].add(fiche);
-						break;
-					case "propriete-junior":
-						fiche = new FicheJunior(this.axe, this.pos, this.colors, this.nom, this.prix);
-						groups[this.colors[0]].add(fiche);
-						break;
-					case "compagnie":
-						fiche = new FicheCompagnie(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers,data.images[this.img] || data.images.compagnie);
-						groups[this.colors[0]].nom = 'Compagnie';
-						groups[this.colors[0]].add(fiche);
-						break;
-					case "gare":
-						fiche = new FicheGare(this.axe, this.pos, this.colors, this.nom, this.prix, this.loyers, data.images.gare);
-						groups[this.colors[0]].nom = 'Gare';
-						groups[this.colors[0]].add(fiche);
-						break;
-					case "chance":
-						fiche = new CaseChance(this.axe, this.pos,data.images.chance,_self.cartes.chance);
-						break;
-					case "communaute":
-						fiche = new CaseCaisseDeCommunaute(this.axe, this.pos,data.images.caisseDeCommunaute,_self.cartes.caisseCommunaute);
-						break;
-					case "taxe":
-						fiche = new SimpleCaseSpeciale(this.nom, this.prix, this.axe, this.pos, "taxe",data.images.taxe);
-						break;
-					case "prison":
-						fiche = new CaseActionSpeciale(this.nom, function () {
-							GestionJoueur.getJoueurCourant().goPrison();
-						}, this.axe, this.pos,"prison");
-						break;
-					case "special":
-						fiche = new CaseActionSpeciale(this.nom, function () {
-							GestionJoueur.change();
-						}, this.axe, this.pos,"special");
-						break;
-					case "parc":
-						_self.parcGratuit = new ParcGratuit(this.axe, this.pos);
-						fiche = _self.parcGratuit;
-						break;
-					case "depart":
-						fiche = new CaseActionSpeciale(this.nom, function () {
-							let montant = (VARIANTES.caseDepart ? 2:1) * InitMonopoly.plateau.infos.montantDepart;
-							GestionJoueur.getJoueurCourant().gagner(montant);
-
-							$.trigger('monopoly.depart', {
-								joueur: GestionJoueur.getJoueurCourant(),
-								montant:montant
-							});
-							GestionJoueur.change();
-						}, this.axe, this.pos,"depart");
-						break;
-				}
-				if(fiche!=null){
-					GestionFiche.add(fiche);
-					if (fiche.color != null) {
-						if (colors[fiche.color] == null) {
-							// On genere un style
-							$('style', 'head').prepend(`.color_${fiche.color.substring(1)}{color:white;font-weight:bold;background-color:${fiche.color};}\n`);
-							colors[fiche.color] = 1;
-						}
-					}
-				}
-			});
-			this._calculateVoisins(data.plateau.nbCases);
-
-		},
-		/* Calcule les voisins de chaque groupe */
-		_calculateVoisins:function(nbCases = 10){
-			var currentGroupe = null;
-			let totalCases = nbCases * 4;
-			// Parcourt les fiches. On enregistre le groupe courant, quand changement, on defini le groupe precedent et calcule le suivant du precedent
-			for (var i = 0; i < totalCases +2; i++) {
-				var axe = Math.floor(i / nbCases) % 4;
-				var pos = i % totalCases - (axe * nbCases);
-				var fiche = GestionFiche.get({
-					axe: axe,
-					pos: pos
-				});
-				if (fiche.groupe != null && fiche.isTerrain()) {
-					if (currentGroupe == null) {
-						// initialisation
-						currentGroupe = fiche.groupe;
-					}
-					if (!currentGroupe.equals(fiche.groupe)) { // Changement de groupe
-						fiche.groupe.groupePrecedent = currentGroupe;
-						currentGroupe.groupeSuivant = fiche.groupe;
-						currentGroupe = fiche.groupe;
-					}
-				}
-			}
-		},
-		enableMouse:function(callback){
-			this.drawing.enableCaseDetect(callback);
-		}
-	},
-	showPanel:function(){
+	showPanel(){
 		this.initSlider('sliderJoueur',2,4);
 		this.initSlider('sliderRobot',0,2);
 		this._loadPlateaux();
@@ -367,27 +378,27 @@ var InitMonopoly = {
 			position: { my: "center top", at: "center top", of: window },
 			buttons: [{
 				text: "Valider",
-				click: function(){InitMonopoly._loadOrCreateGame();}
+				click: ()=>this._loadOrCreateGame()
 			}]
 		})
-	},
-	_loadOrCreateGame:function(){
+	}
+	_loadOrCreateGame(){
 		// Network feature
 		if($('#idCreationGame').tabs('option','active') === 1){
-			return InitMonopoly.joinGame();
+			return this.joinGame();
 		}
 		/* Chargement d'une partie */
 		VARIANTES = {};
 		if (this.listSauvegarde.val() !== "") {
-			Sauvegarde.load(this.listSauvegarde.val());
+			Sauvegarde.load(this.listSauvegarde.val(),this);
 		} else {
 			let options = this._extractOptions();
-			this.plateau.load($('#idSelectPlateau').val(),options,()=>InitMonopoly._createGame(options));
+			this.plateau.load($('#idSelectPlateau').val(),options,()=>this._createGame(options));
 		}
 		this.panelPartie.dialog('close');
-	},
+	}
 	_extractOptions(){
-		var options = {
+		let options = {
 			nbRobots:$('#sliderRobot').slider('value'),
 			nbPlayers:$('#sliderJoueur').slider('value')
 		};
@@ -401,25 +412,25 @@ var InitMonopoly = {
 			options[$(this).attr('name')] = $(this).val();
 		});
 		return options;
-	},
+	}
 	joinGame(){
 		this._joinNetworkGame($('#idRemoteNomJoueur').val(),$('#idRemoteGame').val());
-	},
+	}
 	_joinNetworkGame(name,game){
 		this.remoteManager = new RemoteManager(name,game);
 		this.panelPartie.dialog('close');
-	},
+	}
 	// Create a network game as master
 	_createNetworkGame(options){
 		// Create game on server then load
 		$.ajax({url:"/createGame"}).then((data)=> {
-			this.remoteManager = new MasterRemoteManager(options.joueur,data.game);
-			let players = this.remoteManager.create(options.nbPlayers,options.nbRobots,options.joueur,this.plateau.infos.nomsJoueurs);
+			this.remoteManager = new MasterRemoteManager(options.joueur,data.game,this.plateau);
+			let players = this.remoteManager.create(options.nbPlayers,options.nbRobots,options.joueur,this.plateau.infos.nomsJoueurs, this.plateau.infos.argentJoueurDepart, this.plateau.infos.montantDepart);
 			this.afterCreateGame(players);
 		});
-	},
+	}
 	/* Creer la partie apres le chargement du plateau */
-	_createGame:function(options){
+	_createGame(options){
 		let j = $('#idNomJoueur').val() !== "" ? $('#idNomJoueur').val():"";
 		options = $.extend({},{nbPlayers:0,nbRobots:0,waitTimeIA:1,joueur:j},options);
 		if(options.networkGame === "true"){
@@ -427,7 +438,7 @@ var InitMonopoly = {
 		}else{
 			return this._createLocalGame(options);
 		}
-	},
+	}
 	_createLocalGame(options){
 		let playerNames = new Array(options.nbPlayers);
 		for (let i = 0; i < options.nbPlayers; i++) {
@@ -442,7 +453,7 @@ var InitMonopoly = {
 			playerNames[i] = nom;
 			let isRobot = i >= options.nbPlayers - options.nbRobots;
 			let clazzPlayer = isRobot ? JoueurFactory.getRobotPlayer():JoueurFactory.getCurrentPlayer()
-			GestionJoueur.create(clazzPlayer, i,nom);
+			GestionJoueur.create(clazzPlayer, i,nom,false,this.plateau.infos.argentJoueurDepart,this.plateau.infos.montantDepart);
 		}
 		this.afterCreateGame(playerNames);
 		GestionJoueur.change();
@@ -450,8 +461,8 @@ var InitMonopoly = {
 		/* Gestion des options */
 
 		IA_TIMEOUT = VARIANTES.quickMove?10 : options.waitTimeIA || IA_TIMEOUT;
-	},
-	afterCreateGame:function(players=this.plateau.infos.nomJoueurs){
+	}
+	afterCreateGame(players=this.plateau.infos.nomJoueurs){
 		this.plateau.infos.realNames=players;
 		$('.info-joueur').tooltip({
 			content: function () {
@@ -464,9 +475,9 @@ var InitMonopoly = {
 		});
 		// Panneau d'echange
 		EchangeDisplayer.init('idPanelEchange', 'idSelectJoueurs', 'idListTerrainsJoueur', 'idListTerrainsAdversaire');
-	},
+	}
 	/* Charge les plateaux de jeu disponible */
-	_loadPlateaux:function(){
+	_loadPlateaux(){
 		this.plateaux = $('#idSelectPlateau').empty();
 		$.ajax({
 			url:'data/plateaux.json',
@@ -474,13 +485,11 @@ var InitMonopoly = {
 			context:this,
 			success:function(data){
 				if(data == null || data.plateaux == null){return;}
-				data.plateaux.forEach(function(p){
-					this.plateaux.append('<option value="' + p.url + '">' + p.name + '</option>');
-				},this);
+				data.plateaux.forEach(p=>this.plateaux.append('<option value="' + p.url + '">' + p.name + '</option>'));
 			}
 		});
-	},
-	_configSauvegardePanel:function(){
+	}
+	_configSauvegardePanel(){
 		let sauvegardes = Sauvegarde.findSauvegardes();
 		this.listSauvegarde = $('#idSauvegardes');
 		$('option:not(:first)',this.listSauvegarde).remove();
@@ -499,13 +508,13 @@ var InitMonopoly = {
 			});
 			$('#idLoadSauvegarde').unbind('click').bind('click', function () {
 				if (_self.listSauvegarde.val() != "") {
-					Sauvegarde.load(_self.listSauvegarde.val());
+					Sauvegarde.load(_self.listSauvegarde.val(),_self);
 					_self.panelPartie.dialog('close');
 				}
 			});
 		}
-	},
-	initPanels:function(){
+	}
+	initPanels(){
 		//$('#message').dialog({
 		wrapDialog($('#message'),{
 			autoOpen: false,
@@ -513,9 +522,9 @@ var InitMonopoly = {
 		});
 		$('#message').prev().css("background", "url()");
 		/* Gestion de la sauvegarde */
-		$('#idSavePanel').click(function () {
-			var name = !Sauvegarde.isSauvegarde() ? prompt("Nom de la sauvegarde (si vide, defini par defaut)") : null;
-			Sauvegarde.save(name);
+		$('#idSavePanel').click( ()=> {
+			let name = !Sauvegarde.isSauvegarde() ? prompt("Nom de la sauvegarde (si vide, defini par defaut)") : null;
+			Sauvegarde.save(name,this.plateau.name);
 		});
 		// panneau d'achats de maisons
 		//$('#achatMaisons').dialog({
@@ -535,10 +544,10 @@ var InitMonopoly = {
 			width:350,
 			height:300,
 			buttons:[{text:'Fermer',click:function(){$('#idTerrainsLibres').dialog('close');}}],
-			open:function(){InitMonopoly._showFreeTerrains();}
+			open:()=>this._showFreeTerrains()
 		});
-	},
-	_showFreeTerrains:function(){
+	}
+	_showFreeTerrains(){
 		$('#idTerrainsLibres').empty();
 		var it = GestionFiche.getTerrainsLibres();
 		while(it.hasNext()){

@@ -1,4 +1,4 @@
-h1. Monopoly full JS
+h1. Monopoly full JS !https://codebeat.co/badges/843f9fbf-e914-495f-8d9f-2f85343cc22b(codebeat badge)!:https://codebeat.co/projects/github-com-jotitan-monopoly-master
 
 Implementation Full Javascript du Monopoly. 
 Utilisation de JQuery et canvas. Grunt permet de minifier le projet.

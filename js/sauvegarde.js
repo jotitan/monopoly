@@ -35,9 +35,9 @@ var Sauvegarde = {
         var data = this._getStorage(name);
         // On charge le plateau
         VARIANTES = data.variantes || VARIANTES;
-        monopoly.plateau.load(data.plateau || "data-monopoly.json",function(){
-            data.joueurs.forEach(function(j,i){GestionJoueur.createAndLoad(!j.canPlay, i,j.nom,j);});
-            data.fiches.forEach(function(f){GestionFiche.getById(f.id).load(f);});
+        monopoly.plateau.load(data.plateau || "data-monopoly.json",{},function(){
+            data.joueurs.forEach((j,i)=>GestionJoueur.createAndLoad(!j.canPlay, i,j.nom,j,monopoly.plateau.infos.montantDepart));
+            data.fiches.forEach(f=>GestionFiche.getById(f.id).load(f));
             $.trigger('refreshPlateau');
             globalStats.nbTours = data.nbTours || 0;
             monopoly.afterCreateGame();

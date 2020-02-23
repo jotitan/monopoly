@@ -122,8 +122,8 @@ class PlateauDetails {
 		this.name = options.nomPlateau;
 		// Gestion de l'heritage
 		let dataExtend = $.extend(true,{},data,this._temp_load_data || {});
-		if(data.extend){
-			this.load(data.extend,callback,dataExtend);
+		if(dataExtend.extend != null){
+			this.load(options.nomPlateau,data.extend,callback,dataExtend);
 		}
 		else{
 			this._build(dataExtend,options,callback);
@@ -211,15 +211,17 @@ class PlateauDetails {
 	_createFiche(def,groups,data){
 		switch (def.type) {
 			case "propriete":
-				return this.addToGroup(groups,def,'Terrain',new Fiche(def.axe, def.pos, def.colors, def.nom, def.prix, def.loyers, def.prixMaison));
+				return this.addToGroup(groups,def,'Terrain',
+					new Fiche(def.axe, def.pos, def.colors, def.nom)
+						.setCosts(def.prix,def.loyers,def.prixMaison));
 			case "propriete-junior":
-				return this.addToGroup(groups,def,'Junior',new FicheJunior(def.axe, def.pos, def.colors, def.nom, def.prix));
+				return this.addToGroup(groups,def,'Junior',new FicheJunior(def.axe, def.pos, def.colors, def.nom).setCosts(def.prix,[def.prix]));
 			case "compagnie":
 				return this.addToGroup(groups,def,'Compagnie',
-					new FicheCompagnie(def.axe, def.pos, def.colors, def.nom, def.prix, def.loyers,data.images[def.img] || data.images.compagnie));
+					new FicheCompagnie(def.axe, def.pos, def.colors, def.nom).setCosts(def.prix, def.loyers,null,data.images[def.img] || data.images.compagnie));
 			case "gare":
 				return this.addToGroup(groups,def,'Gare',
-					new FicheGare(def.axe, def.pos, def.colors, def.nom, def.prix, def.loyers, data.images.gare));
+					new FicheGare(def.axe, def.pos, def.colors, def.nom).setCosts(def.prix, def.loyers, null,data.images.gare));
 			case "chance":
 				return new CaseChance(def.axe, def.pos,data.images.chance,this.cartes.chance,this.titles.chance);
 			case "communaute":
@@ -238,16 +240,7 @@ class PlateauDetails {
 				this.parcGratuit = new ParcGratuit(def.axe, def.pos);
 				return this.parcGratuit;
 			case "depart":
-				return new CaseActionSpeciale(def.nom, () =>{
-					let montant = (VARIANTES.caseDepart ? 2:1) * this.infos.montantDepart;
-					GestionJoueur.getJoueurCourant().gagner(montant);
-
-					$.trigger('monopoly.depart', {
-						joueur: GestionJoueur.getJoueurCourant(),
-						montant:montant
-					});
-					GestionJoueur.change();
-				}, def.axe, def.pos,"depart");
+				return new CaseDepart(def.nom,def.axe,def.pos,this.infos.montantDepart);
 		}
 		throw "Impossible case";
 	}

@@ -704,47 +704,43 @@ class JoueurOrdinateur extends Joueur {
 		return false;
 	}
 
-	/* Override de la methode pere */
-	resolveProblemeArgent(montant, callback) {
-		$.trigger('monopoly.debug', {
-			message: 'Resoud probleme argent'
-		});
-		var joueur = this;
+	_buildSortScore(maison){
+		switch (maison.type) {
+			case "gare":
+				return -1;
+				break;
+			case "compagnie":
+				return -2;
+				break;
+			default:
+				return (maison.isTerrain()) ? maison.groupe.getInfos(this).joueur : 0;
+		}
+	}
 
-		/* Ordre de liquidations :
+	propertiesSortByDescImportance(){
+		return this.maisons
+			.filter(m=>m.statutHypotheque === false && !m.isGroupeeAndBuild())
+			.sort((a, b) =>this._buildSortScore(a) - this._buildSortScore(b));
+	}
+
+	/* Override de la methode pere */
+	/* Ordre de liquidations :
 		 * 1) Terrains non constructibles, terrains non groupes, terrains groupes non construits
 		 * 2) Vente des maisons les maisons / hotels les mains rentables prochainement (base sur les stats des prochains passages)
 		 * 3) Hypotheque des terrains precedemment construits
 		 **/
-
-		/* CAS 1 */
-		let maisons = this.maisons.filter(m=>m.statutHypotheque === false && !m.isGroupeeAndBuild());
-
-		var findInfo = function (maison) {
-			switch (maison.type) {
-				case "gare":
-					return -1;
-					break;
-				case "compagnie":
-					return -2;
-					break;
-				default:
-					return (maison.isTerrain()) ? maison.groupe.getInfos(joueur) : 0;
-			}
-		}
-		maisons.sort(function (a, b) {
-			var infosA = findInfo(a);
-			var infosB = findInfo(b);
-
-			return infosA - infosB;
+	resolveProblemeArgent(montant, callback) {
+		$.trigger('monopoly.debug', {
+			message: 'Resoud probleme argent'
 		});
+		/* CAS 1 */
+		let maisons = this.propertiesSortByDescImportance();
 
 		$.trigger("monopoly.debug", {
 			message: "PHASE 1"
 		});
-		for (var index = 0; index < maisons.length && this.montant < montant; index++) {
-			var maison = maisons[index];
-			maison.hypotheque();
+		for (let index = 0; index < maisons.length && this.montant < montant; index++) {
+			maisons[index].hypotheque();
 		}
 
 		/* CAS 2 */
@@ -754,28 +750,23 @@ class JoueurOrdinateur extends Joueur {
 			});
 			// 3 Terrains construits, on vend les maisons dessus
 			// On recupere les groupes construits classes par ordre inverse d'importance. On applique la meme regle que la construction tant que les sommes ne sont pas recupereres
-			var sortedGroups = [];
-			try {
-				sortedGroups = this.getGroupsToConstruct("ASC", 0.1);
-			} catch (e) {}
+			let sortedGroups = this.getGroupsToConstruct("ASC", 0.1);
 			// On boucle (tant que les sommes ne sont pas recouvres) sur le groupe pour reduire le nombre de maison, on tourne sur les maisons
-			for (var idGroup in sortedGroups) {
-				var group = sortedGroups[idGroup];
+			for (let idGroup in sortedGroups) {
+				let group = sortedGroups[idGroup];
 				// On boucle pour reduire les maisons au fur et a mesure
-				var proprietes = group.proprietes;
+				let proprietes = group.proprietes;
 				// On trie par nombre de maison
-				proprietes.sort(function (a, b) {
-					if (a.nbMaison === b.nbMaison) {
-						return 0;
-					}
-					return a.nbMaison < b.nbMaison ? 1 : -1;
-				});
-				var currentId = 0;
-				var nbNoHouse = 0;
-				var boucle = 0; // Securite pour eviter boucle infinie
-				var maisonVendues = 0;
+				proprietes.sort((a, b) =>
+					a.nbMaison === b.nbMaison ? 0 :
+						(a.nbMaison < b.nbMaison) ? 1 : -1
+				);
+				let currentId = 0;
+				let nbNoHouse = 0;
+				let boucle = 0; // Securite pour eviter boucle infinie
+				let maisonVendues = 0;
 				while (this.montant < montant && nbNoHouse < proprietes.length && boucle++ < 100) {
-					var p = proprietes[currentId];
+					let p = proprietes[currentId];
 					if (p.nbMaison === 0) {
 						nbNoHouse++;
 					} else {
@@ -803,14 +794,8 @@ class JoueurOrdinateur extends Joueur {
 			let maisons = this.maisons.filter(m=>m.statutHypotheque === false);
 			// On trie par montant (moins cher en premier). A deporter dans la strategie
 			maisons.sort((a, b) =>a.achat - b.achat);
-			for (var index = 0; index < maisons.length && this.montant < montant; index++) {
-				var maison = maisons[index];
-				maison.hypotheque();
-			}
-			if (this.montant < montant) {
-				// Cas impossible car verification des fonds fait avant
-				this.doDefaite();
-				callback();
+			for (let index = 0; index < maisons.length && this.montant < montant; index++) {
+				maisons[index].hypotheque();
 			}
 		}
 		// Somme recouvree
@@ -834,13 +819,13 @@ class JoueurOrdinateur extends Joueur {
 		var groups = this.findGroupes(); // structure : [color:{color,proprietes:[]}]
 		// Pas de terrains constructibles
 		if (groups.size() === 0) {
-			throw "Impossible";
+			return [];
 		}
 		// On determine les terrains les plus rentables a court terme (selon la position des joueurs)
 		var maisons = this.comportement.getNextProprietesVisitees(this, level);
 		// On Calcule pour chaque maison des groupes (meme ceux sans interet) plusieurs indicateurs : proba (pondere a 3), la rentabilite (pondere a 1)
 		var totalMaisons = 0; // Nombre total de proprietes constructibles
-		for (var color in groups) {
+		for (let color in groups) {
 			var group = groups[color];
 			group.proba = 0;
 			group.rentabilite = 0;
@@ -858,24 +843,17 @@ class JoueurOrdinateur extends Joueur {
 			}
 		}
 		// On trie les groupes
-		var sortedGroups = [];
-		for (var color in groups) {
-			var group = groups[color];
+		let sortedGroups = [];
+		for (let color in groups) {
+			let group = groups[color];
 			group.interetGlobal = group.proba + group.rentabilite + ((group.lessThree > 0) ? 0.5 : 0);
 			sortedGroups.push(group);
 		}
-		var GREATER_VALUE = (sortType === "ASC") ? 1 : -1;
-		var LESSER_VALUE = (sortType === "ASC") ? -1 : 1;
+		let GREATER_VALUE = (sortType === "ASC") ? 1 : -1;
+		let LESSER_VALUE = (sortType === "ASC") ? -1 : 1;
 
-		sortedGroups.sort(function (a, b) {
-			if (a.interetGlobal === b.interetGlobal) {
-				return 0;
-			}
-			if (a.interetGlobal > b.interetGlobal) {
-				return GREATER_VALUE;
-			}
-			return LESSER_VALUE;
-		});
+		sortedGroups.sort((a, b)=>a.interetGlobal === b.interetGlobal ? 0 :
+			a.interetGlobal > b.interetGlobal ? GREATER_VALUE : LESSER_VALUE);
 		return sortedGroups;
 	}
 
@@ -896,11 +874,11 @@ class JoueurOrdinateur extends Joueur {
 	/* Cas : groupes presents (1) et construits (nb>3). Liquidite > 7 fois prix hypotheque */
 	rebuyHypotheque () {
 		// Hypotheque presentes
-		var terrains = this.findMaisonsHypothequees();
+		let terrains = this.findMaisonsHypothequees();
 		if (terrains === undefined || terrains.length === 0 && (this.getNbGroupConstructibles() > 0 && !this.hasConstructedGroups(3))) {
 			return;
 		}
-		var pos = 0;
+		let pos = 0;
 		while (pos < terrains.length && this.montant > 7 * terrains[pos].achatHypotheque) {
 			terrains[pos++].leveHypotheque();
 		}
@@ -922,34 +900,33 @@ class JoueurOrdinateur extends Joueur {
 		if (budget < this.minimumPriceHouse()) {
 			return;
 		}
-		var sortedGroups = [];
-		try {
-			sortedGroups = this.getGroupsToConstruct("DESC", 0.1);
-			// On tri les maisons de chaque groupe en fonction du prix et du nombre (le moins de maison en premier puis l'achat le plus eleve
-			for (var idGroup in sortedGroups) {
-				sortedGroups[idGroup].proprietes.sort(function (a, b) {
-					if (a.nbMaison === b.nbMaison) {
-						if (a.achat === b.achat) {
-							return 0;
-						}
-						return a.achat < b.achat ? 1 : -1
-					}
-					return a.nbMaison > b.nbMaison ? 1 : -1;
-				});
-			}
-		} catch (e) {
+		var sortedGroups = this.getGroupsToConstruct("DESC", 0.1);
+		if(sortedGroups.length === 0) {
 			// Pas de terrains constructibles
 			return;
 		}
+		// On tri les maisons de chaque groupe en fonction du prix et du nombre (le moins de maison en premier puis l'achat le plus eleve
+		for (var idGroup in sortedGroups) {
+			sortedGroups[idGroup].proprietes.sort(function (a, b) {
+				if (a.nbMaison === b.nbMaison) {
+					if (a.achat === b.achat) {
+						return 0;
+					}
+					return a.achat < b.achat ? 1 : -1
+				}
+				return a.nbMaison > b.nbMaison ? 1 : -1;
+			});
+		}
 
-		/* Plusieurs regles pour gerer les constructions : 
-		 * Si un seul groupe, on construit notre budget dessus
-		 * Si plusieurs groupes avec des taux equivalent, on construit sur le groupe le plus rentable (basé sur stats et sur cout)
-		 * On construit jusqu'a obtenir 3 maisons partout (seuil de rentabilité). On construit ensuite sur l'autre groupe
-		 * On construit toujours plus sur la maison la plus chere
-		 * S'il reste du budget, on recupere les terrains sans interet et on construit dessus
-		 * On calcule la somme des taux par groupe
-		 */
+
+		/* Plusieurs regles pour gerer les constructions :
+         * Si un seul groupe, on construit notre budget dessus
+         * Si plusieurs groupes avec des taux equivalent, on construit sur le groupe le plus rentable (basé sur stats et sur cout)
+         * On construit jusqu'a obtenir 3 maisons partout (seuil de rentabilité). On construit ensuite sur l'autre groupe
+         * On construit toujours plus sur la maison la plus chere
+         * S'il reste du budget, on recupere les terrains sans interet et on construit dessus
+         * On calcule la somme des taux par groupe
+         */
 
 
 		// On construit des maisons. On s'arrete quand plus de budget ou qu'on ne peut plus construire (hotel partout ou 4 maisons (blocage de constructions))
@@ -974,7 +951,7 @@ class JoueurOrdinateur extends Joueur {
 				} else {
 					group.treat++;
 				}
-				// Le goupe est traite, on passe au suivant
+// Le goupe est traite, on passe au suivant
 				if (group.treat === group.proprietes.length) {
 					currentGroup++;
 					currentMaison = 0;
@@ -1009,7 +986,7 @@ class JoueurOrdinateur extends Joueur {
 					achats.terrains[group.proprietes[currentMaison].id] = group.proprietes[currentMaison];
 					currentMaison = (currentMaison + 1) % group.proprietes.length;
 				} catch (e) {
-					// Plus de maison ou d'hotel (on peut potentiellement continuer en achetant des maisons ?)                  
+					// Plus de maison ou d'hotel (on peut potentiellement continuer en achetant des maisons ?)
 					stopConstruct = true;
 				}
 
@@ -1024,12 +1001,12 @@ class JoueurOrdinateur extends Joueur {
 
 
 	/* Reevalue la strategie. Se base sur plusieurs parametres :
-	 * Si peu de propriete ont ete achetees (<3)
-	 * Si 60% des terrains qui l'interessent ont ete vendu
-	 * Si aucune famille n'est completable (dans la strategie choisie)
-	 * Si on possede deux terrains d'une strategie qui n'est pas la notre, on choisi cette strategie
-	 * TODO : Si on a des groupes, que la strategie est bloquee et qu'on a de l'argent pour changer
-	 */
+     * Si peu de propriete ont ete achetees (<3)
+     * Si 60% des terrains qui l'interessent ont ete vendu
+     * Si aucune famille n'est completable (dans la strategie choisie)
+     * Si on possede deux terrains d'une strategie qui n'est pas la notre, on choisi cette strategie
+     * TODO : Si on a des groupes, que la strategie est bloquee et qu'on a de l'argent pour changer
+     */
 	changeStrategie() {
 		var localStats = this.strategie.getStatsProprietes();
 		if (localStats.color.pourcent < 40 && this.countInterestProperties() <= 2 && !this.isFamilyFree()) {
@@ -1061,8 +1038,8 @@ class JoueurOrdinateur extends Joueur {
 	}
 
 	/* Indique s'il existe des familles que je peux encore posseder sans echange
-	 * Se base sur les maisons possedees et non celle de la strategie =>TODO
-	 */
+     * Se base sur les maisons possedees et non celle de la strategie =>TODO
+     */
 	isFamilyFree() {
 		// On parcourt les terrains et on verifie la dispo des terrains
 		var family = [];
@@ -1087,8 +1064,8 @@ class JoueurOrdinateur extends Joueur {
 
 
 	/* Fonction appelee avant que les des ne soit lances, lorsqu'il est en prison */
-	/* Regle : si on est au debut du jeu, on sort de prison pour acheter des terrains. 
-	 * Si on est en cours de jeu et que le terrain commence a etre miné, on reste en prison */
+	/* Regle : si on est au debut du jeu, on sort de prison pour acheter des terrains.
+     * Si on est en cours de jeu et que le terrain commence a etre miné, on reste en prison */
 	actionAvantDesPrison(buttons) {
 		var _self = this;
 		setTimeout(function () {
@@ -1106,21 +1083,21 @@ class JoueurOrdinateur extends Joueur {
 		}, IA_TIMEOUT);
 	}
 
-	/* On sort de prison prison dans les cas suivants 
-	 * 1) Le joueur a moins de deux groupes et le terrain n'est pas mine (moyenne des loyers < 20% de ses moyens) avec au moins 3 terrains de vendu
-	 * 2) Si le terrain est miné (moyenne < 30% des moyens) mais que le joueur a absolument besoin d'un terrain encore libre pour termine son groupe (pas de groupe)
-	 * 3) On sort de prison pour acheter en debut de jeu
-	 * Corolaire, on reste en prison
-	 * 1) Si le joueur a au moins deux groupes
-	 * 2) Si le terrain est miné > 15% et qu'il n'a pas un terrain a recuperer absoluement
-	 * 3) Si le terrain est très miné > 30%, quelque soit sa recherche de terrain
-	 */
+	/* On sort de prison prison dans les cas suivants
+     * 1) Le joueur a moins de deux groupes et le terrain n'est pas mine (moyenne des loyers < 20% de ses moyens) avec au moins 3 terrains de vendu
+     * 2) Si le terrain est miné (moyenne < 30% des moyens) mais que le joueur a absolument besoin d'un terrain encore libre pour termine son groupe (pas de groupe)
+     * 3) On sort de prison pour acheter en debut de jeu
+     * Corolaire, on reste en prison
+     * 1) Si le joueur a au moins deux groupes
+     * 2) Si le terrain est miné > 15% et qu'il n'a pas un terrain a recuperer absoluement
+     * 3) Si le terrain est très miné > 30%, quelque soit sa recherche de terrain
+     */
 	getOutPrison() {
 		var loyerStat = this.comportement.getLoyerMoyen(this);
 		var groupesPossibles = this.getGroupesPossibles();
 		// On peut augmenter le risque si les terrains rouges et oranges sont blindes (sortie de prison)
 		// depend de l'argent dispo et du besoin d'acheter un terrain (libre et indispensable pour finir le groupe)
-		// Cas pour rester en prison    
+		// Cas pour rester en prison
 		if (this.findGroupes().size() >= 2) {
 			return false;
 		}
@@ -1130,8 +1107,8 @@ class JoueurOrdinateur extends Joueur {
 		return !(loyerStat.nb >= 4 && loyerStat.montant > this.montant * 0.15);
 	}
 
-	// decide si achete ou non la maison
-	// On se base sur la politique, les fiches obtenues par les autres
+// decide si achete ou non la maison
+// On se base sur la politique, les fiches obtenues par les autres
 	gererAchat(boutonAchat) {
 		boutonAchat.click();
 	}

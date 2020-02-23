@@ -76,7 +76,7 @@
 
       test("Chargement plateau a vide",function(){
          let monopoly = init();
-         monopoly .plateau._build({plateau:{},images:{}},{});
+         monopoly.plateau._build({plateau:{},images:{}},{});
          equal(GestionFiche.fiches.length,0, "Fiches vide");
          equal(monopoly.plateau.cartes.chance.length,0, "Cartes chances vide");
          equal(monopoly.plateau.cartes.caisseCommunaute.length,0,"Cartes caisse de communaute vide");
@@ -84,8 +84,9 @@
       });
 
       test("Chargement plateau avec des donnees incomplete",function() {
+         let monopoly = init();
          try {
-            InitMonopoly.plateau._build({
+            monopoly.plateau._build({
                plateau: {}, chance: {
                   cartes: [
                      {nom: "Carte 1", montant: 10000},
@@ -104,12 +105,13 @@
             equal(true,false,"Build must fail");
          }catch(e){}
          equal(GestionFiche.fiches.length,0, "Fiches vide");
-         equal(InitMonopoly.plateau.cartes.chance.length,0, "Cartes chances vide");
-         equal(InitMonopoly.plateau.cartes.caisseCommunaute.length,0,"Cartes caisse de communaute vide");
+         equal(monopoly.plateau.cartes.chance.length,0, "Cartes chances vide");
+         equal(monopoly.plateau.cartes.caisseCommunaute.length,0,"Cartes caisse de communaute vide");
       });
 
       test("Chargement plateau avec des donnees",function(){
-         InitMonopoly.plateau._build({
+         let monopoly = init();
+         monopoly.plateau._build({
             plateau: {}, titles:{},chance:{
                cartes:[
                   {nom:"Carte 1",type:"taxe",montant:10000},
@@ -126,8 +128,8 @@
             }, images: {}
          }, {});
          equal(GestionFiche.fiches.length,0, "Fiches vide");
-         equal(InitMonopoly.plateau.cartes.chance.length,3, "Cartes chances chargees");
-         equal(InitMonopoly.plateau.cartes.caisseCommunaute.length,3,"Cartes caisse de communaute chargees");
+         equal(monopoly.plateau.cartes.chance.length,3, "Cartes chances chargees");
+         equal(monopoly.plateau.cartes.caisseCommunaute.length,3,"Cartes caisse de communaute chargees");
       });
 
       test("Changement de joueur",function(){
@@ -175,7 +177,7 @@
 
          equal(j1.getStats().argentDispo,100000,"Argent dispo J1");
          // Achat maison
-         let maison = new Fiche(null, null, ["",""], "", 10000, [1000,2000,4000], 5000);
+         let maison = new Fiche(null, null, ["",""], "").setCosts(10000, [1000,2000,4000], 5000);
          maison.groupe=new Groupe('red','red');
          maison.vendu(j1);
          j1.payer(maison.achat);
@@ -200,13 +202,13 @@
       test("Gestion prison",function(){
          let joueurs = initJoueurs();
          fiches = [];
-         fiches[0] = new Fiche(null, null, ["#AAAAAA",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[1] = new Fiche(null, null, ["#AAAAAA",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[2] = new Fiche(null, null, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[3] = new Fiche(null, null, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[4] = new Fiche(null, null, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[5] = new Fiche(null, null, ["#CCCCCC",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[6] = new Fiche(null, null, ["#CCCCCC",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[0] = new Fiche(null, null, ["#AAAAAA",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[1] = new Fiche(null, null, ["#AAAAAA",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[2] = new Fiche(null, null, ["#AAABBB",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[3] = new Fiche(null, null, ["#AAABBB",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[4] = new Fiche(null, null, ["#AAABBB",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[5] = new Fiche(null, null, ["#CCCCCC",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[6] = new Fiche(null, null, ["#CCCCCC",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
          new Groupe("Vert","#AAAAAA").add(fiches[0]).add(fiches[1]);
          new Groupe("Bleu","#AAABBB").add(fiches[2]).add(fiches[3]).add(fiches[4]);
          new Groupe("Rouge","#CCCCCC").add(fiches[5]).add(fiches[6]);
@@ -404,13 +406,13 @@
          // Creation de plusieurs terrains
          let joueurs = initJoueurs();
          fiches = [];
-         fiches[0] = new Fiche(0, 0, ["#AAAAAA",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[1] = new Fiche(0, 1, ["#AAAAAA",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[2] = new Fiche(0, 4, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[3] = new Fiche(0, 6, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[4] = new Fiche(0, 7, ["#AAABBB",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[5] = new Fiche(1, 1, ["#CCCCCC",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[6] = new Fiche(1, 2, ["#CCCCCC",""], "", 10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[0] = new Fiche(0, 0, ["#AAAAAA",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[1] = new Fiche(0, 1, ["#AAAAAA",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[2] = new Fiche(0, 4, ["#AAABBB",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[3] = new Fiche(0, 6, ["#AAABBB",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[4] = new Fiche(0, 7, ["#AAABBB",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[5] = new Fiche(1, 1, ["#CCCCCC",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[6] = new Fiche(1, 2, ["#CCCCCC",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
          new Groupe("Vert","#AAAAAA").add(fiches[0]).add(fiches[1]);
          new Groupe("Bleu","#AAABBB").add(fiches[2]).add(fiches[3]).add(fiches[4]);
          new Groupe("Rouge","#CCCCCC").add(fiches[5]).add(fiches[6]);

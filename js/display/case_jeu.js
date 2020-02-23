@@ -72,6 +72,24 @@ class CaseActionSpeciale extends PlateauCase {
 	}
 }
 
+class CaseDepart extends CaseActionSpeciale {
+	constructor(titre, axe, pos,montant) {
+		super(titre,()=>this.actionSpe(),axe, pos, "depart");
+		this.montant = montant;
+	}
+
+	actionSpe() {
+		let montant = (VARIANTES.caseDepart ? 2:1) * this.montant;
+		GestionJoueur.getJoueurCourant().gagner(montant);
+
+		$.trigger('monopoly.depart', {
+			joueur: GestionJoueur.getJoueurCourant(),
+			montant:montant
+		});
+		GestionJoueur.change();
+	}
+}
+
  /* Case speciale, comme la taxe de luxe */
 class SimpleCaseSpeciale extends PlateauCase {
     constructor(titre, montant, axe, pos, type, img, plateauMonopoly){
@@ -256,18 +274,12 @@ function Groupe(nom, color) {
 
 /* Represente un terrain TODO REFACTO */
 class Fiche extends PlateauCase {
-    constructor(axe, pos, colors, nom, achat, loyers, prixMaison, img){
+    constructor(axe, pos, colors, nom){
     	super(axe,pos,"terrain");
 		this.nom = nom;
 		this.groupe = null;
 		this.color = colors[0];
 		this.secondColor = (colors.length === 2) ? colors[1] : colors[0];
-		this.achat = achat;
-		this.montantHypotheque = achat / 2;
-		this.achatHypotheque = this.montantHypotheque * 1.1;
-		this.loyer = loyers;
-		this.loyerHotel = (loyers != null && loyers.length === 6) ? loyers[5] : 0;
-		this.prixMaison = prixMaison;
 
 		this.statut = ETAT_LIBRE;
 		this.joueurPossede = null;
@@ -277,8 +289,20 @@ class Fiche extends PlateauCase {
 		this.hotel = false; // Si un hotel est present
 		this.maisons = [];
 		this.input = null; // Bouton
-		this.drawing = DrawerFactory.getCase(pos, axe, this.color, this.nom, CURRENCY + " " + achat, img);
+	}
+
+	setCosts(achat,loyers,prixMaison,img){
+		this.achat = achat;
+		this.montantHypotheque = achat / 2;
+		this.achatHypotheque = this.montantHypotheque * 1.1;
+		this.loyer = loyers;
+		this.loyerHotel = (loyers != null && loyers.length === 6) ? loyers[5] : 0;
+		this.prixMaison = prixMaison;
+
+		this.drawing = DrawerFactory.getCase(this.pos, this.axe, this.color, this.nom, CURRENCY + " " + achat,img);
 		Drawer.add(this.drawing);
+
+		return this;
 	}
 
 	equals(fiche) {
@@ -566,7 +590,7 @@ class Fiche extends PlateauCase {
 			if (GestionJoueur.getJoueurCourant().montant < this.achat) {
 				return {
 					"Pas assez d'argent": function () {
-						GestionJoueur.getJoueurCourant().refuseMaison(current,function(){FicheDisplayer.closeFiche()});
+						GestionJoueur.getJoueurCourant().refuseMaison(current,()=>FicheDisplayer.closeFiche());
 					}
 				};
 			} else {
@@ -615,16 +639,16 @@ class Fiche extends PlateauCase {
 
 // Represent a case for junior game (no hypotheque, no builds...)
 class FicheJunior extends Fiche {
-	constructor(axe,pos,colors,nom,achat){
-		super(axe,pos,colors,nom,achat,[achat],null);
+	constructor(axe,pos,colors,nom){
+		super(axe,pos,colors,nom);
 		this.fiche = $('#ficheJunior');
 		this.type = "junior";
 	}
 }
 
 class FicheGare extends Fiche{
-	constructor(axe, pos, color, nom, achat, loyers, img){
-		super (axe, pos, color, nom, achat, loyers, null, img);
+	constructor(axe, pos, color, nom){
+		super (axe, pos, color, nom);
 		this.type = "gare";
 	}
 
@@ -638,8 +662,8 @@ class FicheGare extends Fiche{
 }
 
 class FicheCompagnie extends Fiche {
-	constructor(axe, pos, color, nom, achat, loyers,img) {
-		super( axe, pos, color, nom, achat, loyers, null, img);
+	constructor(axe, pos, color, nom) {
+		super( axe, pos, color, nom);
 		this.fiche = $('#ficheCompagnie');
 		this.type = "compagnie";
 	}

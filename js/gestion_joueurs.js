@@ -25,8 +25,9 @@ let GestionJoueur = {
     getNb(){
         return this.joueurs.reduce((somme,j)=>somme+=!j.defaite?1:0,0);
     },
-    createAndLoad(isRobot,i,nom,data){
-        return this.create(isRobot,i,nom,data.defaite).load(data);
+    createAndLoad(isRobot,i,nom,data,montantDepart){
+        let clazzPlayer = isRobot ? JoueurFactory.getRobotPlayer():JoueurFactory.getCurrentPlayer()
+        return this.create(clazzPlayer,i,nom,data.defaite,0,montantDepart).load(data);
     },
     init(){
         $('.panneau_joueur').empty();

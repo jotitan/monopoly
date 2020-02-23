@@ -438,6 +438,9 @@ class Des {
 		Des.drawPoint(canvas, this.x + this.width * 0.25, this.y + this.width * 0.75, this.width / 5, this.color);
 		Des.drawPoint(canvas, this.x + this.width * 0.75, this.y + this.width * 0.25, this.width / 5, this.color);
 	};
+	_drawMiddle(canvas){
+		Des.drawPoint(canvas, this.x + this.width / 2, this.y + this.width / 2, this.width / 5, this.color);
+	}
 	draw(canvas) {
 		// Structure du des
 		this._drawCadre(canvas);
@@ -445,7 +448,7 @@ class Des {
 			return;
 		}
 		if (this.value % 2 === 1) {
-			Des.drawPoint(canvas, this.x + this.width / 2, this.y + this.width / 2, this.width / 5, this.color);
+			this._drawMiddle(canvas);
 		}
 		if (this.value !== 1) {
 			this.draw2or3(canvas);
@@ -501,7 +504,7 @@ class DesRapide extends Des{
 			return;
 		}
 		if (this.value === 1 || this.value === 3) {
-			Des.drawPoint(canvas, this.x + this.width / 2, this.y + this.width / 2, this.width / 5, this.color);
+			this._drawMiddle(canvas);
 		}
 		if (this.value === 2 || this.value === 3) {
 			this.draw2or3(canvas);

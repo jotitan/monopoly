@@ -124,30 +124,21 @@ class Maisons{
 		let interests = [];
 		let treatGroups = []; // groupes traites
 		// On parcourt les terrains du joueur. Pour chaque, on etudie le groupe
-		for (var index in this.maisons) {
-			var maison = this.maisons[index];
+		this.maisons.forEach(maison=>{
 			if (treatGroups[maison.groupe.color] === undefined) {
 				// Structure : free,joueur,adversaire,nbAdversaires
 				let infos = maison.groupe.getInfos(this.joueur);
 				// Si tous les terrains vendus et un terrain a l'adversaire ou deux terrains a deux adversaires differents, on peut echanger
 				if (infos.free === 0 && (infos.adversaire === 1 || infos.nbAdversaires > 1)) {
-					for (var idx in infos.maisons) {
-						if ((joueur === undefined || joueur.equals(infos.maisons[idx].joueurPossede))
-							&& (exclude == null || !exclude.groupe.equals(infos.maisons[idx].groupe))) {
-							if(exclude && maison.groupe.color === exclude.groupe.color){
-								console.log("Meme groupe, rejet",maison.groupe.color,maison.groupe.color === exclude.groupe.color);
-							} else{
-								interests.push({
-									maison: infos.maisons[idx],
-									nb: infos.maisons.length
-								}); // On ajoute chaque maison avec le nombre a acheter pour terminer le groupe
-							}
-						}
-					}
+					infos.maisons
+						.filter(m=>(joueur === undefined || joueur.equals(m.joueurPossede)) && (exclude == null || !exclude.groupe.equals(m.groupe)))
+						.filter(()=>!(exclude && maison.groupe.color === exclude.groupe.color))
+						// On ajoute chaque maison avec le nombre a acheter pour terminer le groupe
+						.forEach(m=>interests.push({maison: m,nb: infos.maisons.length}));
 				}
 				treatGroups[maison.groupe.color] = true;
 			}
-		}
+		});
 
 		let groups = this.findConstructiblesGroupes();
 

@@ -32,7 +32,7 @@ var Sauvegarde = {
     },
     load: function (name, monopoly) {
         this.currentSauvegardeName = name;
-        var data = this._getStorage(name);
+        let data = this._getStorage(name);
         // On charge le plateau
         VARIANTES = data.variantes || VARIANTES;
         monopoly.plateau.load(data.plateau || "data-monopoly.json",{},function(){

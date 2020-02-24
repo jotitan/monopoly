@@ -86,9 +86,14 @@ function doActions(joueur=GestionJoueur.getJoueurCourant()) {
 	// Notify end play
 	$.trigger('move.end',{});
 }
+
+
 function startMonopoly(debug = false){
 	let monopoly = new Monopoly(debug);
 	monopoly.init();
+	if(!debug){
+		new PanelGameMonopoly(monopoly).show();
+	}
 	return monopoly;
 }
 
@@ -301,12 +306,121 @@ class PlateauDetails {
 	}
 }
 
+// Manage the panel to create a monopoly game
+class PanelGameMonopoly{
+	constructor(monopoly){
+		this.monopoly = monopoly;
+		this.panelPartie = $('#idPanelCreatePartie');
+	}
+
+	show(){
+		this.initSlider('sliderJoueur',2,4);
+		this.initSlider('sliderRobot',0,2);
+		this.loadPlateaux();
+		this.loadSavedGames();
+		wrapDialog(this.panelPartie,{
+			title: "Monopoly",
+			closeOnEscape: false,
+			modal: true,
+			width: 400,
+			position: { my: "center top", at: "center top", of: window },
+			buttons: [{
+				text: "Valider",
+				click: ()=>this.createGame()
+			}]
+		});
+	}
+	close(){
+		this.panelPartie.dialog('close');
+	}
+	// load existing plateaux configuration
+	loadPlateaux(){
+		this.plateaux = $('#idSelectPlateau').empty();
+		$.ajax({
+			url:'data/plateaux.json',
+			dataType:'json',
+			context:this})
+			.done(data=>{
+				if(data == null || data.plateaux == null){return;}
+				data.plateaux.forEach(p=>this.plateaux.append('<option value="' + p.url + '">' + p.name + '</option>'));
+			});
+	}
+	loadSavedGames(){
+		let sauvegardes = Sauvegarde.findSauvegardes();
+		this.listSauvegarde = $('#idSauvegardes');
+		$('option:not(:first)',this.listSauvegarde).remove();
+		if (sauvegardes.length > 0) {
+			sauvegardes.forEach(s=>this.listSauvegarde.append(`<option value="${s.value}">${s.label}</option>`));
+			$('#idDeleteSauvegarde').unbind('click').bind('click',()=> {
+				if ($('option:selected',this.listSauvegarde).length > 0) {
+					if (confirm(`Etes vous sur de vouloir supprimer cette sauvegarde : ${this.listSauvegarde.val()}`)) {
+						Sauvegarde.delete(this.listSauvegarde.val());
+						$('option:selected',this.listSauvegarde).remove();
+					}
+				}
+			});
+			$('#idLoadSauvegarde').unbind('click').bind('click', ()=> {
+				if (this.listSauvegarde.val() != "") {
+					Sauvegarde.load(this.listSauvegarde.val(),this.monopoly);
+					this.close();
+				}
+			});
+		}
+	}
+	initSlider(id,min,value){
+		$( `#${id}` ).slider({
+			min:min,max:6,value:value,
+			create: function() {
+				this.handle = $('.ui-slider-handle',this);
+				this.handle.text( $( this ).slider( "value" ) );
+			},
+			slide: function( event, ui ) {
+				this.handle.text( ui.value );
+			}
+		});
+	}
+	extractOptions(){
+		let options = {
+			nbRobots:$('#sliderRobot').slider('value'),
+			nbPlayers:$('#sliderJoueur').slider('value'),
+			waitTimeIA:1
+		};
+		$('#idPartie',this.panelPartie).find('select[name],:text[name]').each(function(){
+			options[$(this).attr('name')] = $(this).val();
+		});
+		$('#idPartie',this.panelPartie).find(':checkbox[name]').each(function(){
+			options[$(this).attr('name')] = $(this).is(':checked');
+		});
+		$('#idGameType',this.panelPartie).find(':radio:checked').each(function(){
+			options[$(this).attr('name')] = $(this).val();
+		});
+		options.joueur = $('#idNomJoueur').val() !== "" ? $('#idNomJoueur').val():"";
+
+		return options;
+	}
+	isJoinNetwork(){
+		return $('#idCreationGame').tabs('option','active') === 1;
+	}
+	// Extract parameter dans create monopoly game
+	createGame(){
+		if(this.isJoinNetwork()){
+			return this.monopoly.joinNetworkGame($('#idRemoteNomJoueur').val(),$('#idRemoteGame').val());
+		}
+		/* Chargement d'une partie */
+		VARIANTES = {};
+		if (this.listSauvegarde.val() !== "") {
+			Sauvegarde.load(this.listSauvegarde.val(),this.monopoly);
+		} else {
+			let options = this.extractOptions();
+			this.monopoly.plateau.load($('#idSelectPlateau').val(),options,()=>this.monopoly._createGame(this.extractOptions()));
+		}
+		this.close();
+	}
+}
+
 class Monopoly {
 	constructor(debug){
 		DEBUG = debug;
-		this.plateaux = null;
-		this.listSauvegarde = null;
-		this.panelPartie = $('#idPanelCreatePartie');
 		InfoMessage.init('message');
 		FicheDisplayer.init();
 		this.initPanels();
@@ -333,79 +447,12 @@ class Monopoly {
 
 		$('.action-joueur').attr('disabled', 'disabled').addClass('disabled');
 		JoueurFactory.setMouseFunction(this.plateau.enableMouse);
-		if (!DEBUG) {
-			this.showPanel();
-		} else {
-			this.plateau.load('data-monopoly.json',()=>this._createGame({}, {}));
+		if (DEBUG) {
+			this.plateau.load('data-monopoly.json',()=>this._createGame({}));
 		}
 	}
-	initSlider(id,min,value){
-		$( `#${id}` ).slider({
-			min:min,max:6,value:value,
-			create: function() {
-				this.handle = $('.ui-slider-handle',this);
-				this.handle.text( $( this ).slider( "value" ) );
-			},
-			slide: function( event, ui ) {
-				this.handle.text( ui.value );
-			}
-		});
-	}
-
-	showPanel(){
-		this.initSlider('sliderJoueur',2,4);
-		this.initSlider('sliderRobot',0,2);
-		this._loadPlateaux();
-		this._configSauvegardePanel();
-		wrapDialog(this.panelPartie,{
-			title: "Monopoly",
-			closeOnEscape: false,
-			modal: true,
-			width: 400,
-			position: { my: "center top", at: "center top", of: window },
-			buttons: [{
-				text: "Valider",
-				click: ()=>this._loadOrCreateGame()
-			}]
-		})
-	}
-	_loadOrCreateGame(){
-		// Network feature
-		if($('#idCreationGame').tabs('option','active') === 1){
-			return this.joinGame();
-		}
-		/* Chargement d'une partie */
-		VARIANTES = {};
-		if (this.listSauvegarde.val() !== "") {
-			Sauvegarde.load(this.listSauvegarde.val(),this);
-		} else {
-			let options = this._extractOptions();
-			this.plateau.load($('#idSelectPlateau').val(),options,()=>this._createGame(options));
-		}
-		this.panelPartie.dialog('close');
-	}
-	_extractOptions(){
-		let options = {
-			nbRobots:$('#sliderRobot').slider('value'),
-			nbPlayers:$('#sliderJoueur').slider('value')
-		};
-		$('#idPartie',this.panelPartie).find('select[name],:text[name]').each(function(){
-			options[$(this).attr('name')] = $(this).val();
-		});
-		$('#idPartie',this.panelPartie).find(':checkbox[name]').each(function(){
-			options[$(this).attr('name')] = $(this).is(':checked');
-		});
-		$('#idGameType',this.panelPartie).find(':radio:checked').each(function(){
-			options[$(this).attr('name')] = $(this).val();
-		});
-		return options;
-	}
-	joinGame(){
-		this._joinNetworkGame($('#idRemoteNomJoueur').val(),$('#idRemoteGame').val());
-	}
-	_joinNetworkGame(name,game){
+	joinNetworkGame(name,game){
 		this.remoteManager = new RemoteManager(name,game);
-		this.panelPartie.dialog('close');
 	}
 	// Create a network game as master
 	_createNetworkGame(options){
@@ -413,18 +460,15 @@ class Monopoly {
 		$.ajax({url:"/createGame"}).then((data)=> {
 			this.remoteManager = new MasterRemoteManager(options.joueur,data.game,this.plateau);
 			let players = this.remoteManager.create(options.nbPlayers,options.nbRobots,options.joueur,this.plateau.infos.nomsJoueurs, this.plateau.infos.argentJoueurDepart, this.plateau.infos.montantDepart);
-			this.afterCreateGame(players);
+			return this.afterCreateGame(players);
 		});
 	}
 	/* Creer la partie apres le chargement du plateau */
 	_createGame(options){
-		let j = $('#idNomJoueur').val() !== "" ? $('#idNomJoueur').val():"";
-		options = $.extend({},{nbPlayers:0,nbRobots:0,waitTimeIA:1,joueur:j},options);
 		if(options.networkGame === "true"){
 			return this._createNetworkGame(options);
-		}else{
-			return this._createLocalGame(options);
 		}
+		return this._createLocalGame(options);
 	}
 	_createLocalGame(options){
 		let playerNames = new Array(options.nbPlayers);
@@ -439,7 +483,7 @@ class Monopoly {
 			}
 			playerNames[i] = nom;
 			let isRobot = i >= options.nbPlayers - options.nbRobots;
-			let clazzPlayer = isRobot ? JoueurFactory.getRobotPlayer():JoueurFactory.getCurrentPlayer()
+			let clazzPlayer = isRobot ? JoueurFactory.getRobotPlayer():JoueurFactory.getCurrentPlayer();
 			GestionJoueur.create(clazzPlayer, i,nom,false,this.plateau.infos.argentJoueurDepart,this.plateau.infos.montantDepart);
 		}
 		this.afterCreateGame(playerNames);
@@ -462,44 +506,6 @@ class Monopoly {
 		});
 		// Panneau d'echange
 		EchangeDisplayer.init('idPanelEchange', 'idSelectJoueurs', 'idListTerrainsJoueur', 'idListTerrainsAdversaire');
-	}
-	/* Charge les plateaux de jeu disponible */
-	_loadPlateaux(){
-		this.plateaux = $('#idSelectPlateau').empty();
-		$.ajax({
-			url:'data/plateaux.json',
-			dataType:'json',
-			context:this,
-			success:function(data){
-				if(data == null || data.plateaux == null){return;}
-				data.plateaux.forEach(p=>this.plateaux.append('<option value="' + p.url + '">' + p.name + '</option>'));
-			}
-		});
-	}
-	_configSauvegardePanel(){
-		let sauvegardes = Sauvegarde.findSauvegardes();
-		this.listSauvegarde = $('#idSauvegardes');
-		$('option:not(:first)',this.listSauvegarde).remove();
-		var _self = this;
-		if (sauvegardes.length > 0) {
-			sauvegardes.forEach(function(s){
-				this.listSauvegarde.append('<option value="' + s.value + '">' + s.label + '</option>');
-			},this);
-			$('#idDeleteSauvegarde').unbind('click').bind('click', function () {
-				if ($('option:selected',_self.listSauvegarde).length > 0) {
-					if (confirm("Etes vous sur de vouloir supprimer cette sauvegarde : " + _self.listSauvegarde.val())) {
-						Sauvegarde.delete(_self.listSauvegarde.val());
-						$('option:selected',_self.listSauvegarde).remove();
-					}
-				}
-			});
-			$('#idLoadSauvegarde').unbind('click').bind('click', function () {
-				if (_self.listSauvegarde.val() != "") {
-					Sauvegarde.load(_self.listSauvegarde.val(),_self);
-					_self.panelPartie.dialog('close');
-				}
-			});
-		}
 	}
 	initPanels(){
 		//$('#message').dialog({
@@ -530,16 +536,16 @@ class Monopoly {
 			title:"Liste des terrains libre",
 			width:350,
 			height:300,
-			buttons:[{text:'Fermer',click:function(){$('#idTerrainsLibres').dialog('close');}}],
+			buttons:[{text:'Fermer',click:()=>$('#idTerrainsLibres').dialog('close')}],
 			open:()=>this._showFreeTerrains()
 		});
 	}
 	_showFreeTerrains(){
 		$('#idTerrainsLibres').empty();
-		var it = GestionFiche.getTerrainsLibres();
+		let it = GestionFiche.getTerrainsLibres();
 		while(it.hasNext()){
-			var t = it.next();
-			$('#idTerrainsLibres').append('<div style="font-weight:bold;color:' + t.color + '">' + t.nom + '</div>');
+			let t = it.next();
+			$('#idTerrainsLibres').append(`<div style="font-weight:bold;color:${t.color}">${t.nom}</div>`);
 		}
 	}
 }

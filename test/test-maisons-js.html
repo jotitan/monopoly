@@ -116,6 +116,8 @@
          equal(fiches.g2.id,results[0].maison.id,"First property must be the most expensive");
          equal(1,results[0].nb,"Only one to buy");
          equal(1,results[1].nb,"Only one to buy");
+
+         equal(1,maisonsJ1.findOthersInterestProprietes(j2,fiches.b2,null).size(),"Cas avec maison exclue");
       });
 
       test("Terrains non constructibles existants",()=>{

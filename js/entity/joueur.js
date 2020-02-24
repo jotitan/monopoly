@@ -1,3 +1,255 @@
+// Represente houses of a player
+class Maisons{
+	constructor(joueur,maisons=[]){
+		this.joueur = joueur;
+		this.maisons = [];
+		maisons.forEach(m=>this.add(m));
+	}
+	add(maison){
+		maison.joueurPossede = this.joueur;
+		maison.statut = ETAT_ACHETE;
+		this.maisons.push(maison);
+	}
+	remove(maison){
+		let index = this.maisons.findIndex(m=>m.equals(maison));
+		if(index != -1) {
+			maison.statut = ETAT_LIBRE;
+			maison.joueurPossede = null;
+			this.maisons.splice(index, 1);
+		}
+	}
+	/**
+	 * Renvoie la liste des groupes presque complet (un terrain manquant) pour lequel le terrain est encore libre
+	 */
+	getGroupesPossibles() {
+		let groups = new Set();
+		this.maisons
+			.filter(m=>!m.isGroupee())
+			.filter(maison=>
+				// calcule les terrains libre de la meme couleur : si 1 libre=>ok, si adversaire ou libre 1, ko
+				maison.groupe.fiches
+					.filter(f=>!this.joueur.equals(f.joueurPossede))
+					.reduce((libre,f)=>libre + (f.statut === ETAT_LIBRE ? 1:10),0)
+				=== 1
+			).forEach(m=>groups.add(m.color));
+		return Array.from(groups);
+	}
+
+	/** Renvoie les maisons du joueur par groupe avec des details*/
+	getMaisonsGrouped() {
+		var groups = [];
+		this.maisons.forEach(maison=>{
+			if (maison.groupe == null) {
+				if (groups["others"] === undefined) {
+					groups["others"] = {
+						groupe: 'Autres',
+						color: 'black',
+						terrains: [maison]
+					};
+				} else {
+					groups["others"].terrains.push(maison);
+				}
+			} else {
+				if (groups[maison.groupe.nom] === undefined) {
+					groups[maison.groupe.nom] = {
+						groupe: maison.groupe.nom,
+						color: maison.groupe.color,
+						terrains: [maison]
+					};
+				} else {
+					groups[maison.groupe.nom].terrains.push(maison);
+				}
+			}
+		});
+		return groups;
+	}
+	/** Renvoie la liste des maisons regroupées par groupe. getMaisonsGrouped est plus complete */
+	findMaisonsByGroup = function(){
+		let groups = [];
+		this.maisons.forEach(m=>{
+			if(groups[m.groupe.nom] ==null) {
+				groups[m.groupe.nom] = [];
+			}
+			groups[m.groupe.nom].push(m);
+		});
+		return groups;
+	}
+
+	/** Renvoie la liste des terrains hypothecables : sans construction sur le terrain et ceux de la famille, pas deja hypotheques */
+	findMaisonsHypothecables() {
+		return this.maisons
+			.filter(propriete=>
+				propriete.statutHypotheque === false
+				&& propriete.nbMaison === 0
+				&& !this.maisons.some(m=>m.color === propriete.color && m.nbMaison > 0));
+	}
+
+	/** Renvoie la liste des maisons hypothequees */
+	findMaisonsHypothequees() {
+		return this.maisons.filter(m=>m.statutHypotheque)
+	}
+
+	/** Renvoie la liste des groupes constructibles du joueur
+	 * @returns {Array}
+	 */
+	findConstructiblesGroupes() {
+		var colorsKO = [];
+		var groups = [];
+		this.maisons
+			.filter(m=>m.isTerrain() === true && m.groupe != null)
+			.forEach(m=>{
+				if (colorsKO[m.color] === undefined) {
+					// On recherche si on a toutes les proprietes du groupe
+					let infos = m.groupe.getInfos(this.joueur);
+					// Possede le groupe
+					if (infos.free === 0 && infos.adversaire === 0 && infos.hypotheque === 0) {
+						groups[m.color] = {
+							color: m.color,
+							group: m.groupe,
+							proprietes: m.groupe.fiches
+						};
+					} else {
+						colorsKO[m.color] = true;
+					}
+				}
+			});
+		return groups;
+	}
+	/* Cherche les terrains qui interesse chez les adversaires */
+	/* Les terrains sont tries par interet.
+	 * Les criteres : la rentabilite, le nombre de terrain a acheter (1 ou 2), le fait de faire une ligne avec un groupe possede */
+	/* @param joueur : ne recherche que les proprietes de ce joueur */
+	/* @param excludes : terrain exclu, a ne pas renvoyer (celui vise par l'echange) */
+	findOthersInterestProprietes(joueur,exclude,strategie) {
+		let interests = [];
+		let treatGroups = []; // groupes traites
+		// On parcourt les terrains du joueur. Pour chaque, on etudie le groupe
+		for (var index in this.maisons) {
+			var maison = this.maisons[index];
+			if (treatGroups[maison.groupe.color] === undefined) {
+				// Structure : free,joueur,adversaire,nbAdversaires
+				let infos = maison.groupe.getInfos(this.joueur);
+				// Si tous les terrains vendus et un terrain a l'adversaire ou deux terrains a deux adversaires differents, on peut echanger
+				if (infos.free === 0 && (infos.adversaire === 1 || infos.nbAdversaires > 1)) {
+					for (var idx in infos.maisons) {
+						if ((joueur === undefined || joueur.equals(infos.maisons[idx].joueurPossede))
+							&& (exclude == null || !exclude.groupe.equals(infos.maisons[idx].groupe))) {
+							if(exclude && maison.groupe.color === exclude.groupe.color){
+								console.log("Meme groupe, rejet",maison.groupe.color,maison.groupe.color === exclude.groupe.color);
+							} else{
+								interests.push({
+									maison: infos.maisons[idx],
+									nb: infos.maisons.length
+								}); // On ajoute chaque maison avec le nombre a acheter pour terminer le groupe
+							}
+						}
+					}
+				}
+				treatGroups[maison.groupe.color] = true;
+			}
+		}
+
+		let groups = this.findConstructiblesGroupes();
+
+		// On trie la liste selon rapport (argent de 3 maison / achat terrain + 3 maisons), le nombre de terrains a acheter
+		// on rajoute le fait que ca appartient a la strategie et que c'est constructible
+		interests.sort( (a, b)=> this._computeScoreInterest(a,b,groups,strategie));
+		return interests;
+
+	}
+	_computeScoreInterest(a,b,groups,strategie){
+		let critere1 = a.nb / b.nb;
+		/* Second critere : rentabilite du terrain */
+		let critere2 = a.maison.getRentabiliteBrute() / b.maison.getRentabiliteBrute();
+
+		let voisinA = 1,
+			voisinB = 1;
+
+		for (let g in groups) {
+			if (groups[g].group.isVoisin(a.maison.groupe)) {
+				voisinA++;
+			}
+			if (groups[g].group.isVoisin(b.maison.groupe)) {
+				voisinB++;
+			}
+		}
+		let critere3 = voisinA / voisinB;
+		/* Quatrieme critere : fait une ligne avec un autre groupe du joueur */
+		let critere4 = 1;
+		if(strategie!=null){
+			let interetA = strategie.interetPropriete(a.maison);
+			let interetB = strategie.interetPropriete(b.maison);
+			if(interetA!==interetB){
+				critere4 = interetA?0.5:2;
+			}
+		}
+		let critere5 = 1;
+		if(a.maison.isTerrain()!==b.maison.isTerrain()){
+			critere5 = (a.maison.isTerrain())?0.5:4;
+		}
+		return critere1 * critere2 * critere3 * critere4 * critere5 - 1;
+	}
+	/* Renvoie la liste des terrains peu important (gare, compagnie et terrains hypotheques) */
+	/* On integre dans les resultats le nombre d'elements par groupe */
+	findUnterestsProprietes() {
+		var nbByGroups = [];
+		let proprietes = this.maisons.filter(m=>!m.isTerrain());
+		proprietes.forEach(m=>{
+			if (nbByGroups[m.groupe.nom] === undefined) {
+				nbByGroups[m.groupe.nom] = 1;
+			} else {
+				nbByGroups[m.groupe.nom]++;
+			}
+		});
+		return {
+			proprietes: proprietes,
+			nbByGroups: nbByGroups
+		};
+	}
+	/**
+	 * Renvoie les terrains constructibles qui n'interessent (pas en groupe)
+	 * @param interestTerrains : terrains qui interessent, on filtre
+	 */
+	findOthersProperties(interestTerrains) {
+		var mapInterests = [];
+		for (let i in interestTerrains) {
+			mapInterests[interestTerrains[i].maison.color] = 1;
+		}
+		return this.maisons.filter(m=>m.isTerrain() && !m.isGroupee() && mapInterests[m.color] === undefined);
+	}
+	/** Renvoie les groupes constructibles avec les proprietes de chaque */
+	findMaisonsConstructibles() {
+		var mc = [];
+		var colorsOK = [];
+		var colorsKO = [];
+
+		// Si une maison est hypothequee, on ne peut plus construire sur le groupe
+		this.maisons
+			.filter(m=>m.isTerrain())
+			.forEach(m=>{
+				if (colorsOK[m.color] === true) {
+					mc.push(m); // on a la couleur, on ajoute
+				} else {
+					if (colorsKO[m.color] === undefined) {
+						// On recherche si on a toutes les couleurs et si une propriete qui n'appartient pas au joueur
+						let ok = !m.groupe.fiches.some(f=>f.isTerrain() && (!this.joueur.equals(f.joueurPossede) || f.statutHypotheque === true));
+						if (!ok) {
+							colorsKO[m.color] = true;
+						} else {
+							colorsOK[m.color] = true;
+							mc[mc.length] = m;
+						}
+					}
+				}
+			});
+		return mc;
+	}
+	libere(){
+		this.maisons.forEach(m=>m.libere());
+		this.maisons = [];
+	}
+}
+
 /* Represente un joueur humain */
 class Joueur {
 	constructor(numero, nom = '', color,argent,montantDepart=0){
@@ -7,7 +259,7 @@ class Joueur {
 		this.nom = nom;
 		this.color = color;
 		this.montant = argent;
-		this.maisons = [];
+		this.maisons = new Maisons(this);
 		this.enPrison = false;
 		this.pion = null;
 		// Nombre de tour en prison
@@ -105,8 +357,8 @@ class Joueur {
 			strategie: this.strategie != null ? this.strategie.toString() : '-',
 			comportement: this.comportement != null ? this.comportement.name : '-',
 		};
-		for (var index in this.maisons) {
-			var maison = this.maisons[index];
+		for (var index in this.maisons.maisons) {
+			var maison = this.maisons.maisons[index];
 			statsJ.hotel += maison.hotel === true ? 1 : 0;
 			statsJ.maison += parseInt(maison.hotel === false ? maison.nbMaison : 0);
 			// Revente des constructions + hypotheque
@@ -193,72 +445,11 @@ class Joueur {
 		GestionEnchereDisplayer.displayCloseOption(montant, joueur);
 	}
 
-	/* Renvoie les maisons du joueur regroupes par groupe */
-	getMaisonsGrouped() {
-		var groups = [];
-		for (var m in this.maisons) {
-			var maison = this.maisons[m];
-			if (maison.groupe == null) {
-				if (groups["others"] === undefined) {
-					groups["others"] = {
-						groupe: 'Autres',
-						color: 'black',
-						terrains: [maison]
-					};
-				} else {
-					groups["others"].terrains.push(maison);
-				}
-			} else {
-				if (groups[maison.groupe.nom] === undefined) {
-					groups[maison.groupe.nom] = {
-						groupe: maison.groupe.nom,
-						color: maison.groupe.color,
-						terrains: [maison]
-					};
-				} else {
-					groups[maison.groupe.nom].terrains.push(maison);
-				}
-			}
-		}
-		return groups;
-	}
-
-	/**
-	 * Renvoie la liste des groupes presque complet (un terrain manquant) pour lequel le terrain est encore libre
-	 */
-	getGroupesPossibles() {
-		var groups = [];
-		for (var index in this.maisons) {
-			var maison = this.maisons[index];
-			if (!maison.isGroupee()) {
-				// calcule les terrains libre de la meme couleurs
-				let stat = {
-					libre: 0,
-					adversaire: 0
-				};
-				for (var id in maison.groupe.fiches) {
-					var f = maison.groupe.fiches[id];
-					if (!this.equals(f.joueurPossede)) {
-						if (f.statut === ETAT_LIBRE) {
-							stat.libre++;
-						} else {
-							stat.adversaire++;
-						}
-					}
-				}
-				if (stat.libre === 1 && stat.adversaire === 0) {
-					groups.push(maison.color);
-				}
-			}
-		}
-		return groups;
-	}
-
 	// Cherche la position ou placer la nouvelle fiche (tri par couleur)
 	cherchePlacement(maison) {
-		for (let i = 0; i < this.maisons.length; i++) {
-			if (this.maisons[i].color === maison.color) {
-				return this.maisons[i].input;
+		for (let i = 0; i < this.maisons.maisons.length; i++) {
+			if (this.maisons.maisons[i].color === maison.color) {
+				return this.maisons.maisons[i].input;
 			}
 		}
 		return null;
@@ -361,20 +552,9 @@ class Joueur {
 
 		// On supprime l'ancien proprio
 		if(maison.joueurPossede){
-			maison.joueurPossede.removeMaison(maison);
+			maison.joueurPossede.maisons.remove(maison);
 		}
 		maison.setJoueurPossede(this);
-	}
-
-	/* Supprime la maison de la liste */
-	removeMaison(maison) {
-		for (var i = 0; i < this.maisons.length; i++) {
-			if (this.maisons[i].equals(maison)) {
-				this.maisons.splice(i, 1);
-				return;
-			}
-		}
-		this.updateMaisonsByGroup();
 	}
 
 	// Envoi le joueur (et le pion) en prison
@@ -496,8 +676,7 @@ class Joueur {
 	doDefaite() {
 		// On laisse juste le nom et on supprime le reste, on supprime le pion, on remet les maison a la vente
 		// Le banquier peut mettre aux encheres les terrains
-		this.maisons.forEach(f=>f.libere());
-		this.maisons = [];
+		this.maisons.libere();
 		$.trigger('refreshPlateau'); // Pour supprimer les terrains
 		this.updateMaisonsByGroup();
 		$('input', this.div).remove();
@@ -541,235 +720,8 @@ class Joueur {
 		return GestionFiche.getById(this.pion.axe + "-" + this.pion.position);
 	}
 
-	/**
-	 * Renvoie la liste des maisons regroupées par groupe
-	 */
-	findMaisonsByGroup = function(){
-		let groups = [];
-		this.maisons.forEach(m=>{
-			if(groups[m.groupe.nom] ==null) {
-				groups[m.groupe.nom] = [];
-			}
-			groups[m.groupe.nom].push(m);
-		});
-		return groups;
-	}
-
-	/** Renvoie la liste des terrains hypothecables : sans construction sur le terrain et ceux de la famille, pas deja hypotheques
-	 * @return : la liste des terrains */
-	findMaisonsHypothecables() {
-		var proprietes = [];
-
-		for (let i = 0; i < this.maisons.length; i++) {
-			let propriete = this.maisons[i];
-			if (propriete.statutHypotheque === false && propriete.nbMaison === 0) {
-				// Aucune propriete possedee de la couleur ne doit avoir de maison
-				let flag = !this.maisons.some(m=>m.color === propriete.color && m.nbMaison > 0);
-				if (flag) {
-					proprietes.push(propriete);
-				}
-			}
-		}
-		return proprietes;
-	}
-
-	/* Renvoie la liste des maisons hypothequees */
-	findMaisonsHypothequees() {
-		return this.maisons.filter(m=>m.statutHypotheque)
-	}
-
-	/*
-	/**
-	 * Renvoie la liste des groupes constructibles du joueur
-	 * @returns {Array}
-	 */
-	findGroupes() {
-		var colorsOK = [];
-		var colorsKO = [];
-		var groups = [];
-
-		for (var i = 0; i < this.maisons.length; i++) {
-			var m = this.maisons[i];
-			if (m.isTerrain() === true && m.groupe != null) {
-				// Deja traite, on possede la famille
-				if (colorsOK[m.color] === true) {
-				} else {
-					if (colorsKO[m.color] === undefined) {
-						// On recherche si on a toutes les proprietes du groupe
-						var infos = m.groupe.getInfos(this);
-						// Possede le groupe
-						if (infos.free === 0 && infos.adversaire === 0 && infos.hypotheque === 0) {
-							colorsOK[m.color] = true;
-							groups[m.color] = {
-								color: m.color,
-								group: m.groupe,
-								proprietes: m.groupe.fiches
-							};
-						} else {
-							colorsKO[m.color] = true;
-						}
-					}
-				}
-			}
-		}
-		return groups;
-	}
-
-	/* Cherche les terrains qui interesse chez les adversaires */
-	/* Les terrains sont tries par interet.
-	 * Les criteres : la rentabilite, le nombre de terrain a acheter (1 ou 2), le fait de faire une ligne avec un groupe possede */
-	/* @param joueur : ne recherche que les proprietes de ce joueur */
-	/* @param excludes : terrain exclu, a ne pas renvoyer (celui vise par l'echange) */
-	findOthersInterestProprietes(joueur,exclude) {
-		var interests = [];
-		var treatGroups = []; // groupes traites
-		// On parcourt les terrains du joueur. Pour chaque, on etudie le groupe
-		for (var index in this.maisons) {
-			var maison = this.maisons[index];
-			if (treatGroups[maison.groupe.color] === undefined) {
-				// Structure : free,joueur,adversaire,nbAdversaires
-				var infos = maison.groupe.getInfos(this);
-				// Si tous les terrains vendus et un terrain a l'adversaire ou deux terrains a deux adversaires differents, on peut echanger
-				if (infos.free === 0 && (infos.adversaire === 1 || infos.nbAdversaires > 1)) {
-					for (var idx in infos.maisons) {
-						if ((joueur === undefined || joueur.equals(infos.maisons[idx].joueurPossede))
-							&& (exclude === undefined || !exclude.groupe.equals(infos.maisons[idx].groupe))) {
-							if(exclude && maison.groupe.color === exclude.groupe.color){
-								console.log("Meme groupe, rejet",maison.groupe.color,maison.groupe.color === exclude.groupe.color);
-							} else{
-								interests.push({
-									maison: infos.maisons[idx],
-									nb: infos.maisons.length
-								}); // On ajoute chaque maison avec le nombre a acheter pour terminer le groupe
-							}
-						}
-					}
-				}
-				treatGroups[maison.groupe.color] = true;
-			}
-		}
-
-		let groups = this.findGroupes();
-
-		// On trie la liste selon rapport (argent de 3 maison / achat terrain + 3 maisons), le nombre de terrains a acheter
-		// on rajoute le fait que ca appartient a la strategie et que c'est constructible
-		interests.sort( (a, b)=> {
-			/* Premier critere : nombre de terrain a acheter pour finir le groupe */
-			var critere1 = a.nb / b.nb;
-			/* Second critere : rentabilite du terrain */
-			var critere2 = a.maison.getRentabiliteBrute() / b.maison.getRentabiliteBrute();
-
-			var voisinA = 1,
-				voisinB = 1;
-			for (var g in groups) {
-				if (groups[g].group.isVoisin(a.maison.groupe)) {
-					voisinA++;
-				}
-				if (groups[g].group.isVoisin(b.maison.groupe)) {
-					voisinB++;
-				}
-			}
-			var critere3 = voisinA / voisinB;
-			/* Quatrieme critere : fait une ligne avec un autre groupe du joueur */
-			var critere4 = 1;
-			if(this.strategie!=null){
-				var interetA = this.strategie.interetPropriete(a.maison);
-				var interetB = this.strategie.interetPropriete(b.maison);
-				if(interetA!==interetB){
-					critere4 = (interetA)?0.5:2;
-				}
-			}
-			var critere5 = 1;
-			if(a.maison.isTerrain()!==b.maison.isTerrain()){
-				critere5 = (a.maison.isTerrain())?0.5:4;
-			}
-			var criteres = critere1 * critere2 * critere3 * critere4 * critere5;
-			return criteres - 1;
-		});
-		return interests;
-
-	}
-
-	/* Renvoie la liste des terrains peu important (gare, compagnie et terrains hypotheques) */
-	/* On integre dans les resultats le nombre d'elements par groupe */
-	findUnterestsProprietes() {
-		var proprietes = [];
-		var nbByGroups = [];
-		for (var m in this.maisons) {
-			var maison = this.maisons[m];
-			if (!maison.isTerrain()) {
-				proprietes.push(maison);
-				if (nbByGroups[maison.groupe.nom] === undefined) {
-					nbByGroups[maison.groupe.nom] = 1;
-				} else {
-					nbByGroups[maison.groupe.nom]++;
-				}
-			}
-		}
-		return {
-			proprietes: proprietes,
-			nbByGroups: nbByGroups
-		};
-	}
-
-	/**
-	 * Renvoie les terrains constructibles qui n'interessent (pas en groupe)
-	 * @param interestTerrains : terrains qui interessent, on filtre
-	 */
-	findOthersProperties(interestTerrains) {
-		let terrains = [];
-		var mapInterests = [];
-		for (let i in interestTerrains) {
-			mapInterests[interestTerrains[i].maison.color] = 1;
-		}
-
-		for (var f in this.maisons) {
-			var maison = this.maisons[f];
-			if (maison.isTerrain() && !maison.isGroupee() && mapInterests[maison.color] === undefined) {
-				terrains.push(maison);
-			}
-		}
-		return terrains;
-	}
-
-	/* Renvoie les groupes constructibles avec les proprietes de chaque */
-	findMaisonsConstructibles() {
-		var mc = [];
-		var colorsOK = [];
-		var colorsKO = [];
-
-		// Si une maison est hypothequee, on ne peut plus construire sur le groupe
-		for (var i = 0; i < this.maisons.length; i++) {
-			var m = this.maisons[i];
-			if (m.isTerrain() === true) {
-				if (colorsOK[m.color] === true) {
-					mc.push(m); // on a la couleur, on ajoute
-				} else {
-					if (colorsKO[m.color] === undefined) {
-						// On recherche si on a toutes les couleurs
-						var ok = true;
-						// On cherche une propriete qui n'appartient pas au joueur
-						for (var f in m.groupe.fiches) {
-							var fiche = m.groupe.fiches[f];
-							if (fiche.isTerrain() === true &&
-								(fiche.joueurPossede == null || !fiche.joueurPossede.equals(this) || fiche.statutHypotheque === true)) {
-								ok = false;
-							}
-						}
-						if (!ok) {
-							colorsKO[m.color] = true;
-						} else {
-							colorsOK[m.color] = true;
-							mc[mc.length] = m;
-						}
-					}
-				}
-			}
-		}
-		return mc;
-	}
 	updateMaisonsByGroup(){
-		let groups = this.findMaisonsByGroup();
+		let groups = this.maisons.findMaisonsByGroup();
 		let div = $('.count-property',this.div);
 		$(".counter-group",div).html(0);
 		for(var group in groups){

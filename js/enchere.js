@@ -325,7 +325,7 @@ var EchangeDisplayer = {
             $('option:not(:first),optgroup', EchangeDisplayer.listTerrainsAdversaire).remove();
             var joueur = GestionJoueur.getById(EchangeDisplayer.selectJoueurs.val());
             if (joueur != null) {
-                var groups = joueur.getMaisonsGrouped();
+                var groups = joueur.maisons.getMaisonsGrouped();
                 for (var g in groups) {
                     var group = groups[g];
                     var optionGroup = $('<optgroup label="Groupe ' + group.groupe + '" style="color:' + group.color + '"></optGroup>');
@@ -346,7 +346,7 @@ var EchangeDisplayer = {
 
         // Affichage des terrains du joueur
         this.listTerrainsJoueur.empty();
-        var groups = joueur.getMaisonsGrouped();
+        let groups = joueur.maisons.getMaisonsGrouped();
         for (var g in groups) {
             // ne pas affiche si construit )groups[g].isConstructed()
             var group = groups[g];

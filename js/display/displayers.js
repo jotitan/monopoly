@@ -241,7 +241,7 @@ var CommunicationDisplayer = {
     /* Affiche le panneau de saisie d'une contreproposition */
     _showContrePanel: function (joueur, joueurAdverse) {
         // Affichage sur l'ecran principal ou le meme
-        var groups = joueur.getMaisonsGrouped();
+        var groups = joueur.maisons.getMaisonsGrouped();
         var divProposition = $('<div class="contreProposition"></div>');
         for (var g in groups) {
             // ne pas affiche si construit )groups[g].isConstructed()

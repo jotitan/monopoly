@@ -213,7 +213,7 @@ class JoueurOrdinateur extends Joueur {
 
 
 	addIsolateHouse(maison,proposition){
-		let data = this.findUnterestsProprietes();
+		let data = this.maisons.findUnterestsProprietes();
 		let montant = 0;
 		if (data != null && data.proprietes != null && data.proprietes.length > 0) {
 			let proprietes = data.proprietes;
@@ -245,11 +245,11 @@ class JoueurOrdinateur extends Joueur {
 			return callback();
 		}
 		// Proprietes qui interessent le joueur
-		var proprietes = this.findOthersInterestProprietes();
+		let proprietes = this.maisons.findOthersInterestProprietes();
 		if (proprietes.length === 0) {
 			return callback();
 		}
-		var nbGroupesPossedes = this.findGroupes().length;
+		var nbGroupesPossedes = this.maisons.findConstructiblesGroupes().length;
 		/* On calcule l'importance d'echanger (si des groupes sont presents ou non) */
 		var interetEchange = Math.pow(1 / (1 + nbGroupesPossedes), 2);
 
@@ -264,7 +264,7 @@ class JoueurOrdinateur extends Joueur {
 				let joueur = maison.joueurPossede;
 				prop.compensation = 0;
 				// Calcule les monnaies d'echange
-				prop.deals = maison.joueurPossede.findOthersInterestProprietes(this,maison);
+				prop.deals = maison.joueurPossede.maisons.findOthersInterestProprietes(this,maison);
 				if (prop.deals.length === 0) {
 					// On ajoute les terrains non importants (gare seule, compagnie)
 					let montant = this.addIsolateHouse(maison,prop);
@@ -287,7 +287,7 @@ class JoueurOrdinateur extends Joueur {
 				// Si aucune proposition, on ajoute les autres terrains dont on se moque (terrains constructibles mais non intéressant)
 				// Potentiellement un terrain de la strategie peut tout de meme etre proposee (une gare par exemple)
 				if ((prop.deals == null || prop.deals.length === 0) && prop.compensation === 0) {
-					var terrains = this.findOthersProperties(proprietes);
+					var terrains = this.maisons.findOthersProperties(proprietes);
 					var montant = 0;
 					for (var i = 0; i < terrains.length && montant / maison.achat < 0.7; i++) {
 						var terrain = terrains[i];
@@ -372,7 +372,7 @@ class JoueurOrdinateur extends Joueur {
 		if ((proposition.terrains === undefined || proposition.terrains.length === 0) && (proposition.compensation === undefined || proposition.compensation === 0)) {
 			return GestionEchange.reject(this);
 		}
-		var others = this.findOthersInterestProprietes(joueur);
+		var others = this.maisons.findOthersInterestProprietes(joueur);
 		var infos = this._calculatePropositionValue(maison, joueur, proposition, others);
 		if (infos.critere >= 3) {
 			return GestionEchange.accept(this);
@@ -421,7 +421,7 @@ class JoueurOrdinateur extends Joueur {
 					}
 					if (!done) {
 						// Il faut proposer autre chose, autre terrain
-						var uselessProprietes = joueur.findUnterestsProprietes();
+						var uselessProprietes = joueur.maisons.findUnterestsProprietes();
 						if (uselessProprietes.proprietes.length > 0) {
 							contreProposition.terrains.push(uselessProprietes.proprietes[0]);
 						}
@@ -511,7 +511,7 @@ class JoueurOrdinateur extends Joueur {
 			return GestionEchange.reject(this);
 		}
 		/* On evalue la pertinence  */
-		var others = this.findOthersInterestProprietes(joueur);
+		var others = this.maisons.findOthersInterestProprietes(joueur);
 		var infos = null;
 		if (proposition.terrains.length > 0) {
 			// On inverse les parametres
@@ -568,7 +568,7 @@ class JoueurOrdinateur extends Joueur {
 		// compte les autres groupes
 		var criterePrix = (groupe.maisons[0].loyers[nbMaison]) / this.threasholdMontant;
 		// Ligne presente
-		var groups = this.findGroupes();
+		var groups = this.maisons.findConstructiblesGroupes();
 		var isLigne = false;
 		for (var g in groups) {
 			if (groups[g].isVoisin(groupe)) {
@@ -679,7 +679,7 @@ class JoueurOrdinateur extends Joueur {
 		// On compte le nombre joueurs qui peuvent construire
 		GestionJoueur.forEach(function(joueur){
 			if (!this.equals(this)) {
-				var groups = joueur.findGroupes();
+				var groups = joueur.maisons.findConstructiblesGroupes();
 				if (groups.size() > 0) {
 					// On verifie si le budget est important ()
 					// On compte le potentiel de maison achetables
@@ -718,7 +718,7 @@ class JoueurOrdinateur extends Joueur {
 	}
 
 	propertiesSortByDescImportance(){
-		return this.maisons
+		return this.maisons.maisons
 			.filter(m=>m.statutHypotheque === false && !m.isGroupeeAndBuild())
 			.sort((a, b) =>this._buildSortScore(a) - this._buildSortScore(b));
 	}
@@ -791,7 +791,7 @@ class JoueurOrdinateur extends Joueur {
 		}
 		/* CAS 3, il reste les maisons groupees desormais non construites */
 		if (this.montant < montant) {
-			let maisons = this.maisons.filter(m=>m.statutHypotheque === false);
+			let maisons = this.maisons.maisons.filter(m=>m.statutHypotheque === false);
 			// On trie par montant (moins cher en premier). A deporter dans la strategie
 			maisons.sort((a, b) =>a.achat - b.achat);
 			for (let index = 0; index < maisons.length && this.montant < montant; index++) {
@@ -806,7 +806,7 @@ class JoueurOrdinateur extends Joueur {
 	}
 
 	getNbGroupConstructibles() {
-		return this.maisons
+		return this.maisons.maisons
 			.filter(m=>m.isGroupee())
 			.reduce((s,m)=>{s.add(m.groupe.nom);return s},new Set())
 			.size;
@@ -816,7 +816,7 @@ class JoueurOrdinateur extends Joueur {
 	 * @param sortType : Tri des groupes en fonction de l'importance. ASC ou DESC
 	 */
 	getGroupsToConstruct(sortType, level) {
-		var groups = this.findGroupes(); // structure : [color:{color,proprietes:[]}]
+		var groups = this.maisons.findConstructiblesGroupes(); // structure : [color:{color,proprietes:[]}]
 		// Pas de terrains constructibles
 		if (groups.size() === 0) {
 			return [];
@@ -860,10 +860,9 @@ class JoueurOrdinateur extends Joueur {
 	/* Renvoie les groupes construits */
 	/* @param nbMaison : nombre de maison moyen qui servent de palier */
 	hasConstructedGroups (nbMaison=0) {
-		var nb = nbMaison;
-		var groups = this.findGroupes();
-		for (var idGroup in groups) {
-			if (groups[idGroup].group.getAverageConstructions() > nb) {
+		let groups = this.maisons.findConstructiblesGroupes();
+		for (let idGroup in groups) {
+			if (groups[idGroup].group.getAverageConstructions() > nbMaison) {
 				return true;
 			}
 		}
@@ -874,7 +873,7 @@ class JoueurOrdinateur extends Joueur {
 	/* Cas : groupes presents (1) et construits (nb>3). Liquidite > 7 fois prix hypotheque */
 	rebuyHypotheque () {
 		// Hypotheque presentes
-		let terrains = this.findMaisonsHypothequees();
+		let terrains = this.maisons.findMaisonsHypothequees();
 		if (terrains === undefined || terrains.length === 0 && (this.getNbGroupConstructibles() > 0 && !this.hasConstructedGroups(3))) {
 			return;
 		}
@@ -886,7 +885,7 @@ class JoueurOrdinateur extends Joueur {
 
 	// Return the minimum price to build an house
 	minimumPriceHouse(){
-		return this.maisons.reduce((a,b)=>a.prixMaison < b.prixMaison ? a:b).prixMaison;
+		return this.maisons.maisons.reduce((a,b)=>a.prixMaison < b.prixMaison ? a:b).prixMaison;
 	}
 
 	/* Construit des maisons / hotels
@@ -894,7 +893,7 @@ class JoueurOrdinateur extends Joueur {
 	 * Possibilite d'enregistrer tous les deplacements des joueurs pour affiner les cases les plus visitees
 	 */
 	buildConstructions() {
-		if(this.maisons.length === 0){return;}
+		if(this.maisons.maisons.length === 0){return;}
 		var budget = this.comportement.getBudget(this);
 		// Pas d'argent
 		if (budget < this.minimumPriceHouse()) {
@@ -1034,7 +1033,7 @@ class JoueurOrdinateur extends Joueur {
 
 	/* Compte le nombre de maison possedee correspondant a la strategie */
 	countInterestProperties() {
-		return this.maisons.filter(m=>this.strategie.groups.contains(m.color)).length;
+		return this.maisons.maisons.filter(m=>this.strategie.groups.contains(m.color)).length;
 	}
 
 	/* Indique s'il existe des familles que je peux encore posseder sans echange
@@ -1043,8 +1042,8 @@ class JoueurOrdinateur extends Joueur {
 	isFamilyFree() {
 		// On parcourt les terrains et on verifie la dispo des terrains
 		var family = [];
-		for (var m in this.maisons) {
-			var maison = this.maisons[m];
+		for (var m in this.maisons.maisons) {
+			var maison = this.maisons.maisons[m];
 			if (!family[maison.groupe.nom]) {
 				family[maison.groupe.nom] = true;
 				var free = true;
@@ -1094,11 +1093,11 @@ class JoueurOrdinateur extends Joueur {
      */
 	getOutPrison() {
 		var loyerStat = this.comportement.getLoyerMoyen(this);
-		var groupesPossibles = this.getGroupesPossibles();
+		var groupesPossibles = this.maisons.getGroupesPossibles();
 		// On peut augmenter le risque si les terrains rouges et oranges sont blindes (sortie de prison)
 		// depend de l'argent dispo et du besoin d'acheter un terrain (libre et indispensable pour finir le groupe)
 		// Cas pour rester en prison
-		if (this.findGroupes().size() >= 2) {
+		if (this.maisons.findConstructiblesGroupes().size() >= 2) {
 			return false;
 		}
 		if (groupesPossibles.length > 0 && loyerStat.montant < (this.montant * 0.3)) {

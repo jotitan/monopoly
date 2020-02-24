@@ -1,0 +1,207 @@
+<html>
+<head>
+   <title>Test Monopoly</title>
+   <script language="javascript" src="../lib/jquery-1.9.1.js">;</script>
+   <script language="javascript" src="../lib/jquery-ui-1.10.3.custom.min.js">;</script>
+   <script language="Javascript" src="../lib/qunit-1.12.0.js">;</script>
+   <script language="Javascript" src="../monopoly.js">;</script>
+   <script language="Javascript" src="../js/utils.js">;</script>
+   <script language="Javascript" src="../js/ui/graphics.js">;</script>
+   <script language="Javascript" src="../js/entity/joueur.js">;</script>
+   <script language="Javascript" src="../js/display/case_jeu.js">;</script>
+   <link rel="stylesheet" type="text/css" href="../css/qunit-1.12.0.css"/>
+
+   <script>
+      let j1 = new Joueur(1, '', '',0);
+      let j2 = new Joueur(2, '', '',0);
+
+      function createFiches(){
+         let groupeBlue = new Groupe("blue","blue");
+         let groupeGreen = new Groupe("green","green");
+         let groupeBlack = new Groupe("black","black");
+         let ficheGreen1 = new Fiche(0, 1, ["green"], "").setCosts(10000,[2000,8000,20000,40000],10000);
+         let ficheGreen2 = new Fiche(0, 2, ["green"], "").setCosts(10000,[2000,8000,20000,40000],10000);
+         let ficheBlue1 = new Fiche(0, 3, ["blue"], "").setCosts(20000,[4000,16000,40000,80000],20000);
+         let ficheBlue2 = new Fiche(0, 4, ["blue"], "").setCosts(20000,[4000,16000,40000,80000],20000);
+         let ficheBlue3 = new Fiche(0, 5, ["blue"], "").setCosts(20000,[4000,16000,40000,80000],20000);
+         let ficheGare1 = new FicheGare(0,6,"black","");
+         let ficheGare2 = new FicheGare(0,7,"black","");
+
+         groupeBlue.add(ficheBlue1);
+         groupeBlue.add(ficheBlue2);
+         groupeBlue.add(ficheBlue3);
+         groupeGreen.add(ficheGreen1);
+         groupeGreen.add(ficheGreen2);
+         groupeBlack.add(ficheGare1);
+         groupeBlack.add(ficheGare2);
+
+         return {b1:ficheBlue1,b2:ficheBlue2,b3:ficheBlue3,g1:ficheGreen1,g2:ficheGreen2,ga1:ficheGare1,ga2:ficheGare2};
+      }
+
+      test("Ajout et suppression de maison",()=>{
+         let fiches = createFiches();
+         let maisons = new Maisons(j1);
+         maisons.add(fiches.b1);
+
+         equal(maisons.maisons.length,1);
+
+         maisons.add(fiches.g1);
+         equal(maisons.maisons.length,2);
+
+         maisons.remove(fiches.b1);
+         equal(maisons.maisons.length,1);
+
+         maisons.remove(fiches.b1);
+         equal(maisons.maisons.length,1);
+      });
+
+      test("Maisons hypothecables et hypothequees",()=>{
+         let fiches = createFiches();
+         let maisons = new Maisons(j1,[fiches.g1,fiches.g2,fiches.b1]);
+         equal(3,maisons.findMaisonsHypothecables().length);
+         equal(0,maisons.findMaisonsHypothequees().length);
+
+         fiches.g1.statutHypotheque = true;
+         equal(2,maisons.findMaisonsHypothecables().length);
+         equal(1,maisons.findMaisonsHypothequees().length);
+
+         fiches.g1.statutHypotheque = false;
+         fiches.g1.nbMaison = 1;
+         equal(1,maisons.findMaisonsHypothecables().length);
+
+         fiches.b1.statutHypotheque = true;
+         equal(0,maisons.findMaisonsHypothecables().length);
+         equal(1,maisons.findMaisonsHypothequees().length);
+      });
+
+      test("Maisons par groupe",()=>{
+         let fiches = createFiches();
+         let maisons = new Maisons(j1,[fiches.g1,fiches.g2,fiches.b1]);
+         equal(2,maisons.findMaisonsByGroup().size());
+      });
+
+      test("Groupe constructible",()=>{
+         let fiches = createFiches();
+         let maisons = new Maisons(j1,[fiches.g1]);
+         equal(0,maisons.findConstructiblesGroupes().size());
+
+         maisons.add(fiches.g2);
+         equal(1,maisons.findConstructiblesGroupes().size());
+
+         maisons.add(fiches.b1);
+         equal(1,maisons.findConstructiblesGroupes().size());
+
+         maisons.add(fiches.b2);
+         maisons.add(fiches.b3);
+         equal(2,maisons.findConstructiblesGroupes().size());
+
+         maisons.remove(fiches.g2);
+         equal(1,maisons.findConstructiblesGroupes().size() );
+      });
+
+      test("Terrains interessants adversaires",()=>{
+         let maisonsJ1 = new Maisons(j1);
+         let maisonsJ2 = new Maisons(j2);
+         let fiches = createFiches();
+         maisonsJ1.add(fiches.g1);
+         maisonsJ2.add(fiches.g2);
+
+         equal(1,maisonsJ1.findOthersInterestProprietes(j2,null,null).size());
+
+         maisonsJ1.add(fiches.b1);
+         maisonsJ1.add(fiches.b3);
+         maisonsJ2.add(fiches.b2);
+         let results = maisonsJ1.findOthersInterestProprietes(j2,null,null);
+         equal(2,results.size(),"Must find 2 interest properties");
+         equal(fiches.g2.id,results[0].maison.id,"First property must be the most expensive");
+         equal(1,results[0].nb,"Only one to buy");
+         equal(1,results[1].nb,"Only one to buy");
+      });
+
+      test("Terrains non constructibles existants",()=>{
+         let fiches = createFiches();
+         let maisons = new Maisons(j1);
+
+         equal(0,maisons.findUnterestsProprietes().proprietes.size());
+         maisons.add(fiches.g1);
+         maisons.add(fiches.b1);
+         equal(0,maisons.findUnterestsProprietes().proprietes.size());
+
+         maisons.add(fiches.ga1);
+         equal(1,maisons.findUnterestsProprietes().proprietes.size());
+         maisons.add(fiches.ga2);
+         equal(2,maisons.findUnterestsProprietes().proprietes.size());
+         equal(2,maisons.findUnterestsProprietes().nbByGroups["black"]);
+      });
+
+      test("Terrains pas interessants",()=>{
+         let fiches = createFiches();
+         let maisons = new Maisons(j1,[fiches.b1,fiches.b2,fiches.g1]);
+
+         equal(1,maisons.findOthersProperties([fiches.b1].map(m=>{return {maison:m}})).size());
+      });
+
+      test("Maisons groupees",()=>{
+         let fiches = createFiches();
+         let maisons = new Maisons(j1);
+
+         equal(0,maisons.getMaisonsGrouped().size());
+         maisons.add(fiches.b1);
+         maisons.add(fiches.b2);
+         maisons.add(fiches.g2);
+
+         equal(2,maisons.getMaisonsGrouped().size());
+
+         maisons.add(fiches.ga1);
+         equal(3,maisons.getMaisonsGrouped().size());
+         equal(1,maisons.getMaisonsGrouped()["black"].terrains.size());
+         equal(2,maisons.getMaisonsGrouped()["blue"].terrains.size());
+
+      });
+
+      test("Groupe presque complet",()=>{
+         let fiches = createFiches();
+         let maisonsJ1 = new Maisons(j1);
+         let maisonsJ2 = new Maisons(j1);
+
+         equal(0,maisonsJ1.getGroupesPossibles().size(),"No group");
+
+         maisonsJ1.add(fiches.g1);
+         equal(1,maisonsJ1.getGroupesPossibles().size(),"Un groupe disponible");
+
+         maisonsJ2.add(fiches.g2);
+         equal(0,maisonsJ1.getGroupesPossibles().size(),"Aucun groupe, maison vendue");
+         equal(0,maisonsJ2.getGroupesPossibles().size(),"Aucun groupe, maison deja vendue");
+
+         maisonsJ1.add(fiches.b1);
+         equal(0,maisonsJ1.getGroupesPossibles().size(),"Aucun groupe, 2 maisons dispos");
+
+         maisonsJ1.add(fiches.b3);
+         equal(1,maisonsJ1.getGroupesPossibles().size());
+         equal("blue",maisonsJ1.getGroupesPossibles()[0]);
+
+         maisonsJ2.remove(fiches.g2);
+         equal(2,maisonsJ1.getGroupesPossibles().size());
+      });
+
+      test("Maisons constructibles",()=>{
+         let fiches = createFiches();
+         let maisons = new Maisons(j1,[fiches.b1,fiches.b2]);
+
+         equal(0,maisons.findMaisonsConstructibles().size());
+
+         maisons.add(fiches.b3);
+         equal(3,maisons.findMaisonsConstructibles().size());
+
+         maisons.remove(fiches.b2);
+         equal(0,maisons.findMaisonsConstructibles().size());
+      });
+
+   </script>
+</head>
+<body>
+<a target="_blank" href="../monopoly-canvas.html">Lien jeu</a>
+<div id="qunit"></div>
+</body>
+
+</html>

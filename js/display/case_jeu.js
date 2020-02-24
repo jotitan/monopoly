@@ -276,7 +276,8 @@ function Groupe(nom, color) {
 class Fiche extends PlateauCase {
     constructor(axe, pos, colors, nom){
     	super(axe,pos,"terrain");
-		this.nom = nom;
+		this.id = GestionFiche.buildId(this);
+    	this.nom = nom;
 		this.groupe = null;
 		this.color = colors[0];
 		this.secondColor = (colors.length === 2) ? colors[1] : colors[0];
@@ -291,17 +292,20 @@ class Fiche extends PlateauCase {
 		this.input = null; // Bouton
 	}
 
-	setCosts(achat,loyers,prixMaison,img){
+	setCosts(achat,loyers,prixMaison){
 		this.achat = achat;
 		this.montantHypotheque = achat / 2;
 		this.achatHypotheque = this.montantHypotheque * 1.1;
 		this.loyer = loyers;
 		this.loyerHotel = (loyers != null && loyers.length === 6) ? loyers[5] : 0;
 		this.prixMaison = prixMaison;
+		return this;
+	}
 
+	setCostsAndDraw(achat,loyers,prixMaison,img){
+    	this.setCosts(achat,loyers,prixMaison);
 		this.drawing = DrawerFactory.getCase(this.pos, this.axe, this.color, this.nom, CURRENCY + " " + achat,img);
 		Drawer.add(this.drawing);
-
 		return this;
 	}
 
@@ -326,8 +330,8 @@ class Fiche extends PlateauCase {
 
 	getNbPropertiesOfType(){
 		var nb = -1;
-		for (var i = 0; i < this.joueurPossede.maisons.length; i++) {
-			if (this.joueurPossede.maisons[i].type === this.type) {
+		for (var i = 0; i < this.joueurPossede.maisons.maisons.length; i++) {
+			if (this.joueurPossede.maisons.maisons[i].type === this.type) {
 				nb++;
 			}
 		}
@@ -360,8 +364,10 @@ class Fiche extends PlateauCase {
 
 	setJoueurPossede(joueur,noRefresh){
 		this.joueurPossede = joueur;
-		this.drawing.setJoueur(joueur);
-		this.joueurPossede.maisons.push(this);
+		if(this.drawing != null) {
+			this.drawing.setJoueur(joueur);
+		}
+		this.joueurPossede.maisons.add(this);
 		this.joueurPossede.updateMaisonsByGroup();
 		if(!noRefresh && $.trigger){
 			$.trigger('refreshPlateau');
@@ -384,7 +390,9 @@ class Fiche extends PlateauCase {
 		this.statut = ETAT_LIBRE;
 		this.statutHypotheque = false;
 		this.joueurPossede = null;
-		this.drawing.setJoueur(null);
+		if(this.drawing != null) {
+			this.drawing.setJoueur(null);
+		}
 		this.setNbMaison(0, true);
 		this.hotel = false;
 		$.trigger('refreshPlateau');
@@ -462,7 +470,9 @@ class Fiche extends PlateauCase {
 	/* Modifie le nombre de maison sur le terrain */
 	setNbMaison(nb, noRefresh) {
 		this.nbMaison = nb;
-		this.drawing.setNbMaison(nb);
+		if(this.drawing != null){
+			this.drawing.setNbMaison(nb);
+		}
 		if (this.nbMaison === 5) {
 			this.hotel = true;
 		} else {
@@ -626,8 +636,8 @@ class Fiche extends PlateauCase {
 			return false;
 		}
 		// Renvoie les maisons constructibles (lorsque le groupe est complet)
-		var l = this.joueurPossede.findMaisonsConstructibles();
-		for (var i = 0; i < l.length; i++) {
+		let l = this.joueurPossede.maisons.findMaisonsConstructibles();
+		for (let i = 0; i < l.length; i++) {
 			// Si la couleur apparait dans une propriete, le groupe est complet
 			if (l[i].color === this.color && l[i].nbMaison > 0) {
 				return true;

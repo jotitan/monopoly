@@ -142,7 +142,7 @@ var GestionTerrains = {
         },
         /* Charge les terrains hypothequables */
         load: function () {
-            var proprietes = GestionJoueur.getJoueurCourant().findMaisonsHypothecables();
+            var proprietes = GestionJoueur.getJoueurCourant().maisons.findMaisonsHypothecables();
 			proprietes.forEach(function(m){GestionTerrains.Hypotheque.addOption(m);});
         },
         addGroup: function (group) {
@@ -204,7 +204,7 @@ var GestionTerrains = {
             }
         },
         load: function () {
-            var proprietes = GestionJoueur.getJoueurCourant().findMaisonsHypothequees();
+            var proprietes = GestionJoueur.getJoueurCourant().maisons.findMaisonsHypothequees();
             $(proprietes).each(function () {
                 var fiche = this;
                 var div = $("<div>" + this.nom + "</div>");
@@ -415,7 +415,7 @@ var GestionTerrains = {
             }
         },
         load: function () {
-            var groups = GestionJoueur.getJoueurCourant().findGroupes();
+            var groups = GestionJoueur.getJoueurCourant().maisons.findConstructiblesGroupes();
             for (var color in groups) {
                 let divTitre = $(`<div style="cursor:pointer" class="group-${color.substring(1)}">Groupe <span style="color:${color};font-weight:bold">${groups[color].proprietes[0].groupe.nom}'</span></div>`);
                 divTitre.data("color", color.substring(1));

@@ -218,15 +218,15 @@ class PlateauDetails {
 			case "propriete":
 				return this.addToGroup(groups,def,'Terrain',
 					new Fiche(def.axe, def.pos, def.colors, def.nom)
-						.setCosts(def.prix,def.loyers,def.prixMaison));
+						.setCostsAndDraw(def.prix,def.loyers,def.prixMaison));
 			case "propriete-junior":
-				return this.addToGroup(groups,def,'Junior',new FicheJunior(def.axe, def.pos, def.colors, def.nom).setCosts(def.prix,[def.prix]));
+				return this.addToGroup(groups,def,'Junior',new FicheJunior(def.axe, def.pos, def.colors, def.nom).setCostsAndDraw(def.prix,[def.prix]));
 			case "compagnie":
 				return this.addToGroup(groups,def,'Compagnie',
-					new FicheCompagnie(def.axe, def.pos, def.colors, def.nom).setCosts(def.prix, def.loyers,null,data.images[def.img] || data.images.compagnie));
+					new FicheCompagnie(def.axe, def.pos, def.colors, def.nom).setCostsAndDraw(def.prix, def.loyers,null,data.images[def.img] || data.images.compagnie));
 			case "gare":
 				return this.addToGroup(groups,def,'Gare',
-					new FicheGare(def.axe, def.pos, def.colors, def.nom).setCosts(def.prix, def.loyers, null,data.images.gare));
+					new FicheGare(def.axe, def.pos, def.colors, def.nom).setCostsAndDraw(def.prix, def.loyers, null,data.images.gare));
 			case "chance":
 				return new CaseChance(def.axe, def.pos,data.images.chance,this.cartes.chance,this.titles.chance);
 			case "communaute":

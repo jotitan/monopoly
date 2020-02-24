@@ -179,17 +179,17 @@ class Strategie {
      */
     acceptSwapTerrain (terrain, joueur, otherInterests, interestGroupe) {
         /* Calcule si le proprio est le seul fournisseur */
-        var alone = GestionJoueur.getNb() > 2; // Faux si seulement 2 joueurs
+        let alone = GestionJoueur.getNb() > 2; // Faux si seulement 2 joueurs
         /* Seul groupe qui m'interesse, on refuse */
         if ((interestGroupe === true && otherInterests.length === 1) || terrain.isGroupee()) {
             return 0;
         }
-        for (var idx in otherInterests) {
+        for (let idx in otherInterests) {
             if (!otherInterests[idx].maison.joueurPossede.equals(terrain.joueurPossede)) {
                 alone = false;
             }
         }
-        var nbGroups = joueur.findGroupes().size();
+        let nbGroups = joueur.maisons.findConstructiblesGroupes().size();
         /* Le proprio est le seul a pouvoir aider le demandeur et il n'a pas encore de groupe */
         if (nbGroups === 0 && otherInterests.length === 0 && alone) {
             return this.agressif === 2 ? 0.5 : 1;

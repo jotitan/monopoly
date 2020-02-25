@@ -136,7 +136,7 @@ var FicheDisplayer = {
     },
     loadFiche:function(fiche){
         this._load(fiche,fiche.type === "junior" ? this.ficheJunior : this.fiche, 'FFFFFF');
-        fiche.fiche.prev().css("background-color", fiche.color);
+        fiche.fiche.panel.prev().css("background-color", fiche.color);
     },
     loadDetailFiche:function(fiche,detailFiche){
         this._load(fiche, detailFiche, fiche.secondColor);

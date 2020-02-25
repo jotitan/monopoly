@@ -4,25 +4,25 @@ var ETAT_LIBRE = 0;
 var ETAT_ACHETE = 1;
 
 class PlateauCase{
-    constructor(axe,pos,type) {
+	constructor(axe,pos,type) {
 		this.axe = axe;
 		this.pos = pos;
 		this.id = axe + "-" + pos;
 		this.type = type;
 	}
 
-    isTerrain(){
-        return this.type === "terrain";
-    }
+	isTerrain(){
+		return this.type === "terrain";
+	}
 
-    isPropriete(){
-        return this.type === "terrain" || this.type === "junior" || this.type === "gare" || this.type === "compagnie";
-    }
+	isPropriete(){
+		return this.type === "terrain" || this.type === "junior" || this.type === "gare" || this.type === "compagnie";
+	}
 }
 
 /* Case representant le parc gratuit */
 class ParcGratuit extends PlateauCase {
-    constructor(axe, pos) {
+	constructor(axe, pos) {
 		super(axe, pos, "parc");
 		this.montant = null;
 		this._titre = "Parc Gratuit";
@@ -32,28 +32,28 @@ class ParcGratuit extends PlateauCase {
 		this.setMontant(0);
 	}
 
-    setMontant(montant) {
-        this.montant = montant;
+	setMontant(montant) {
+		this.montant = montant;
 		this.drawing.titre = this._titre + ((this.montant > 0) ? "\n" + CURRENCY + " " + this.montant : "");
 		$.trigger('refreshPlateau');
-        $('#idMontantParc > span').text(this.montant);
-    }
+		$('#idMontantParc > span').text(this.montant);
+	}
 
-    payer (montant) {
+	payer (montant) {
 		this.setMontant(this.montant + montant);
-    }
+	}
 
-    action() {
+	action() {
 		var _self = this;
-        return InfoMessage.create(GestionJoueur.getJoueurCourant(),"Parc gratuit", "lightblue", "Vous gagnez " + this.montant + " " + CURRENCY, function (param) {
-            param.joueur.gagner(param.montant);
-            _self.setMontant(0);
-            GestionJoueur.change();
-        }, {
-            joueur: GestionJoueur.getJoueurCourant(),
-            montant: this.montant
-        });
-    }
+		return InfoMessage.create(GestionJoueur.getJoueurCourant(),"Parc gratuit", "lightblue", "Vous gagnez " + this.montant + " " + CURRENCY, function (param) {
+			param.joueur.gagner(param.montant);
+			_self.setMontant(0);
+			GestionJoueur.change();
+		}, {
+			joueur: GestionJoueur.getJoueurCourant(),
+			montant: this.montant
+		});
+	}
 }
 
 class CaseActionSpeciale extends PlateauCase {
@@ -90,10 +90,10 @@ class CaseDepart extends CaseActionSpeciale {
 	}
 }
 
- /* Case speciale, comme la taxe de luxe */
+/* Case speciale, comme la taxe de luxe */
 class SimpleCaseSpeciale extends PlateauCase {
-    constructor(titre, montant, axe, pos, type, img, plateauMonopoly){
-    	super(axe,pos,type);
+	constructor(titre, montant, axe, pos, type, img, plateauMonopoly){
+		super(axe,pos,type);
 		this.montant = montant;
 		this.titre = titre;
 		// Used to pay to parc gratuit if necessary
@@ -122,7 +122,7 @@ class CaseChance extends PlateauCase {
 		this.drawing = DrawerFactory.getCase(pos, axe, null, longTitle, null, img);
 		Drawer.add(this.drawing);
 	}
-    action() {
+	action() {
 		if (this.cartes.length === 0) {
 			throw "Aucune " + this.nom;
 		}
@@ -138,8 +138,8 @@ class CaseChance extends PlateauCase {
 }
 
 class CaseCaisseDeCommunaute extends CaseChance {
-    constructor(axe, pos, img, cartes,longTitle){
-    	super(axe,pos,img,cartes,longTitle,"carte caisse de communauté");
+	constructor(axe, pos, img, cartes,longTitle){
+		super(axe,pos,img,cartes,longTitle,"carte caisse de communauté");
 	}
 }
 
@@ -269,15 +269,58 @@ function Groupe(nom, color) {
 	/* Renvoie le nombre de fiche dans le groupe */
 	this.getNb = function () {
 		return (this.fiches == null) ? 0 : this.fiches.length;
-	}		
+	}
+}
+
+// Representation graphique d'une fiche
+class FicheUI{
+	constructor(fiche,id){
+		this.panel = $(id);
+		this.fiche = fiche;
+		this.name = "";
+	}
+	updateName(name){
+		this.name = name;
+		this.panel.dialog('option','title',this.name);
+	}
+	open(){
+		var buttons = this.getButtons();
+		this.panel.dialog('option', 'buttons', this.getButtons());
+		FicheDisplayer.loadFiche(this.fiche);
+		if (GestionJoueur.getJoueurCourant().canPlay) {
+			wrapDialog(this.panel,'open');
+		}
+		return buttons;
+	}
+	getButtons(){
+		if (this.fiche.statut === ETAT_LIBRE) {
+			if (GestionJoueur.getJoueurCourant().montant < this.fiche.achat) {
+				return {
+					"Pas assez d'argent": () =>GestionJoueur.getJoueurCourant().refuseMaison(this.fiche,()=>FicheDisplayer.closeFiche())
+				}
+			} else {
+				return {
+					"Acheter": () =>{
+						GestionJoueur.getJoueurCourant().acheteMaison(this.fiche);
+						FicheDisplayer.closeFiche();
+					},
+					"Refuser": ()=> GestionJoueur.getJoueurCourant().refuseMaison(this.fiche,()=>FicheDisplayer.closeFiche())
+				};
+			}
+		} else {
+			return {
+				"Fermer": () =>FicheDisplayer.closeFiche()
+			};
+		}
+	}
 }
 
 /* Represente un terrain TODO REFACTO */
 class Fiche extends PlateauCase {
-    constructor(axe, pos, colors, nom){
-    	super(axe,pos,"terrain");
+	constructor(axe, pos, colors, nom){
+		super(axe,pos,"terrain");
 		this.id = GestionFiche.buildId(this);
-    	this.nom = nom;
+		this.nom = nom;
 		this.groupe = null;
 		this.color = colors[0];
 		this.secondColor = (colors.length === 2) ? colors[1] : colors[0];
@@ -285,7 +328,7 @@ class Fiche extends PlateauCase {
 		this.statut = ETAT_LIBRE;
 		this.joueurPossede = null;
 		this.statutHypotheque = false;
-		this.fiche = $('#fiche');
+		this.fiche = new FicheUI(this,'#fiche');
 		this.nbMaison = 0; // Nombre de maison construite sur le terrain par le proprietaire
 		this.hotel = false; // Si un hotel est present
 		this.maisons = [];
@@ -303,7 +346,7 @@ class Fiche extends PlateauCase {
 	}
 
 	setCostsAndDraw(achat,loyers,prixMaison,img){
-    	this.setCosts(achat,loyers,prixMaison);
+		this.setCosts(achat,loyers,prixMaison);
 		this.drawing = DrawerFactory.getCase(this.pos, this.axe, this.color, this.nom, CURRENCY + " " + achat,img);
 		Drawer.add(this.drawing);
 		return this;
@@ -373,7 +416,7 @@ class Fiche extends PlateauCase {
 			$.trigger('refreshPlateau');
 		}
 	}
-	
+
 	vendu(joueur) {
 		this.statut = ETAT_ACHETE;
 		this.setJoueurPossede(joueur);
@@ -463,10 +506,6 @@ class Fiche extends PlateauCase {
 		return this.statut === ETAT_LIBRE;
 	}
 
-	isConstructed() {
-		return this.nbMaison > 0;
-	}
-
 	/* Modifie le nombre de maison sur le terrain */
 	setNbMaison(nb, noRefresh) {
 		this.nbMaison = nb;
@@ -485,7 +524,7 @@ class Fiche extends PlateauCase {
 	}
 
 	action() {
-		this.fiche.dialog('option', 'title', this.nom);
+		this.fiche.updateName(this.nom);
 		// si on est chez soi, on affiche pas
 		if (this.joueurPossede != null && this.joueurPossede.equals(GestionJoueur.getJoueurCourant())) {
 			return this.chezSoi();
@@ -493,10 +532,10 @@ class Fiche extends PlateauCase {
 		if (this.joueurPossede != null && this.statutHypotheque === false) { // on doit payer un loyer
 			return this.payerLoyer();
 		}
-        if(this.statutHypotheque === true){
-            return GestionJoueur.change();
-        }
-		return this.openFiche();
+		if(this.statutHypotheque === true){
+			return GestionJoueur.change();
+		}
+		return this.fiche.open();
 	}
 
 	chezSoi() {
@@ -544,13 +583,13 @@ class Fiche extends PlateauCase {
 		}
 	}
 
-    /* Renvoie le montant du loyer pour ce joueur (0 s'il est proprietaire) */
-    getLoyerFor (joueur){
-        if(joueur.equals(this.joueurPossede)){
-            return 0;
-        }
-        return this.getLoyer()
-    }
+	/* Renvoie le montant du loyer pour ce joueur (0 s'il est proprietaire) */
+	getLoyerFor (joueur){
+		if(joueur.equals(this.joueurPossede)){
+			return 0;
+		}
+		return this.getLoyer()
+	}
 
 	getLoyer() {
 		if (this.statutHypotheque) {
@@ -581,49 +620,6 @@ class Fiche extends PlateauCase {
 		});
 	}
 
-	noArgent() {}
-
-	// Ouvre la fiche d'une propriete
-	openFiche() {
-		var buttons = this.getButtons();
-		this.fiche.dialog('option', 'buttons', buttons);
-		FicheDisplayer.loadFiche(this);
-		if (GestionJoueur.getJoueurCourant().canPlay) {
-			wrapDialog(this.fiche,'open');
-		}
-		return buttons;
-	}
-
-	getButtons() {
-    	var current = this;
-		if (this.statut === ETAT_LIBRE) {
-			if (GestionJoueur.getJoueurCourant().montant < this.achat) {
-				return {
-					"Pas assez d'argent": function () {
-						GestionJoueur.getJoueurCourant().refuseMaison(current,()=>FicheDisplayer.closeFiche());
-					}
-				};
-			} else {
-				return {
-					"Acheter": function () {
-						var j = GestionJoueur.getJoueurCourant();
-						j.acheteMaison(current);
-						FicheDisplayer.closeFiche();
-					},
-					"Refuser": function () {
-						GestionJoueur.getJoueurCourant().refuseMaison(current,function(){FicheDisplayer.closeFiche()});
-					}
-				};
-			}
-		} else {
-			return {
-				"Fermer": function () {
-					FicheDisplayer.closeFiche();
-				}
-			};
-		}
-	}
-
 	/* Renvoie vrai si le reste du groupe appartient au meme joueur.*/
 	isGroupee() {
 		return (this.groupe == null) ? false : this.groupe.isGroupee();
@@ -651,7 +647,7 @@ class Fiche extends PlateauCase {
 class FicheJunior extends Fiche {
 	constructor(axe,pos,colors,nom){
 		super(axe,pos,colors,nom);
-		this.fiche = $('#ficheJunior');
+		this.fiche = new FicheUI(this,'#ficheJunior');
 		this.type = "junior";
 	}
 }
@@ -674,12 +670,12 @@ class FicheGare extends Fiche{
 class FicheCompagnie extends Fiche {
 	constructor(axe, pos, color, nom) {
 		super( axe, pos, color, nom);
-		this.fiche = $('#ficheCompagnie');
+		this.fiche = new FicheUI(this,$('#ficheCompagnie'));
 		this.type = "compagnie";
 	}
 
 	getLoyer() {
-		var loyer = GestionDes.total();
+		let loyer = GestionDes.total();
 		if (this.joueurPossede != null) {
 			let nb = this.getNbPropertiesOfType();
 			return this.loyer[nb] * loyer;
@@ -690,10 +686,10 @@ class FicheCompagnie extends Fiche {
 
 /* Permet de gerer les fiches */
 var GestionFiche = {
-    fiches: [],
-    keys: [], // Cles des fiches
+	fiches: [],
+	keys: [], // Cles des fiches
 	buildId(fiche){
-    	return fiche.axe + "-" + fiche.pos;
+		return fiche.axe + "-" + fiche.pos;
 	},
 	_calculateStrId:function(id){
 		return parseInt(id.substr(0,1))*DrawerFactory.dimensions.nbCases + parseInt(id.substr(2,3));
@@ -701,30 +697,30 @@ var GestionFiche = {
 	_calculateId:function(info){
 		return info.axe*DrawerFactory.dimensions.nbCases + info.pos;
 	},
-    getById: function (id) {
+	getById: function (id) {
 		return this.fiches[this._calculateStrId(id)];
-    },
-    get: function (info) {
+	},
+	get: function (info) {
 		return this.fiches[this._calculateId(info)];
-    },
+	},
 	getPrison : function(){
 		return this.fiches[this._calculateId({axe:1,pos:0})];
 	},
 	getDepart : function(){
 		return this.fiches[this._calculateId({axe:2,pos:0})];
 	},
-    add: function (fiche) {
+	add: function (fiche) {
 		var intId = this._calculateStrId(fiche.id);
 		this.fiches[intId] = fiche;
 		this.keys.push(intId);
-    },
-    /* Renvoie les terrains libres */
-    getFreeFiches: function () {
-        return this.fiches.filter(function(f){return f.statut === ETAT_LIBRE;});
-    },
+	},
+	/* Renvoie les terrains libres */
+	getFreeFiches: function () {
+		return this.fiches.filter(function(f){return f.statut === ETAT_LIBRE;});
+	},
 	/* Renvoie vrai s'il reste des terrains libres */
 	isFreeFiches:function(){
-        return this.fiches.some(function(f){return f.statut === ETAT_LIBRE;});
+		return this.fiches.some(function(f){return f.statut === ETAT_LIBRE;});
 	},
 	/* Renvoie le prochain terrain libre */
 	getNextFreeTerrain:function(from){
@@ -748,63 +744,63 @@ var GestionFiche = {
 			var fiche = this.get({axe:info.axe,pos:info.position});
 			if(condition == null || condition(fiche)){
 				return fiche;
-			}		 
+			}
 		}while(from.axe!==info.axe || from.pos!==info.position);
 		return null;
 	},
-    /* iterateur pour parcourir les fiches */
-    iterator: function () {
-        return {
-            pointer: 0,
-            hasNext: function () {
-                return this.pointer < GestionFiche.keys.length;
-            },
-            next: function () {
-                return GestionFiche.fiches[GestionFiche.keys[this.pointer++]];
-            }
-        }
-    },
-    /* iterateur pour parcourir les terrains (pas de carte chance, taxe...) */
-    iteratorTerrains: function () {
-        // On calcule des cles
-        var keys = [];
+	/* iterateur pour parcourir les fiches */
+	iterator: function () {
+		return {
+			pointer: 0,
+			hasNext: function () {
+				return this.pointer < GestionFiche.keys.length;
+			},
+			next: function () {
+				return GestionFiche.fiches[GestionFiche.keys[this.pointer++]];
+			}
+		}
+	},
+	/* iterateur pour parcourir les terrains (pas de carte chance, taxe...) */
+	iteratorTerrains: function () {
+		// On calcule des cles
+		var keys = [];
 		for (var id in this.fiches) {
-            if (this.fiches[id].isPropriete()) {
-                keys.push(id);
-            }
-        }
-        return this._buildIterator(keys);
-    },
-    getTerrainsLibres: function () {
-        var keys = [];
-        for (var id in this.fiches) {
-            if (this.fiches[id].isPropriete() && this.fiches[id].statut === ETAT_LIBRE) {
-                keys.push(id);
-            }
-        }
-        return this._buildIterator(keys);
-    },
-    _buildIterator: function (keys) {
-        return {
-            pointer: 0,
-            keys: keys,
-            hasNext: function () {
-                return this.pointer < this.keys.length;
-            },
-            next: function () {
-                return GestionFiche.fiches[this.keys[this.pointer++]];
-            }
-        }
-    },
-    nextPos: function (axe, position) {
-        position++;
-        if (position === 10) {
-            axe = (axe + 1) % 4;
-            position = 0;
-        }
-        return {
-            "position": position,
-            "axe": axe
-        };
-    }
+			if (this.fiches[id].isPropriete()) {
+				keys.push(id);
+			}
+		}
+		return this._buildIterator(keys);
+	},
+	getTerrainsLibres: function () {
+		var keys = [];
+		for (var id in this.fiches) {
+			if (this.fiches[id].isPropriete() && this.fiches[id].statut === ETAT_LIBRE) {
+				keys.push(id);
+			}
+		}
+		return this._buildIterator(keys);
+	},
+	_buildIterator: function (keys) {
+		return {
+			pointer: 0,
+			keys: keys,
+			hasNext: function () {
+				return this.pointer < this.keys.length;
+			},
+			next: function () {
+				return GestionFiche.fiches[this.keys[this.pointer++]];
+			}
+		}
+	},
+	nextPos: function (axe, position) {
+		position++;
+		if (position === 10) {
+			axe = (axe + 1) % 4;
+			position = 0;
+		}
+		return {
+			"position": position,
+			"axe": axe
+		};
+	}
 };

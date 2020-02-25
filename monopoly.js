@@ -217,8 +217,7 @@ class PlateauDetails {
 		switch (def.type) {
 			case "propriete":
 				return this.addToGroup(groups,def,'Terrain',
-					new Fiche(def.axe, def.pos, def.colors, def.nom)
-						.setCostsAndDraw(def.prix,def.loyers,def.prixMaison));
+					new Fiche(def.axe, def.pos, def.colors, def.nom).setCostsAndDraw(def.prix,def.loyers,def.prixMaison));
 			case "propriete-junior":
 				return this.addToGroup(groups,def,'Junior',new FicheJunior(def.axe, def.pos, def.colors, def.nom).setCostsAndDraw(def.prix,[def.prix]));
 			case "compagnie":
@@ -234,13 +233,9 @@ class PlateauDetails {
 			case "taxe":
 				return new SimpleCaseSpeciale(def.nom, def.prix, def.axe, def.pos, "taxe",data.images.taxe,this);
 			case "prison":
-				return new CaseActionSpeciale(def.nom, function () {
-					GestionJoueur.getJoueurCourant().goPrison();
-				}, def.axe, def.pos,"prison");
+				return new CaseActionSpeciale(def.nom, ()=>GestionJoueur.getJoueurCourant().goPrison(), def.axe, def.pos,"prison");
 			case "special":
-				return new CaseActionSpeciale(def.nom, function () {
-					GestionJoueur.change();
-				}, def.axe, def.pos,"special");
+				return new CaseActionSpeciale(def.nom, () =>GestionJoueur.change(), def.axe, def.pos,"special");
 			case "parc":
 				this.parcGratuit = new ParcGratuit(def.axe, def.pos);
 				return this.parcGratuit;
@@ -264,12 +259,10 @@ class PlateauDetails {
 			let fiche = this._createFiche(ficheDef,groups,data);
 			if(fiche!=null){
 				GestionFiche.add(fiche);
-				if (fiche.color != null) {
-					if (colors[fiche.color] == null) {
-						// On genere un style
-						$('style', 'head').prepend(`.color_${fiche.color.substring(1)}{color:white;font-weight:bold;background-color:${fiche.color};}\n`);
-						colors[fiche.color] = 1;
-					}
+				if (fiche.color != null && colors[fiche.color] == null) {
+					// On genere un style
+					$('style', 'head').prepend(`.color_${fiche.color.substring(1)}{color:white;font-weight:bold;background-color:${fiche.color};}\n`);
+					colors[fiche.color] = 1;
 				}
 			}
 		});

@@ -114,30 +114,27 @@ class GestionDesImpl{
     /* Cas lorsque le joueur est en prison */
     treatPrison(){
         let j = GestionJoueur.getJoueurCourant();
-        let gd = this;
         if (this.isDouble()) {
-            let buttons = InfoMessage.create(GestionJoueur.getJoueurCourant(),"Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", function () {
+            let buttons = InfoMessage.create(GestionJoueur.getJoueurCourant(),"Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", () =>{
                 GestionJoueur.getJoueurCourant().exitPrison({notrigger:true});
-                gd.endLancer();
+                this.endLancer();
             }, {});
             j.actionApresDes(buttons, null);
             return {prison:{sortie:true,montant:0},end:true};
         } else {
             if (j.nbDouble === 2) {
-                let messagePrison = "Vous etes liberes de prison, mais vous devez payer " + CURRENCY + " " + this.montantPrison+ " !";
+                let messagePrison = `Vous etes liberes de prison, mais vous devez payer ${CURRENCY} ${this.montantPrison} !`;
                 let buttons = InfoMessage.create(j,"Libere de prison", "lightblue", messagePrison,  ()=> {
-                    j.payerParcGratuit(this.parcGratuit,this.montantPrison, function () {
+                    j.payerParcGratuit(this.parcGratuit,this.montantPrison, () =>{
                         j.exitPrison({notrigger:true});
-                        gd.endLancer();
+                        this.endLancer();
                     });
                 }, {});
                 j.actionApresDes(buttons, null);
                 return {prison:{sortie:true,montant:this.montantPrison},end:true};
             } else {
                 j.nbDouble++;
-                let buttons = InfoMessage.create(j,"Tour " + j.nbDouble, "red", "Vous restez en prison, vous n'avez pas fait de double.", function () {
-                    GestionJoueur.change();
-                }, {});
+                let buttons = InfoMessage.create(j,`Tour ${j.nbDouble}`, "red", "Vous restez en prison, vous n'avez pas fait de double.", ()=>GestionJoueur.change(), {});
                 j.actionApresDes(buttons, null);
                 return {prison:{sortie:false},end:true};
             }
@@ -158,7 +155,6 @@ class GestionDesImpl{
             // Gere le cas du triple (de rapide) egalement
             if (this.isDouble()) {
                 event = $.extend(event,this.treatDouble());
-                if(event.double.status === false){}
             }
         }
         MessageDisplayer.events.lanceDes(event);

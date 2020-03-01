@@ -1,3 +1,7 @@
+import {DrawerFactory,Component} from "./graphics.js";
+import {Des,DesRapide} from './square_graphics.js'
+import {DrawerHelper} from "./graphics.js";
+
 /* Implementation pour plateau carree */
 
 var pasAngle = (2 * Math.PI)/40;	// Nombre de case du jeu
@@ -32,7 +36,7 @@ class CirclePionJoueur extends Component {
 	}
 
 	init(axe,pos){
-		var center = DrawerFactory.dimensions.plateauSize/2;
+		let center = DrawerFactory.dimensions.plateauSize/2;
 		this.pos = convertAxePos(axe,pos);
 		/* Gere le decalage de chaque joueur lors de la creation */
 		this._rayon = center- (70 + (nbJoueurs%3)*25);
@@ -41,8 +45,8 @@ class CirclePionJoueur extends Component {
 	}
 
 	draw (canvas) {
-		var centrePlateau = DrawerFactory.dimensions.plateauSize/2;
-		var centre = getCoords((this.pos+this._angle)*pasAngle,this._rayon);
+		let centrePlateau = DrawerFactory.dimensions.plateauSize/2;
+		let centre = getCoords((this.pos+this._angle)*pasAngle,this._rayon);
 		if(this.isSelected){
 			DrawerHelper.drawCircle(canvas,"#FFFFFF",(this.largeur+2) / 2,{x:centre.x+centrePlateau,y:centre.y+centrePlateau},"#FF0000");
 		}
@@ -140,18 +144,18 @@ class CircleCase extends Component{
 		}
 	}
 
-	draw = function(canvas){
-		var centre = DrawerFactory.dimensions.plateauSize/2;
-		var bordure = DrawerFactory.dimensions.bordure/2;
-		var pA = getCoords(this.pos*pasAngle,centre);
-		var pB = getCoords(this.pos*pasAngle,centre-DrawerFactory.dimensions.innerPlateauSize);
-		var bgColor = DrawerFactory.getInfo("backgroundColor");
+	draw(canvas){
+		let centre = DrawerFactory.dimensions.plateauSize/2;
+		let bordure = DrawerFactory.dimensions.bordure/2;
+		let pA = getCoords(this.pos*pasAngle,centre);
+		let pB = getCoords(this.pos*pasAngle,centre-DrawerFactory.dimensions.innerPlateauSize);
+		let bgColor = DrawerFactory.getInfo("backgroundColor");
 		canvas.fillStyle='#FFFFFF';
 		canvas.lineWidth=0.5;
 		canvas.moveTo(centre - pA.x,centre - pA.y);
 		canvas.lineTo(centre - pB.x,centre - pB.y);
 		canvas.stroke();
-		var maxLength = 120;
+		let maxLength = 120;
 		if(this.color!=null){
 			canvas.beginPath();
 			canvas.fillStyle=this.color;
@@ -168,21 +172,21 @@ class CircleCase extends Component{
 		}
 		if(this.title!=null){
 			if(this.pos > 10 && this.pos < 30){
-				var p = getCoords((this.pos+0.7)*pasAngle,centre-bordure -5);
+				let p = getCoords((this.pos+0.7)*pasAngle,centre-bordure -5);
 				DrawerHelper.writeText(this.title, p.x + centre,p.y + centre, ((this.pos+20)%40 + 0.8)*pasAngle, canvas,9,maxLength,'left');
 			}else{
-				var length = canvas.measureText(this.title).width + 30;
+				let length = canvas.measureText(this.title).width + 30;
 				let p = getCoords((this.pos+0.3)*pasAngle,centre -maxLength - bordure -5);
 				DrawerHelper.writeText(this.title, p.x + centre,p.y + centre, (this.pos + 0.2)*pasAngle, canvas,9,maxLength,'right');
 			}
 		}
 		if(this.prix!=null){
 			if(this.pos > 10 && this.pos < 30){
-				var p = getCoords((this.pos+0.15)*pasAngle,centre-bordure -5);
+				let p = getCoords((this.pos+0.15)*pasAngle,centre-bordure -5);
 				DrawerHelper.writeText(this.prix, p.x + centre,p.y + centre, ((this.pos+20)%40 + 0.5)*pasAngle, canvas,9,maxLength,'left');
 			}else{
-				var length = canvas.measureText(this.prix).width + 30;
-				var p = getCoords((this.pos+0.9)*pasAngle,centre -maxLength - bordure -5);
+				let length = canvas.measureText(this.prix).width + 30;
+				let p = getCoords((this.pos+0.9)*pasAngle,centre -maxLength - bordure -5);
 				DrawerHelper.writeText(this.prix, p.x + centre,p.y + centre, (this.pos + 0.7)*pasAngle, canvas,9,maxLength,'right');
 			}
 		}
@@ -195,7 +199,7 @@ class CircleCase extends Component{
 			DrawerHelper.drawImage(canvas, this.data.image, centre+coords.x, centre+coords.y, this.data.image.width,this.data.image.height, angle);
 		}
 		if(this.nbMaison <= 4){
-			for(var i = 0 ; i < this.nbMaison ; i++){
+			for(let i = 0 ; i < this.nbMaison ; i++){
 				let coords = getCoords((this.pos + 0.25*i)*pasAngle,centre-4);
 				DrawerHelper.drawImage(canvas, this.imageMaison, centre+coords.x, centre+coords.y, 16,16, this.pos*pasAngle + Math.PI/2)
 			}
@@ -222,23 +226,23 @@ class CircleCaseSpeciale extends Component{
 		this.title = title;
 	}
 	draw (canvas){
-		var centre = DrawerFactory.dimensions.plateauSize/2;
-		var pA = getCoords(this.pos*pasAngle,centre);
-		var pB = getCoords(this.pos*pasAngle,centre-DrawerFactory.dimensions.innerPlateauSize);
-		var bgColor = DrawerFactory.getInfo("backgroundColor");
+		let centre = DrawerFactory.dimensions.plateauSize/2;
+		let pA = getCoords(this.pos*pasAngle,centre);
+		let pB = getCoords(this.pos*pasAngle,centre-DrawerFactory.dimensions.innerPlateauSize);
+		let bgColor = DrawerFactory.getInfo("backgroundColor");
 		canvas.fillStyle=bgColor;
 		canvas.lineWidth=0.5;
 		canvas.moveTo(centre - pA.x,centre - pA.y);
 		canvas.lineTo(centre - pB.x,centre - pB.y);
 		canvas.stroke();
 		DrawerHelper.drawArcCircle(canvas,bgColor,centre,{x:centre,y:centre},this.pos*pasAngle,(this.pos+1)*pasAngle)
-		var maxLength = 120;
+		let maxLength = 120;
 		if(this.title!=null){
 			if(this.pos > 10 && this.pos < 30){
-				var p = getCoords((this.pos+0.5)*pasAngle,centre-15);
+				let p = getCoords((this.pos+0.5)*pasAngle,centre-15);
 				DrawerHelper.writeText(this.title, p.x + centre,p.y + centre, ((this.pos+20)%40 + 0.6)*pasAngle, canvas,9,maxLength,'left');
 			}else{
-				var p = getCoords((this.pos+0.6)*pasAngle,centre -maxLength - 15);
+				let p = getCoords((this.pos+0.6)*pasAngle,centre -maxLength - 15);
 				DrawerHelper.writeText(this.title, p.x + centre,p.y + centre, (this.pos + 0.2)*pasAngle, canvas,9,maxLength,'right');
 			}
 		}
@@ -282,8 +286,8 @@ class EndCirclePlateau extends Component{
 	}
 
 	draw(canvas){
-		var centre = DrawerFactory.dimensions.plateauSize/2;
-		var innerPlateau = DrawerFactory.dimensions.innerPlateauSize;
+		let centre = DrawerFactory.dimensions.plateauSize/2;
+		let innerPlateau = DrawerFactory.dimensions.innerPlateauSize;
 		DrawerHelper.drawCircle(canvas,'#000000',centre-innerPlateau,{x:centre,y:centre});
 		DrawerHelper.drawCircle(canvas,'#FFFFFF',centre-innerPlateau - 2,{x:centre,y:centre});
 		DrawerHelper.drawArcCircle(canvas,'#FF0000',centre-innerPlateau -2,{x:centre,y:centre},-Math.PI,0);
@@ -292,7 +296,7 @@ class EndCirclePlateau extends Component{
 }
 
 function initCircleInstance(){
-	var instance = {
+	let instance = {
 		type:'circle',
 		standardCase:CircleCase,
 		specialCase:CircleCaseSpeciale,

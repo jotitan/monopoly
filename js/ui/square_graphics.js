@@ -1,7 +1,14 @@
+import {} from '../../lib/jquery-1.11.0.min.js'
+import {DrawerFactory,DrawerHelper,Component} from "./graphics.js";
+import {GestionFiche} from "../display/case_jeu.js";
+import {VARIANTES} from "../monopoly.js";
+import {GestionJoueur} from "../gestion_joueurs.js";
+
 /* Implementation pour plateau carree */
 
 /* Represente un pion d'un joueur */
 // TODO : sortir GestionFiche
+
 class PionJoueur extends Component{
 	constructor(color, largeur,img,joueur){
 		super();
@@ -297,7 +304,7 @@ class Case extends Component {
 		var hauteur = DrawerFactory.dimensions.hauteur;
 		canvas.strokeStyle = '#000000';
 		canvas.strokeRect(this.data.x, this.data.y, this.data.width, this.data.height);
-		var drawer = axeDrawer[this.axe];
+		let drawer = axeDrawer[this.axe];
 		if (this.color != null) {
 			canvas.fillStyle = this.color;
 			drawer.color(canvas,this.data.x,this.data.y,this.data.width,bordure,largeur,hauteur);
@@ -538,8 +545,8 @@ class Plateau extends Component{
 	enableCaseDetect(callback){
 		let plateau = this;
 		$('canvas').unbind('mousedown').bind('mousedown',function(event){
-			var offset = $(this).offset();
-			var fiche = plateau._findFiche(event.clientX - offset.left,event.clientY - offset.top);
+			let offset = $(this).offset();
+			let fiche = plateau._findFiche(event.clientX - offset.left,event.clientY - offset.top);
 			if(fiche!=null){
 				plateau.disableCaseDetect();
 				callback(fiche);
@@ -552,7 +559,7 @@ class Plateau extends Component{
 	_findFiche(x,y){
 		let fiche = null;
 		GestionFiche.fiches.forEach(function(f){
-			var data = f.drawing.data;
+			let data = f.drawing.data;
 			if(x >= data.x && x<= (data.x + data.width) && y >= data.y && y <= (data.y + data.height)){
 				fiche = f;
 			}
@@ -577,3 +584,5 @@ function initSquareInstance(){
 }
 
 $(function(){initSquareInstance();});
+
+export {Des,DesRapide};

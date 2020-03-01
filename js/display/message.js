@@ -1,3 +1,6 @@
+import {DEBUG,CURRENCY} from "../monopoly.js";
+import {wrapDialog} from "./displayers.js";
+
 /* Gere les affichages (message dialog, trace de log) */
 
 /* Intercepte les evenements et affiche une information */
@@ -232,7 +235,7 @@ let MessageDisplayer = {
 }
 
 /* Affichage des informations dans une boite de dialogue */
-var InfoMessage = {
+let InfoMessage = {
     div:null,
     init:function(id){
         this.div = $('#' + id);
@@ -340,3 +343,5 @@ var InfoMessage = {
         return buttons;
     }
 }
+
+export {InfoMessage,MessageDisplayer};

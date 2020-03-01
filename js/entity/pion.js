@@ -1,4 +1,7 @@
 /* Objet PION */
+import {DrawerFactory,Drawer} from "../ui/graphics.js";
+import {GestionJoueur} from "../gestion_joueurs.js";
+import {VARIANTES} from "../monopoly.js";
 
 function Pion(color, joueur,img, montantDepart = 20000) {
 	this.axe = 2;
@@ -78,3 +81,5 @@ function Pion(color, joueur,img, montantDepart = 20000) {
 		this.pion.gotoDirect(axe,pos,callback);
 	}
 }
+
+export {Pion};

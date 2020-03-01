@@ -1,3 +1,11 @@
+import {GestionFiche,ETAT_ACHETE,ETAT_LIBRE} from "../display/case_jeu.js";
+import {Pion} from "./pion.js";
+import {GestionDes} from "./dices.js";
+import {doActions,VARIANTES} from "../monopoly.js";
+import {GestionJoueur} from "../gestion_joueurs.js";
+import {FicheDisplayer} from "../display/displayers.js";
+import {InfoMessage} from "../display/message.js";
+
 // Represente houses of a player
 class Maisons{
 	constructor(joueur,maisons=[]){
@@ -64,7 +72,7 @@ class Maisons{
 		return groups;
 	}
 	/** Renvoie la liste des maisons regroupées par groupe. getMaisonsGrouped est plus complete */
-	findMaisonsByGroup = function(){
+	findMaisonsByGroup(){
 		let groups = [];
 		this.maisons.forEach(m=>{
 			if(groups[m.groupe.nom] ==null) {
@@ -688,17 +696,16 @@ class Joueur {
 	resolveProblemeArgent(montant, callback) {
 		// On ouvre le panneau de resolution en empechant la fermeture
 		this.montant -= montant;
-		var _self = this;
-		InfoMessage.create(this,"Attention", "red", "Vous n'avez pas les fonds necessaires, il faut trouver de l'argent", function () {
+		InfoMessage.create(this,"Attention", "red", "Vous n'avez pas les fonds necessaires, il faut trouver de l'argent", ()=> {
 			// On attache un evenement a la fermeture
 			let onclose = (e)=> {
-				if (_self.montant < 0) {
+				if (this.montant < 0) {
 					// Message d'erreur pas possible
-					InfoMessage.create(_self,"Attention", "red", "Impossible, il faut trouver les fond	s avant de fermer");
+					InfoMessage.create(this,"Attention", "red", "Impossible, il faut trouver les fond	s avant de fermer");
 					e.preventDefault();
 				} else {
-					_self.bloque = false;
-					_self.setArgent(_self.montant);
+					this.bloque = false;
+					this.setArgent(this.montant);
 					callback();
 				}
 			}
@@ -765,7 +772,6 @@ let Notifier = {
 			kind: "launchDices",
 			player: player.id
 		});
-
 	},
 	dices(dices, event,player) {
 		delete event.joueur;
@@ -840,3 +846,5 @@ let Notifier = {
 		});
 	}
 }
+
+export {Joueur,Maisons,Notifier};

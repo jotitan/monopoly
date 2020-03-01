@@ -1,6 +1,8 @@
+import {wrapDialog} from './display/displayers.js'
+
 /* Panneau de gestion des terrains */
 
-var GestionTerrains = {
+let GestionTerrains = {
     maisonsToLever: [],
     changesConstructions: [],
     cout: 0,
@@ -433,3 +435,5 @@ var GestionTerrains = {
         }
     }
 };
+
+export {GestionTerrains};

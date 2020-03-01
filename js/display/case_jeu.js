@@ -1,7 +1,16 @@
+import {} from '../../lib/jquery-1.11.0.min.js'
+import {DrawerFactory,Drawer} from '../ui/graphics.js'
+import {CURRENCY,VARIANTES} from "../monopoly.js";
+import {GestionJoueur} from "../gestion_joueurs.js";
+import {FicheDisplayer,wrapDialog} from "./displayers.js";
+import {InfoMessage} from "./message.js";
+import {GestionConstructions} from "../gestion_constructions.js";
+import {GestionDes} from "../entity/dices.js";
+
 /* Case du plateau */
 
-var ETAT_LIBRE = 0;
-var ETAT_ACHETE = 1;
+let ETAT_LIBRE = 0;
+let ETAT_ACHETE = 1;
 
 class PlateauCase{
 	constructor(axe,pos,type) {
@@ -44,10 +53,9 @@ class ParcGratuit extends PlateauCase {
 	}
 
 	action() {
-		var _self = this;
-		return InfoMessage.create(GestionJoueur.getJoueurCourant(),"Parc gratuit", "lightblue", "Vous gagnez " + this.montant + " " + CURRENCY, function (param) {
+		return InfoMessage.create(GestionJoueur.getJoueurCourant(),"Parc gratuit", "lightblue", "Vous gagnez " + this.montant + " " + CURRENCY, param=> {
 			param.joueur.gagner(param.montant);
-			_self.setMontant(0);
+			this.setMontant(0);
 			GestionJoueur.change();
 		}, {
 			joueur: GestionJoueur.getJoueurCourant(),
@@ -184,7 +192,7 @@ function Groupe(nom, color) {
 			return false;
 		}
 		var joueur = this.fiches[0].joueurPossede;
-		for (var i = 0; i < this.fiches.length; i++) {
+		for (let i = 0; i < this.fiches.length; i++) {
 			if (this.fiches[i].joueurPossede == null || !this.fiches[i].joueurPossede.equals(joueur)) {
 				return false;
 			}
@@ -198,7 +206,7 @@ function Groupe(nom, color) {
 		if (this.fiches == null || fiches.length === 0) {
 			return false;
 		}
-		for (var i = 0; i < this.fiches.length; i++) {
+		for (let i = 0; i < this.fiches.length; i++) {
 			if (this.fiches[i].nbMaison > 0) {
 				return true;
 			}
@@ -207,8 +215,8 @@ function Groupe(nom, color) {
 	}
 
 	this.getAverageConstructions = function () {
-		var nb = 0;
-		for (var i = 0; i < this.fiches.length; i++) {
+		let nb = 0;
+		for (let i = 0; i < this.fiches.length; i++) {
 			nb += this.fiches[i].nbMaison;
 		}
 		return nb / this.fiches.length;
@@ -216,11 +224,11 @@ function Groupe(nom, color) {
 
 	/* Renvoie le nombre de constructions sur le groupe */
 	this.getConstructions = function () {
-		var constructions = {
+		let constructions = {
 			maison: 0,
 			hotel: 0
 		};
-		for (var i = 0; i < this.fiches.length; i++) {
+		for (let i = 0; i < this.fiches.length; i++) {
 			if (this.fiches[i].hotel) {
 				constructions.hotel++;
 			} else {
@@ -232,7 +240,7 @@ function Groupe(nom, color) {
 
 	/* Renvoie des infos sur les proprietes du groupe. Ajoute la liste des proprietes qui n'appartiennent pas au joueur */
 	this.getInfos = function (joueur) {
-		var infos = {
+		let infos = {
 			free: 0,
 			joueur: 0,
 			adversaire: 0,
@@ -240,10 +248,10 @@ function Groupe(nom, color) {
 			maisons: [],
 			hypotheque: 0
 		};
-		var adversaires = []; // Liste des adversaires possedant un terrains
+		let adversaires = []; // Liste des adversaires possedant un terrains
 		let sumAdversaires = 0;
-		for (var i = 0; i < this.fiches.length; i++) {
-			var f = this.fiches[i];
+		for (let i = 0; i < this.fiches.length; i++) {
+			let f = this.fiches[i];
 			if (f.statut === ETAT_LIBRE) {
 				infos.free++;
 			} else {
@@ -443,14 +451,14 @@ class Fiche extends PlateauCase {
 
 	/* Renvoie la rentabilite de la propriete. Se base sur le rapport entre le loyer de trois maisons et le prix d'achat d'une maison */
 	getRentabilite() {
-		var ponderation = 10; // Facteur pour nivelle le taux
+		let ponderation = 10; // Facteur pour nivelle le taux
 		if (!this.isTerrain() || this.nbMaison >= 3) {
 			return 0;
 		} else {
 			// Maison du groupe
-			var proprietes = this.groupe.fiches;
-			var nbMaisonsConstruites = 0;
-			for (var i = 0; i < proprietes.length; i++) {
+			let proprietes = this.groupe.fiches;
+			let nbMaisonsConstruites = 0;
+			for (let i = 0; i < proprietes.length; i++) {
 				nbMaisonsConstruites += proprietes[i].nbMaison;
 			}
 			return (this.loyer[3] / Math.max((proprietes.length * 3 - nbMaisonsConstruites) * this.prixMaison, 1)) / ponderation;
@@ -512,11 +520,7 @@ class Fiche extends PlateauCase {
 		if(this.drawing != null){
 			this.drawing.setNbMaison(nb);
 		}
-		if (this.nbMaison === 5) {
-			this.hotel = true;
-		} else {
-			this.hotel = false;
-		}
+		this.hotel = this.nbMaison === 5;
 		// Lancer un evenement pour rafraichir le plateau
 		if (!noRefresh) {
 			$.trigger('refreshPlateau');
@@ -540,7 +544,7 @@ class Fiche extends PlateauCase {
 
 	chezSoi() {
 		$.trigger('monopoly.chezsoi',{joueur:this.joueurPossede,maison:this});
-		return InfoMessage.create(GestionJoueur.getJoueurCourant(),"Vous etes " + this.nom, this.color, "Vous etes chez vous", function(){GestionJoueur.change()});
+		return InfoMessage.create(GestionJoueur.getJoueurCourant(),"Vous etes " + this.nom, this.color, "Vous etes chez vous", ()=>GestionJoueur.change());
 	}
 
 	sellMaison(joueur, noRefresh) {
@@ -685,7 +689,7 @@ class FicheCompagnie extends Fiche {
 }
 
 /* Permet de gerer les fiches */
-var GestionFiche = {
+let GestionFiche = {
 	fiches: [],
 	keys: [], // Cles des fiches
 	buildId(fiche){
@@ -710,7 +714,7 @@ var GestionFiche = {
 		return this.fiches[this._calculateId({axe:2,pos:0})];
 	},
 	add: function (fiche) {
-		var intId = this._calculateStrId(fiche.id);
+		let intId = this._calculateStrId(fiche.id);
 		this.fiches[intId] = fiche;
 		this.keys.push(intId);
 	},
@@ -738,7 +742,7 @@ var GestionFiche = {
 		return groups;
 	},
 	_getNextFiche:function(from,condition){
-		var info = {position:from.pos,axe:from.axe};
+		let info = {position:from.pos,axe:from.axe};
 		do{
 			info = this.nextPos(info.axe,info.position);
 			var fiche = this.get({axe:info.axe,pos:info.position});
@@ -763,8 +767,8 @@ var GestionFiche = {
 	/* iterateur pour parcourir les terrains (pas de carte chance, taxe...) */
 	iteratorTerrains: function () {
 		// On calcule des cles
-		var keys = [];
-		for (var id in this.fiches) {
+		let keys = [];
+		for (let id in this.fiches) {
 			if (this.fiches[id].isPropriete()) {
 				keys.push(id);
 			}
@@ -772,8 +776,8 @@ var GestionFiche = {
 		return this._buildIterator(keys);
 	},
 	getTerrainsLibres: function () {
-		var keys = [];
-		for (var id in this.fiches) {
+		let keys = [];
+		for (let id in this.fiches) {
 			if (this.fiches[id].isPropriete() && this.fiches[id].statut === ETAT_LIBRE) {
 				keys.push(id);
 			}
@@ -804,3 +808,5 @@ var GestionFiche = {
 		};
 	}
 };
+
+export {Fiche,FicheGare,FicheJunior,FicheCompagnie,CaseChance,CaseCaisseDeCommunaute,SimpleCaseSpeciale,CaseActionSpeciale,CaseDepart,GestionFiche,ParcGratuit,Groupe,ETAT_LIBRE,ETAT_ACHETE};

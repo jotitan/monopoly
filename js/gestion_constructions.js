@@ -1,5 +1,5 @@
 /* Gere les reserves de constructions (maison / hotel) */
-var GestionConstructions = {
+let GestionConstructions = {
     nbInitHouse: 32,
     nbInitHotel: 12,
     nbSellHouse: 0,
@@ -156,3 +156,5 @@ var GestionConstructions = {
         return simulation;
     }
 }
+
+export {GestionConstructions};

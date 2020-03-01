@@ -1,3 +1,11 @@
+import {Joueur} from './entity/joueur.js'
+import {JoueurOrdinateur} from "./entity/joueur_robot.js";
+import {CURRENCY,VARIANTES,globalStats,startMonopoly} from "./monopoly.js"
+import {GestionFiche} from "./display/case_jeu.js";
+import {GestionEchange} from "./enchere.js";
+import {GestionDes} from "./entity/dices.js";
+import {InfoMessage} from "./display/message.js";
+
 
 /* Gere les joueurs : creation, changement... */
 let GestionJoueur = {
@@ -41,7 +49,7 @@ let GestionJoueur = {
         let groups = GestionFiche.getGroups();
         let sizeBlock = 45 / groups.size();
         let div = $('<div style="width:100%" class="count-property"></div>')
-        for(var name in groups){
+        for(let name in groups){
             let color = name.replace(/ /g,"");
             div.append(`<span style="width:${sizeBlock}vw;background-color:${groups[name]}"></span> : <span class="counter-group ${color}">0</span>`);
         }
@@ -51,8 +59,7 @@ let GestionJoueur = {
         let id = `joueur${i}`;
         let color = this.colorsJoueurs[i];
         let img = this.imgJoueurs[i];
-        let argent = argentDepart;
-        let joueur = new clazz(i, nom, color,argent,montantDepart);
+        let joueur = new clazz(i, nom, color,argentDepart,montantDepart);
         joueur.setEnableMouseFunction(JoueurFactory.mouseFunction);
         let isDefaite = defaite ? ' class="defaite" ':'';
         let div = $(`<div id="${id}"${isDefaite}></div>`);
@@ -123,7 +130,7 @@ let GestionJoueur = {
             }
             return b.tourDefaite - a.tourDefaite;
         });
-        var message = `Le joueur ${gagnant.nom} a gagné en ${this._formatTempsJeu(globalStats.heureDebut)}.<br/>`;
+        let message = `Le joueur ${gagnant.nom} a gagné en ${this._formatTempsJeu(globalStats.heureDebut)}.<br/>`;
         message+=`1 - ${gagnant.nom}<br/>`;
 
         for(var i = 0 ; i < perdants.length ; i++){
@@ -136,7 +143,7 @@ let GestionJoueur = {
     /* Prend en compte l'argent, le nombre de terrains, le nombre de constructions, le nombre de tours des joueurs adverses */
     /* On pondere par rapport au nombre de joueur (plus il est grand, plus le nombre de maison a de l'importance) */
     _calculateScore(joueur){
-        var statsJoueur = joueur.getStats();
+        let statsJoueur = joueur.getStats();
         var critere1 = statsJoueur.argent/10000;
         var critere2 = (joueur.maisons.length*this.joueurs.length)/4;	// < 1
         var critere3 = statsJoueur.hotel/12 + statsJoueur.maison/32;	// < 2
@@ -262,3 +269,5 @@ let JoueurFactory = {
         return this.network ? (this.master ? MasterRemotePlayer : RemotePlayer) : Joueur;
     }
 };
+
+export {GestionJoueur,JoueurFactory};

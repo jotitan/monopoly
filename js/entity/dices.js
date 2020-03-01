@@ -1,5 +1,10 @@
+import {DrawerFactory,Drawer} from '../ui/graphics.js'
+import {GestionJoueur} from '../gestion_joueurs.js'
+import {InfoMessage,MessageDisplayer} from '../display/message.js'
+import {VARIANTES,CURRENCY} from "../monopoly.js";
+import {GestionFiche} from "../display/case_jeu.js";
 
-var GestionDes = {
+let GestionDes = {
     gestionDes:null,
 
     init:function(rollColor){
@@ -407,3 +412,5 @@ class GestionDesRapideImpl extends GestionDesImpl{
         }
     }
 }
+
+export {GestionDesRapideImpl,GestionDesImpl, GestionDes};

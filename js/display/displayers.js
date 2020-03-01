@@ -1,5 +1,7 @@
 /* Displayers d'information */
 
+import {GestionJoueur} from "../gestion_joueurs.js";
+
 function initWrapButtons(bloc){
     currentDialogId++;
     bloc.data('inner-open-id',currentDialogId);
@@ -51,7 +53,7 @@ function wrapDialog(bloc,parameters){
 }
 
 /* Affiche les fiches de terrains */
-var FicheDisplayer = {
+let FicheDisplayer = {
     detailFiche:null,
     detailJunior:null,
     fiche:null,
@@ -191,7 +193,7 @@ var FicheDisplayer = {
 }
 
 /* Affiche les ecrans de communication lors d'echange */
-var CommunicationDisplayer = {
+let CommunicationDisplayer = {
     panel: null,
     joueur: null, // Joueur a qui est affiche le panneau
     init: function (idPanel) {
@@ -363,3 +365,5 @@ var CommunicationDisplayer = {
         //this.panel.dialog('open');
     }
 }
+
+export {wrapDialog,CommunicationDisplayer,FicheDisplayer};

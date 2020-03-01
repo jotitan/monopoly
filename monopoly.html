@@ -5,29 +5,8 @@
    <title>Monopoly FULL JS</title>
    <link type="text/css" href="css/sunny/jquery-ui-1.10.3.custom.min.css" rel="stylesheet" />
    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
-   <script type="text/javascript" src="lib/jquery-1.11.0.min.js"></script>
-   <script type="text/javascript" src="lib/jquery-ui-1.10.3.custom.min.js"></script>
-   <script type="text/javascript" src="lib/jquery.mousewheel.js"></script>
-   <script type="text/javascript" src="lib/jquery.arctext.js"></script>
-   
-   
-   
-   <script type="text/javascript" src="js/sauvegarde.js"></script>
-   <script type="text/javascript" src="js/utils.js"></script>
-   <script type="text/javascript" src="js/gestion_constructions.js"></script>
-   <script type="text/javascript" src="js/gestion_terrains.js"></script>
-   <script type="text/javascript" src="js/enchere.js"></script>
-   <script type="text/javascript" src="js/entity/joueur.js"></script>
-   <script type="text/javascript" src="js/ui/graphics.js"></script>
-   <script type="text/javascript" src="js/ui/square_graphics.js"></script>
-   <script type="text/javascript" src="js/ui/circle_graphics.js"></script>
-   <script type="text/javascript" src="js/entity/comportement.js"></script>
-   <script type="text/javascript" src="js/entity/strategie.js"></script>
-   <script type="text/javascript" src="js/entity/joueur.js"></script>
-   <script type="text/javascript" src="js/entity/cartes_action.js"></script>
-   <script type="text/javascript" src="js/Message.js"></script>
-   <script type="text/javascript" src="js/CarteJeu.js"></script>
-   <script type="text/javascript" src="monopoly.js"></script>
+
+   <script type="text/javascript" src="dist/app.js"></script>
    
 
    
@@ -262,27 +241,6 @@
 		<div class="messages"></div>
 		
 	</div>
- 
-   <script language="javascript">
-	// On detecte le type de donnees a charger
-	var nomPlateau = "data-monopoly.json";
-	if (location.href.indexOf("plateau=")!=-1) {
-	  nomPlateau = "data-monopoly-" + location.href.substring(location.href.indexOf("plateau=")+8) + ".json";
-	}
-	var debug = false;
-	if (location.href.indexOf("debug=1")!=-1) {
-	  $('#idDebug').show();
-	  debug = true;
-	}
-	$(function(){
-		$('#idMontantParc').hide();
-		init(nomPlateau,debug);
-	});
-	
-	
-	
-   </script>
- 
- 	 
+
 	</body>
 </html>

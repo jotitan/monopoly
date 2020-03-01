@@ -1,3 +1,23 @@
+//import $ from 'jquery'
+import  '../lib/jquery-1.11.0.min.js'
+import './utils.js'
+import {GestionJoueur,JoueurFactory} from './gestion_joueurs.js'
+import {InfoMessage,MessageDisplayer} from './display/message.js'
+import {DrawerFactory,Drawer} from './ui/graphics.js'
+import {GestionTerrains} from './gestion_terrains.js'
+import {GestionDesRapideImpl,GestionDesImpl, GestionDes} from './entity/dices.js'
+import {GestionEnchere,GestionEnchereDisplayer,EchangeDisplayer} from './enchere.js'
+import {CarteActionFactory} from './entity/cartes_action.js'
+import {Fiche,FicheGare,FicheJunior,FicheCompagnie,CaseChance,CaseCaisseDeCommunaute,SimpleCaseSpeciale,CaseActionSpeciale,CaseDepart,GestionFiche,ParcGratuit,Groupe} from './display/case_jeu.js'
+import {wrapDialog,CommunicationDisplayer,FicheDisplayer } from './display/displayers.js'
+import {Sauvegarde } from './sauvegarde.js'
+import {} from '../lib/jquery.arctext.js'
+import {} from '../lib/jquery-ui.1.12.min.js'
+import {} from '../lib/jquery.mousewheel.js'
+
+import {} from './ui/square_graphics.js'
+import {} from './ui/circle_graphics.js'
+
 /* Gestion du Monopoly */
 
 /* -- TODO : Echange uniquement quand tous les terrains sont vendus. La banque vend (quand on achete pas) ou quand un joueur perd */
@@ -11,7 +31,7 @@
 /* TODO : pour echange, si argent dispo et adversaire dans la deche, on propose une grosse somme (si old proposition presente) */
 
 let DEBUG = false;
-let IA_TIMEOUT = 1000; // Temps d'attente pour les actions de l'ordinateur
+let IA_TIMEOUT = 100; // Temps d'attente pour les actions de l'ordinateur
 
 /* Gestion des variantes, case depart (touche 40000) et parc gratuit (touche la somme des amendes) */
 /* Conf classique : false,false,true,true */
@@ -86,7 +106,6 @@ function doActions(joueur=GestionJoueur.getJoueurCourant()) {
 	// Notify end play
 	$.trigger('move.end',{});
 }
-
 
 function startMonopoly(debug = false){
 	let monopoly = new Monopoly(debug);
@@ -275,9 +294,9 @@ class PlateauDetails {
 		let totalCases = nbCases * 4;
 		// Parcourt les fiches. On enregistre le groupe courant, quand changement, on defini le groupe precedent et calcule le suivant du precedent
 		for (var i = 0; i < totalCases +2; i++) {
-			var axe = Math.floor(i / nbCases) % 4;
-			var pos = i % totalCases - (axe * nbCases);
-			var fiche = GestionFiche.get({
+			let axe = Math.floor(i / nbCases) % 4;
+			let pos = i % totalCases - (axe * nbCases);
+			let fiche = GestionFiche.get({
 				axe: axe,
 				pos: pos
 			});
@@ -489,6 +508,7 @@ class Monopoly {
 	afterCreateGame(players=this.plateau.infos.nomJoueurs){
 		this.plateau.infos.realNames=players;
 		$('.info-joueur').tooltip({
+			show:{},hide:{},
 			content: function () {
 				let stats = GestionJoueur.getById($(this).data('idjoueur')).getStats();
 				$('span[name]', '#infoJoueur').each(function () {
@@ -543,6 +563,17 @@ class Monopoly {
 	}
 }
 
+let debug = false;
+$(function(){
+	$('#idCreationGame').tabs();
+	$('#idMontantParc').hide();
+	startMonopoly(debug)
+	if($('.mobile').is(':visible')) {
+		DrawerFactory.setSize(950);
+	}
+});
+
+
 /*  DEBUG */
 /* Achete des maisons pour le joueur courant, on passe les ids de fiche */
 function buy(maisons) {
@@ -550,3 +581,5 @@ function buy(maisons) {
 		GestionJoueur.getJoueurCourant().acheteMaison(GestionFiche.getById(maisons[i]));
 	}
 }
+
+export {Monopoly,CURRENCY,DEBUG,VARIANTES,IA_TIMEOUT,doActions,globalStats,startMonopoly};

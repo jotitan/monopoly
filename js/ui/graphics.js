@@ -1,3 +1,4 @@
+
 /* Fournit les methodes de dessin d'un plateau de jeu standard (carré) */
 
 var CURRENT_ID_COMPONENT = 0; // Permet de generer un numero de composant unique
@@ -195,7 +196,7 @@ let DrawerFactory = {
 }.init();
 
 // Gere les dessins et les calques
-var Drawer = {
+let Drawer = {
     components: [],	// Un ordre est ajoute lors de l'insertion
     height: 0,
     width: 0,
@@ -284,3 +285,4 @@ var Drawer = {
     }
 };
 
+export {DrawerFactory,Drawer,Component,DrawerHelper};

@@ -1,5 +1,7 @@
 /* Cartes actions (chance ou caisse de communaute) */
 
+import {GestionJoueur} from "../gestion_joueurs.js";
+
 class CarteAction{
 	constructor(type) {
 		this.type = type;
@@ -61,12 +63,12 @@ class PrisonCarte extends CarteAction {
 		super("prison");
 		this.joueurPossede = null;
 	}
-	action = function (joueur) {
+	action(joueur) {
 		joueur.cartesSortiePrison.push(this);
 		this.joueurPossede = joueur;
 		GestionJoueur.change();
-	};
-	isLibre = function () {
+	}
+	isLibre () {
 		return this.joueurPossede == null;
 	}
 }
@@ -137,5 +139,6 @@ let CarteActionFactory = {
 		throw "Type inconnu";
 	}
 };
-	
+
+export {CarteActionFactory};
 

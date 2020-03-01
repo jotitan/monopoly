@@ -1,6 +1,14 @@
+import {Joueur,Notifier} from "./joueur.js";
+import {GestionStrategie} from "./strategie.js";
+import {GestionComportement} from "./comportement.js";
+import {ETAT_LIBRE, GestionFiche} from "../display/case_jeu.js";
+import {GestionDes} from "./dices.js";
+import {GestionEchange, GestionEnchere} from "../enchere.js";
+import {GestionJoueur} from "../gestion_joueurs.js";
+import {VARIANTES, IA_TIMEOUT,globalStats} from "../monopoly.js";
+
 /* Joueurs du jeu, version robot et manuel */
 /* Objet central sur la gestion du jeu */
-/* Depend de Strategie, Comportement, GestionEnchere, GestionFiche, GestionDes, Pion, GestionEnchereDisplayer, InfoMessage */
 
 /* Joueur ordinateur */
 /* Il faut, a la creation, definir le style de jeu : prudent (achat des deux premiere lignes), agressif (achete tout)
@@ -15,7 +23,7 @@ class JoueurOrdinateur extends Joueur {
 		super(numero, nom, color,argent,montantDepart);
 		this.type = "Ordinateur";
 		// Threashold when detecting dangerous case
-		this.threasholdMontant = argent*0,65;
+		this.threasholdMontant = argent*0.65;
 		this.canPlay = false;
 		/* Strategie : definit le comportement pour l'achat des maisons */
 		this.strategie = null;
@@ -58,11 +66,11 @@ class JoueurOrdinateur extends Joueur {
 		this.init(data.strategie, data.comportement);
 		this.rejectedPropositions = [];
 		if (data.rejectedPropositions != null) {
-			for (var id in data.rejectedPropositions) {
-				var p = data.rejectedPropositions[id].proposition;
-				var terrains = [];
+			for (let id in data.rejectedPropositions) {
+				let p = data.rejectedPropositions[id].proposition;
+				let terrains = [];
 				if(p.terrains!=null){
-					for(var t in p.terrains){
+					for(let t in p.terrains){
 						terrains.push(GestionFiche.getById(p.terrains[t]));
 					}
 				}
@@ -97,11 +105,11 @@ class JoueurOrdinateur extends Joueur {
 	/* 1) Cherche dans les terrains libres celui qu'il prefere */
 	/* 2) Si pas de terrain libre, choisi la case prison (protege le plus) si besoin */
 	choisiCase(callback){
-		var fiches = GestionFiche.getFreeFiches();
+		let fiches = GestionFiche.getFreeFiches();
 		let maxInteret;
-		var maxFiche = null;
+		let maxFiche = null;
 		fiches.forEach(function(fiche){
-			var interet = this.strategie.interetGlobal(fiche,this,false).interet;
+			let interet = this.strategie.interetGlobal(fiche,this,false).interet;
 			if(interet !==0 && (maxInteret === undefined || interet > maxInteret)){
 				maxInteret = interet;
 				maxFiche = fiche;
@@ -125,19 +133,19 @@ class JoueurOrdinateur extends Joueur {
 	/* 3) Choisi les cases safe (case depart, parking, simple visite) */
 	/* 4) Choisi le loyer le moins cher a payer */
 	choisiDes(des1,des2,callback){
-		var f1 = {fiche:this.pion.deplaceValeursDes(des1),total:des1};
-		var f2 = {fiche:this.pion.deplaceValeursDes(des2),total:des2};
-		var f3 = {fiche:this.pion.deplaceValeursDes(des1 + des2),total:des1+des2};
+		let f1 = {fiche:this.pion.deplaceValeursDes(des1),total:des1};
+		let f2 = {fiche:this.pion.deplaceValeursDes(des2),total:des2};
+		let f3 = {fiche:this.pion.deplaceValeursDes(des1 + des2),total:des1+des2};
 
-		var maxInteret = -1000;
-		var total = 0;
-		[f1,f2,f3].forEach(function(f){
-			var value = this._analyseCase(GestionFiche.get(f.fiche));
+		let maxInteret = -1000;
+		let total = 0;
+		[f1,f2,f3].forEach(f=>{
+			let value = this._analyseCase(GestionFiche.get(f.fiche));
 			if(value > maxInteret){
 				total = f.total;
 				maxInteret = value;
 			}
-		},this);
+		});
 		callback(total);
 	}
 
@@ -148,7 +156,7 @@ class JoueurOrdinateur extends Joueur {
 	/* Interet d'un terrain depend des moyens qu'on a */
 	/* TODO : dans le cas d'enchere immediate, empecher de tomber sur un terrain qui interesse un autre ? */
 	_analyseCase(fiche){
-		var interet = 0;
+		let interet = 0;
 		if(fiche.isPropriete() === true){
 			interet = fiche.statut === ETAT_LIBRE ?
 				this.strategie.interetGlobal(fiche,this,false).interet :
@@ -167,11 +175,11 @@ class JoueurOrdinateur extends Joueur {
 		if (buttons === undefined || buttons == null) {
 			return;
 		}
-		var _self = this;
+		let _self = this;
 		setTimeout(function () {
 			if (buttons.Acheter != null && propriete != null) {
-				var interet = _self.strategie.interetGlobal(propriete).interet;
-				var comportement = _self.comportement.getRisqueTotal(_self, propriete.achat);
+				let interet = _self.strategie.interetGlobal(propriete).interet;
+				let comportement = _self.comportement.getRisqueTotal(_self, propriete.achat);
 				$.trigger("monopoly.debug", {
 					message: "Strategie : " + interet + " " + comportement
 				});
@@ -183,7 +191,7 @@ class JoueurOrdinateur extends Joueur {
 					return;
 				}
 			}
-			for (var i in buttons) {
+			for (let i in buttons) {
 				if (i !== "Acheter") {
 					buttons[i]();
 					return;
@@ -210,7 +218,6 @@ class JoueurOrdinateur extends Joueur {
 		});
 		callback();
 	}
-
 
 	addIsolateHouse(maison,proposition){
 		let data = this.maisons.findUnterestsProprietes();
@@ -372,8 +379,8 @@ class JoueurOrdinateur extends Joueur {
 		if ((proposition.terrains === undefined || proposition.terrains.length === 0) && (proposition.compensation === undefined || proposition.compensation === 0)) {
 			return GestionEchange.reject(this);
 		}
-		var others = this.maisons.findOthersInterestProprietes(joueur);
-		var infos = this._calculatePropositionValue(maison, joueur, proposition, others);
+		let others = this.maisons.findOthersInterestProprietes(joueur);
+		let infos = this._calculatePropositionValue(maison, joueur, proposition, others);
 		if (infos.critere >= 3) {
 			return GestionEchange.accept(this);
 		}
@@ -400,8 +407,8 @@ class JoueurOrdinateur extends Joueur {
 	_calculateContreProposition(joueur, proposition, contreProposition, recommandations, terrain, others) {
 		if (recommandations[terrainDispo] === 1 || recommandations[terrainNonListe] === 1) {
 			// terrain dispo non propose, on ajoute tant que la valeur du terrain n'est pas atteinte
-			var montant = 0;
-			for (var i = 0; i < others.length; i++) {
+			let montant = 0;
+			for (let i = 0; i < others.length; i++) {
 				if (!others[i].maison.groupe.equals(terrain.groupe)) { // si on est interesse par le meme groupe
 					contreProposition.terrains.push(others[i].maison);
 					montant += others[i].maison.achat;
@@ -413,15 +420,15 @@ class JoueurOrdinateur extends Joueur {
 			/* Ajout d'un terrain de la propal originale */
 			if (montant < terrain.achat && recommandations[terrainNonListe] === 1) {
 				// On ajoute un terrain propose avant
-				var done = false;
-				for (var i = 0; i < proposition.length && !done; i++) {
+				let done = false;
+				for (let i = 0; i < proposition.length && !done; i++) {
 					if (!contreProposition.terrains.contains(proposition.terrains[i])) {
 						contreProposition.terrains.push(proposition.terrains[i]);
 						done = true;
 					}
 					if (!done) {
 						// Il faut proposer autre chose, autre terrain
-						var uselessProprietes = joueur.maisons.findUnterestsProprietes();
+						let uselessProprietes = joueur.maisons.findUnterestsProprietes();
 						if (uselessProprietes.proprietes.length > 0) {
 							contreProposition.terrains.push(uselessProprietes.proprietes[0]);
 						}
@@ -438,21 +445,21 @@ class JoueurOrdinateur extends Joueur {
 	/* Calcule la valeur d'une proposition d'echange */
 	/* @return : renvoie la valeur de la proposition ainsi que des recommandations (utilise pour les contre propositions) */
 	_calculatePropositionValue(maison, joueur, proposition, others) {
-		var recommandations = []; // Enregistre des parametres pour la contre proposition
+		let recommandations = []; // Enregistre des parametres pour la contre proposition
 
 		// Indique qu'on est aussi interesse par ce groupe
 		let interesetMeToo = others.some(o=>maison.groupe.equals(o.maison.groupe));
 
-		var critereTerrains = 0;
-		var critereArgent = 0;
+		let critereTerrains = 0;
+		let critereArgent = 0;
 		// Gestion des terrains
 		if ((proposition.terrains != null && proposition.terrains.length > 0)) {
-			var useList = false;
-			for (var t in proposition.terrains) {
-				var terrain = proposition.terrains[t];
+			let useList = false;
+			for (let t in proposition.terrains) {
+				let terrain = proposition.terrains[t];
 				// On verifie si dans others et on note l'ordre dans la liste, signe de l'interet
-				var interetTerrain = null;
-				for (var i = 0; i < others.length; i++) {
+				let interetTerrain = null;
+				for (let i = 0; i < others.length; i++) {
 					if (others[i].maison.equals(terrain)) {
 						interetTerrain = i;
 					}
@@ -471,7 +478,7 @@ class JoueurOrdinateur extends Joueur {
 		} else {
 			if (others != null && others.length > 0) {
 				// On verifie si le terrain demande n'appartient pas un groupe qui nous interesse
-				var length = others.length - ((interesetMeToo) ? 1 : 0);
+				let length = others.length - ((interesetMeToo) ? 1 : 0);
 				critereTerrains -= length;
 				recommandations[terrainDispo] = 1; // Indique qu'un terrain peut etre choisi en contre proposition
 			}
@@ -490,10 +497,10 @@ class JoueurOrdinateur extends Joueur {
 		}
 
 		/* Confirme le traitement ou le durci. Prend le pas sur la decision calculee  */
-		var strategie = this.strategie.acceptSwapTerrain(maison, joueur, others, interesetMeToo);
+		let strategie = this.strategie.acceptSwapTerrain(maison, joueur, others, interesetMeToo);
 
 		// On melange le tout
-		var critere = (critereTerrains + critereArgent) * strategie;
+		let critere = (critereTerrains + critereArgent) * strategie;
 		$.trigger('monopoly.debug',{message:"Criteres : " + critere + " " + critereTerrains + " " + critereArgent});
 		return {
 			critere: critere,
@@ -511,16 +518,16 @@ class JoueurOrdinateur extends Joueur {
 			return GestionEchange.reject(this);
 		}
 		/* On evalue la pertinence  */
-		var others = this.maisons.findOthersInterestProprietes(joueur);
-		var infos = null;
+		let others = this.maisons.findOthersInterestProprietes(joueur);
+		let infos = null;
 		if (proposition.terrains.length > 0) {
 			// On inverse les parametres
-			var prop = {
+			let prop = {
 				terrains: [maison],
 				compensation: proposition.compensation * -1
 			};
-			var terrain = proposition.terrains[0];
-			var infos = this._calculatePropositionValue(terrain, joueur, prop, others);
+			let terrain = proposition.terrains[0];
+			infos = this._calculatePropositionValue(terrain, joueur, prop, others);
 		} else {
 			// Uniquement de la tune
 			// Il demande de l'argent, on verifie par rapport a nos resources
@@ -544,12 +551,12 @@ class JoueurOrdinateur extends Joueur {
 	 */
 	evalueCompensation (joueur, maison, interetTerrain, oldProposition) {
 		// On calcule les sommes dispos. En fonction de l'interet pour le terrain, on peut potentiellement hypothequer
-		var budgetMax = this.comportement.getBudget(this, (interetTerrain != null && interetTerrain > 2));
-		var budget = Math.min(budgetMax, maison.achat);
+		let budgetMax = this.comportement.getBudget(this, (interetTerrain != null && interetTerrain > 2));
+		let budget = Math.min(budgetMax, maison.achat);
 		if (oldProposition != null && oldProposition.proposition.compensation >= budget) {
 			budget = Math.min(this.montant, oldProposition.proposition.compensation * this.comportement.getFactorForProposition());
 			// On plafonne le budget (fonction logarithmique)
-			var plafondBudget = (14 - Math.log(maison.achat)) * maison.achat;
+			let plafondBudget = (14 - Math.log(maison.achat)) * maison.achat;
 			budget = Math.min(budget, plafondBudget);
 		}
 		return Math.round(Math.max(0, budget));
@@ -564,19 +571,19 @@ class JoueurOrdinateur extends Joueur {
 	 */
 	isDangerous (groupe) {
 		// Critere 1, nombre de maison par terrain pouvant etre achete
-		var nbMaison = (this.argent / groupe.maisons[0].prixMaison) / groupe.fiches.length;
+		let nbMaison = (this.argent / groupe.maisons[0].prixMaison) / groupe.fiches.length;
 		// compte les autres groupes
-		var criterePrix = (groupe.maisons[0].loyers[nbMaison]) / this.threasholdMontant;
+		let criterePrix = (groupe.maisons[0].loyers[nbMaison]) / this.threasholdMontant;
 		// Ligne presente
-		var groups = this.maisons.findConstructiblesGroupes();
-		var isLigne = false;
-		for (var g in groups) {
+		let groups = this.maisons.findConstructiblesGroupes();
+		let isLigne = false;
+		for (let g in groups) {
 			if (groups[g].isVoisin(groupe)) {
 				isLigne = true;
 			}
 		}
 		// Resultat : nb maison, le fait de faire une ligne et une ponderation par le prix
-		var moteur = (nbMaison + criterePrix) * (isLigne ? 2 : 1);
+		let moteur = (nbMaison + criterePrix) * (isLigne ? 2 : 1);
 
 		return moteur >= 5;
 	}
@@ -590,17 +597,17 @@ class JoueurOrdinateur extends Joueur {
 		if (terrains === undefined || terrains.length === 0) {
 			return [];
 		}
-		var proposition = [];
-		var valeur = 0;
+		let proposition = [];
+		let valeur = 0;
 		// Si seul fournisseur, il faut etre plus laxiste.
-		for (var t in terrains) {
+		for (let t in terrains) {
 			if (!terrainVise.joueurPossede.isDangerous(terrains[t].groupe) || !testDangerous) {
 				// On regarde si c'est necessaire de l'ajouter
 				if (valeur === 0) {
 					proposition.push(terrains[t]);
 					valeur += terrains[t].achat;
 				} else {
-					var rapport = (Math.abs(1 - terrainVise.achat / valeur)) / (Math.abs(1 - terrainVise.achat(valeur + terrains[t].achat)));
+					let rapport = (Math.abs(1 - terrainVise.achat / valeur)) / (Math.abs(1 - terrainVise.achat(valeur + terrains[t].achat)));
 					if (rapport > 1) {
 						proposition.push(terrains[t]);
 						valeur += terrains[t].achat;
@@ -623,8 +630,8 @@ class JoueurOrdinateur extends Joueur {
 		if (this.currentEchange != null) {
 			throw "Impossible de gerer une nouvelle enchere";
 		}
-		var interet = this.strategie.interetGlobal(terrain, this, true);
-		var budgetMax = this.comportement.getMaxBudgetForStrategie(this, interet.interet);
+		let interet = this.strategie.interetGlobal(terrain, this, true);
+		let budgetMax = this.comportement.getMaxBudgetForStrategie(this, interet.interet);
 		this.currentEnchere = {
 			transaction: transaction,
 			terrain: terrain,
@@ -644,8 +651,8 @@ class JoueurOrdinateur extends Joueur {
 			return;
 		}
 		// On temporise la reponse de IA_TIMEOUT + random de ms
-		var timeout = IA_TIMEOUT * (Math.random() + 1);
-		var _self = this;
+		let timeout = IA_TIMEOUT * (Math.random() + 1);
+		let _self = this;
 		setTimeout(function () {
 			if(_self.currentEnchere === undefined){return;}
 			if (montant > _self.currentEnchere.budgetMax ||
@@ -679,21 +686,21 @@ class JoueurOrdinateur extends Joueur {
 		// On compte le nombre joueurs qui peuvent construire
 		GestionJoueur.forEach(function(joueur){
 			if (!this.equals(this)) {
-				var groups = joueur.maisons.findConstructiblesGroupes();
+				let groups = joueur.maisons.findConstructiblesGroupes();
 				if (groups.size() > 0) {
 					// On verifie si le budget est important ()
 					// On compte le potentiel de maison achetables
-					var nbMaisons = 0;
-					var coutMaisons = 0;
+					let nbMaisons = 0;
+					let coutMaisons = 0;
 					for (let color in groups) {
 						let group = groups[color];
 						for (let index in group.proprietes) {
-							var maison = group.proprietes[index];
+							let maison = group.proprietes[index];
 							nbMaisons += 5 - maison.nbMaison;
 							coutMaisons += (5 - maison.nbMaison) * maison.prixMaison;
 						}
 					}
-					var budgetMin = (coutMaisons / nbMaisons) * 3;
+					let budgetMin = (coutMaisons / nbMaisons) * 3;
 					if (nbMaisons > 3 && budgetMin < joueur.montant) {
 						// On doit bloquer la construction
 						return true;
@@ -708,10 +715,8 @@ class JoueurOrdinateur extends Joueur {
 		switch (maison.type) {
 			case "gare":
 				return -1;
-				break;
 			case "compagnie":
 				return -2;
-				break;
 			default:
 				return (maison.isTerrain()) ? maison.groupe.getInfos(this).joueur : 0;
 		}
@@ -816,23 +821,23 @@ class JoueurOrdinateur extends Joueur {
 	 * @param sortType : Tri des groupes en fonction de l'importance. ASC ou DESC
 	 */
 	getGroupsToConstruct(sortType, level) {
-		var groups = this.maisons.findConstructiblesGroupes(); // structure : [color:{color,proprietes:[]}]
+		let groups = this.maisons.findConstructiblesGroupes(); // structure : [color:{color,proprietes:[]}]
 		// Pas de terrains constructibles
 		if (groups.size() === 0) {
 			return [];
 		}
 		// On determine les terrains les plus rentables a court terme (selon la position des joueurs)
-		var maisons = this.comportement.getNextProprietesVisitees(this, level);
+		let maisons = this.comportement.getNextProprietesVisitees(this, level);
 		// On Calcule pour chaque maison des groupes (meme ceux sans interet) plusieurs indicateurs : proba (pondere a 3), la rentabilite (pondere a 1)
-		var totalMaisons = 0; // Nombre total de proprietes constructibles
+		let totalMaisons = 0; // Nombre total de proprietes constructibles
 		for (let color in groups) {
-			var group = groups[color];
+			let group = groups[color];
 			group.proba = 0;
 			group.rentabilite = 0;
 			group.lessThree = 0;
 			group.interetGlobal = 0;
-			for (var index in group.proprietes) {
-				var propriete = group.proprietes[index];
+			for (let index in group.proprietes) {
+				let propriete = group.proprietes[index];
 				totalMaisons++;
 				// On cherche si proba
 				if (maisons[propriete.id] != null) {
@@ -894,18 +899,18 @@ class JoueurOrdinateur extends Joueur {
 	 */
 	buildConstructions() {
 		if(this.maisons.maisons.length === 0){return;}
-		var budget = this.comportement.getBudget(this);
+		let budget = this.comportement.getBudget(this);
 		// Pas d'argent
 		if (budget < this.minimumPriceHouse()) {
 			return;
 		}
-		var sortedGroups = this.getGroupsToConstruct("DESC", 0.1);
+		let sortedGroups = this.getGroupsToConstruct("DESC", 0.1);
 		if(sortedGroups.length === 0) {
 			// Pas de terrains constructibles
 			return;
 		}
 		// On tri les maisons de chaque groupe en fonction du prix et du nombre (le moins de maison en premier puis l'achat le plus eleve
-		for (var idGroup in sortedGroups) {
+		for (let idGroup in sortedGroups) {
 			sortedGroups[idGroup].proprietes.sort(function (a, b) {
 				if (a.nbMaison === b.nbMaison) {
 					if (a.achat === b.achat) {
@@ -929,20 +934,20 @@ class JoueurOrdinateur extends Joueur {
 
 
 		// On construit des maisons. On s'arrete quand plus de budget ou qu'on ne peut plus construire (hotel partout ou 4 maisons (blocage de constructions))
-		var stopConstruct = false;
-		var currentMaison = 0;
-		var currentGroup = 0;
-		var seuil = 3; // Premier passage, ensuite passe a 4 ou 5
-		var achats = {
+		let stopConstruct = false;
+		let currentMaison = 0;
+		let currentGroup = 0;
+		let seuil = 3; // Premier passage, ensuite passe a 4 ou 5
+		let achats = {
 			maison: 0,
 			hotel: 0,
 			terrains:[]
 		};
 		while (budget >= 5000 && !stopConstruct) {
 			// On choisit une maison
-			var group = sortedGroups[currentGroup];
+			let group = sortedGroups[currentGroup];
 			// Changement de group
-			var maison = group.proprietes[currentMaison];
+			let maison = group.proprietes[currentMaison];
 			// Si le seuil est atteint, on construit sur une autre maison ou sur un autre group
 			if (maison.nbMaison >= seuil) {
 				if (group.treat === undefined) {
@@ -950,7 +955,7 @@ class JoueurOrdinateur extends Joueur {
 				} else {
 					group.treat++;
 				}
-// Le goupe est traite, on passe au suivant
+				// Le goupe est traite, on passe au suivant
 				if (group.treat === group.proprietes.length) {
 					currentGroup++;
 					currentMaison = 0;
@@ -958,7 +963,7 @@ class JoueurOrdinateur extends Joueur {
 					if (currentGroup >= sortedGroups.length) {
 						if (seuil === 3) {
 							seuil = 5;
-							for (var color in sortedGroups) {
+							for (let color in sortedGroups) {
 								sortedGroups[color].treat = 0;
 							}
 							currentGroup = 0;
@@ -995,7 +1000,7 @@ class JoueurOrdinateur extends Joueur {
 			joueur: this,
 			achats: achats
 		});
-		$('body').trigger('refreshPlateau');
+		$.trigger('refreshPlateau');
 	}
 
 
@@ -1007,16 +1012,16 @@ class JoueurOrdinateur extends Joueur {
      * TODO : Si on a des groupes, que la strategie est bloquee et qu'on a de l'argent pour changer
      */
 	changeStrategie() {
-		var localStats = this.strategie.getStatsProprietes();
+		let localStats = this.strategie.getStatsProprietes();
 		if (localStats.color.pourcent < 40 && this.countInterestProperties() <= 2 && !this.isFamilyFree()) {
 			$.trigger("monopoly.debug", {
 				message: this.nom + " cherche une nouvelle strategie"
 			});
 			// On change de strategie. Une nouvelle strategie doit posseder au moins 60% de ses terrains de libre
-			for (var i in GestionStrategie.getAll()) {
-				var s = GestionStrategie.create(i);
+			for (let i in GestionStrategie.getAll()) {
+				let s = GestionStrategie.create(i);
 				if (s.name !== this.strategie.name) {
-					var strategieStats = s.getStatsProprietes();
+					let strategieStats = s.getStatsProprietes();
 					if (strategieStats.color.pourcent > 50) {
 						// Nouvelle strategie
 						$.trigger("monopoly.debug", {
@@ -1041,14 +1046,14 @@ class JoueurOrdinateur extends Joueur {
      */
 	isFamilyFree() {
 		// On parcourt les terrains et on verifie la dispo des terrains
-		var family = [];
-		for (var m in this.maisons.maisons) {
-			var maison = this.maisons.maisons[m];
+		let family = [];
+		for (let m in this.maisons.maisons) {
+			let maison = this.maisons.maisons[m];
 			if (!family[maison.groupe.nom]) {
 				family[maison.groupe.nom] = true;
-				var free = true;
-				for (var idf in maison.groupe.fiches) {
-					var fiche = maison.groupe.fiches[idf];
+				let free = true;
+				for (let idf in maison.groupe.fiches) {
+					let fiche = maison.groupe.fiches[idf];
 					if (fiche.statut !== ETAT_LIBRE && !this.equals(fiche.joueurPossede)) {
 						free = false;
 					}
@@ -1061,15 +1066,13 @@ class JoueurOrdinateur extends Joueur {
 		return false;
 	}
 
-
 	/* Fonction appelee avant que les des ne soit lances, lorsqu'il est en prison */
 	/* Regle : si on est au debut du jeu, on sort de prison pour acheter des terrains.
      * Si on est en cours de jeu et que le terrain commence a etre miné, on reste en prison */
 	actionAvantDesPrison(buttons) {
-		var _self = this;
-		setTimeout(function () {
+		setTimeout( () =>{
 			// Cas 1 : on prend la carte de sortie
-			var getOut = _self.getOutPrison();
+			let getOut = this.getOutPrison();
 			if (getOut) {
 				if (buttons["Utiliser carte"] != null) {
 					buttons["Utiliser carte"]();
@@ -1092,8 +1095,8 @@ class JoueurOrdinateur extends Joueur {
      * 3) Si le terrain est très miné > 30%, quelque soit sa recherche de terrain
      */
 	getOutPrison() {
-		var loyerStat = this.comportement.getLoyerMoyen(this);
-		var groupesPossibles = this.maisons.getGroupesPossibles();
+		let loyerStat = this.comportement.getLoyerMoyen(this);
+		let groupesPossibles = this.maisons.getGroupesPossibles();
 		// On peut augmenter le risque si les terrains rouges et oranges sont blindes (sortie de prison)
 		// depend de l'argent dispo et du besoin d'acheter un terrain (libre et indispensable pour finir le groupe)
 		// Cas pour rester en prison
@@ -1111,7 +1114,6 @@ class JoueurOrdinateur extends Joueur {
 	gererAchat(boutonAchat) {
 		boutonAchat.click();
 	}
-
 }
 
 class NetworkJoueurOrdinateur extends JoueurOrdinateur{
@@ -1139,6 +1141,6 @@ class NetworkJoueurOrdinateur extends JoueurOrdinateur{
 	notifyPay(montant){
 		Notifier.payer(montant,this);
 	}
-
-
 }
+
+export {JoueurOrdinateur};

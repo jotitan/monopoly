@@ -1,5 +1,7 @@
 /* Gestion de la strategie */
-/* @required GestionFiche */
+import {GestionFiche} from "../display/case_jeu.js";
+import {ETAT_LIBRE} from "../display/case_jeu.js";
+import {GestionJoueur} from "../gestion_joueurs.js";
 
 /* @Abstract */
 /* Objet qui gere la strategie. IL y a differentes implementations */
@@ -25,7 +27,7 @@ class Strategie {
 
     /* Renvoie des stats sur les proprietes concernees par cette strategie : nombre de propriete, nombre de libre... */
     getStatsProprietes(){
-        var stats = {
+        let stats = {
             color: {
                 total: 0,
                 libre: 0,
@@ -41,7 +43,7 @@ class Strategie {
         };
         let it = GestionFiche.iteratorTerrains();
         while (it.hasNext()) {
-            var fiche = it.next();
+            let fiche = it.next();
             if (fiche.statut != null) {
                 stats.all.total++;
                 if (fiche.statut === ETAT_LIBRE) {
@@ -70,10 +72,10 @@ class Strategie {
 	/* @param isEnchere : indique que la mesure est faite pour une enchere */
 	/* Cas des encheres, on ajoute un critere qui determine si le terrain est indispensable pour la strategie : autre groupe, autre terrain... */
 	interetGlobal(propriete, joueur, isEnchere) {
-        var i1 = this.interetPropriete(propriete);
-        var statutGroup = this.statutGroup(propriete, joueur, isEnchere);
-		var i2 = statutGroup.statut;
-        var interet = {interet:1};
+        let i1 = this.interetPropriete(propriete);
+        let statutGroup = this.statutGroup(propriete, joueur, isEnchere);
+        let i2 = statutGroup.statut;
+        let interet = {interet:1};
 		if (i1 === false && i2 === 0) {
             interet = {interet:0.2};	// Permet en cas de situation tres confortable de continuer a investir
         }
@@ -104,15 +106,15 @@ class Strategie {
 
 	/* Determine l'interet de la propriete par rapport a l'etat de la strategie */
     /* @return : un nombre inférieur à 1 */
-	interetProprieteInStrategie (propriete){
-		var stats = this.getStatsProprietes();
+	interetProprieteInStrategie (){
+        let stats = this.getStatsProprietes();
         /* Si les terrains sont presques tous libres, renvoie un calcul logarithmique (entre 67 et 100% de terrain libre) */
         return 0.5 + parseFloat((Math.log(((Math.min(100-stats.color.pourcent,32.5))/50)+1)).toFixed(2));    
 	}
 	
     /* Calcul l'interet pour la maison (a partir des groupes interessant) */
     interetPropriete (propriete) {
-        for (var color in this.groups) {
+        for (let color in this.groups) {
             if (this.groups[color] === propriete.color || (propriete.type === 'gare' && this.interetGare)) {
                 return true;
             }
@@ -129,13 +131,13 @@ class Strategie {
 		  5 : joueur en possede deja une de la famille */
     /* @param isEnchere : achat du terrain a un autre joueur, on ne prend pas en compte le statut libre */
     statutGroup (propriete, joueur, isEnchere) {
-        var nbTotal = 0;
-        var nbLibre = 0;
-        var dernierJoueur = null;
-        var nbEquals = 0;
-        var nbPossede = 0;
-        for (var id in propriete.groupe.fiches) {
-            var fiche = propriete.groupe.fiches[id];
+        let nbTotal = 0;
+        let nbLibre = 0;
+        let dernierJoueur = null;
+        let nbEquals = 0;
+        let nbPossede = 0;
+        for (let id in propriete.groupe.fiches) {
+            let fiche = propriete.groupe.fiches[id];
             nbTotal++;
             if (fiche.statut === ETAT_LIBRE) {
                 nbLibre++;
@@ -251,7 +253,7 @@ class CrazyStrategie extends Strategie {
     }
 }
 
-var GestionStrategie = {
+let GestionStrategie = {
 	strategies : [CheapStrategie, MediumStrategie, HardStrategie,SmartStrategie,CrazyStrategie],
 	create:function(id){
 		return new this.strategies[id]();
@@ -266,3 +268,5 @@ var GestionStrategie = {
 		return this.strategies.length;
 	}
 };
+
+export {GestionStrategie};

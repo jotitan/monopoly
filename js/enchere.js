@@ -1,8 +1,12 @@
+import {wrapDialog,CommunicationDisplayer} from './display/displayers.js'
+import {GestionJoueur} from "./gestion_joueurs.js";
+
+
 /* Gestion des encheres et des echanges entre joueurs */
 
 /* Gestion d'une mise aux enchere d'un terrain */
 /* Empecher un joueur d'acquerir un terrain ? */
-var GestionEnchere = {
+let GestionEnchere = {
     terrain: null,
     callback: null,
     miseDepart: 0,
@@ -182,7 +186,7 @@ var GestionEnchere = {
     }
 }
 
-var GestionEnchereDisplayer = {
+let GestionEnchereDisplayer = {
     panel: null,
     currentMontant: 0,
     currentEncherisseur: null,
@@ -293,7 +297,7 @@ var GestionEnchereDisplayer = {
 }
 
 /* Panneau d'echange */
-var EchangeDisplayer = {
+let EchangeDisplayer = {
     panel: null,
     selectJoueurs: null,
     listTerrainsJoueur: null,
@@ -389,7 +393,7 @@ var EchangeDisplayer = {
 }
 
 /* Gere l'echange d'une propriete entre deux joueurs */
-var GestionEchange = {
+let GestionEchange = {
     running: false,
     /* Indique qu'un echange est en cours, la partie est bloquee */
     demandeur: null,
@@ -502,3 +506,5 @@ var GestionEchange = {
         }
     }
 }
+
+export {GestionEnchere,GestionEnchereDisplayer,EchangeDisplayer,GestionEchange};

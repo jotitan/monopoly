@@ -1,10 +1,12 @@
 import {GestionFiche,ETAT_ACHETE,ETAT_LIBRE} from "../display/case_jeu.js";
 import {Pion} from "./pion.js";
 import {GestionDes} from "./dices.js";
-import {doActions,VARIANTES} from "../monopoly.js";
+import {doActions,globalStats,VARIANTES} from "../monopoly.js";
 import {GestionJoueur} from "../gestion_joueurs.js";
-import {FicheDisplayer} from "../display/displayers.js";
+import {FicheDisplayer,CommunicationDisplayer} from "../display/displayers.js";
 import {InfoMessage} from "../display/message.js";
+import {GestionTerrains} from "../gestion_terrains.js";
+import {GestionEnchere,GestionEnchereDisplayer} from "../enchere.js";
 
 // Represente houses of a player
 class Maisons{
@@ -399,7 +401,7 @@ class Joueur {
 	}
 
 	/* Affiche la contreproposition du joueur */
-	traiteContreProposition(proposition, joueur, terrain) {
+	traiteContreProposition(proposition) {
 		CommunicationDisplayer.showContreProposition(proposition);
 	}
 
@@ -490,10 +492,10 @@ class Joueur {
 	}
 
 	// Fonction a ne pas implementer avec un vrai joueur
-	actionApresDes(buttons, propriete) {}
+	actionApresDes() {}
 
 	// Fonction a ne pas implementer pour un vrai joueur
-	actionAvantDesPrison(buttons) {}
+	actionAvantDesPrison() {}
 
 	// Achete une propriete
 	/* @param montant : montant a payer si different du prix d'achat (cas des encheres) */
@@ -528,7 +530,7 @@ class Joueur {
 
 	_drawTitrePropriete(maison) {
 		var m = this.cherchePlacement(maison);
-		var input = '<input type=\"button\" id=\"idInputFiche' + maison.id + '\" class=\"ui-corner-all fiche color_' + maison.color.substring(1) + '\" value=\"' + maison.nom + '\" id=\"fiche_' + maison.id + '\"/>';
+		var input = `<input type="button" id="idInputFiche${maison.id}" class="ui-corner-all fiche color_${maison.color.substring(1)}" value="${maison.nom}" id="fiche_${maison.id}"/>`;
 		if (m != null) {
 			m.after(input);
 		} else {
@@ -591,8 +593,7 @@ class Joueur {
 
 	setArgent(montant) {
 		if(montant === undefined){
-			console.log("error montant")
-			throw "error"
+			throw "error montant";
 		}
 		this.montant = montant;
 		$('.compte-banque', this.div).text(montant);
@@ -640,9 +641,10 @@ class Joueur {
 			callback();
 		}
 	}
-	notifyHypotheque(terrain){}
-	notifyLeveHypotheque(terrain){}
-	notifyPay(montant){}
+
+	notifyHypotheque(){}
+	notifyLeveHypotheque(){}
+	notifyPay(){}
 
 	/* Paye une somme a un joueur */
 	/* Si le joueur ne peut pas payer, une exception est lancee (il a perdu). On recupere le peut d'argent a prendre */

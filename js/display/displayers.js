@@ -1,6 +1,8 @@
 /* Displayers d'information */
 
 import {GestionJoueur} from "../gestion_joueurs.js";
+import {CURRENCY} from "../monopoly.js";
+import {GestionEchange} from "../enchere.js";
 
 function initWrapButtons(bloc){
     currentDialogId++;
@@ -41,6 +43,21 @@ function openWrapDialog(bloc){
     bloc.dialog('open');
 }
 
+function wrapFicheDialog(bloc,title="Fiche",height=410){
+    wrapDialog(bloc,{
+        autoOpen: false,
+        title: title,
+        width: 280,
+        height: height,
+        modal: true,
+        position: { my: "center top", at: "center top", of: window },
+        resizable: false,
+        close: function () {
+            FicheDisplayer.close();
+        }
+    });
+}
+
 function wrapDialog(bloc,parameters){
     if(parameters === 'open'){
         return openWrapDialog(bloc);
@@ -71,46 +88,14 @@ let FicheDisplayer = {
         $('body').append(this.detailFicheJunior);
         this.ficheCompagnie = $('#ficheCompagnie');
 
-        wrapDialog(this.fiche,{
-            autoOpen: false,
-            title: "Fiche",
-            width: 280,
-            height: 410,
-            modal: true,
-            position: { my: "center top", at: "center top", of: window },
-            resizable: false,
-            close: function () {
-                FicheDisplayer.close();
-            }
-        });
+
+        wrapFicheDialog(this.fiche);
         this.fiche.prev().css("background", "url()");
 
-        wrapDialog(this.ficheJunior,{
-            autoOpen: false,
-            title: "Fiche",
-            width: 280,
-            height: 410,
-            modal: true,
-            position: { my: "center top", at: "center top", of: window },
-            resizable: false,
-            close: function () {
-                FicheDisplayer.close();
-            }
-        });
+        wrapFicheDialog(this.ficheJunior);
         this.ficheJunior.prev().css("background", "url()");
 
-        wrapDialog(this.ficheCompagnie,{
-            autoOpen: false,
-            title: "Fiche",
-            width: 280,
-            height: 350,
-            modal: true,
-            position: { my: "center top", at: "center top", of: window },
-            resizable: false,
-            close: function () {
-                FicheDisplayer.close();
-            }
-        });
+        wrapFicheDialog(this.ficheCompagnie,"Fiche",350);
         this.ficheCompagnie.prev().css("background", "url()");
     },
     openDetail:function(fiche,input){
@@ -235,7 +220,7 @@ let CommunicationDisplayer = {
         this.joueur = displayJoueur;
         this.panel.dialog('option', 'title', 'Echange entre ' + demandeur.nom + ' et ' + proprietaire.nom);
         $('.proposition,.communications', this.panel).empty();
-        $('.proposition', this.panel).append('<div>Terrain : <span style="font-weight:bold;color:' + terrain.color + '">' + terrain.nom + '</div>');
+        $('.proposition', this.panel).append(`<div>Terrain : <span style="font-weight:bold;color:${terrain.color}">${terrain.nom}</div>`);
 
         this._showProposition($('.proposition', this.panel), proposition);
         $('.communications', this.panel).empty();
@@ -243,15 +228,15 @@ let CommunicationDisplayer = {
     /* Affiche le panneau de saisie d'une contreproposition */
     _showContrePanel: function (joueur, joueurAdverse) {
         // Affichage sur l'ecran principal ou le meme
-        var groups = joueur.maisons.getMaisonsGrouped();
-        var divProposition = $('<div class="contreProposition"></div>');
-        for (var g in groups) {
+        let groups = joueur.maisons.getMaisonsGrouped();
+        let divProposition = $('<div class="contreProposition"></div>');
+        for (let g in groups) {
             // ne pas affiche si construit )groups[g].isConstructed()
-            var group = groups[g];
-            var div = $('<div style="font-weight:bold;color:' + group.color + '">Groupe ' + group.groupe + '<br/></div>');
-            for (var f in group.terrains) {
-                var fiche = group.terrains[f];
-                div.append('<input type="checkbox" value="' + fiche.id + '" id="chk_id_' + fiche.id + '"/><label for="chk_id_' + fiche.id + '">' + fiche.nom + '</label><br/>');
+            let group = groups[g];
+            let div = $(`<div style="font-weight:bold;color:${group.color}">Groupe ${group.groupe}<br/></div>`);
+            for (let f in group.terrains) {
+                let fiche = group.terrains[f];
+                div.append(`<input type="checkbox" value="${fiche.id}" id="chk_id_${fiche.id}"/><label for="chk_id_${fiche.id}">${fiche.nom}</label><br/>`);
             }
             divProposition.append(div);
         }
@@ -259,12 +244,10 @@ let CommunicationDisplayer = {
         $('.communications', this.panel).append(divProposition);
         this.addMessage("Quelle est votre contreproposition", [{
             nom: "Proposer",
-            action: function () {
-                CommunicationDisplayer._doContreproposition(CommunicationDisplayer.joueur);
-            }
+            action: () =>CommunicationDisplayer._doContreproposition(CommunicationDisplayer.joueur)
         }, {
             nom: "Rejeter",
-            action: function () {
+            action: ()=> {
                 CommunicationDisplayer.close();
                 GestionEchange.reject(CommunicationDisplayer.joueur);
             }
@@ -272,18 +255,18 @@ let CommunicationDisplayer = {
     },
     _doContreproposition: function (joueur) {
         // On recupere les informations
-        var proposition = {
+        let proposition = {
             terrains: [],
             compensation: 0
         };
         $('.contreProposition:last :checkbox:checked', this.panel).each(function () {
-            var terrain = GestionFiche.getById($(this).val());
+            let terrain = GestionFiche.getById($(this).val());
             if (terrain != null) {
                 proposition.terrains.push(terrain);
             }
         });
-        var argent = $('.contreProposition:last :text.argent', this.panel).val();
-        if (argent != "") {
+        let argent = $('.contreProposition:last :text.argent', this.panel).val();
+        if (argent !== "") {
             proposition.compensation = parseInt(argent);
         }
         GestionEchange.contrePropose(proposition, joueur);
@@ -291,46 +274,42 @@ let CommunicationDisplayer = {
     _showProposition: function (div, proposition) {
         div.append('Proposition : ');
         if (proposition.terrains.length > 0) {
-            for (var t in proposition.terrains) {
-                var terrain = proposition.terrains[t];
-                div.append('<div style="padding-left:20px;color:' + terrain.color + '">' + terrain.nom + '</div>');
+            for (let t in proposition.terrains) {
+                let terrain = proposition.terrains[t];
+                div.append(`<div style="padding-left:20px;color:${terrain.color}">${terrain.nom}</div>`);
             }
         }
-        div.append('<div style="padding-left:20px;">Argent : ' + CURRENCY + ' ' + proposition.compensation + '</div>');
+        div.append(`<div style="padding-left:20px;">Argent : ${CURRENCY} ${proposition.compensation}</div>`);
     },
     /* Affiche la proposition acceptee */
-    showAccept: function (callback) {
-        this.addMessage("La proposition a été <span style=\"color:green\">acceptée</span>", [{
+    showAccept: function (callback=()=>{}) {
+        this.addMessage('La proposition a été <span style="color:green">acceptée</span>', [{
             nom: "Fermer",
-            action: function () {
+            action: ()=> {
                 CommunicationDisplayer.close();
-                if (callback) {
-                    callback();
-                }
+                callback();
             }
         }]);
     },
-    showReject: function (callback) {
-        this.addMessage("La proposition a été <span style=\"color:red\">rejetée</span>.", [{
+    showReject: function (callback=()=>{}) {
+        this.addMessage('La proposition a été <span style="color:red">rejetée</span>.', [{
             nom: "Fermer",
-            action: function () {
+            action: () =>{
                 CommunicationDisplayer.close();
-                if (callback) {
-                    callback();
-                }
+                callback();
             }
         }]);
     },
     showContreProposition: function (contreProposition) {
         this.addMessage("Une contreproposition a été faite", [{
             nom: "Refuser",
-            action: function () {
+            action: ()=> {
                 CommunicationDisplayer.close();
                 GestionEchange.reject(CommunicationDisplayer.joueur);
             }
         }, {
             nom: "Accepter",
-            action: function () {
+            action: () =>{
                 CommunicationDisplayer.close();
                 GestionEchange.accept(CommunicationDisplayer.joueur);
             }
@@ -344,10 +323,10 @@ let CommunicationDisplayer = {
         }
         $('.communications', this.panel).append('<p>' + message + '</p>');
         if (actions != null && actions.length > 0) {
-            var buttons = [];
-            for (var act in actions) {
-                var action = actions[act];
-                var button = {
+            let buttons = [];
+            for (let act in actions) {
+                let action = actions[act];
+                let button = {
                     text: action.nom,
                     click: action.action
                 };
@@ -362,8 +341,7 @@ let CommunicationDisplayer = {
     },
     open: function () {
         wrapDialog(this.panel,'open');
-        //this.panel.dialog('open');
     }
-}
+};
 
-export {wrapDialog,CommunicationDisplayer,FicheDisplayer};
+export {wrapDialog,CommunicationDisplayer,FicheDisplayer,initWrapButtons};

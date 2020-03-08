@@ -31,13 +31,13 @@
 					<button title="Lancez les dés" id="idLancerDes" class="action-joueur" disabled="disabled">
 						<img src="img/dices.png"/>
 					</button>
-					<button title="Achat maisons" class="action-joueur action-normal" onclick="GestionTerrains.open()" disabled="disabled">
+					<button title="Achat maisons" id="idOpenPanelHouses" class="action-joueur action-normal" disabled="disabled">
 						<img src="img/house2.png"/>
 					</button>
-					<button title="Echange terrains" id="idEchangeTerrains" class="action-normal action-joueur" onclick="EchangeDisplayer.open(GestionJoueur.getJoueurCourant())" disabled="disabled">
+					<button title="Echange terrains" id="idEchangeTerrains" class="action-normal action-joueur" disabled="disabled">
 						<img src="img/swap.png"/>
 					</button>
-					<button title="Terrains libres" class="action-joueur" onclick="$('#idTerrainsLibres').dialog('open');" disabled="disabled">
+					<button title="Terrains libres" id="idOpenFreeTerrains" class="action-joueur" disabled="disabled">
 						<img src="img/list.png"/>
 					</button>
 				</div>

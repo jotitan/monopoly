@@ -652,17 +652,16 @@ class JoueurOrdinateur extends Joueur {
 		}
 		// On temporise la reponse de IA_TIMEOUT + random de ms
 		let timeout = IA_TIMEOUT * (Math.random() + 1);
-		let _self = this;
-		setTimeout(function () {
-			if(_self.currentEnchere === undefined){return;}
-			if (montant > _self.currentEnchere.budgetMax ||
-				(_self.currentEnchere.joueurInteresse!=null && !_self.currentEnchere.joueurInteresse.equals(lastEncherisseur))) {
+		setTimeout(() =>{
+			if(this.currentEnchere === undefined){return;}
+			if (montant > this.currentEnchere.budgetMax ||
+				(this.currentEnchere.joueurInteresse!=null && !this.currentEnchere.joueurInteresse.equals(lastEncherisseur))) {
 				// Exit enchere
-				GestionEnchere.exitEnchere(_self);
+				GestionEnchere.exitEnchere(this);
 			} else {
 				// Fait une enchere. Dans le cas d'un blocage, joueurInteresse est renseigne. Enchere uniquement s'il est le dernier
 				try {
-					GestionEnchere.doEnchere(_self, montant, jeton);
+					GestionEnchere.doEnchere(this, montant, jeton);
 				} catch (e) {
 					// Si une enchere a deja ete faite et update, on arrete la demande (joueur trop lent)
 				}
@@ -890,7 +889,7 @@ class JoueurOrdinateur extends Joueur {
 
 	// Return the minimum price to build an house
 	minimumPriceHouse(){
-		return this.maisons.maisons.reduce((a,b)=>a.prixMaison < b.prixMaison ? a:b).prixMaison;
+		return this.maisons.maisons.length === 0 ? 0 : this.maisons.maisons.reduce((a,b)=>a.prixMaison < b.prixMaison ? a:b,Number.MAX_SAFE_INTEGER).prixMaison;
 	}
 
 	/* Construit des maisons / hotels

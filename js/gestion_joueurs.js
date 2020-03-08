@@ -144,11 +144,11 @@ let GestionJoueur = {
     /* On pondere par rapport au nombre de joueur (plus il est grand, plus le nombre de maison a de l'importance) */
     _calculateScore(joueur){
         let statsJoueur = joueur.getStats();
-        var critere1 = statsJoueur.argent/10000;
-        var critere2 = (joueur.maisons.length*this.joueurs.length)/4;	// < 1
-        var critere3 = statsJoueur.hotel/12 + statsJoueur.maison/32;	// < 2
-        var critere4 = statsJoueur.tour * this.joueurs.length;		// ~5 * nbJoueurs
-        var critere5 = 1;												// ~5 * nbJoueurs
+        let critere1 = statsJoueur.argent/10000;
+        let critere2 = (joueur.maisons.maisons.length*this.joueurs.length)/4;	// < 1
+        let critere3 = 1 + statsJoueur.hotel/12 + statsJoueur.maison/32;	// < 2
+        let critere4 = (statsJoueur.tour+1) * this.joueurs.length;		// ~5 * nbJoueurs
+        let critere5 = 1;												// ~5 * nbJoueurs
         this.joueurs.forEach(j=>{
             critere5+=(!j.equals(joueur))?j.pion.stats.tour:0;
         });
@@ -237,6 +237,9 @@ let GestionJoueur = {
         this.joueurs.forEach(callback,element);
     }
 };
+
+
+window.gestion = GestionJoueur;
 
 // Construit les joueurs en fonction du context
 let JoueurFactory = {

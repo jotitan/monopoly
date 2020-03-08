@@ -1,4 +1,9 @@
 import {wrapDialog} from './display/displayers.js'
+import {CURRENCY} from "./monopoly.js";
+import {GestionJoueur} from "./gestion_joueurs.js";
+import {InfoMessage} from "./display/message.js";
+import {GestionConstructions} from "./gestion_constructions.js";
+import {GestionFiche} from "./display/case_jeu.js";
 
 /* Panneau de gestion des terrains */
 
@@ -35,7 +40,7 @@ let GestionTerrains = {
         this.update();
     },
     init: function (config) {
-		this.divArgentRestant = $(config.idArgentRestant);
+        this.divArgentRestant = $(config.idArgentRestant);
         this.divCout = $(config.idCout);
         this.Hypotheque.init(config.idTerrains,config.idHypotheque);
         this.LeverHypotheque.init(config.idTerrainsHypotheque);
@@ -49,18 +54,12 @@ let GestionTerrains = {
             title: 'Gestion des maisons',
             modal: true,
             buttons: {
-                'Fermer': function () {
-                    GestionTerrains.closePanel();
-                },
-                "Valider": function () {
-                    GestionTerrains.valider();
-                }
+                'Fermer': () =>this.closePanel(),
+                "Valider": () =>this.valider()
             },
             autoOpen: false,
-            open: function () {
-                // On charge les proprietes a hypothequer
-                GestionTerrains.load();
-            }
+            // On charge les proprietes a hypothequer
+            open: ()=>this.load()
         });
     },
     /* Charge les informations */
@@ -79,7 +78,7 @@ let GestionTerrains = {
     update: function () {
         // On mets a jour les maisons, si on ajoute, on ne peut pas hypothequer
         this.Hypotheque.update();
-        var totals = this.Constructions.update();
+        let totals = this.Constructions.update();
         this.divCout.text((this.cout - totals.cout) + " " + CURRENCY);
         this.totalRestant = GestionJoueur.getJoueurCourant().montant + this.cout - totals.cout;
         this.divArgentRestant.text((this.totalRestant) + " " + CURRENCY);
@@ -100,11 +99,10 @@ let GestionTerrains = {
         if (!this.verify()) {
             return;
         }
-
-		this.Constructions.vendre();
+        this.Constructions.vendre();
         this.Hypotheque.valider();
-		this.LeverHypotheque.valider();        
-		this.Constructions.acheter();
+        this.LeverHypotheque.valider();
+        this.Constructions.acheter();
 
         this.closePanel();
     },
@@ -137,48 +135,46 @@ let GestionTerrains = {
         update: function () {
             $('option[data-color]', this.select).removeAttr('disabled');
             // On desactive les propriete qui ont des terrains construits
-            var colors = GestionTerrains.Constructions.getGroupesConstruits();
-            for (var i in colors) {
+            let colors = GestionTerrains.Constructions.getGroupesConstruits();
+            for (let i in colors) {
                 $('option[data-color="' + colors[i] + '"]', this.select).attr('disabled', 'disabled');
             }
         },
         /* Charge les terrains hypothequables */
         load: function () {
-            var proprietes = GestionJoueur.getJoueurCourant().maisons.findMaisonsHypothecables();
-			proprietes.forEach(function(m){GestionTerrains.Hypotheque.addOption(m);});
+            GestionJoueur.getJoueurCourant().maisons
+                .findMaisonsHypothecables()
+                .forEach(function(m){GestionTerrains.Hypotheque.addOption(m);});
         },
         addGroup: function (group) {
-            for (var index in group.proprietes) {
-                this.addOption(group.proprietes[index]);
-            }
+            group.proprietes.forEach(g=>this.addOption(g));
         },
         addOption: function (fiche) {
             // On verifie si l'option n'existe pas
             if (this.select.find('option[value="' + fiche.id + '"]').length > 0) {
                 return;
             }
-            var option = $("<option data-color='" + fiche.color + "' value='" + fiche.id + "'>" + fiche.nom + " (+" + fiche.montantHypotheque + " " + CURRENCY + ")</option>");
+            let option = $("<option data-color='" + fiche.color + "' value='" + fiche.id + "'>" + fiche.nom + " (+" + fiche.montantHypotheque + " " + CURRENCY + ")</option>");
             option.data("fiche", fiche);
             this.select.append(option);
         },
         /* Ajoute une propriete aux hypotheques */
         add: function () {
-            var terrain = $('option:selected', this.select);
-            var fiche = terrain.data("fiche");
+            let terrain = $('option:selected', this.select);
+            let fiche = terrain.data("fiche");
             this.table[fiche.id] = fiche;
-            var div = $('<div>' + fiche.nom + '</div>');
-            var boutonAnnuler = $('<button style="margin-right:5px">Annuler</button>');
-            var _self = this;
-            boutonAnnuler.click(function () {
-                _self.addOption(fiche);
+            let div = $('<div>' + fiche.nom + '</div>');
+            let boutonAnnuler = $('<button style="margin-right:5px">Annuler</button>');
+            boutonAnnuler.click(() =>{
+                this.addOption(fiche);
                 $(this).parent().remove();
                 GestionTerrains.addCout(-fiche.montantHypotheque);
-                delete _self.table[fiche.id];
+                delete this.table[fiche.id];
                 // On permet l'achat de maison sur les terrains si aucune maison hypotheque
                 // On prend toutes les couleurs et on les elimine
-                var colors = [];
-                for (var id in _self.table) {
-                    colors.push(_self.table[id].color.substring(1));
+                let colors = [];
+                for (let id in this.table) {
+                    colors.push(this.table[id].color.substring(1));
                 }
                 GestionTerrains.Constructions.showByColors(colors);
             });
@@ -206,11 +202,11 @@ let GestionTerrains = {
             }
         },
         load: function () {
-            var proprietes = GestionJoueur.getJoueurCourant().maisons.findMaisonsHypothequees();
+            let proprietes = GestionJoueur.getJoueurCourant().maisons.findMaisonsHypothequees();
             $(proprietes).each(function () {
-                var fiche = this;
-                var div = $("<div>" + this.nom + "</div>");
-                var boutonLever = $('<button style="margin-right:5px">Lever</button>');
+                let fiche = this;
+                let div = $("<div>" + this.nom + "</div>");
+                let boutonLever = $('<button style="margin-right:5px">Lever</button>');
                 boutonLever.click(function () {
                     GestionTerrains.LeverHypotheque.lever($(this), fiche);
                 });
@@ -230,16 +226,16 @@ let GestionTerrains = {
         div: null,
         infos: null,
         simulation: null, // Simulation d'achat pour evaluer la faisabilite
-		resteConstructions:null,
+        resteConstructions:null,
         init: function (idTerrains,idCout,idConstructions) {
             this.div = $(idTerrains);
             this.infos = $(idCout);
-    		this.resteConstructions = $(idConstructions);
+            this.resteConstructions = $(idConstructions);
         },
         /* Verifie pour la validation et renvoie une exception */
         verify: function () {
             // On verifie les terrains libres
-            var testGroups = [];
+            let testGroups = [];
             $('select[data-color]', this.div).each(function () {
                 var color = $(this).get(0).dataset.color;
                 if (testGroups[color] == null) {
@@ -251,7 +247,7 @@ let GestionTerrains = {
                 testGroups[color].min = Math.min(testGroups[color].min, $(this).val());
                 testGroups[color].max = Math.max(testGroups[color].max, $(this).val());
             });
-            for (var color in testGroups) {
+            for (let color in testGroups) {
                 if (testGroups[color].max - testGroups[color].min > 1) {
                     throw "Il faut equilibrer les maisons";
                 }
@@ -262,8 +258,8 @@ let GestionTerrains = {
             }
         },
         valider: function () {
-            for (var achat in this.table) {
-                var data = this.table[achat];
+            for (let achat in this.table) {
+                let data = this.table[achat];
                 data.propriete.setNbMaison(data.nbMaison);
                 GestionJoueur.getJoueurCourant().payer(data.cout);
             }
@@ -280,45 +276,45 @@ let GestionTerrains = {
                 });
             }
         },
-		acheter: function () {
+        acheter: function () {
             for (var achat in this.table) {
-                var data = this.table[achat];
-				if(data.propriete.nbMaison < data.nbMaison){
-					data.propriete.setNbMaison(data.nbMaison);
-					GestionJoueur.getJoueurCourant().payer(data.cout);
-				}
+                let data = this.table[achat];
+                if(data.propriete.nbMaison < data.nbMaison){
+                    data.propriete.setNbMaison(data.nbMaison);
+                    GestionJoueur.getJoueurCourant().payer(data.cout);
+                }
             }
             // On modifie les quantites de maisons / hotels
             this._doBuyConstructions();
         },
-		vendre: function () {
+        vendre: function () {
             for (var achat in this.table) {
-                var data = this.table[achat];
+                let data = this.table[achat];
                 if(data.propriete.nbMaison > data.nbMaison){
-					data.propriete.setNbMaison(data.nbMaison);
-					GestionJoueur.getJoueurCourant().payer(data.cout);
-				}
-            }                    
+                    data.propriete.setNbMaison(data.nbMaison);
+                    GestionJoueur.getJoueurCourant().payer(data.cout);
+                }
+            }
         },
         reset: function () {
             this.table = [];
             this.div.empty();
         },
         getGroupesConstruits: function () {
-            var colors = [];
+            let colors = [];
             $('select[data-color]:has(option:selected[value!=0])', this.div).each(function () {
                 colors.push($(this).attr('data-color'));
             });
             return colors;
         },
         update: function () {
-            var totals = {
+            let totals = {
                 nbMaison: 0,
                 nbHotel: 0,
                 cout: 0
             };
-            var projects = [];
-            for (var achat in this.table) {
+            let projects = [];
+            for (let achat in this.table) {
                 let fiche = GestionFiche.getById(achat);
                 let project = {
                     from: {},
@@ -332,7 +328,7 @@ let GestionTerrains = {
                     project.from.type = "maison";
                     project.from.nb = parseInt(fiche.nbMaison);
                 }
-                var data = this.table[achat];
+                let data = this.table[achat];
                 totals.cout += data.cout;
                 if (data.hotel > 0) {
                     project.to.type = "hotel";
@@ -360,26 +356,26 @@ let GestionTerrains = {
             this.div.find('div[class*="-' + color.substring(1) + '"]').hide();
         },
         showByColors: function (exludeColors) {
-            var selectors = "div";
-            for (var index in exludeColors) {
+            let selectors = "div";
+            for (let index in exludeColors) {
                 selectors += ':not([class*="-' + exludeColors[index] + '"])';
             }
             this.div.find(selectors).show();
         },
         _displayProprietesOfGroup:function(group){
-            for (var index in group.proprietes) {
+            for (let index in group.proprietes) {
                 let propriete = group.proprietes[index];
                 let divTerrain = $(`<div class="propriete propriete-${propriete.color.substring(1)}"></div>`);
                 divTerrain.append(`<span style="color:${propriete.color}" class="title-propriete">${propriete.nom}</span>`);
                 let select = $(`<select data-color="${propriete.color}" class="${((propriete.nbMaison === 5) ? 'hotel' : 'maison')}"></select>`);
                 select.data("propriete", propriete);
                 select.data("group", group);
-                for (var j = 0; j <= ((GestionTerrains.banqueroute) ? propriete.nbMaison : 5); j++) {
+                for (let j = 0; j <= ((GestionTerrains.banqueroute) ? propriete.nbMaison : 5); j++) {
                     select.append("<option class=\"" + ((j === 5) ? "hotel" : "maison") + "\" value=\"" + j + "\" " + ((propriete.nbMaison === j) ? "selected" : "") + ">x " + ((j === 5) ? 1 : j) + "</option>");
                 }
                 select.change( (e) =>{
                     let target = $(e.currentTarget);
-                    var prop = target.data("propriete");
+                    let prop = target.data("propriete");
                     // On verifie changement par rapport a l'origine
                     let value = parseInt(target.val());
                     if (prop.nbMaison === value) {
@@ -417,12 +413,12 @@ let GestionTerrains = {
             }
         },
         load: function () {
-            var groups = GestionJoueur.getJoueurCourant().maisons.findConstructiblesGroupes();
-            for (var color in groups) {
+            let groups = GestionJoueur.getJoueurCourant().maisons.findConstructiblesGroupes();
+            for (let color in groups) {
                 let divTitre = $(`<div style="cursor:pointer" class="group-${color.substring(1)}">Groupe <span style="color:${color};font-weight:bold">${groups[color].proprietes[0].groupe.nom}'</span></div>`);
                 divTitre.data("color", color.substring(1));
                 divTitre.click(function () {
-                    var id = 'div.propriete-' + $(this).data('color');
+                    let id = 'div.propriete-' + $(this).data('color');
                     if ($(`${id}:visible`, this.div).length === 0) {
                         $(id, this.div).slideDown(); // On ouvre
                     } else {

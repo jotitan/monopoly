@@ -1,6 +1,7 @@
-import {wrapDialog,CommunicationDisplayer} from './display/displayers.js'
+import {wrapDialog,initWrapButtons,CommunicationDisplayer} from './display/displayers.js'
 import {GestionJoueur} from "./gestion_joueurs.js";
-
+import {GestionFiche} from "./display/case_jeu.js";
+import {CURRENCY} from "./monopoly.js";
 
 /* Gestion des encheres et des echanges entre joueurs */
 
@@ -44,20 +45,20 @@ let GestionEnchere = {
             joueur: this.terrain.joueurPossede
         });
 
-        GestionJoueur.forEach(function(j){j.initEnchere(this.transaction, this.terrain, this.miseDepart)},this);
+        GestionJoueur.forEach(j=>j.initEnchere(this.transaction, this.terrain, this.miseDepart));
         this.runEnchere();
     },
     computeEncherisseurs: function () {
-        var encherisseurs = [];
-        var observers = [];
+        let encherisseurs = [];
+        let observers = [];
         // exclure les joueurs qui ont perdus
-        GestionJoueur.forEach(function(j){
-            if (!j.equals(this.terrain.joueurPossede) && !j.equals(this.joueurLastEnchere) && this.joueursExit[j.nom] == null && j.defaite == false) {
+        GestionJoueur.forEach(j=>{
+            if (!j.equals(this.terrain.joueurPossede) && !j.equals(this.joueurLastEnchere) && this.joueursExit[j.nom] == null && j.defaite === false) {
                 encherisseurs.push(j);
             } else {
                 observers.push(j);
             }
-        },this);
+        });
         return {
             encherisseurs: encherisseurs,
             observers: observers
@@ -65,12 +66,12 @@ let GestionEnchere = {
     },
     /* On lance aux joueurs les encheres, le premier qui repond prend la main, on relance a chaque fois (et on invalide le resultat des autres) */
     /* @param newEnchere : quand l'enchere, on notifie les joueurs (ca peut les interesse) */
-    runEnchere: function (newEnchere) {
-        var joueurs = this.computeEncherisseurs();
-        for (var i = 0; i < joueurs.encherisseurs.length; i++) {
+    runEnchere: function (newEnchere=false) {
+        let joueurs = this.computeEncherisseurs();
+        for (let i = 0; i < joueurs.encherisseurs.length; i++) {
             joueurs.encherisseurs[i].updateEnchere(this.transaction, this.currentJeton, this.nextMontantEnchere, this.joueurLastEnchere,newEnchere);
         }
-        for (var i = 0; i < joueurs.observers.length; i++) {
+        for (let i = 0; i < joueurs.observers.length; i++) {
             joueurs.observers[i].updateInfoEnchere(this.nextMontantEnchere, this.joueurLastEnchere);
         }
     },
@@ -79,9 +80,6 @@ let GestionEnchere = {
         if(this.joueursExit[joueur.nom] != null){return;}
         this.joueursExit[joueur.nom] = joueur;
         GestionJoueur.forEach(function(j){j.notifyExitEnchere(joueur)});
-        /*for (var j in joueurs) {
-            joueurs[j].notifyExitEnchere(joueur);
-        }*/
         if (this.checkEndEnchere()) {
             this.manageEndEnchere();
         }
@@ -167,10 +165,7 @@ let GestionEnchere = {
     endEnchere: function () {
         this.terrain = null;
         // On notifie les joueurs que c'est termine
-        GestionJoueur.forEach(function(j){j.endEnchere(this.lastEnchere, this.joueurLastEnchere)},this);
-        /*for (var j in joueurs) {
-            joueurs[j].endEnchere(this.lastEnchere, this.joueurLastEnchere);
-        }*/
+        GestionJoueur.forEach(j=>j.endEnchere(this.lastEnchere, this.joueurLastEnchere));
     },
     /* Enregistre les joueurs qui accusent reception. Quand tous ont repondu, on lance le callback */
     checkEndNotify: function (joueur) {
@@ -184,7 +179,7 @@ let GestionEnchere = {
             this.callback();
         }
     }
-}
+};
 
 let GestionEnchereDisplayer = {
     panel: null,
@@ -230,9 +225,7 @@ let GestionEnchereDisplayer = {
         }
         this.panel.dialog('option', 'buttons', [{
             text: 'Fermer',
-            click: function () {
-                GestionEnchereDisplayer.close();
-            }
+            click: ()=>GestionEnchereDisplayer.close()
         }]);
         initWrapButtons(this.panel);
 
@@ -276,16 +269,12 @@ let GestionEnchereDisplayer = {
         }
         if (canDoEnchere) {
             // On affiche les boutons pour encherir ou quitter
-            var buttons = [{
+            let buttons = [{
                 text: 'Encherir',
-                click: function () {
-                    GestionEnchere.doEnchere(GestionEnchereDisplayer.displayer, montant, contexte.jeton);
-                }
+                click: () =>GestionEnchere.doEnchere(GestionEnchereDisplayer.displayer, montant, contexte.jeton)
             }, {
                 text: 'Quitter',
-                click: function () {
-                    GestionEnchere.exitEnchere(GestionEnchereDisplayer.displayer);
-                }
+                click: ()=>GestionEnchere.exitEnchere(GestionEnchereDisplayer.displayer)
             }];
             this.panel.dialog('option', 'buttons', buttons);
             initWrapButtons(this.panel);
@@ -315,27 +304,23 @@ let EchangeDisplayer = {
             position: { my: "center top", at: "center top", of: window },
             width: 400,
             buttons: {
-                "Annuler": function () {
-                    EchangeDisplayer.close();
-                },
-                "Proposer": function () {
-                    EchangeDisplayer.propose();
-                }
+                "Annuler": ()=>EchangeDisplayer.close(),
+                "Proposer":  ()=>EchangeDisplayer.propose()
             }
         });
         // On charge les joueurs
-        GestionJoueur.forEach(function(j){this.selectJoueurs.append('<option value="' + j.id + '">' + j.nom + '</option>');},this)
+        GestionJoueur.forEach(j=>this.selectJoueurs.append(`<option value="${j.id}">${j.nom}</option>`))
         this.selectJoueurs.change(function () {
             $('option:not(:first),optgroup', EchangeDisplayer.listTerrainsAdversaire).remove();
-            var joueur = GestionJoueur.getById(EchangeDisplayer.selectJoueurs.val());
+            let joueur = GestionJoueur.getById(EchangeDisplayer.selectJoueurs.val());
             if (joueur != null) {
-                var groups = joueur.maisons.getMaisonsGrouped();
-                for (var g in groups) {
-                    var group = groups[g];
-                    var optionGroup = $('<optgroup label="Groupe ' + group.groupe + '" style="color:' + group.color + '"></optGroup>');
-                    for (var f in group.terrains) {
-                        var fiche = group.terrains[f];
-                        optionGroup.append('<option value="' + fiche.id + '">' + fiche.nom + '</option>');
+                let groups = joueur.maisons.getMaisonsGrouped();
+                for (let g in groups) {
+                    let group = groups[g];
+                    let optionGroup = $(`<optgroup label="Groupe ${group.groupe}" style="color:${group.color}"></optGroup>`);
+                    for (let f in group.terrains) {
+                        let fiche = group.terrains[f];
+                        optionGroup.append(`<option value="${fiche.id}">${fiche.nom}</option>`);
                     }
                     EchangeDisplayer.listTerrainsAdversaire.append(optionGroup);
                 }
@@ -353,10 +338,10 @@ let EchangeDisplayer = {
         let groups = joueur.maisons.getMaisonsGrouped();
         for (var g in groups) {
             // ne pas affiche si construit )groups[g].isConstructed()
-            var group = groups[g];
-            var div = $(`<div style="font-weight:bold;color:${group.color}">Groupe ${group.groupe}<br/></div>`);
-            for (var f in group.terrains) {
-                var fiche = group.terrains[f];
+            let group = groups[g];
+            let div = $(`<div style="font-weight:bold;color:${group.color}">Groupe ${group.groupe}<br/></div>`);
+            for (let f in group.terrains) {
+                let fiche = group.terrains[f];
                 div.append(`<input type="checkbox" value="${fiche.id}" id="chk_id_${fiche.id}"/><label for="chk_id_${fiche.id}">${fiche.nom}</label><br/>`);
             }
             EchangeDisplayer.listTerrainsJoueur.append(div);
@@ -364,15 +349,15 @@ let EchangeDisplayer = {
         this.panel.dialog('open');
     },
     propose: function () {
-        var proprietaire = GestionJoueur.getById(EchangeDisplayer.selectJoueurs.val());
-        var terrain = GestionFiche.getById(this.listTerrainsAdversaire.val());
+        let proprietaire = GestionJoueur.getById(EchangeDisplayer.selectJoueurs.val());
+        let terrain = GestionFiche.getById(this.listTerrainsAdversaire.val());
         if (proprietaire == null || terrain == null) {
             return;
         }
         // L'action de fin, c'est la reprise du jeu par le joueur (donc rien)
         GestionEchange.init(this.joueur, proprietaire, terrain, null);
         // On recupere la proposition
-        var proposition = {
+        let proposition = {
             terrains: [],
             compensation: 0
         };

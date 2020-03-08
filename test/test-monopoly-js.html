@@ -13,8 +13,8 @@
       import {ETAT_ACHETE, ETAT_LIBRE} from "../js/display/case_jeu.js";
       import {GestionJoueur} from "../js/gestion_joueurs.js";
       import {JoueurOrdinateur} from "../js/entity/joueur_robot.js";
-      import {GestionConstructions} from "../js/gestion_constructions";
-      import {GestionEchange} from "../js/enchere";
+      import {GestionConstructions} from "../js/gestion_constructions.js";
+      import {GestionEchange} from "../js/enchere.js";
       // Mock de la fonction specifique a un vrai plateau
       let calculeVoisinsGroupes = function(){};
       GestionDes.gestionDes = new GestionDesImpl();
@@ -391,13 +391,13 @@
          // Creation de plusieurs terrains
          let joueurs = initJoueurs();
          let fiches = [];
-         fiches[0] = new Fiche(0, 0, ["#AAAAAA",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[1] = new Fiche(0, 1, ["#AAAAAA",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[2] = new Fiche(0, 4, ["#AAABBB",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[3] = new Fiche(0, 6, ["#AAABBB",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[4] = new Fiche(0, 7, ["#AAABBB",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[5] = new Fiche(1, 1, ["#CCCCCC",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
-         fiches[6] = new Fiche(1, 2, ["#CCCCCC",""], "").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[0] = new Fiche(0, 0, ["#AAAAAA",""], "Fiche 1").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[1] = new Fiche(0, 1, ["#AAAAAA",""], "Fiche 2").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[2] = new Fiche(0, 4, ["#AAABBB",""], "Fiche 3").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[3] = new Fiche(0, 6, ["#AAABBB",""], "Fiche 4").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[4] = new Fiche(0, 7, ["#AAABBB",""], "Fiche 5").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[5] = new Fiche(1, 1, ["#CCCCCC",""], "Fiche 6").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
+         fiches[6] = new Fiche(1, 2, ["#CCCCCC",""], "Fiche 7").setCosts(10000, [1000,2000,4000,8000,16000,25000], 5000);
          new Groupe("Vert","#AAAAAA").add(fiches[0]).add(fiches[1]);
          new Groupe("Bleu","#AAABBB").add(fiches[2]).add(fiches[3]).add(fiches[4]);
          new Groupe("Rouge","#CCCCCC").add(fiches[5]).add(fiches[6]);

@@ -40,7 +40,7 @@ var DrawerHelper = {
 	/* Detect les sauts de ligne */
 	_splitLine:function(mots){
 		if(mots.some(function(m){return m.indexOf('\n')!==-1;})){
-			var mots2 = [];
+			let mots2 = [];
 			mots.forEach(function(m){
 				if(m.indexOf('\n')!==-1){
 					m.split('\n').forEach(function(mm){mots2.push(mm);});
@@ -58,16 +58,16 @@ var DrawerHelper = {
 		canvas.fillStyle=DrawerFactory.getInfo('textColor') || '#000000';
         canvas.font = `${this.fontWeight} ` + size + "pt Arial";
 
-		var mots = this._splitLine([text]);
+		let mots = this._splitLine([text]);
 		
-		var mots2 = [];
+		let mots2 = [];
 		mots.forEach(function(m){
 			if (canvas.measureText(m).width > width - 5) {
 				// On split les mots intelligement (on regroupe)
-				var splitMots = m.split(" ");
-				var tempMots = [];
-				var pos = 0;
-				for (var i = 0; i < splitMots.length; i++) {
+				let splitMots = m.split(" ");
+				let tempMots = [];
+				let pos = 0;
+				for (let i = 0; i < splitMots.length; i++) {
 					if (pos > 0 && (canvas.measureText(tempMots[pos - 1]).width + canvas.measureText(splitMots[i]).width) < width - 5) {
 						// on concatene
 						tempMots[pos - 1] = tempMots[pos - 1] + " " + splitMots[i];

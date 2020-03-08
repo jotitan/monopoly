@@ -59,7 +59,7 @@ let globalStats = {	// Statistiques
 	positions:[]
 }
 
-var CURRENCY = "F.";
+let CURRENCY = "F.";
 
 class CarteActionWrapper{
 	constructor(libelle,carte,title,color,triggerLabel){
@@ -137,7 +137,7 @@ class PlateauDetails {
 			dataType: 'json',
 			context:this})
 			.done(data => this.managePlateauConfig(data,options,callback))
-			.fail(() =>alert(`Le plateau ${nomPlateau} n'existe pas (data/${nomPlateau})`));
+			.fail(() =>alert(`Le plateau ${path} n'existe pas`));
 	}
 	managePlateauConfig(data,options,callback){
 		if(data.plateau == null){
@@ -146,8 +146,8 @@ class PlateauDetails {
 		this.name = options.nomPlateau;
 		// Gestion de l'heritage
 		let dataExtend = $.extend(true,{},data,this._temp_load_data || {});
-		if(dataExtend.extend != null){
-			this.load(options.nomPlateau,data.extend,callback,dataExtend);
+		if(data.extend != null){
+			this.load(data.extend,options,callback,dataExtend);
 		}
 		else{
 			this._build(dataExtend,options,callback);
@@ -196,7 +196,7 @@ class PlateauDetails {
 		GestionDes.gestionDes = this.isQuickDice() ? new GestionDesRapideImpl(this.infos.montantPrison,this.parcGratuit):new GestionDesImpl(this.infos.montantPrison,this.parcGratuit);
 		GestionDes.init(this.infos.rollColor);
 		let plateauSize = DrawerFactory.dimensions.plateauSize;
-		$('#idLancerDes').unbind('click').bind('click',()=>GestionJoueur.lancerDes());
+		this._createPlateauActions();
 		this.drawing = DrawerFactory.getPlateau(0, 0, plateauSize, plateauSize, this.infos.backgroundColor);
 		Drawer.add(this.drawing, 0);
 		this._draw(data);
@@ -204,6 +204,13 @@ class PlateauDetails {
 		Drawer.init(plateauSize, plateauSize);
 		GestionEnchere.setPasVente(this.infos.montantDepart / 10);
 		callback();
+	}
+	_createPlateauActions(){
+		$('#idLancerDes').unbind('click').bind('click',()=>GestionJoueur.lancerDes());
+		$('#idOpenPanelHouses').unbind('click').bind('click',()=>GestionTerrains.open());
+
+		$('#idEchangeTerrains').unbind('click').bind('click',()=>EchangeDisplayer.open(GestionJoueur.getJoueurCourant()));
+		$('#idOpenFreeTerrains').unbind('click').bind('click',()=>$('#idTerrainsLibres').dialog('open'));
 	}
 	isQuickDice(){
 		return this.options.typeGame === "quick";
@@ -533,7 +540,6 @@ class Monopoly {
 			Sauvegarde.save(name,this.plateau.name);
 		});
 		// panneau d'achats de maisons
-		//$('#achatMaisons').dialog({
 		wrapDialog($('#achatMaisons'),{
 			autoOpen: false,
 			position: { my: "center top", at: "center top", of: window },
@@ -542,7 +548,6 @@ class Monopoly {
 			height: 300
 		});
 		// Liste des terrains libres
-		//$('#idTerrainsLibres').dialog({
 		wrapDialog($('#idTerrainsLibres'),{
 			autoOpen:false,
 			position: { my: "center top", at: "center top", of: window },

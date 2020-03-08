@@ -1,6 +1,7 @@
-import {DEBUG,CURRENCY} from "../monopoly.js";
+import {DEBUG} from "../monopoly.js";
 import {wrapDialog} from "./displayers.js";
 
+let CURRENCY = 'Fr.';
 /* Gere les affichages (message dialog, trace de log) */
 
 /* Intercepte les evenements et affiche une information */
@@ -17,18 +18,16 @@ let MessageDisplayer = {
     },
     write: function (joueur, message) {
         MessageDisplayer.order++;
-        var orderMessage = (DEBUG) ? (' (' + MessageDisplayer.order + ')') : '';
+        let orderMessage = (DEBUG) ? (' (' + MessageDisplayer.order + ')') : '';
         this.div.prepend('<div><span style="color:' + joueur.color + '">' + joueur.nom + '</span> : ' + message + orderMessage + '</div>');
     },
     _buildProposition: function (proposition) {
         if (proposition == null) {
             return "";
         }
-        var message = "";
-        if (proposition.terrains.length > 0) {
-            for (var i = 0; i < proposition.terrains.length; i++) {
-                message += this.events._buildTerrain(proposition.terrains[i]) + ", ";
-            }
+        let message = "";
+        if (proposition.terrains!=null && proposition.terrains.length > 0) {
+            message=proposition.terrains.reduce((str,terrain)=>this.events._buildTerrain(terrain) + ", " + str,"");
         }
         if (proposition.compensation > 0) {
             message += " compensation : " + proposition.compensation + " " + CURRENCY;

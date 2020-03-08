@@ -1,11 +1,12 @@
 import {DrawerFactory,Component} from "./graphics.js";
 import {Des,DesRapide} from './square_graphics.js'
 import {DrawerHelper} from "./graphics.js";
+import {VARIANTES} from "../monopoly.js";
 
 /* Implementation pour plateau carree */
 
-var pasAngle = (2 * Math.PI)/40;	// Nombre de case du jeu
-var nbJoueurs = 0;	// Permet de definir la position des joueurs
+let pasAngle = (2 * Math.PI)/40;	// Nombre de case du jeu
+let nbJoueurs = 0;	// Permet de definir la position des joueurs
 
 function getCoords(angle,rayon){
 	return {
@@ -22,7 +23,6 @@ function convertAxePos(axe,pos){
 class CirclePionJoueur extends Component {
 	constructor(color, largeur,img) {
 		super();
-		this.pos;
 		this.color = color;
 		this.isSelected = false;
 		this.largeur = largeur / 2; // Largeur du pion
@@ -61,14 +61,13 @@ class CirclePionJoueur extends Component {
 		this.isSelected = value;
 	}
 
-	_moveTo (ciblePos,callback = ()=>{},pas){
+	_moveTo (ciblePos,callback,pas){
 		if(this.pos!==ciblePos){
 			setTimeout(()=>{
 				this.pos=parseFloat((this.pos + pas).toFixed(1));
 				if(this.pos>=40){
 					this.pos = 0;
 				}
-				//drawPion(currentPos);
 				this._moveTo(ciblePos,callback,pas);
 			},30);
 		}
@@ -144,78 +143,97 @@ class CircleCase extends Component{
 		}
 	}
 
+	_drawColorGroup(canvas,param){
+		let bgColor = DrawerFactory.getInfo("backgroundColor");
+		if(this.color!=null){
+			canvas.beginPath();
+			canvas.fillStyle=this.color;
+			canvas.moveTo(param.centre,param.centre);
+			canvas.arc(param.centre,param.centre,param.centre,(this.pos)*pasAngle,(this.pos+1)*pasAngle);
+			canvas.fill();
+			canvas.closePath();
+			canvas.beginPath();
+			canvas.fillStyle=bgColor;
+			canvas.moveTo(param.centre,param.centre);
+			canvas.arc(param.centre,param.centre,param.centre-param.bordure,this.pos*pasAngle,(this.pos+1)*pasAngle);
+			canvas.fill();
+			canvas.closePath();
+		}
+	}
+
+	_drawPossede(canvas,param){
+		if(this.joueurPossede!=null){
+			canvas.beginPath();
+			canvas.strokeStyle=this.joueurPossede.color;
+			canvas.lineWidth = 10;
+			canvas.arc(param.centre,param.centre,param.centre-DrawerFactory.dimensions.innerPlateauSize+15,(this.pos)*pasAngle,(this.pos+1)*pasAngle);
+			canvas.stroke();
+			canvas.closePath();
+		}
+	}
+	_drawTitle(canvas,param){
+		if(this.title!=null){
+			if(this.pos > 10 && this.pos < 30){
+				let p = getCoords((this.pos+0.7)*pasAngle,param.centre-param.bordure -5);
+				DrawerHelper.writeText(this.title, p.x + param.centre,p.y + param.centre, ((this.pos+20)%40 + 0.8)*pasAngle, canvas,9,param.length,'left');
+			}else{
+				let length = Math.min(param.length,canvas.measureText(this.title).width + 30);
+				let p = getCoords((this.pos+0.3)*pasAngle,param.centre -param.length - param.bordure -5);
+				DrawerHelper.writeText(this.title, p.x + param.centre,p.y + param.centre, (this.pos + 0.2)*pasAngle, canvas,9,length,'right');
+			}
+		}
+	}
+	_drawPrice(canvas,param){
+		if(this.prix!=null){
+			if(this.pos > 10 && this.pos < 30){
+				let p = getCoords((this.pos+0.15)*pasAngle,param.centre-param.bordure -5);
+				DrawerHelper.writeText(this.prix, p.x + param.centre,p.y + param.centre, ((this.pos+20)%40 + 0.5)*pasAngle, canvas,9,param.length,'left');
+			}else{
+				let length = Math.min(param.length,canvas.measureText(this.prix).width + 30);
+				let p = getCoords((this.pos+0.9)*pasAngle,param.centre - param.length- param.bordure -5);
+				DrawerHelper.writeText(this.prix, p.x + param.centre,p.y + param.centre, (this.pos + 0.7)*pasAngle, canvas,9,length,'right');
+			}
+		}
+	}
+	_drawHouses(canvas,param){
+		if(this.nbMaison <= 4){
+			for(let i = 0 ; i < this.nbMaison ; i++){
+				let coords = getCoords((this.pos + 0.25*i)*pasAngle,param.centre-4);
+				DrawerHelper.drawImage(canvas, this.imageMaison, param.centre+coords.x, param.centre+coords.y, 16,16, this.pos*pasAngle + Math.PI/2)
+			}
+		}
+		else{
+			let coords = getCoords((this.pos + 0.4)*pasAngle,param.centre-4);
+			DrawerHelper.drawImage(canvas, this.imageHotel, param.centre+coords.x, param.centre+coords.y, 16,16, this.pos*pasAngle + Math.PI/2)
+		}
+	}
+	_drawImage(canvas,param){
+		if (this.data.image != null) {
+			// Margin left est defini en portion d'angle (1 correspond a la largeur de la case), margin top joue sur la longueur du rayon
+			let coords = getCoords((this.pos + this.data.image.marginLeft)*pasAngle,param.centre-param.bordure -5 - this.data.image.margin);
+			let angle = DrawerHelper.fromDegresToRad(this.data.image.rotate) + this.pos*pasAngle + Math.PI/2;
+			DrawerHelper.drawImage(canvas, this.data.image, param.centre+coords.x, param.centre+coords.y, this.data.image.width,this.data.image.height, angle);
+		}
+	}
+
 	draw(canvas){
 		let centre = DrawerFactory.dimensions.plateauSize/2;
 		let bordure = DrawerFactory.dimensions.bordure/2;
 		let pA = getCoords(this.pos*pasAngle,centre);
 		let pB = getCoords(this.pos*pasAngle,centre-DrawerFactory.dimensions.innerPlateauSize);
-		let bgColor = DrawerFactory.getInfo("backgroundColor");
+
 		canvas.fillStyle='#FFFFFF';
 		canvas.lineWidth=0.5;
 		canvas.moveTo(centre - pA.x,centre - pA.y);
 		canvas.lineTo(centre - pB.x,centre - pB.y);
 		canvas.stroke();
-		let maxLength = 120;
-		if(this.color!=null){
-			canvas.beginPath();
-			canvas.fillStyle=this.color;
-			canvas.moveTo(centre,centre);
-			canvas.arc(centre,centre,centre,(this.pos)*pasAngle,(this.pos+1)*pasAngle);
-			canvas.fill();
-			canvas.closePath();
-			canvas.beginPath();
-			canvas.fillStyle=bgColor;
-			canvas.moveTo(centre,centre);
-			canvas.arc(centre,centre,centre-bordure,this.pos*pasAngle,(this.pos+1)*pasAngle);
-			canvas.fill();
-			canvas.closePath();
-		}
-		if(this.title!=null){
-			if(this.pos > 10 && this.pos < 30){
-				let p = getCoords((this.pos+0.7)*pasAngle,centre-bordure -5);
-				DrawerHelper.writeText(this.title, p.x + centre,p.y + centre, ((this.pos+20)%40 + 0.8)*pasAngle, canvas,9,maxLength,'left');
-			}else{
-				let length = canvas.measureText(this.title).width + 30;
-				let p = getCoords((this.pos+0.3)*pasAngle,centre -maxLength - bordure -5);
-				DrawerHelper.writeText(this.title, p.x + centre,p.y + centre, (this.pos + 0.2)*pasAngle, canvas,9,maxLength,'right');
-			}
-		}
-		if(this.prix!=null){
-			if(this.pos > 10 && this.pos < 30){
-				let p = getCoords((this.pos+0.15)*pasAngle,centre-bordure -5);
-				DrawerHelper.writeText(this.prix, p.x + centre,p.y + centre, ((this.pos+20)%40 + 0.5)*pasAngle, canvas,9,maxLength,'left');
-			}else{
-				let length = canvas.measureText(this.prix).width + 30;
-				let p = getCoords((this.pos+0.9)*pasAngle,centre -maxLength - bordure -5);
-				DrawerHelper.writeText(this.prix, p.x + centre,p.y + centre, (this.pos + 0.7)*pasAngle, canvas,9,maxLength,'right');
-			}
-		}
-		// Image
-		if (this.data.image != null) {
-			// Margin left est defini en portion d'angle (1 correspond a la largeur de la case)
-			// Margin top joue sur la longueur du rayon
-			let coords = getCoords((this.pos + this.data.image.marginLeft)*pasAngle,centre-bordure -5 - this.data.image.margin);
-			var angle = DrawerHelper.fromDegresToRad(this.data.image.rotate) + this.pos*pasAngle + Math.PI/2;
-			DrawerHelper.drawImage(canvas, this.data.image, centre+coords.x, centre+coords.y, this.data.image.width,this.data.image.height, angle);
-		}
-		if(this.nbMaison <= 4){
-			for(let i = 0 ; i < this.nbMaison ; i++){
-				let coords = getCoords((this.pos + 0.25*i)*pasAngle,centre-4);
-				DrawerHelper.drawImage(canvas, this.imageMaison, centre+coords.x, centre+coords.y, 16,16, this.pos*pasAngle + Math.PI/2)
-			}
-		}
-		else{
-			let coords = getCoords((this.pos + 0.4)*pasAngle,centre-4);
-			DrawerHelper.drawImage(canvas, this.imageHotel, centre+coords.x, centre+coords.y, 16,16, this.pos*pasAngle + Math.PI/2)
-		}
-		if(this.joueurPossede!=null){
-			canvas.beginPath();
-			canvas.strokeStyle=this.joueurPossede.color;
-			canvas.lineWidth = 10;
-			canvas.arc(centre,centre,centre-DrawerFactory.dimensions.innerPlateauSize+15,(this.pos)*pasAngle,(this.pos+1)*pasAngle);
-			canvas.stroke();
-			canvas.closePath();
-		}
+		let param = {centre:centre,bordure:bordure,length:140};
+		this._drawColorGroup(canvas,param);
+		this._drawTitle(canvas,param);
+		this._drawPrice(canvas,param);
+		this._drawImage(canvas,param);
+		this._drawHouses(canvas,param);
+		this._drawPossede(canvas,param);
 	}
 }
 
@@ -235,7 +253,7 @@ class CircleCaseSpeciale extends Component{
 		canvas.moveTo(centre - pA.x,centre - pA.y);
 		canvas.lineTo(centre - pB.x,centre - pB.y);
 		canvas.stroke();
-		DrawerHelper.drawArcCircle(canvas,bgColor,centre,{x:centre,y:centre},this.pos*pasAngle,(this.pos+1)*pasAngle)
+		DrawerHelper.drawArcCircle(canvas,bgColor,centre,{x:centre,y:centre},this.pos*pasAngle,(this.pos+1)*pasAngle);
 		let maxLength = 120;
 		if(this.title!=null){
 			if(this.pos > 10 && this.pos < 30){

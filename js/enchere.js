@@ -318,10 +318,7 @@ let EchangeDisplayer = {
                 for (let g in groups) {
                     let group = groups[g];
                     let optionGroup = $(`<optgroup label="Groupe ${group.groupe}" style="color:${group.color}"></optGroup>`);
-                    for (let f in group.terrains) {
-                        let fiche = group.terrains[f];
-                        optionGroup.append(`<option value="${fiche.id}">${fiche.nom}</option>`);
-                    }
+                    group.terrains.forEach(fiche=>optionGroup.append(`<option value="${fiche.id}">${fiche.nom}</option>`));
                     EchangeDisplayer.listTerrainsAdversaire.append(optionGroup);
                 }
             }
@@ -335,17 +332,7 @@ let EchangeDisplayer = {
 
         // Affichage des terrains du joueur
         this.listTerrainsJoueur.empty();
-        let groups = joueur.maisons.getMaisonsGrouped();
-        for (var g in groups) {
-            // ne pas affiche si construit )groups[g].isConstructed()
-            let group = groups[g];
-            let div = $(`<div style="font-weight:bold;color:${group.color}">Groupe ${group.groupe}<br/></div>`);
-            for (let f in group.terrains) {
-                let fiche = group.terrains[f];
-                div.append(`<input type="checkbox" value="${fiche.id}" id="chk_id_${fiche.id}"/><label for="chk_id_${fiche.id}">${fiche.nom}</label><br/>`);
-            }
-            EchangeDisplayer.listTerrainsJoueur.append(div);
-        }
+        CommunicationDisplayer.showTerrainByGroup(EchangeDisplayer.listTerrainsJoueur,joueur);
         this.panel.dialog('open');
     },
     propose: function () {

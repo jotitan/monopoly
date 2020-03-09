@@ -225,11 +225,8 @@ let CommunicationDisplayer = {
         this._showProposition($('.proposition', this.panel), proposition);
         $('.communications', this.panel).empty();
     },
-    /* Affiche le panneau de saisie d'une contreproposition */
-    _showContrePanel: function (joueur, joueurAdverse) {
-        // Affichage sur l'ecran principal ou le meme
+    showTerrainByGroup(bloc,joueur){
         let groups = joueur.maisons.getMaisonsGrouped();
-        let divProposition = $('<div class="contreProposition"></div>');
         for (let g in groups) {
             // ne pas affiche si construit )groups[g].isConstructed()
             let group = groups[g];
@@ -238,8 +235,14 @@ let CommunicationDisplayer = {
                 let fiche = group.terrains[f];
                 div.append(`<input type="checkbox" value="${fiche.id}" id="chk_id_${fiche.id}"/><label for="chk_id_${fiche.id}">${fiche.nom}</label><br/>`);
             }
-            divProposition.append(div);
+            bloc.append(div);
         }
+    },
+    /* Affiche le panneau de saisie d'une contreproposition */
+    _showContrePanel: function (joueur, joueurAdverse) {
+        let divProposition = $('<div class="contreProposition"></div>');
+        // Affichage sur l'ecran principal ou le meme
+        this.showTerrainByGroup(divProposition,joueur);
         divProposition.append('Argent : <input class="argent" type="text"/>');
         $('.communications', this.panel).append(divProposition);
         this.addMessage("Quelle est votre contreproposition", [{

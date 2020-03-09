@@ -171,27 +171,34 @@ class CircleCase extends Component{
 			canvas.closePath();
 		}
 	}
+	_writeText(canvas,value,param,angle){
+		DrawerHelper.writeText(value,param.p.x + param.centre,param.p.y + param.centre, angle*pasAngle, canvas,9,param.length,param.align);
+	}
 	_drawTitle(canvas,param){
 		if(this.title!=null){
 			if(this.pos > 10 && this.pos < 30){
-				let p = getCoords((this.pos+0.7)*pasAngle,param.centre-param.bordure -5);
-				DrawerHelper.writeText(this.title, p.x + param.centre,p.y + param.centre, ((this.pos+20)%40 + 0.8)*pasAngle, canvas,9,param.length,'left');
+				param.p = getCoords((this.pos+0.7)*pasAngle,param.centre-param.bordure -5);
+				param.align='left';
+				this._writeText(canvas,this.title,param,((this.pos+20)%40 + 0.8));
 			}else{
-				let length = Math.min(param.length,canvas.measureText(this.title).width + 30);
-				let p = getCoords((this.pos+0.3)*pasAngle,param.centre -param.length - param.bordure -5);
-				DrawerHelper.writeText(this.title, p.x + param.centre,p.y + param.centre, (this.pos + 0.2)*pasAngle, canvas,9,length,'right');
+				param.length = Math.min(param.length,canvas.measureText(this.title).width + 30);
+				param.p = getCoords((this.pos+0.3)*pasAngle,param.centre -param.length - param.bordure -5);
+				param.align='right';
+				this._writeText(canvas,this.title,param,this.pos + 0.2);
 			}
 		}
 	}
 	_drawPrice(canvas,param){
 		if(this.prix!=null){
 			if(this.pos > 10 && this.pos < 30){
-				let p = getCoords((this.pos+0.15)*pasAngle,param.centre-param.bordure -5);
-				DrawerHelper.writeText(this.prix, p.x + param.centre,p.y + param.centre, ((this.pos+20)%40 + 0.5)*pasAngle, canvas,9,param.length,'left');
+				param.p = getCoords((this.pos+0.15)*pasAngle,param.centre-param.bordure -5);
+				param.align='left';
+				this._writeText(canvas,this.prix,param,((this.pos+20)%40 + 0.5));
 			}else{
-				let length = Math.min(param.length,canvas.measureText(this.prix).width + 30);
-				let p = getCoords((this.pos+0.9)*pasAngle,param.centre - param.length- param.bordure -5);
-				DrawerHelper.writeText(this.prix, p.x + param.centre,p.y + param.centre, (this.pos + 0.7)*pasAngle, canvas,9,length,'right');
+				param.length = Math.min(param.length,canvas.measureText(this.prix).width + 30);
+				param.p = getCoords((this.pos+0.9)*pasAngle,param.centre - param.length- param.bordure -5);
+				param.align='right';
+				this._writeText(canvas,this.prix,param,this.pos + 0.7);
 			}
 		}
 	}

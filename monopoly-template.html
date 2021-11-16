@@ -13,28 +13,28 @@
 	<script type="text/javascript" src="lib/jquery.arctext.js"></script>
 
 	<!--(if target dev)><!-->
-	<script type="text/javascript" src="js/sauvegarde.js"></script>
-	<script type="text/javascript" src="js/utils.js"></script>
-	<script type="text/javascript" src="js/gestion_constructions.js"></script>
-	<script type="text/javascript" src="js/gestion_terrains.js"></script>
-	<script type="text/javascript" src="js/enchere.js"></script>
-	<script type="text/javascript" src="js/ui/graphics.js"></script>
-	<script type="text/javascript" src="js/ui/square_graphics.js"></script>
-	<script type="text/javascript" src="js/ui/circle_graphics.js"></script>
-	<script type="text/javascript" src="js/display/message.js"></script>
-	<script type="text/javascript" src="js/entity/comportement.js"></script>
-	<script type="text/javascript" src="js/entity/strategie.js"></script>
-	<script type="text/javascript" src="js/entity/pion.js"></script>
-	<script type="text/javascript" src="js/entity/joueur.js"></script>
-	<script type="text/javascript" src="js/entity/network/local_joueur.js"></script>
-	<script type="text/javascript" src="js/entity/network/remote_manager.js"></script>
-	<script type="text/javascript" src="js/entity/joueur_robot.js"></script>
-	<script type="text/javascript" src="js/gestion_joueurs.js"></script>
-	<script type="text/javascript" src="js/entity/cartes_action.js"></script>
-	<script type="text/javascript" src="js/display/displayers.js"></script>
-	<script type="text/javascript" src="js/display/case_jeu.js"></script>
-	<script type="text/javascript" src="js/entity/dices.js"></script>
-	<script type="text/javascript" src="js/monopoly.js"></script>
+	<script type="module" src="js/sauvegarde.js"></script>
+	<script type="module" src="js/utils.js"></script>
+	<script type="module" src="js/gestion_constructions.js"></script>
+	<script type="module" src="js/gestion_terrains.js"></script>
+	<script type="module" src="js/enchere.js"></script>
+	<script type="module" src="js/ui/graphics.js"></script>
+	<script type="module" src="js/ui/square_graphics.js"></script>
+	<script type="module" src="js/ui/circle_graphics.js"></script>
+	<script type="module" src="js/display/message.js"></script>
+	<script type="module" src="js/entity/comportement.js"></script>
+	<script type="module" src="js/entity/strategie.js"></script>
+	<script type="module" src="js/entity/pion.js"></script>
+	<script type="module" src="js/entity/joueur.js"></script>
+	<script type="module" src="js/entity/network/local_joueur.js"></script>
+	<script type="module" src="js/entity/network/remote_manager.js"></script>
+	<script type="module" src="js/entity/joueur_robot.js"></script>
+	<script type="module" src="js/gestion_joueurs.js"></script>
+	<script type="module" src="js/entity/cartes_action.js"></script>
+	<script type="module" src="js/display/displayers.js"></script>
+	<script type="module" src="js/display/case_jeu.js"></script>
+	<script type="module" src="js/entity/dices.js"></script>
+	<script type="module" src="js/monopoly.js"></script>
 	<!--<!(endif)-->
 
 	<!--(if target prod)><!-->
@@ -321,12 +321,8 @@
 </div>
 <div id="actions"></div>
 <div class="mobile"></div>
-<script language="javascript">
-	// On detecte le type de donnees a charger
-	/*let nomPlateau = "data-monopoly.json";
-	if (location.href.indexOf("plateau=")!==-1) {
-		nomPlateau = "data-monopoly-" + location.href.substring(location.href.indexOf("plateau=")+8) + ".json";
-	}*/
+<script language="module">
+	import {startMonopoly} from './js/monopoly.js'
 	let debug = false;
 	$(function(){
 		$('#idCreationGame').tabs();

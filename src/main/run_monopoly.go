@@ -1,17 +1,21 @@
 package main
 
 import (
-	"dice"
+	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jotitan/monopoly/dice"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var resources string
@@ -28,11 +32,12 @@ func runServer(){
 	server := http.NewServeMux()
 	server.HandleFunc("/dices",runDice)
 	server.HandleFunc("/createGame",createGame)
+	server.HandleFunc("/game/exist",isGameExists)
 	server.HandleFunc("/event",manageEvent)
 	server.HandleFunc("/connect",connectGame)
 	server.HandleFunc("/",root)
 
-	fmt.Println("Run on 8100")
+	log.Println("Run on 8100")
 	http.ListenAndServe(":8100",server)
 }
 
@@ -49,15 +54,32 @@ func runDice(w http.ResponseWriter, r * http.Request){
 
 // Serve files
 func root(response http.ResponseWriter,request *http.Request){
+	if strings.HasSuffix(request.RequestURI[1:],".js") {
+		response.Header().Set("Content-Type","text/javascript")
+	}
 	http.ServeFile(response,request,filepath.Join(resources,request.RequestURI[1:]))
 }
 
+func generateGameId()string{
+	d := []byte(time.Now().Format("20060102150405"))
+	r := rand.Uint64()
+	data := make([]byte,8)
+	binary.LittleEndian.PutUint64(data,r)
+	d = append(d,data...)
+	return hex.EncodeToString(data)
+}
+
+func isGameExists(w http.ResponseWriter, r * http.Request) {
+	gameID := r.FormValue("id")
+	_,exist := games[gameID]
+	w.Write([]byte(fmt.Sprintf("%t",exist)))
+}
+
 func createGame(w http.ResponseWriter, r * http.Request){
-	counterGame++
-	gameID := fmt.Sprintf("%d",counterGame)
+	gameID := generateGameId()
 	games[gameID] = &Game{ID:gameID,Players:make(map[string]chan []byte),counterID:0}
 	w.Header().Set("Content-type","application/json")
-	w.Write([]byte(fmt.Sprintf("{\"game\":\"%d\"}",counterGame)))
+	w.Write([]byte(fmt.Sprintf("{\"game\":\"%s\"}",gameID)))
 }
 
 // Receive an event from a player, send to others, avoid launcher
@@ -95,24 +117,36 @@ func connectGame(w http.ResponseWriter, r * http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	gameID := r.FormValue("game")
+	uniquePlayer := r.FormValue("player")
 	if game,exist := games[gameID] ; exist {
 		game.counterID++
-		playerID := fmt.Sprintf("player_%d",game.counterID)
+		playerID := fmt.Sprintf("player_%d", game.counterID)
 		game.Players[playerID] = make(chan []byte, 10)
-
-		writeEvent(w, "welcome", []byte("{\"message\":\"Start game\",\"playerID\":\"" + playerID + "\"}"))
+		if strings.EqualFold("",uniquePlayer) {
+			writeEvent(w, "welcome", []byte("{\"message\":\"Start game\",\"playerID\":\""+playerID+"\"}"))
+		}else{
+			writeEvent(w, "welcome", []byte(fmt.Sprintf("{\"message\":\"Rejoin\",\"playerID\":\"%s\",\"uniquePlayerID\":\"%s\"}",playerID,uniquePlayer)))
+		}
 		go func() {
 			<-r.Context().Done()
 			close(game.Players[playerID])
 			game.Players[playerID] = nil
 			delete(game.Players,playerID)
+			// If all players are disconnected, remove game
+			if len(game.Players) == 0 {
+				log.Println("Remove game",gameID)
+				delete(games,gameID)
+			}else{
+				// notify players for disconnect
+				dispatchEventToPlayers(gameID,"",[]byte("{\"kind\":\"exit\",\"player\":\"" + playerID + "\"}"))
+			}
 		}()
 		for {
 			if event, more := <-game.Players[playerID]; more {
 				writeEvent(w, "event", event)
 			} else {
 				// Close the chanel
-				fmt.Println("Close the chanel")
+				log.Println("Close the chanel")
 				break
 			}
 		}
@@ -122,7 +156,7 @@ func connectGame(w http.ResponseWriter, r * http.Request) {
 }
 
 func writeEvent(w http.ResponseWriter,eventName string, event []byte){
-	fmt.Println("Send event " + eventName, " : " + string(event))
+	log.Println(fmt.Sprintf("Send %s : %s",eventName,string(event)))
 	w.Write([]byte(fmt.Sprintf("event: %s\n",eventName)))
 	w.Write([]byte("data: " + string(event) + "\n\n"))
 	w.(http.Flusher).Flush()

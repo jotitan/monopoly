@@ -1,11 +1,11 @@
-import {Joueur} from './entity/joueur.js'
-import {JoueurOrdinateur} from "./entity/joueur_robot.js";
-import {CURRENCY,VARIANTES,globalStats,startMonopoly} from "./monopoly.js"
+import {Joueur,NetworkJoueur} from './entity/joueur.js'
+import {RemotePlayer,MasterRemotePlayer,LocalPlayer} from './entity/network/local_joueur.js'
+import {JoueurOrdinateur,NetworkJoueurOrdinateur} from "./entity/joueur_robot.js";
+import {CURRENCY,VARIANTES,globalStats,restartMonopoly} from "./monopoly.js"
 import {GestionFiche} from "./display/case_jeu.js";
 import {GestionEchange} from "./enchere.js";
 import {GestionDes} from "./entity/dices.js";
 import {InfoMessage} from "./display/message.js";
-
 
 /* Gere les joueurs : creation, changement... */
 let GestionJoueur = {
@@ -17,25 +17,25 @@ let GestionJoueur = {
         return this.joueurCourant;
     },
     setColors(colors){
-      if(colors !=null){
-          this.colorsJoueurs = colors;
-      }
+        if(colors !=null){
+            this.colorsJoueurs = colors;
+        }
     },
     setImgJoueurs(img){
-      if(img != null){
-          this.imgJoueurs = img;
-      }
+        if(img != null){
+            this.imgJoueurs = img;
+        }
     },
     getNbJoueurs(){
         return this.joueurs.length;
     },
     // renvoi le nombre de joueur dans la partie
     getNb(){
-        return this.joueurs.reduce((somme,j)=>somme+=!j.defaite?1:0,0);
+        return this.joueurs.reduce((somme,j)=>somme+(!j.defaite?1:0),0);
     },
     createAndLoad(isRobot,i,nom,data,montantDepart){
         let clazzPlayer = isRobot ? JoueurFactory.getRobotPlayer():JoueurFactory.getCurrentPlayer()
-        return this.create(clazzPlayer,i,nom,data.defaite,0,montantDepart).load(data);
+        return this.create(clazzPlayer,i,nom,data.defaite,0,montantDepart).saver.load(data);
     },
     init(){
         $('.panneau_joueur').empty();
@@ -60,6 +60,7 @@ let GestionJoueur = {
         let color = this.colorsJoueurs[i];
         let img = this.imgJoueurs[i];
         let joueur = new clazz(i, nom, color,argentDepart,montantDepart);
+        joueur.enPrison = false;
         joueur.setEnableMouseFunction(JoueurFactory.mouseFunction);
         let isDefaite = defaite ? ' class="defaite" ':'';
         let div = $(`<div id="${id}"${isDefaite}></div>`);
@@ -70,15 +71,20 @@ let GestionJoueur = {
         joueur.setDiv($(`div[id="${id}"]`));
         joueur.setPion(color,img,montantDepart);
         // On defini la couleurs
-        $('#' + id + ' > div.joueur-bloc').css('backgroundImage', 'linear-gradient(to right,white 50%,' + color + ')');
+        $(`#${id} > div.joueur-bloc`).css('backgroundImage', `linear-gradient(to right,white 50%,${color})`);
         $.trigger('monopoly.newPlayer', {
             joueur: joueur
         });
         this.joueurs.push(joueur);
         return joueur;
     },
+    // Search by numero or playerID
+    getByUniqueId(id){
+        console.log("FIND",id,this.joueurs)
+        return this.joueurs.find(j=>j.uniqueID != null && j.uniqueID === id);
+    },
     getById(id){
-        return this.joueurs.find(j=>j.numero ===parseInt(id));
+        return this.joueurs.find(j=>j.numero ===parseInt(id) || j.playerID === id);
     },
     /* @param idInitialJoueur : si present, joueur qui debute */
     change(idInitialJoueur){
@@ -100,7 +106,7 @@ let GestionJoueur = {
         let joueur = null;
         try {
             joueur = this.next();
-            if(joueur != null) {
+            if(joueur != null && (GestionJoueur.getJoueurCourant() == null || joueur.id !== GestionJoueur.getJoueurCourant().id)) {
                 $.trigger('monopoly.debug', {
                     message: `Change player to ${joueur.nom}`
                 });
@@ -112,8 +118,10 @@ let GestionJoueur = {
         if (joueur == null) {
             return null;
         }
-        joueur.notifySelect();
-        GestionDes.resetDouble();
+        if(GestionJoueur.getJoueurCourant() == null || joueur.id !== GestionJoueur.getJoueurCourant().id){
+            joueur.notifySelect();
+            GestionDes.resetDouble();
+        }
         this._select(joueur);
     },
     // Renvoie la liste des joueurs disponibles
@@ -123,7 +131,7 @@ let GestionJoueur = {
     _showVainqueur(gagnant){
         $.trigger('monopoly.victoire',{joueur:gagnant});
         // On affiche les resultats complets
-        var perdants = this.joueurs.filter(function(j){return j.defaite;});
+        const perdants = this.joueurs.filter(function(j){return j.defaite;});
         perdants.sort((a,b)=>{
             if(a.tourDefaite === b.tourDefaite){
                 return b.numero - a.numero;
@@ -133,11 +141,12 @@ let GestionJoueur = {
         let message = `Le joueur ${gagnant.nom} a gagné en ${this._formatTempsJeu(globalStats.heureDebut)}.<br/>`;
         message+=`1 - ${gagnant.nom}<br/>`;
 
-        for(var i = 0 ; i < perdants.length ; i++){
-            message+= (i+2) + " - " + perdants[i].nom + "<br/>";
-        }
+        message+= perdants.map((a,i)=>`${(i+2)} - ${a.nom}`).join("<br/>")
         let score = this._calculateScore(gagnant);
-        InfoMessage.create(this.joueurCourant,`Fin de partie : ${score} Points`, "green", message, ()=>{}, null, true,{"Recommencer":()=>startMonopoly()});
+        InfoMessage.create(this.joueurCourant,`Fin de partie : ${score} Points`, "green", message, ()=>{}, null, true,{"Recommencer":()=>{
+                InfoMessage.close();
+                restartMonopoly();
+            }});
     },
     /* Calcule un score de victoire */
     /* Prend en compte l'argent, le nombre de terrains, le nombre de constructions, le nombre de tours des joueurs adverses */
@@ -156,16 +165,16 @@ let GestionJoueur = {
         return Math.round(score);
     },
     _formatTempsJeu(beginTime){
-        var time = Math.round((new Date().getTime() - beginTime)/1000);
+        let time = Math.round((new Date().getTime() - beginTime)/1000);
         if(time < 60){
             return sec + " sec";
         }
-        var sec = time%60;
+        const sec = time%60;
         time = Math.round(time/60);
-        return time + " min et " + sec + " sec";
+        return `${time} min et ${sec} sec`;
     },
     _select(joueur){
-            if(!joueur.canPlay){
+        if(!joueur.canPlay){
             $('.action-joueur').attr('disabled', 'disabled').addClass('disabled');
         }else{
             $('.action-joueur').removeAttr('disabled').removeClass('disabled');
@@ -185,9 +194,9 @@ let GestionJoueur = {
         joueur.select();
     },
     getWinner() {
-        var defaites = 0;
-        var gagnantProbable;
-        for (var index in this.joueurs) {
+        let defaites = 0;
+        let gagnantProbable;
+        for (let index in this.joueurs) {
             if (this.joueurs[index].defaite === true) {
                 defaites++;
             } else {
@@ -212,10 +221,10 @@ let GestionJoueur = {
             // On a un vainqueur
             throw gagnant;
         }
-        var joueur = this.joueurCourant;
+        let joueur = this.joueurCourant;
         /* Changement de joueur */
         if(!GestionDes.continuePlayer() && !GestionDes.isSpecificAction()){
-            var pos = 0;
+            let pos = 0;
             joueur = this.joueurs[(joueur.numero + 1) % (this.joueurs.length)];
             while (joueur.defaite === true && pos++ < this.joueurs.length) {
                 joueur = this.joueurs[(joueur.numero + 1) % (this.joueurs.length)];

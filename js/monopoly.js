@@ -10,6 +10,7 @@ import {GestionEnchere,GestionEnchereDisplayer,EchangeDisplayer} from './enchere
 import {CarteActionFactory} from './entity/cartes_action.js'
 import {Fiche,FicheGare,FicheJunior,FicheCompagnie,CaseChance,CaseCaisseDeCommunaute,SimpleCaseSpeciale,CaseActionSpeciale,CaseDepart,GestionFiche,ParcGratuit,Groupe} from './display/case_jeu.js'
 import {wrapDialog,CommunicationDisplayer,FicheDisplayer } from './display/displayers.js'
+import {checkExistingGame, MasterRemoteManager, RemoteManager} from './entity/network/remote_manager.js'
 import {Sauvegarde } from './sauvegarde.js'
 import {} from '../lib/jquery.arctext.js'
 import {} from '../lib/jquery-ui.1.12.min.js'
@@ -46,14 +47,13 @@ let VARIANTES = {
 }
 
 /* Preconfiguration des variantes */
-var configJeu = [
+const configJeu = [
 	{nom:"Classique strict",config:[false,false,true,true,false]},
 	{nom:"Classique",config:[false,false,false,false,false]},
 	{nom:"Variante 1",config:[true,true,false,false,false]}
 ];
 
 let globalStats = {	// Statistiques
-//var stats = {	// Statistiques
 	nbTours:0,	// Nombre de tours de jeu depuis le depuis (nb de boucle de joueurs)
 	heureDebut:new Date(),
 	positions:[]
@@ -107,13 +107,28 @@ function doActions(joueur=GestionJoueur.getJoueurCourant()) {
 	$.trigger('move.end',{});
 }
 
-function startMonopoly(debug = false){
-	let monopoly = new Monopoly(debug);
-	monopoly.init();
-	if(!debug){
-		new PanelGameMonopoly(monopoly).show();
+function restartMonopoly(){
+	if(currentMonopoly == null){
+		return;
 	}
-	return monopoly;
+	let options = currentMonopoly.options;
+	currentMonopoly = new Monopoly(false);
+	currentMonopoly.init();
+	new PanelGameMonopoly(currentMonopoly).restartGame(options);
+}
+
+let currentMonopoly;
+
+function startMonopoly(debug = false,showPanel=true){
+	currentMonopoly = new Monopoly(debug);
+	currentMonopoly.init();
+	if(!debug){
+		let panel = new PanelGameMonopoly(currentMonopoly);
+		if(showPanel){
+			panel.show();
+		}
+	}
+	return currentMonopoly;
 }
 
 class PlateauDetails {
@@ -127,7 +142,7 @@ class PlateauDetails {
 	}
 	load(nomPlateau,options,callback,dataExtend){
 		options.nomPlateau = nomPlateau;
-		return this.loadFullPath('data/' + nomPlateau,options,callback,dataExtend);
+		return this.loadFullPath(`data/${nomPlateau}`,options,callback,dataExtend);
 	}
 	loadFullPath(path,options,callback,dataExtend){
 		this._temp_load_data = dataExtend;
@@ -352,6 +367,7 @@ class PanelGameMonopoly{
 	close(){
 		this.panelPartie.dialog('close');
 	}
+
 	// load existing plateaux configuration
 	loadPlateaux(){
 		this.plateaux = $('#idSelectPlateau').empty();
@@ -379,7 +395,7 @@ class PanelGameMonopoly{
 				}
 			});
 			$('#idLoadSauvegarde').unbind('click').bind('click', ()=> {
-				if (this.listSauvegarde.val() != "") {
+				if (this.listSauvegarde.val() !== "") {
 					Sauvegarde.load(this.listSauvegarde.val(),this.monopoly);
 					this.close();
 				}
@@ -404,36 +420,41 @@ class PanelGameMonopoly{
 			nbPlayers:$('#sliderJoueur').slider('value'),
 			waitTimeIA:1
 		};
-		$('#idPartie',this.panelPartie).find('select[name],:text[name]').each(function(){
-			options[$(this).attr('name')] = $(this).val();
-		});
-		$('#idPartie',this.panelPartie).find(':checkbox[name]').each(function(){
-			options[$(this).attr('name')] = $(this).is(':checked');
-		});
-		$('#idGameType',this.panelPartie).find(':radio:checked').each(function(){
-			options[$(this).attr('name')] = $(this).val();
-		});
+		$('#idPartie',this.panelPartie).find('select[name],:text[name]').each(function(){options[$(this).attr('name')] = $(this).val()});
+		$('#idPartie',this.panelPartie).find(':checkbox[name]').each(function(){options[$(this).attr('name')] = $(this).is(':checked')});
+		$('#idGameType',this.panelPartie).find(':radio:checked').each(function(){options[$(this).attr('name')] = $(this).val()});
 		options.joueur = $('#idNomJoueur').val() !== "" ? $('#idNomJoueur').val():"";
-
 		return options;
 	}
 	isJoinNetwork(){
 		return $('#idCreationGame').tabs('option','active') === 1;
 	}
+	isRejoinNetwork(){
+		return $('#idCreationGame').tabs('option','active') === 2;
+	}
 	// Extract parameter dans create monopoly game
 	createGame(){
 		if(this.isJoinNetwork()){
+			this.close();
 			return this.monopoly.joinNetworkGame($('#idRemoteNomJoueur').val(),$('#idRemoteGame').val());
+		}
+		if(this.isRejoinNetwork()){
+			this.close();
+			return this.monopoly.rejoinNetworkGame();
 		}
 		/* Chargement d'une partie */
 		VARIANTES = {};
 		if (this.listSauvegarde.val() !== "") {
 			Sauvegarde.load(this.listSauvegarde.val(),this.monopoly);
 		} else {
-			let options = this.extractOptions();
-			this.monopoly.plateau.load($('#idSelectPlateau').val(),options,()=>this.monopoly._createGame(this.extractOptions()));
+			this.monopoly.options = this.extractOptions();
+			this.monopoly.plateau.load($('#idSelectPlateau').val(),this.monopoly.options,()=>this.monopoly._createGame(this.monopoly.options));
 		}
 		this.close();
+	}
+	restartGame(savedOptions){
+		this.monopoly.options = savedOptions;
+		this.monopoly.plateau.load($('#idSelectPlateau').val(),savedOptions,()=>this.monopoly._createGame(savedOptions));
 	}
 }
 
@@ -472,6 +493,9 @@ class Monopoly {
 	}
 	joinNetworkGame(name,game){
 		this.remoteManager = new RemoteManager(name,game);
+	}
+	rejoinNetworkGame(){
+		this.remoteManager = new RemoteManager("",localStorage["network_game"],localStorage["uniqueID"]);
 	}
 	// Create a network game as master
 	_createNetworkGame(options){
@@ -537,7 +561,7 @@ class Monopoly {
 		/* Gestion de la sauvegarde */
 		$('#idSavePanel').click( ()=> {
 			let name = !Sauvegarde.isSauvegarde() ? prompt("Nom de la sauvegarde (si vide, defini par defaut)") : null;
-			Sauvegarde.save(name,this.plateau.name);
+			Sauvegarde.save(name,this.plateau);
 		});
 		// panneau d'achats de maisons
 		wrapDialog($('#achatMaisons'),{
@@ -569,22 +593,31 @@ class Monopoly {
 }
 
 let debug = false;
-$(function(){
+
+function startGame(){
 	$('#idCreationGame').tabs();
 	$('#idMontantParc').hide();
 	startMonopoly(debug)
 	if($('.mobile').is(':visible')) {
 		DrawerFactory.setSize(950);
 	}
-});
+}
 
+
+$(()=>{
+	// Check if a game exist
+	checkExistingGame().then(exist=>{
+		$('#existingGame')[exist ? "show":"hide"]();
+	});
+	startGame();
+});
 
 /*  DEBUG */
 /* Achete des maisons pour le joueur courant, on passe les ids de fiche */
 function buy(maisons) {
-	for (var i in maisons) {
+	for (let i in maisons) {
 		GestionJoueur.getJoueurCourant().acheteMaison(GestionFiche.getById(maisons[i]));
 	}
 }
 
-export {Monopoly,CURRENCY,DEBUG,VARIANTES,IA_TIMEOUT,doActions,globalStats,startMonopoly};
+export {Monopoly,CURRENCY,DEBUG,VARIANTES,IA_TIMEOUT,doActions,globalStats,startMonopoly,restartMonopoly};

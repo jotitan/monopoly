@@ -249,6 +249,66 @@ class Maisons{
 		this.maisons.forEach(m=>m.libere());
 		this.maisons = [];
 	}
+	// Cherche la position ou placer la nouvelle fiche (tri par couleur)
+	cherchePlacement(maison) {
+		for (let i = 0; i < this.maisons.length; i++) {
+			if (this.maisons[i].color === maison.color) {
+				return this.maisons[i].input;
+			}
+		}
+		return null;
+	}
+}
+
+class PlayerSaver{
+	constructor(joueur){
+		this.joueur = joueur;
+	}
+	save() {
+		// On sauvegarde id, nom, color,montant, prison, bloque, defaite, cartes, son type (manuel). Pas besoin des maisons (auto)
+		let data = {
+			canPlay: this.joueur.canPlay,
+			id: this.joueur.id,
+			nom: this.joueur.nom,
+			color: this.joueur.color,
+			montant: this.joueur.montant,
+			enPrison: this.joueur.enPrison,
+			nbDouble: this.joueur.nbDouble,
+			bloque: this.joueur.bloque,
+			defaite: this.joueur.defaite,
+			cartesPrison: this.joueur.cartesSortiePrison.length,
+			position: this.joueur.pion.position,
+			axe: this.joueur.pion.axe
+		};
+		this.saveMore(data);
+		return data;
+	}
+
+	load(data) {
+		for (let name in data) {
+			if (this[name] != null) {
+				this[name] = data[name];
+			}
+		}
+		this.joueur.setArgent(data.montant);
+		this.loadMore(data);
+		// Position initiale, aucune action
+		this.joueur.pion.goDirectToCell(data.axe, data.position);
+		// Cas des cartes de prison
+
+		// Cas ou le joueur est mort
+		if(this.joueur.defaite) {
+			$('.joueurCourant', this.joueur.div).removeAttr('style').addClass('defaite');
+		}
+		return this.joueur;
+	}
+
+	/* Template Method : les enfants peuvent la reimplementer */
+	// Indique les choses a sauvegarder en plus
+	saveMore() {}
+
+	loadMore(data) {}
+
 }
 
 /* Represente un joueur humain */
@@ -274,6 +334,7 @@ class Joueur {
 		this.canPlay = true;
 		this.montantDepart = montantDepart;	// Montant sur la case depart
 		this.enableMouseFunction = ()=>{};
+		this.saver = new PlayerSaver(this);
 	}
 
 	setEnableMouseFunction(fct){
@@ -286,50 +347,6 @@ class Joueur {
 	isSlotFree(){
 		return false;
 	}
-	/* Sauvegarde un joueur */
-	save() {
-		// On sauvegarde id, nom, color,montant, prison, bloque, defaite, cartes, son type (manuel). Pas besoin des maisons (auto)
-		let data = {
-			canPlay: this.canPlay,
-			id: this.id,
-			nom: this.nom,
-			color: this.color,
-			montant: this.montant,
-			enPrison: this.enPrison,
-			bloque: this.bloque,
-			defaite: this.defaite,
-			cartesPrison: this.cartesSortiePrison.length,
-			position: this.pion.position,
-			axe: this.pion.axe
-		};
-		this.saveMore(data);
-		return data;
-	}
-
-	load(data) {
-		for (let name in data) {
-			if (this[name] != null) {
-				this[name] = data[name];
-			}
-		}
-		this.setArgent(this.montant);
-		this.loadMore(data);
-		// Position initiale, aucune action
-		this.pion.goDirectToCell(data.axe, data.position);
-		// Cas des cartes de prison
-
-		// Cas ou le joueur est mort
-		if(this.defaite) {
-			$('.joueurCourant', this.div).removeAttr('style').addClass('defaite');
-		}
-		return this;
-	}
-
-	/* Template Method : les enfants peuvent la reimplementer */
-	// Indique les choses a sauvegarder en plus
-	saveMore() {}
-
-	loadMore(data) {}
 
 	// Utilise la carte sortie de prison
 	utiliseCarteSortiePrison() {
@@ -340,7 +357,7 @@ class Joueur {
 		this.cartesSortiePrison.splice(this.cartesSortiePrison.length - 1, 1);
 	}
 
-	/* Renvoie les stats et infos du jour : 
+	/* Renvoie les stats et infos du jour :
 	 * Nombre de tour, nombre de fois en prison
 	 * Nombre de terrains, nombre de maison et hotel
 	 * Argent disponible, argent apres vente maison / hypotheque, argent apres hypotheque
@@ -446,16 +463,6 @@ class Joueur {
 		GestionEnchereDisplayer.displayCloseOption(montant, joueur);
 	}
 
-	// Cherche la position ou placer la nouvelle fiche (tri par couleur)
-	cherchePlacement(maison) {
-		for (let i = 0; i < this.maisons.maisons.length; i++) {
-			if (this.maisons.maisons[i].color === maison.color) {
-				return this.maisons.maisons[i].input;
-			}
-		}
-		return null;
-	}
-
 	joueDes(sommeDes) {
 		this.moveTo(sommeDes);
 	}
@@ -467,6 +474,10 @@ class Joueur {
 	/* Joueur sur une case donnees */
 	joueSurCase(fiche,direct, primeDepart=true){
 		this.pion.goto(fiche.axe, fiche.pos, ()=>doActions(this),direct,primeDepart);
+	}
+
+	joueSurCaseNoAction(fiche){
+		this.pion.goto(fiche.axe, fiche.pos, ()=>{});
 	}
 
 	// Fonction a ne pas implementer avec un vrai joueur
@@ -505,14 +516,16 @@ class Joueur {
 			throw "Achat de la maison impossible";
 		}
 		if (maison.isLibre()) {
-			this._drawTitrePropriete(maison);
-			maison.vendu(this);
+			this.showAcheteMaison(maison);
 			this.payer(montant);
 			this.notifyAcheteMaison(maison,montant);
 		}
 	}
-	// Create an event which notify buy
-	notifyAcheteMaison(terrain,montant){}
+	showAcheteMaison(maison){
+		this._drawTitrePropriete(maison);
+		maison.vendu(this);
+
+	}
 
 	/* Refuse l'achat d'une propriete. La banque peut mettre aux encheres le terrain */
 	refuseMaison(maison,callback=()=>{}){
@@ -529,8 +542,8 @@ class Joueur {
 	}
 
 	_drawTitrePropriete(maison) {
-		var m = this.cherchePlacement(maison);
-		var input = `<input type="button" id="idInputFiche${maison.id}" class="ui-corner-all fiche color_${maison.color.substring(1)}" value="${maison.nom}" id="fiche_${maison.id}"/>`;
+		let m = this.maisons.cherchePlacement(maison);
+		let input = `<input type="button" id="idInputFiche${maison.id}" class="ui-corner-all fiche color_${maison.color.substring(1)}" value="${maison.nom}" id="fiche_${maison.id}"/>`;
 		if (m != null) {
 			m.after(input);
 		} else {
@@ -559,20 +572,29 @@ class Joueur {
 	}
 
 	// Envoi le joueur (et le pion) en prison
-	goPrison() {
-		this.enPrison = true;
-		this.div.addClass('jail');
+	goPrison(notify=true) {
+		this.showPrison();
 		this.nbDouble = 0;
+		if(notify) {
+			this.notifyPrison();
+		}
 		this.pion.goPrison(()=>GestionJoueur.change());
 		$.trigger("monopoly.goPrison", {
 			joueur: this
 		});
 	}
+	showPrison(){
+		this.enPrison = true;
+		this.div.addClass('jail');
 
-	exitPrison(info = {notrigger:false,paye:false,carte:false}) {
+	}
+	exitPrison(info = {notrigger:false,notify:true,paye:false,carte:false}) {
 		this.enPrison = false;
 		this.nbDouble = 0;
 		this.div.removeClass('jail');
+		if(info.notify){
+			this.notifyExitPrison(info.paye,info.carte)
+		}
 		if(!info.notrigger) {
 			$.trigger("monopoly.exitPrison", {
 				joueur: this,
@@ -642,10 +664,17 @@ class Joueur {
 		}
 	}
 
+	// Create an event which notify buy
+	notifyAcheteMaison(terrain,montant){}
 	notifyHypotheque(){}
 	notifyLeveHypotheque(){}
 	notifyPay(){}
-
+	notifyPrison(){
+		Notifier.goPrison(this);
+	}
+	notifyExitPrison(paye=false,carte=false){
+		Notifier.exitPrison(this,paye,carte);
+	}
 	/* Paye une somme a un joueur */
 	/* Si le joueur ne peut pas payer, une exception est lancee (il a perdu). On recupere le peut d'argent a prendre */
 	/* Payer est potentiellement asynchrone (resolve manuel), on indique l'etape suivante en cas de reussite */
@@ -716,10 +745,6 @@ class Joueur {
 		return true;
 	}
 
-	getFichePosition() {
-		return GestionFiche.getById(this.pion.axe + "-" + this.pion.position);
-	}
-
 	updateMaisonsByGroup(){
 		let groups = this.maisons.findMaisonsByGroup();
 		let div = $('.count-property',this.div);
@@ -733,7 +758,6 @@ class Joueur {
 	endTurn(){}
 }
 
-
 // Used only when master play
 class NetworkJoueur extends Joueur{
 	constructor(numero, nom, color,argent,montantDepart){
@@ -743,6 +767,10 @@ class NetworkJoueur extends Joueur{
 		var nextCase = this.pion.deplaceValeursDes(nb);
 		Notifier.moveTo(GestionFiche.buildId(nextCase),this);
 		this.joueSurCase(nextCase);
+	}
+	actionApresDes(buttons){
+		// Detecte action apres lancement des comme sortie prison (mouvement double, paiement)
+		// Si un seul bouton, executer l'action
 	}
 	gagner(montant) {
 		this.setArgent(this.montant + montant);
@@ -820,6 +848,20 @@ let Notifier = {
 			player: player.id
 		});
 	},
+	goPrison(player){
+		$.trigger("event.network", {
+			kind: "prison",
+			player: player.id,
+		});
+	},
+	exitPrison(player,paye,carte){
+		$.trigger("event.network", {
+			kind: "exitPrison",
+			player: player.id,
+			paye:paye,
+			carte:carte
+		});
+	},
 	payer(montant, player) {
 		$.trigger("event.network", {
 			kind: "tax",
@@ -849,4 +891,4 @@ let Notifier = {
 	}
 }
 
-export {Joueur,Maisons,Notifier};
+export {Joueur,NetworkJoueur, PlayerSaver,Maisons,Notifier};

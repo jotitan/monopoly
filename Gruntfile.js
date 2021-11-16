@@ -14,20 +14,7 @@ module.exports = function(grunt){
 		},
 		zip:{
 			'build/monopoly.zip':['build/**']
-			
-		},
-		'ftp-deploy':{
-			build:{
-				auth:{
-					host:'ftpperso.free.fr',
-					port:21,
-					// Definir les droits dans le fichier .ftppass
-					authKey:'default'
-				},
-				src:'build',
-				dest:'monopoly/',
-				exclusions:['*.zip']
-			}
+
 		},
 		targethtml:{
 			dev:{
@@ -50,17 +37,17 @@ module.exports = function(grunt){
 				},
 				files:{
 					'build/monopoly-min.js':[
-						'js/ui/graphics.js',
-						'js/ui/square_graphics.js',
-						'js/ui/circle_graphics.js',
+						'js/ui/*.js',
 						'js/entity/*.js',
 						'js/display/*.js',
 						'js/utils.js',
 						'js/enchere.js',
 						'js/gestion_constructions.js',
 						'js/gestion_terrains.js',
+						'js/gestion_joueur.js',
 						'js/sauvegarde.js',
-						'monopoly.js']
+						'js/utils.js',
+						'js/monopoly.js']
 				}
 			}
 		},
@@ -75,11 +62,10 @@ module.exports = function(grunt){
 	grunt.loadNpmTasks('grunt-contrib-clean')
 	grunt.loadNpmTasks('grunt-contrib-copy')
 	grunt.loadNpmTasks('grunt-zip')
-	grunt.loadNpmTasks('grunt-ftp-deploy')
 	grunt.loadNpmTasks('grunt-targethtml')
 	grunt.loadNpmTasks('grunt-contrib-uglify')
 	grunt.loadNpmTasks('grunt-contrib-watch')
 
 	grunt.registerTask('package','package application',['clean','uglify','copy','targethtml:prod','zip'])
-	grunt.registerTask('deploy','deploie application sur serveur ftp',['ftp-deploy'])			
+	grunt.registerTask('deploy','deploie application sur serveur ftp',['ftp-deploy'])
 }

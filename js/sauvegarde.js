@@ -10,11 +10,17 @@ let Sauvegarde = {
     isSauvegarde:function(){
         return this.currentSauvegardeName!=null;
     },
-    save: function (name, namePlateau) {
+    save: function (name, plateau) {
         this.currentSauvegardeName = name !=null ? this.getSauvegardeName(name) : this.currentSauvegardeName || this.getSauvegardeName();
+        this.saveWithName(this.currentSauvegardeName,plateau);
+        $.trigger("monopoly.save", {
+            name: this.currentSauvegardeName
+        });
+    },
+    saveWithName: function (saveName, plateau) {
         // On recupere la liste des joueurs
         let saveJoueurs = [];
-        GestionJoueur.forEach(function(j){if(j.save){saveJoueurs.push(j.save())}});
+        GestionJoueur.joueurs.filter(j=>j.save).forEach(j=>saveJoueurs.push(j.saver.save()));
         // On recupere la liste des fiches
         let saveFiches = [];
         let it = GestionFiche.iteratorTerrains();
@@ -24,15 +30,13 @@ let Sauvegarde = {
         let data = {
             joueurs: saveJoueurs,
             fiches: saveFiches,
-            joueurCourant: GestionJoueur.getJoueurCourant().id,
+            joueurCourant: GestionJoueur.getJoueurCourant() != null ? GestionJoueur.getJoueurCourant().id:'',
             variantes: VARIANTES,
+            options:plateau.options,
             nbTours: globalStats.nbTours,
-            plateau:namePlateau
+            plateau:plateau.name
         };
-        this._putStorage(this.currentSauvegardeName, data);
-        $.trigger("monopoly.save", {
-            name: this.currentSauvegardeName
-        });
+        this._putStorage(saveName, data);
     },
     load: function (name, monopoly) {
         this.currentSauvegardeName = name;
@@ -40,7 +44,7 @@ let Sauvegarde = {
         // On charge le plateau
         $.extend(VARIANTES,VARIANTES,data.variantes)
         //VARIANTES = data.variantes || VARIANTES;
-        monopoly.plateau.load(data.plateau || "data-monopoly.json",{},function(){
+        monopoly.plateau.load(data.plateau || "data-monopoly.json",data.options,function(){
             data.joueurs.forEach((j,i)=>GestionJoueur.createAndLoad(!j.canPlay, i,j.nom,j,monopoly.plateau.infos.montantDepart));
             data.fiches.forEach(f=>GestionFiche.getById(f.id).load(f));
             $.trigger('refreshPlateau');
@@ -82,6 +86,8 @@ let Sauvegarde = {
     getSauvegardeName: function (name) {
         return this.prefix + ((name == null || name === "") ? new Date().getTime() : name) + this.suffix;
     }
-}
+};
+
+
 
 export {Sauvegarde};

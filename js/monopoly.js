@@ -22,7 +22,9 @@ import {
 } from './display/case_jeu.js'
 import {CommunicationDisplayer, FicheDisplayer, wrapDialog} from './display/displayers.js'
 import {checkExistingGame, MasterRemoteManager, RemoteManager} from './entity/network/remote_manager.js'
-import {Sauvegarde} from './sauvegarde.js'
+import {} from './ui/square_graphics.js';
+import {} from './ui/circle_graphics.js';
+import {Sauvegarde} from './sauvegarde.js';
 
 /* Gestion du Monopoly */
 

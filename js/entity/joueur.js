@@ -375,8 +375,8 @@ class Joueur {
 			strategie: this.strategie != null ? this.strategie.toString() : '-',
 			comportement: this.comportement != null ? this.comportement.name : '-',
 		};
-		for (var index in this.maisons.maisons) {
-			var maison = this.maisons.maisons[index];
+		for (const index in this.maisons.maisons) {
+			const maison = this.maisons.maisons[index];
 			statsJ.hotel += maison.hotel === true ? 1 : 0;
 			statsJ.maison += parseInt(maison.hotel === false ? maison.nbMaison : 0);
 			// Revente des constructions + hypotheque
@@ -467,11 +467,11 @@ class Joueur {
 		this.moveTo(sommeDes);
 	}
 	moveTo(nb){
-		var nextCase = this.pion.deplaceValeursDes(nb);
+		const nextCase = this.pion.deplaceValeursDes(nb);
 		this.joueSurCase(nextCase);
 	}
 
-	/* Joueur sur une case donnees */
+	/* Joueur sur une case precise */
 	joueSurCase(fiche,direct, primeDepart=true){
 		this.pion.goto(fiche.axe, fiche.pos, ()=>doActions(this),direct,primeDepart);
 	}
@@ -488,11 +488,11 @@ class Joueur {
 		if(!callback){return;}
 
 		let options = [
-			{title:(des1 + ' + ' + des2),fct:function(){callback(des1+des2);}},
-			{title:(des1),fct:function(){callback(des1);}},
-			{title:(des2),fct:function(){callback(des2);}}
+			{title:(des1 + ' + ' + des2),fct:()=>callback(des1+des2)},
+			{title:(des1),fct:()=>callback(des1)},
+			{title:(des2),fct:()=>callback(des2)}
 		];
-		var message = 'Quel(s) dé(s) vous choisissez';
+		const message = 'Quel(s) dé(s) vous choisissez';
 		InfoMessage.createGeneric(this,'Vous prenez le bus','green',message,options);
 	}
 	/* Le joueur se deplace sur la case qu'il souhaite */
@@ -530,6 +530,7 @@ class Joueur {
 	/* Refuse l'achat d'une propriete. La banque peut mettre aux encheres le terrain */
 	refuseMaison(maison,callback=()=>{}){
 		$.trigger('monopoly.visiteMaison',{joueur:GestionJoueur.getJoueurCourant(),maison:maison});
+		this.notifyMessage('monopoly.visiteMaison','',{maison:maison.id});
 		if(VARIANTES.enchereAchat){
 			this._enchereByBanque(maison,callback);
 		}else{
@@ -669,6 +670,7 @@ class Joueur {
 	notifyHypotheque(){}
 	notifyLeveHypotheque(){}
 	notifyPay(){}
+	notifyMessage(){}
 	notifyPrison(){
 		Notifier.goPrison(this);
 	}
@@ -764,9 +766,15 @@ class NetworkJoueur extends Joueur{
 		super(numero,nom,color,argent,montantDepart);
 	}
 	moveTo(nb){
-		var nextCase = this.pion.deplaceValeursDes(nb);
+		const nextCase = this.pion.deplaceValeursDes(nb);
 		Notifier.moveTo(GestionFiche.buildId(nextCase),this);
 		this.joueSurCase(nextCase);
+	}
+	joueSurCase(fiche,direct, primeDepart=true, notify = false){
+		super.joueSurCase(fiche,direct,primeDepart);
+		if(notify){
+			Notifier.moveTo(GestionFiche.buildId(fiche),this);
+		}
 	}
 	actionApresDes(buttons){
 		// Detecte action apres lancement des comme sortie prison (mouvement double, paiement)
@@ -778,6 +786,9 @@ class NetworkJoueur extends Joueur{
 	}
 	notifyPay(montant){
 		Notifier.payer(montant,this);
+	}
+	notifyMessage(name, libelle, payload){
+		Notifier.notifyMessage(name, libelle, this, payload);
 	}
 	notifyHypotheque(terrain){
 		Notifier.hypotheque(terrain,this);
@@ -883,6 +894,9 @@ let Notifier = {
 			terrain: terrain.id,
 			montant: montant,
 		});
+	},
+	notifyMessage(name, libelle, player,payload={}){
+		$.trigger('event.network',{kind:'message',player:player.id,libelle:libelle,name:name,...payload});
 	},
 	notifyEnd() {
 		$.trigger("event.network", {

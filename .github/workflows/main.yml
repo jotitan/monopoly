@@ -1,0 +1,52 @@
+# Workflow to build at each commit in master the application
+
+name: CI build photos app
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    - name: Build go server
+      run: |
+        echo Run build server go
+        cd src/main
+        export GOOS=linux
+        export GOARCH=arm
+        go build -o run_monopoly run_monopoly.go
+        cd ../../
+        mkdir artifacts
+        echo Copy monopoly server to artifacts/
+        mv src/main/run_monopoly artifacts
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+
+    - name: Build front
+      run: |
+        echo Install and build app,
+        npm install
+        npm run package
+        mv dist/monopoly_build.zip ../artifacts
+
+  # Upload artifact
+    - uses: actions/upload-artifact@v1
+      with:
+        name: Artifacts monopoly
+        path: artifacts

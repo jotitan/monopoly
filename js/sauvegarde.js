@@ -20,7 +20,7 @@ let Sauvegarde = {
     saveWithName: function (saveName, plateau) {
         // On recupere la liste des joueurs
         let saveJoueurs = [];
-        GestionJoueur.joueurs.filter(j=>j.save).forEach(j=>saveJoueurs.push(j.saver.save()));
+        GestionJoueur.joueurs.filter(j=>j.saver).forEach(j=>saveJoueurs.push(j.saver.save()));
         // On recupere la liste des fiches
         let saveFiches = [];
         let it = GestionFiche.iteratorTerrains();

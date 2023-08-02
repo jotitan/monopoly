@@ -16,7 +16,7 @@
 	}
 }
 
-@media screen and (min-height: 1000px){
+@media screen and (min-height: 1000px)  and (max-width: 700px){
 	#informations-left,#informations  {
 		display:none;
 	}	
@@ -232,7 +232,7 @@ div.ui-tooltip {
     color:black;
 }
 
-@media screen and (max-height: 1000px) {
+@media  (max-height: 1000px) or (min-width: 700px){
     #idActions > button {
         top:260px;
         position:absolute;
@@ -264,7 +264,7 @@ div.ui-tooltip {
     }
 }
 
-@media screen and (min-height: 1000px) {
+@media screen and (min-height: 1000px) and (max-width: 700px) {
     .jail > div {
         width:calc(100% - 25px);
     }

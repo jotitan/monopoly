@@ -3,8 +3,8 @@
 // Defini la methode size. Cette methode evite d'etre enumere dans les boucles
 Object.defineProperty(Array.prototype, "size", {
     value: function () {
-        var count = 0;
-        for (var i in this) {
+        let count = 0;
+        for (let i in this) {
             count++;
         }
         return count;
@@ -16,8 +16,8 @@ Object.defineProperty(Array.prototype, "size", {
 
 Object.defineProperty(Array.prototype, "contains", {
     value: function (value) {
-        for (var i in this) {
-            if (this[i] == value) {
+        for (let i in this) {
+            if (this[i] === value) {
                 return true;
             }
         }

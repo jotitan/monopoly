@@ -7,41 +7,14 @@
 	<link type="text/css" href="css/ui/jquery-ui.structure.min.css" rel="stylesheet" />
 	<link type="text/css" href="css/ui/jquery-ui.theme.min.css" rel="stylesheet" />
 	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+
 	<script type="text/javascript" src="lib/jquery-1.11.0.min.js"></script>
+	<script type="text/javascript" src="lib/jquery.arctext.js"></script>
 	<script type="text/javascript" src="lib/jquery-ui.1.12.min.js"></script>
 	<script type="text/javascript" src="lib/jquery.mousewheel.js"></script>
-	<script type="text/javascript" src="lib/jquery.arctext.js"></script>
 
-	<!--(if target dev)><!-->
-	<script type="module" src="js/sauvegarde.js"></script>
-	<script type="module" src="js/utils.js"></script>
-	<script type="module" src="js/gestion_constructions.js"></script>
-	<script type="module" src="js/gestion_terrains.js"></script>
-	<script type="module" src="js/enchere.js"></script>
-	<script type="module" src="js/ui/graphics.js"></script>
-	<script type="module" src="js/ui/square_graphics.js"></script>
-	<script type="module" src="js/ui/circle_graphics.js"></script>
-	<script type="module" src="js/display/message.js"></script>
-	<script type="module" src="js/entity/comportement.js"></script>
-	<script type="module" src="js/entity/strategie.js"></script>
-	<script type="module" src="js/entity/pion.js"></script>
-	<script type="module" src="js/entity/joueur.js"></script>
-	<script type="module" src="js/entity/network/local_joueur.js"></script>
-	<script type="module" src="js/entity/network/remote_manager.js"></script>
-	<script type="module" src="js/entity/joueur_robot.js"></script>
-	<script type="module" src="js/gestion_joueurs.js"></script>
-	<script type="module" src="js/entity/cartes_action.js"></script>
-	<script type="module" src="js/display/displayers.js"></script>
-	<script type="module" src="js/display/case_jeu.js"></script>
-	<script type="module" src="js/entity/dices.js"></script>
 	<script type="module" src="js/monopoly.js"></script>
-	<!--<!(endif)-->
 
-	<!--(if target prod)><!-->
-	<!--script type="text/javascript" src="monopoly-min.js"></script-->
-	<!--<!(endif)-->
-
-	<style></style>
 	<link rel="stylesheet" type="text/css" href="css/style.css"/>
 </head>
 
@@ -61,13 +34,13 @@
 					<button title="Lancez les dés" id="idLancerDes" class="action-joueur" disabled="disabled">
 						<img src="img/dices.png"/>
 					</button>
-					<button title="Achat maisons" class="action-joueur action-normal" onclick="GestionTerrains.open()" disabled="disabled">
+					<button title="Achat maisons" id="idOpenPanelHouses" class="action-joueur action-normal" disabled="disabled">
 						<img src="img/house2.png"/>
 					</button>
-					<button title="Echange terrains" id="idEchangeTerrains" class="action-normal action-joueur" onclick="EchangeDisplayer.open(GestionJoueur.getJoueurCourant())" disabled="disabled">
+					<button title="Echange terrains" id="idEchangeTerrains" class="action-normal action-joueur" disabled="disabled">
 						<img src="img/swap.png"/>
 					</button>
-					<button title="Terrains libres" class="action-joueur" onclick="$('#idTerrainsLibres').dialog('open');" disabled="disabled">
+					<button title="Terrains libres" id="idOpenFreeTerrains" class="action-joueur" disabled="disabled">
 						<img src="img/list.png"/>
 					</button>
 				</div>
@@ -321,18 +294,7 @@
 </div>
 <div id="actions"></div>
 <div class="mobile"></div>
-<script language="module">
-	import {startMonopoly} from './js/monopoly.js'
-	let debug = false;
-	$(function(){
-		$('#idCreationGame').tabs();
-		$('#idMontantParc').hide();
-		startMonopoly(debug)
-		if($('.mobile').is(':visible')) {
-			DrawerFactory.setSize(950);
-		}
-	});
-</script>
+
 
 </body>
 </html>

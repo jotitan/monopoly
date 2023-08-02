@@ -5,7 +5,7 @@ import {DiceThrower, GestionDes} from "../dices.js";
 import {GestionFiche} from "../../display/case_jeu.js";
 import {startMonopoly, DEBUG, VARIANTES} from "../../monopoly.js";
 import {GestionTerrains} from "../../gestion_terrains.js";
-import {Sauvegarde} from "../../sauvegarde";
+import {Sauvegarde} from "../../sauvegarde.js";
 
 // Check if a game is in memory and still working
 export async function checkExistingGame(){
@@ -20,10 +20,11 @@ export async function checkExistingGame(){
 /* RemoteManager manage the connexion to the remote game master */
 class RemoteManager {
     /* @param playerUniqueId : id of player when try to reconnect */
-    constructor(name,game,playerUniqueId,connect=true){
+    constructor(plateau, name,game, playerUniqueId,connect=true){
         if(connect) {
             this.name = name;
             this.game = game;
+            this.plateau = plateau;
             this.playerUniqueID = playerUniqueId;
             this.startSource();
             this.listenLocalEvents();
@@ -54,7 +55,7 @@ class RemoteManager {
             // Initialize player
             this.playerID = data.playerID;
             const url = `/event?game=${this.game}&playerID=${this.playerID}`;
-            this.eventSender = new EventSender(url,null,this.isMaster());
+            this.eventSender = new EventSender(url,this.plateau,this.isMaster());
             this.askJoin();
 
         }
@@ -124,10 +125,11 @@ class RemoteManager {
             case "buyHouse":this.debug("BUY HOUSE");GestionFiche.getById(event.terrain).setNbMaison(event.nb);break;
             case "loyer":this.debug("LOYER");$.trigger('monopoly.payerLoyer',{joueur:joueur,maison:GestionFiche.getById(event.maison)});break;
             case "exit":this.debug("EXIT");$.trigger('monopoly.exit',{joueur:joueur});break;
-            case "message":this.debug("GOT MESSAGE");
+            case "message":this.debug("GOT MESSAGE",event);
                 $.trigger(event.name, {
                     joueur: joueur,
-                    message: event.libelle
+                    message: event.libelle,
+                    maison:event.maison == null ? null : GestionFiche.getById(event.maison)
                 });
                 break;
             case "buy":this.debug("BUY",event);    //
@@ -217,9 +219,8 @@ class RemoteManager {
 /* MasterRemoteManager manage the local game master with network connexion */
 export class MasterRemoteManager extends RemoteManager{
     constructor(name,game,plateau){
-        super(name,game);
+        super(plateau, name,game);
         // Plateau monopoly
-        this.plateau = plateau;
     }
     create(nbJoueurs, nbRobots,playerName,players,argentDepart,montantDepart){
         JoueurFactory.useNetwork();
@@ -299,7 +300,7 @@ export class MasterRemoteManager extends RemoteManager{
         player.playerID = event.playerID;
         player.uniqueID = `id_${btoa(Math.random()*100000000)}`
         MessageDisplayer.write(player, "is joining the game");
-        console.log("DATA",this.createGameInformations(player,event))
+        this.createGameInformations(player,event);
         this.eventSender.sendEvent(this.createGameInformations(player,event));
         // If last available, start game
         if(availables.length === 1){

@@ -23,8 +23,8 @@
 	</td>
 	<td>
 		<div style="width:810px;height:810px;position:relative" id="plateau" class="graphic_element">
-			<canvas id="canvas" width="810" height="810" style="top:0px;left:0px;position:absolute"></canvas>
-			<canvas id="canvas_rt" width="810" height="810" style="top:0px;left:0px;position:absolute"></canvas>
+			<canvas id="canvas" width="810" height="810" style="top:0;left:0;position:absolute"></canvas>
+			<canvas id="canvas_rt" width="810" height="810" style="top:0;left:0;position:absolute"></canvas>
 			<div>
 				<img src="img/reload_dice.png" style="display:none;" id="idReloadDice" title="Relancez" class="graphic_element"/>
 				<div id="idActions">
@@ -183,6 +183,7 @@
 		<ul>
 			<li><a href="#create">Créer partie</a></li>
 			<li><a href="#join">Rejoindre</a></li>
+			<li id="existingGame"><a href="#rejoin">Partie en cours</a> </li>
 		</ul>
 
 		<div id="create">
@@ -247,6 +248,9 @@
 		<div id="join">
 			Joueur : <input type="text" id="idRemoteNomJoueur" name="joueur" placeholder="Nom"/><br/>
 			Partie : <input type="text" id="idRemoteGame" placeholder="ID Partie"/><br/>
+		</div>
+		<div id="rejoin">
+			Une partie est déjà en cours, vous pouvez vous y reconnecter
 		</div>
 
 	</div>

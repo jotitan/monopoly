@@ -53,7 +53,7 @@ class GotoCarte extends CarteAction{
 		this.primeDepart = primeDepart;
 	}
 	action(joueur) {
-		joueur.joueSurCase(this.fiche,this.direct,this.primeDepart);
+		joueur.joueSurCase(this.fiche,this.direct,this.primeDepart, true);
 	}
 }
 

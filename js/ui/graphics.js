@@ -1,10 +1,10 @@
 
 /* Fournit les methodes de dessin d'un plateau de jeu standard (carré) */
 
-var CURRENT_ID_COMPONENT = 0; // Permet de generer un numero de composant unique
+let CURRENT_ID_COMPONENT = 0; // Permet de generer un numero de composant unique
 
 /* Fournit des methodes de dessins */
-var DrawerHelper = {
+let DrawerHelper = {
 	fontWeight:200,
 	setFontWeight(font){
 		this.fontWeight = font;
@@ -26,7 +26,7 @@ var DrawerHelper = {
 		canvas.moveTo(center.x,center.y);
 		canvas.arc(center.x,center.y,rayon,alphaStart,alphaEnd);
 		canvas.fill();
-		canvas.closePath();	
+		canvas.closePath();
 	},
     drawImage: function (canvas, img, x, y, width, height, rotate) {
 		canvas.save();
@@ -59,7 +59,7 @@ var DrawerHelper = {
         canvas.font = `${this.fontWeight} ` + size + "pt Arial";
 
 		let mots = this._splitLine([text]);
-		
+
 		let mots2 = [];
 		mots.forEach(function(m){
 			if (canvas.measureText(m).width > width - 5) {
@@ -82,7 +82,7 @@ var DrawerHelper = {
 			}
 		});
 		mots = mots2;
-       
+
         canvas.save();
         canvas.translate(x, y);
         canvas.rotate(rotate);
@@ -94,7 +94,7 @@ var DrawerHelper = {
             	case 'right':lng = width - canvas.measureText(mots[i]).width;break;
             	default : lng = (width - canvas.measureText(mots[i]).width) / 2;
             }
-			canvas.fillText(mots[i], lng, i * pas);			
+			canvas.fillText(mots[i], lng, i * pas);
         }
         canvas.font = "6pt Times news roman";
         canvas.restore();
@@ -161,32 +161,32 @@ let DrawerFactory = {
 	},
 	/* Ajoute une nouvelle implementation */
 	addInstance:function(instance){
-		this.instances[instance.type] = instance;		
-	},	
+		this.instances[instance.type] = instance;
+	},
 	getDes:function(x, y, width){
-		return this._instantiate('des',arguments);		
+		return this._instantiate('des',arguments);
 	},
 	getDesRapide:function(x, y, width){
-		return this._instantiate('desRapide',arguments);		
+		return this._instantiate('desRapide',arguments);
 	},
 	getCase:function(pos,axe,color,nom,prix,img){
-		return this._instantiate('standardCase',arguments);	
+		return this._instantiate('standardCase',arguments);
 	},
 	getCaseSpeciale:function(axe,titre){
-		return this._instantiate('specialCase',arguments);	
+		return this._instantiate('specialCase',arguments);
 	},
 	getPionJoueur:function(color){
-		return this._instantiate('pionJoueur',arguments);	
+		return this._instantiate('pionJoueur',arguments);
 	},
 	getPlateau:function(x,y,width,height,color){
-		return this._instantiate('plateau',arguments);	
+		return this._instantiate('plateau',arguments);
 	},
 	endPlateau:function(){
-		return this._instantiate('endPlateau',arguments);		
+		return this._instantiate('endPlateau',arguments);
 	},
 	_instantiate:function(method,params){
 		if(this.instances[this.type] == null){
-			throw "Creation, type : " + this.type + " inconnu";    
+			throw "Creation, type : " + this.type + " inconnu";
 		}
 		if(this.instances[this.type][method] == null){
 			return null;
@@ -222,7 +222,7 @@ let Drawer = {
             return Drawer.canvas.canvas.id
         };
 		component.order = (order==null)?0:order;
-        Drawer.components.push(component);        
+        Drawer.components.push(component);
     },
     addRealTime: function (component) {
         component.getId = function () {

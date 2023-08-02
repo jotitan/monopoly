@@ -80,14 +80,24 @@ let MessageDisplayer = {
         vend(event){
             this.write(event.joueur, `vends ${event.nbMaison} maison(s)</span>`);
         },
+        exit(event){
+            this.write(event.joueur, `s'est déconnecté</span>`);
+        },
         loyer(event){
             let mais = event.maison;
             let m = `<span style="font-weight:bold;color:${mais.color}"> ${mais.nom}</span>`;
             let jp = `<span style="color:${mais.joueurPossede.color}">${mais.joueurPossede.nom}</span>`;
             this.write(event.joueur, `tombe sur ${m} et paye ${mais.getLoyer()} ${CURRENCY} à ${jp}`);
         },
+        start(){
+            this.write(this.people('Monopoly'),'La partie peut commencer');
+        },
         player(event){
-            this.write(event.joueur, "rentre dans la partie");
+            if(event.joueur.type === 'Distant'){
+                this.write(this.people('Monopoly'),'un siège est disponible');
+            }else {
+                this.write(event.joueur, "rentre dans la partie");
+            }
         },
         hypotheque(event){
             this.write(event.joueur, `hypothèque ${this._buildTerrain(event.maison)}`);
@@ -137,10 +147,13 @@ let MessageDisplayer = {
             if(event.carte === true){
                 message += " en utilisant une carte sortie de prison"
             }
+            if(!event.paye && !event.carte){
+                message += " en faisant un double"
+            }
             this.write(event.joueur, message);
         },
         construit(event){
-            var message = "";
+            let message = "";
             let achats = event.achats;
             if (achats.maison > 0) {
                 message += `achète ${achats.maison} maison(s) `;
@@ -200,8 +213,10 @@ let MessageDisplayer = {
     },
     bindEvents: function () {
         $
+            .bind("monopoly.start", () =>this.events.start())
             .bind("monopoly.save", (e, data) =>this.events.save(data))
             .bind("monopoly.depart", (e, data) =>this.events.depart(data))
+            .bind("monopoly.exit", (e, data) =>this.events.exit(data))
             .bind("monopoly.enchere.init",  (e, data) =>this.events.initEnchere(data))
             .bind("monopoly.enchere.fail", (e, data) => this.events.failEnchere(data))
             .bind("monopoly.enchere.success",  (e, data) => this.events.successEnchere(data))
@@ -256,7 +271,7 @@ let InfoMessage = {
         this.div.unbind('dialogclose.message').bind('dialogclose.message', function () {
             InfoMessage.div.dialog('open');
         });
-        var buttons = {};
+        let buttons = {};
         actionButtons.forEach(function(action){
             buttons[action.title] = function(){
                 InfoMessage.div.unbind('dialogclose.message');
@@ -272,25 +287,25 @@ let InfoMessage = {
         return buttons;
     },
     /* @params buttons : additonal buttons */
-    create:function(joueur,titre, background, message, call, param, forceshow,buttons){
+    create:function(joueur,titre, background, message, call = ()=>{}, param, forceshow,buttons){
         this._initMessage(background,titre,message);
-        var button = {
+        let button = {
             "Ok": function () {
-                InfoMessage.close();
+                InfoMessage.close(()=>call(param));
             }
         };
         if(buttons != null){
-            for(var title in buttons){
+            for(let title in buttons){
                 button[title] = buttons[title];
             }
         }
-        this.div.unbind('dialogclose.message').bind('dialogclose.message', function () {
+        /*this.div.unbind('dialogclose.message').bind('dialogclose.message', function () {
             InfoMessage.div.unbind('dialogclose.message');
             if (call != null) {
                 call(param);
             }
 
-        });
+        });*/
         if (call != null) {
             this.div.dialog('option', 'buttons', button);
         }
@@ -300,42 +315,40 @@ let InfoMessage = {
         }
         return button;
     },
-    close:function(){
+    close:function(callback = ()=>{}){
         if (this.div.dialog('isOpen')) {
             this.div.dialog('close');
-        } else {
-            // Trigger de fermeture
-            this.div.trigger('dialogclose.message');
-            this.div.trigger('dialogclose.prison');
         }
+        callback();
     },
     createPrison:function(montantPrison,joueur,nbTours, callback){
         this._initMessage("red","Vous êtes en prison depuis " + nbTours + " tours.","Vous êtes en prison, que voulez vous faire");
 
-        var buttons = {
+        let buttons = {
             "Payer": function () {
                 joueur.payer(montantPrison);
                 // TODO : Ajouter message pour indiquer qu'il paye
-                joueur.exitPrison({paye:true});
-                InfoMessage.close();
+                joueur.exitPrison({paye:true,notify:true});
+                InfoMessage.close(callback);
             },
             "Attendre": function () {
-                InfoMessage.close();
+                InfoMessage.close(callback);
             }
         }
         if (joueur.cartesSortiePrison.length > 0) {
             buttons["Utiliser carte"] = function () {
                 joueur.utiliseCarteSortiePrison();
                 // TODO : ajouter message pour dire qu'il utilise une carte
-                joueur.exitPrison({carte:true});
-                InfoMessage.close();
+                joueur.exitPrison({carte:true,notify:true});
+                InfoMessage.close(callback);
             }
         }
         this.div.dialog('option', 'buttons', buttons);
-        this.div.bind('dialogclose.prison', function () {
+        /*this.div.bind('dialogclose.prison', function () {
+            console.log("BIND CLOSE DIALOG, launch callback")
             InfoMessage.div.unbind('dialogclose.prison');
             callback();
-        });
+        });*/
         if (joueur.canPlay) {
             wrapDialog(this.div,'open');
         }

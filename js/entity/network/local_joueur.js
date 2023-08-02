@@ -1,3 +1,8 @@
+import {NetworkJoueur, Joueur, Notifier} from '../joueur.js';
+import {GestionFiche} from "../../display/case_jeu.js";
+import {GestionDes} from "../dices.js";
+import {GestionJoueur} from "../../gestion_joueurs.js";
+
 /* Represent a local player in remote game */
 /* Extend joueur but override many methods, no action, only receive events */
 class LocalPlayer extends NetworkJoueur {
@@ -5,8 +10,8 @@ class LocalPlayer extends NetworkJoueur {
         super(numero,nom,color,argent,montantDepart);
     }
     lancerDes() {
-        // Send event to get score for dices
-        Notifier.askDices(this);
+        // Send event to get score for dices. If prison, ask stay or not before
+        GestionDes.gestionDes.before(()=>Notifier.askDices(this));
     }
     notifySelect(){}
     // Notify to master end of turn
@@ -47,7 +52,16 @@ class MasterRemotePlayer extends RemotePlayer{
         Notifier.notifySelect(this);
     }
     notifyDices(dices,event){
+        // Send event tax if necessary, move to and change
         Notifier.dices(dices,event,this);
+        if(event.prison != null) {
+            if (!event.prison.sortie) {
+                GestionJoueur.change()
+            }else{
+                GestionJoueur.getJoueurCourant().exitPrison()
+                // exist but must by or relaunch
+            }
+        }
     }
     moveTo(nb){
         let nextCase = this.pion.deplaceValeursDes(nb);
@@ -55,3 +69,5 @@ class MasterRemotePlayer extends RemotePlayer{
         this.joueSurCase(nextCase);
     }
 }
+
+export {MasterRemotePlayer,RemotePlayer,LocalPlayer};

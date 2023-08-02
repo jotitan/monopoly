@@ -1,4 +1,4 @@
-import {Joueur,Notifier} from "./joueur.js";
+import {Joueur,PlayerSaver,Notifier} from "./joueur.js";
 import {GestionStrategie} from "./strategie.js";
 import {GestionComportement} from "./comportement.js";
 import {ETAT_LIBRE, GestionFiche} from "../display/case_jeu.js";
@@ -18,6 +18,53 @@ const terrainNonListe = "TERRAIN_NON_LISTE";
 const terrainDispo = "TERRAIN_DISPO";
 const argentInsuffisant = "ARGENT_INSUFFISANT";
 
+class PlayerOrdinateurSaver extends PlayerSaver{
+	constructor(joueur){
+		super(joueur);
+	}
+	saveMore(data) {
+		data.comportement = this.joueur.comportement.id;
+		data.strategie = this.joueur.strategie.id;
+		// Charge l'historique des propositions (derniere proposition du terrain)
+		data.rejectedPropositions = [];
+		for (let id in this.joueur.rejectedPropositions) {
+			let proposition = this.joueur.rejectedPropositions[id][this.joueur.rejectedPropositions[id].length -1].proposition;
+			let terrains = [];	// On ne garde que les ids des fiches pour eviter les cycles a la sauvegarde
+			proposition.terrains.forEach(terrain=>terrains.push(terrain.id));
+			data.rejectedPropositions.push({
+				id: id,
+				proposition: {
+					compensation:proposition.compensation,
+					terrains:terrains
+				}
+			});
+		}
+	}
+
+	loadMore(data) {
+		this.joueur.init(data.strategie, data.comportement);
+		this.joueur.rejectedPropositions = [];
+		if (data.rejectedPropositions != null) {
+			for (let id in data.rejectedPropositions) {
+				let p = data.rejectedPropositions[id].proposition;
+				let terrains = [];
+				if(p.terrains!=null){
+					for(let t in p.terrains){
+						terrains.push(GestionFiche.getById(p.terrains[t]));
+					}
+				}
+				// On ajoute la proposition dans le tableau
+				this.joueur.rejectedPropositions[data.rejectedPropositions[id].id] = [{
+					proposition:{
+						compensation:p.compensation,
+						terrains:terrains
+					}
+				}];
+			}
+		}
+	}
+}
+
 class JoueurOrdinateur extends Joueur {
 	constructor(numero, nom, color, argent,montantDepart){
 		super(numero, nom, color,argent,montantDepart);
@@ -31,6 +78,7 @@ class JoueurOrdinateur extends Joueur {
 		this.comportement = null;
 		this.nom = nom;
 		this.rejectedPropositions = []; // Sotcke les propositions rejetees
+		this.saver = new PlayerOrdinateurSaver(this);
 		this.init();
 	}
 
@@ -38,51 +86,6 @@ class JoueurOrdinateur extends Joueur {
 	init(idStrategie, idComportement) {
 		this.strategie = (idStrategie === undefined) ? GestionStrategie.createRandom() : GestionStrategie.create(idStrategie);
 		this.comportement = (idComportement === undefined) ? GestionComportement.createRandom() : GestionComportement.create(idComportement);
-	}
-
-	saveMore(data) {
-		data.comportement = this.comportement.id;
-		data.strategie = this.strategie.id;
-		// Charge l'historique des propositions (derniere proposition du terrain)
-		data.rejectedPropositions = [];
-		for (let id in this.rejectedPropositions) {
-			let proposition = this.rejectedPropositions[id][this.rejectedPropositions[id].length -1].proposition;
-			let terrains = [];	// On ne garde que les ids des fiches pour eviter les cycles a la sauvegarde
-			// TODO map
-			for(let t in proposition.terrains){
-				terrains.push(proposition.terrains[t].id);
-			}
-			data.rejectedPropositions.push({
-				id: id,
-				proposition: {
-					compensation:proposition.compensation,
-					terrains:terrains
-				}
-			});
-		}
-	}
-
-	loadMore(data) {
-		this.init(data.strategie, data.comportement);
-		this.rejectedPropositions = [];
-		if (data.rejectedPropositions != null) {
-			for (let id in data.rejectedPropositions) {
-				let p = data.rejectedPropositions[id].proposition;
-				let terrains = [];
-				if(p.terrains!=null){
-					for(let t in p.terrains){
-						terrains.push(GestionFiche.getById(p.terrains[t]));
-					}
-				}
-				// On ajoute la proposition dans le tableau
-				this.rejectedPropositions[data.rejectedPropositions[id].id] = [{
-					proposition:{
-						compensation:p.compensation,
-						terrains:terrains
-					}
-				}];
-			}
-		}
 	}
 
 	// Fonction appelee lorsque le joueur a la main
@@ -206,7 +209,7 @@ class JoueurOrdinateur extends Joueur {
 		}
 	}
 
-	notifyRejectProposition(callback=()=>{}, terrain, proposition) {
+	notifyRejectProposition(callback, terrain, proposition) {
 		// On enregistre le refus du proprietaire : le terrain, la proposition et le numero de tour
 		// utiliser pour plus tard pour ne pas redemander immediatement
 		if (this.rejectedPropositions[terrain.id] === undefined) {
@@ -222,7 +225,7 @@ class JoueurOrdinateur extends Joueur {
 	addIsolateHouse(maison,proposition){
 		let data = this.maisons.findUnterestsProprietes();
 		let montant = 0;
-		if (data != null && data.proprietes != null && data.proprietes.length > 0) {
+		if (data.proprietes.length > 0) {
 			let proprietes = data.proprietes;
 			// On en ajoute. En fonction de la strategie, on n'ajoute que les terrains seuls dans le groupe (peu important)
 			for (let i = 0; i < proprietes.length && montant / maison.achat < 0.7; i++) {
@@ -256,13 +259,13 @@ class JoueurOrdinateur extends Joueur {
 		if (proprietes.length === 0) {
 			return callback();
 		}
-		var nbGroupesPossedes = this.maisons.findConstructiblesGroupes().length;
+		const nbGroupesPossedes = this.maisons.findConstructiblesGroupes().length;
 		/* On calcule l'importance d'echanger (si des groupes sont presents ou non) */
-		var interetEchange = Math.pow(1 / (1 + nbGroupesPossedes), 2);
+		const interetEchange = Math.pow(1 / (1 + nbGroupesPossedes), 2);
 
 		/* On cherche les monnaies d'echanges. */
-		var proprietesFiltrees = [];
-		for (var p in proprietes) {
+		let proprietesFiltrees = [];
+		for (let p in proprietes) {
 			let prop = proprietes[p];
 			let maison = prop.maison;
 			// On verifie si une demande n'a pas ete faite trop recemment
@@ -274,16 +277,16 @@ class JoueurOrdinateur extends Joueur {
 				prop.deals = maison.joueurPossede.maisons.findOthersInterestProprietes(this,maison);
 				if (prop.deals.length === 0) {
 					// On ajoute les terrains non importants (gare seule, compagnie)
-					let montant = this.addIsolateHouse(maison,prop);
+					let localMontant = this.addIsolateHouse(maison,prop);
 
 					// Permettre calcul compensation quand traitement fournit des terrains < 80% du montant
-					if (montant / maison.achat < 0.8) {
-						prop.compensation = this.evalueCompensation(joueur, maison, interetEchange, last) - montant;
+					if (localMontant / maison.achat < 0.8) {
+						prop.compensation = this.evalueCompensation(joueur, maison, interetEchange, last) - localMontant;
 					}
 				} else {
-					// Si trop couteux, on propose autre chose, comme de l'argent. On evalue le risque a echanger contre ce joueur.  
+					// Si trop couteux, on propose autre chose, comme de l'argent. On evalue le risque a echanger contre ce joueur.
 					// On teste toutes les monnaies d'echanges
-					var monnaies = this.chooseMonnaiesEchange(prop, prop.monnaiesEchange, true, nbGroupesPossedes >= 2, last);
+					const monnaies = this.chooseMonnaiesEchange(prop, prop.monnaiesEchange, true, nbGroupesPossedes >= 2, last);
 					if (monnaies === undefined || monnaies.length === 0) {
 						prop.compensation = this.evalueCompensation(joueur, maison, interetEchange, last);
 						prop.deals = null;
@@ -294,10 +297,10 @@ class JoueurOrdinateur extends Joueur {
 				// Si aucune proposition, on ajoute les autres terrains dont on se moque (terrains constructibles mais non intéressant)
 				// Potentiellement un terrain de la strategie peut tout de meme etre proposee (une gare par exemple)
 				if ((prop.deals == null || prop.deals.length === 0) && prop.compensation === 0) {
-					var terrains = this.maisons.findOthersProperties(proprietes);
-					var montant = 0;
+					const terrains = this.maisons.findOthersProperties(proprietes);
+					let montant = 0;
 					for (var i = 0; i < terrains.length && montant / maison.achat < 0.7; i++) {
-						var terrain = terrains[i];
+						const terrain = terrains[i];
 						if (!this.strategie.interetPropriete(terrain)) {
 							if (prop.deals == null) {
 								prop.deals = [];
@@ -347,9 +350,9 @@ class JoueurOrdinateur extends Joueur {
 	/* Verifie que le terrain peut etre demande a l'echange (si une precedente demande n'a pas été faite trop recemment) */
 	_canAskTerrain(terrain) {
 		// On prend le dernier
-		var last = this._getLastProposition(terrain);
+		const last = this._getLastProposition(terrain);
 		if (last != null) {
-			var pas = 3 + (Math.round((Math.random() * 1000) % 3));
+			const pas = 3 + (Math.round((Math.random() * 1000) % 3));
 			return last.nbTours + pas < globalStats.nbTours;
 		}
 
@@ -367,7 +370,7 @@ class JoueurOrdinateur extends Joueur {
 	// La gestion des echanges se passe par des mecanismes asynchrones. On utilise un objet contenant une proposition / contre proposition et un statut.
 	// On bloque le traitement d'un joueur
 
-	/* Suite a une demande d'echange d'un joueur, analyse la requete. Plusieurs cas : 
+	/* Suite a une demande d'echange d'un joueur, analyse la requete. Plusieurs cas :
 	 * Accepte la proposition (ACCEPT, indice > 3)
 	 * Refuse la proposition (BLOCK, indice < 0)
 	 * Fait une contre proposition en demandant plus d'argent et / ou d'autres terrains (UP, 1 < indice > 5)
@@ -388,11 +391,11 @@ class JoueurOrdinateur extends Joueur {
 			return GestionEchange.reject(this);
 		}
 
-		var contreProposition = {
+		let contreProposition = {
 			terrains: [],
 			compensation: 0
 		};
-		var turn = 0; // Pas plus de 3 tour de calcul
+		let turn = 0; // Pas plus de 3 tour de calcul
 		do {
 			contreProposition = this._calculateContreProposition(joueur, proposition, contreProposition, infos.recommandations, maison, others);
 			infos = this._calculatePropositionValue(maison, joueur, contreProposition, others);
@@ -519,7 +522,7 @@ class JoueurOrdinateur extends Joueur {
 		}
 		/* On evalue la pertinence  */
 		let others = this.maisons.findOthersInterestProprietes(joueur);
-		let infos = null;
+		let infos;
 		if (proposition.terrains.length > 0) {
 			// On inverse les parametres
 			let prop = {
@@ -563,7 +566,7 @@ class JoueurOrdinateur extends Joueur {
 	}
 
 	/* Evalue la dangerosite d'un joueur s'il recupere une maison supplementaire pour finir un groupe */
-	/* Plusieurs criteres : 
+	/* Plusieurs criteres :
 	 * 1) Capacite a acheter des constructions
 	 * 2) Rentabilite du groupe (hors frais d'achat, uniquement maison + loyer)
 	 * 3) Creation d'une ligne
@@ -678,7 +681,7 @@ class JoueurOrdinateur extends Joueur {
 	}
 
 	/* Permet de faire du blocage de construction : vente d'un hotel pour limiter l'achat de maison, decision d'acheter un hotel pour bloquer.
-	 * Se base sur les terrains constructibles des adversaires ainsi que de leur tresorie.
+	 * Se base sur les terrains constructibles des adversaires ainsi que de leur tresorerie.
 	 * Retourne vrai s'il faut bloquer le jeu de constructions
 	 */
 	doBlocage() {
@@ -795,11 +798,11 @@ class JoueurOrdinateur extends Joueur {
 		}
 		/* CAS 3, il reste les maisons groupees desormais non construites */
 		if (this.montant < montant) {
-			let maisons = this.maisons.maisons.filter(m=>m.statutHypotheque === false);
+			let localsMaisons = this.maisons.maisons.filter(m=>m.statutHypotheque === false);
 			// On trie par montant (moins cher en premier). A deporter dans la strategie
-			maisons.sort((a, b) =>a.achat - b.achat);
-			for (let index = 0; index < maisons.length && this.montant < montant; index++) {
-				maisons[index].hypotheque();
+			localsMaisons.sort((a, b) =>a.achat - b.achat);
+			for (let index = 0; index < localsMaisons.length && this.montant < montant; index++) {
+				localsMaisons[index].hypotheque();
 			}
 		}
 		// Somme recouvree
@@ -816,7 +819,7 @@ class JoueurOrdinateur extends Joueur {
 			.size;
 	}
 
-	/* Renvoie la liste des groupes a construire trie. 
+	/* Renvoie la liste des groupes a construire trie.
 	 * @param sortType : Tri des groupes en fonction de l'importance. ASC ou DESC
 	 */
 	getGroupsToConstruct(sortType, level) {
@@ -1142,4 +1145,4 @@ class NetworkJoueurOrdinateur extends JoueurOrdinateur{
 	}
 }
 
-export {JoueurOrdinateur};
+export {JoueurOrdinateur,NetworkJoueurOrdinateur};

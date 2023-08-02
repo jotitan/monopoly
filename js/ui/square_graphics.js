@@ -1,4 +1,3 @@
-import {} from '../../lib/jquery-1.11.0.min.js'
 import {DrawerFactory,DrawerHelper,Component} from "./graphics.js";
 import {GestionFiche} from "../display/case_jeu.js";
 import {VARIANTES} from "../monopoly.js";
@@ -85,14 +84,14 @@ class PionJoueur extends Component{
 			}
 			return;
 		}
-		var caseFiche = this._toNextCase();
-		var pas = 5;
-		var field = "x"; // On varie sur l'axe x
+		const caseFiche = this._toNextCase();
+		const pas = 5;
+		let field = "x"; // On varie sur l'axe x
 		if (this.x === caseFiche.x) {
 			field = "y"; // On varie sur l'axe y
 		}
-		var distance = Math.abs(caseFiche[field] - this[field]);
-		var sens = (caseFiche[field] > this[field]) ? 1 : -1;
+		let distance = Math.abs(caseFiche[field] - this[field]);
+		const sens = (caseFiche[field] > this[field]) ? 1 : -1;
 		this.currentInterval = setInterval(()=> {
 			if (distance > 0) {
 				this[field] += pas * sens;
@@ -299,9 +298,9 @@ class Case extends Component {
 	};
 
 	draw (canvas) {
-		var bordure = DrawerFactory.dimensions.bordure/2;
-		var largeur = DrawerFactory.dimensions.largeur;
-		var hauteur = DrawerFactory.dimensions.hauteur;
+		const bordure = DrawerFactory.dimensions.bordure/2;
+		const largeur = DrawerFactory.dimensions.largeur;
+		const hauteur = DrawerFactory.dimensions.hauteur;
 		canvas.strokeStyle = '#000000';
 		canvas.strokeRect(this.data.x, this.data.y, this.data.width, this.data.height);
 		let drawer = axeDrawer[this.axe];
@@ -359,9 +358,9 @@ class Case extends Component {
 	// Retourne le decalage d'un pion sur la case
 	/* @param inverse : decalage inverse (remise en place) */
 	_decalagePion() {
-		var bordure = DrawerFactory.dimensions.bordure/2;
-		var dec = 20 + ((this.color != null) ? bordure : 0) + DrawerFactory.dimensions.largeurPion / 2;
-		var center = this.getCenter();
+		const bordure = DrawerFactory.dimensions.bordure/2;
+		const dec = 20 + ((this.color != null) ? bordure : 0) + DrawerFactory.dimensions.largeurPion / 2;
+		const center = this.getCenter();
 		center.x += 5;
 		let pas = {
 			x: DrawerFactory.dimensions.largeurPion,
@@ -569,7 +568,7 @@ class Plateau extends Component{
 }
 
 function initSquareInstance(){
-	var instance = {
+	const instance = {
 		type:'square',
 		standardCase:Case,
 		specialCase:CaseSpeciale,

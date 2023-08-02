@@ -1,4 +1,3 @@
-import {} from '../../lib/jquery-1.11.0.min.js'
 import {DrawerFactory,Drawer} from '../ui/graphics.js'
 import {CURRENCY,VARIANTES} from "../monopoly.js";
 import {GestionJoueur} from "../gestion_joueurs.js";
@@ -9,8 +8,8 @@ import {GestionDes} from "../entity/dices.js";
 
 /* Case du plateau */
 
-let ETAT_LIBRE = 0;
-let ETAT_ACHETE = 1;
+const ETAT_LIBRE = 0;
+const ETAT_ACHETE = 1;
 
 class PlateauCase{
 	constructor(axe,pos,type) {
@@ -132,7 +131,7 @@ class CaseChance extends PlateauCase {
 	}
 	action() {
 		if (this.cartes.length === 0) {
-			throw "Aucune " + this.nom;
+			throw `Aucune ${this.nom}`;
 		}
 		let randomValue = Math.round((Math.random() * 1000)) % (this.cartes.length);
 		let c = this.cartes[randomValue];
@@ -191,7 +190,7 @@ function Groupe(nom, color) {
 		if (this.fiches == null || this.fiches.length === 0) {
 			return false;
 		}
-		var joueur = this.fiches[0].joueurPossede;
+		let joueur = this.fiches[0].joueurPossede;
 		for (let i = 0; i < this.fiches.length; i++) {
 			if (this.fiches[i].joueurPossede == null || !this.fiches[i].joueurPossede.equals(joueur)) {
 				return false;
@@ -292,7 +291,7 @@ class FicheUI{
 		this.panel.dialog('option','title',this.name);
 	}
 	open(){
-		var buttons = this.getButtons();
+		const buttons = this.getButtons();
 		this.panel.dialog('option', 'buttons', this.getButtons());
 		FicheDisplayer.loadFiche(this.fiche);
 		if (GestionJoueur.getJoueurCourant().canPlay) {
@@ -380,8 +379,8 @@ class Fiche extends PlateauCase {
 	}
 
 	getNbPropertiesOfType(){
-		var nb = -1;
-		for (var i = 0; i < this.joueurPossede.maisons.maisons.length; i++) {
+		let nb = -1;
+		for (let i = 0; i < this.joueurPossede.maisons.maisons.length; i++) {
 			if (this.joueurPossede.maisons.maisons[i].type === this.type) {
 				nb++;
 			}
@@ -390,7 +389,7 @@ class Fiche extends PlateauCase {
 	}
 
 	load(data) {
-		var joueur = data.joueur != null ? GestionJoueur.getById(data.joueur) : null;
+		const joueur = data.joueur != null ? GestionJoueur.getById(data.joueur) : null;
 		if (joueur != null) {
 			this.setJoueurPossede(joueur,true);
 			joueur._drawTitrePropriete(this);

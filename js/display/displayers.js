@@ -218,7 +218,7 @@ let CommunicationDisplayer = {
     /* Affiche juste la proposition, pas d'option */
     showPropose: function (demandeur, proprietaire, terrain, proposition, displayJoueur) {
         this.joueur = displayJoueur;
-        this.panel.dialog('option', 'title', 'Echange entre ' + demandeur.nom + ' et ' + proprietaire.nom);
+        this.panel.dialog('option', 'title', `Echange entre ${demandeur.nom} et ${proprietaire.nom}`);
         $('.proposition,.communications', this.panel).empty();
         $('.proposition', this.panel).append(`<div>Terrain : <span style="font-weight:bold;color:${terrain.color}">${terrain.nom}</div>`);
 

@@ -12,7 +12,7 @@ function Pion(color, joueur,img, montantDepart = 20000) {
 		tour: 0,
 		prison: 0,
 		positions:[]
-	}; // stat du joueur		
+	}; // stat du joueur
 	this.pion = DrawerFactory.getPionJoueur(color,DrawerFactory.dimensions.largeurPion,img,this.joueur);
 	Drawer.addRealTime(this.pion);
 
@@ -54,9 +54,11 @@ function Pion(color, joueur,img, montantDepart = 20000) {
 		else{
 			this.stats.positions[id]++;
 		}
-		$.trigger("monopoly.debug", {
-			message: GestionJoueur.getJoueurCourant().nom + " est en " + this.axe + "-" + this.position + " et va en " + id
-		});
+		if(GestionJoueur.getJoueurCourant() != null) {
+			$.trigger("monopoly.debug", {
+				message: GestionJoueur.getJoueurCourant().nom + " est en " + this.axe + "-" + this.position + " et va en " + id
+			});
+		}
 		// On gere le cas de la case depart (si elle est sur le trajet)
 		let depart = this.axe*DrawerFactory.dimensions.nbCases + this.position;
 		let cible = axe*DrawerFactory.dimensions.nbCases + pos;
@@ -73,7 +75,7 @@ function Pion(color, joueur,img, montantDepart = 20000) {
 	this.treatCaseDepart = function () {
 		this.stats.tour++;
 		this.joueur.gagner(this.montantDepart);
-	}    
+	}
 
 	this.goDirectToCell = function (axe, pos, callback) {
 		this.axe = axe;

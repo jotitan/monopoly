@@ -22,7 +22,7 @@
 		{"type": "propriete","groupe": "Bleu clair","axe": 2,"pos": 9,"nom": "Avenue de la Republique","colors": ["#119AEB", "#98CEEE"],"prix": 12000,"loyers": [800, 4000, 10000, 30000, 45000, 60000],"prixMaison": 5000},				
 		{"type": "special","axe": 3,"pos": 0,"nom": "Simple visite"},				
 		{"type": "propriete","groupe": "Violet clair","axe": 3,"pos": 1,"nom": "Boulevard de la Villette","colors": ["#73316F", "#DFB4DC"],"prix": 14000,"loyers": [1000, 5000, 15000, 45000, 62500, 75000],"prixMaison": 10000},
-		{"type": "compagnie","axe": 3,"pos": 2,"nom": "Compagnie de distribution d'électricité","colors": ["lightgreen"],"prix": 15000,"loyers": [400,1000]},
+		{"type": "compagnie","axe": 3,"pos": 2,"nom": "Compagnie de distribution d'électricité","colors": ["lightgreen"],"prix": 15000,"loyers": [400,1000],"img": "light"},
 		{"type": "propriete","groupe": "Violet clair","axe": 3,"pos": 3,"nom": "Avenue de Neuilly","colors": ["#73316F", "#DFB4DC"],"prix": 14000,"loyers": [1000, 5000, 15000, 45000, 62500, 75000],"prixMaison": 10000},				
 		{"type": "propriete","groupe": "Violet clair","axe": 3,"pos": 4,"nom": "Rue de Paradis","colors": ["#73316F", "#DFB4DC"],"prix": 16000,"loyers": [1200, 6000, 18000, 50000, 70000, 90000],"prixMaison": 10000},
 		{"type": "gare","axe": 3,"pos": 5,"nom": "Gare de Lyon","colors": ["#000000", "#ABABAB"],"prix": 20000,"loyers": [2500, 5000, 10000, 20000]},
@@ -38,7 +38,7 @@
 		{"type": "gare","axe": 0,"pos": 5,"nom": "Gare du Nord","colors": ["#000000", "#ABABAB"],"prix": 20000,"loyers": [2500, 5000, 10000, 20000]},		
 		{"type": "propriete","groupe": "Jaune","axe": 0,"pos": 6,"nom": "Boulevard Saint-Honoré","colors": ["#E6E018", "#F8F587"],"prix": 26000,"loyers": [2200, 11000, 33000, 80000, 97500, 115000],"prixMaison": 15000},
 		{"type": "propriete","groupe": "Jaune","axe": 0,"pos": 7,"nom": "Place de la Bourse","colors": ["#E6E018", "#F8F587"],"prix": 26000,"loyers": [2200, 11000, 33000, 80000, 97500, 115000],"prixMaison": 15000},								
-		{"type": "compagnie","axe": 0,"pos": 8,"nom": "Compagnie de distribution des eaux","colors": ["lightgreen"],"prix": 15000,"loyers": [400,1000]},
+		{"type": "compagnie","axe": 0,"pos": 8,"nom": "Compagnie de distribution des eaux","colors": ["lightgreen"],"prix": 15000,"loyers": [400,1000],"img": "water"},
 		{"type": "propriete","groupe": "Jaune","axe": 0,"pos": 9,"nom": "Rue Lafayette","colors": ["#E6E018", "#F8F587"],"prix": 28000,"loyers": [2400, 12000, 36000, 85000, 102500, 120000],"prixMaison": 15000},								
 		{"type": "prison","axe": 1,"pos": 0,"nom": "Allez en prison"},
 		{"type": "propriete","groupe": "Vert","axe": 1,"pos": 1,"nom": "Avenue de Breteuil","colors": ["#11862E", "#93D1A2"],"prix": 30000,"loyers": [2600, 13000, 39000, 90000, 110000, 127500],"prixMaison": 20000},
@@ -71,6 +71,18 @@
 			"src": "img/light2.png",
             "width": 28,
             "height": 28,
+			"margin": 17
+		},
+		"water":{
+			"src": "img/tap.png",
+			"width": 28,
+			"height": 28,
+			"margin": 17
+		},
+		"light":{
+			"src": "img/light2.png",
+			"width": 28,
+			"height": 28,
 			"margin": 17
 		},
 		"gare":{

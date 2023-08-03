@@ -37,5 +37,10 @@
             "name": "Star Wars 2 Circle",
             "url": "data-monopoly-circle-starwars2.json"
         }
+    ,
+        {
+            "name": "Monopoly Junior",
+            "url": "data-monopoly-junior.json"
+        }
     ]
 }

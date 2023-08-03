@@ -16,7 +16,7 @@
 	}
 }
 
-@media screen and (min-height: 1000px){
+@media screen and (min-height: 1000px)  and (max-width: 700px){
 	#informations-left,#informations  {
 		display:none;
 	}	
@@ -44,11 +44,11 @@
 	width:250px;
 }
 
-#idDetailFiche {
+.detail-fiche{
 	width:240px;
 }
 
-#idDetailFiche > table{
+.detail-fiche > table{
 	width:240px;
 }
 
@@ -57,12 +57,13 @@
     width: 240px;
 }
 
-
 .panneau_joueur  {
     width:250px;
+    height:800px;
+    overflow: auto;
 }
 
-.joueurCourant > .joueur-name {
+.joueurCourant .joueur-name {
     padding-left: 35px;
     background-image: url("../img/dice.png");
     background-repeat: no-repeat;
@@ -137,8 +138,8 @@ body { margin: 0 }
     border:solid grey 2px;
     background-color:#FFFFFF;
     position:absolute;
-    top:350px;
-    left:130px;
+    top:338px;
+    left:125px;
     width:540px;
     height:330px;
     overflow:auto;
@@ -154,7 +155,7 @@ body { margin: 0 }
 	height:25px;
 	position:absolute;
 	top:215px;
-	left:270px;
+	left:275px;
 }
 
 #idReloadDice.circle {
@@ -231,7 +232,7 @@ div.ui-tooltip {
     color:black;
 }
 
-@media screen and (max-height: 1000px) {
+@media  (max-height: 1000px) or (min-width: 700px){
     #idActions > button {
         top:260px;
         position:absolute;
@@ -258,11 +259,21 @@ div.ui-tooltip {
     .count-property {
         display:none;
     }
+    #actions {
+        display: none;
+    }
 }
 
-@media screen and (min-height: 1000px) {
+@media screen and (min-height: 1000px) and (max-width: 700px) {
     .jail > div {
         width:calc(100% - 25px);
+    }
+    .joueur-id {
+        font-size:3vw;
+    }
+
+    .joueur-bloc {
+        height:auto;
     }
 
     #actions {
@@ -284,7 +295,7 @@ div.ui-tooltip {
         display:inline-block;
         border-radius:5px;
         margin-left:10px;
-        height:14px;
+        height:16px;
     }
 
     .panneau_joueur > div {
@@ -322,4 +333,10 @@ div.ui-tooltip {
         width: 24vw;
     }
 
+}
+
+.ui-state-default {
+    text-align:center;
+    padding-left:5px;
+    padding-right:5px;
 }

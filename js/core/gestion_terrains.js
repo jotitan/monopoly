@@ -18,11 +18,7 @@ let GestionTerrains = {
     panel: null,
     /* Remet a 0 le panneau */
     open: function (banqueroute, onclose) {
-        if (banqueroute) {
-            this.banqueroute = true;
-        } else {
-            this.banqueroute = false;
-        }
+        this.banqueroute = banqueroute;
         if (onclose) {
             this.panel.unbind('dialogbeforeclose').bind('dialogbeforeclose', onclose);
         } else {
@@ -128,7 +124,7 @@ let GestionTerrains = {
         },
         valider: function () {
             // On recupere les fiches et on hypotheque les biens
-            for (var id in this.table) {
+            for (const id in this.table) {
                 this.table[id].hypotheque();
             }
         },
@@ -197,7 +193,7 @@ let GestionTerrains = {
             this.table = [];
         },
         valider: function () {
-            for (var id in this.table) {
+            for (const id in this.table) {
                 this.table[id].leveHypotheque();
             }
         },
@@ -237,7 +233,7 @@ let GestionTerrains = {
             // On verifie les terrains libres
             let testGroups = [];
             $('select[data-color]', this.div).each(function () {
-                var color = $(this).get(0).dataset.color;
+                const color = $(this).get(0).dataset.color;
                 if (testGroups[color] == null) {
                     testGroups[color] = {
                         min: 5,
@@ -277,7 +273,7 @@ let GestionTerrains = {
             }
         },
         acheter: function () {
-            for (var achat in this.table) {
+            for (const achat in this.table) {
                 let data = this.table[achat];
                 if(data.propriete.nbMaison < data.nbMaison){
                     data.propriete.setNbMaison(data.nbMaison);
@@ -288,7 +284,7 @@ let GestionTerrains = {
             this._doBuyConstructions();
         },
         vendre: function () {
-            for (var achat in this.table) {
+            for (const achat in this.table) {
                 let data = this.table[achat];
                 if(data.propriete.nbMaison > data.nbMaison){
                     data.propriete.setNbMaison(data.nbMaison);
@@ -398,8 +394,8 @@ let GestionTerrains = {
                     GestionTerrains.update();
 
                     // Si le groupe est vide, on permet l'hypotheque des terrains
-                    var nbMaisons = 0;
-                    var gr = target.data("group");
+                    let nbMaisons = 0;
+                    const gr = target.data("group");
                     GestionTerrains.Constructions.div.find(`select[data-color="${prop.color}"]`).each(function () {
                         nbMaisons += value;
                     });

@@ -163,7 +163,7 @@ class PlateauDetails {
         this._temp_load_data = dataExtend;
         // On charge le plateau
         get(path).then(data => this.managePlateauConfig(data, options, callback))
-            .catch((e) => alert(`Le plateau ${path} n'existe pas`));
+            .catch(() => alert(`Le plateau ${path} n'existe pas`));
     }
 
     managePlateauConfig(data, options, callback) {
@@ -265,7 +265,10 @@ class PlateauDetails {
     }
 
     addToGroup(groups, def, name, fiche) {
-        groups[def.colors[0]].nom = name;
+        const g = groups[def.colors[0]];
+        if(g.nom == null){
+            g.nom =  name;
+        }
         groups[def.colors[0]].add(fiche);
         return fiche;
     }
@@ -515,9 +518,8 @@ class Monopoly {
 
     init() {
         MessageDisplayer.init('idInfoBox');
-
         $('.action-joueur').attr('disabled', 'disabled').addClass('disabled');
-        JoueurFactory.setMouseFunction(this.plateau.enableMouse);
+        JoueurFactory.setMouseFunction(callback=>this.plateau.enableMouse(callback));
         if (DEBUG) {
             this.plateau.load('data-monopoly.json', () => this._createGame({}));
         }

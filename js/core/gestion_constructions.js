@@ -17,7 +17,7 @@ let GestionConstructions = {
         if (nbActualHouse == null) {
             return this.nbInitHotel > this.nbSellHotel;
         }
-        var needHouse = 4 - nbActualHouse;
+        const needHouse = 4 - nbActualHouse;
         return this.nbInitHotel > this.nbSellHotel & this.nbInitHouse >= this.nbSellHouse + needHouse;
     },
     getRestHouse: function () {
@@ -94,7 +94,7 @@ let GestionConstructions = {
                         }
                     }
                     // Verifie qu'il y a assez de maison disponible
-                    var resteMaison = 4 - p.from.nb;
+                    const resteMaison = 4 - p.from.nb;
                     if (resteMaison > simulation.reste.maison) {
                         // Impossible, pas assez de maison, on renvoie un nombre de maison negatif et on sort
                         simulation.reste.maison -= resteMaison;

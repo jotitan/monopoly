@@ -3,6 +3,7 @@
 import {GestionJoueur} from "../core/gestion_joueurs.js";
 import {CURRENCY} from "../core/monopoly.js";
 import {GestionEchange} from "../core/enchere.js";
+import {GestionFiche} from "./case_jeu.js";
 
 function initWrapButtons(bloc){
     currentDialogId++;
@@ -158,7 +159,7 @@ let FicheDisplayer = {
         }
     },
     closeFiche:function(){
-        var close = false;
+        let close = false;
         if(this.fiche.dialog('isOpen')) {
             this.fiche.dialog('close');
             close = true;

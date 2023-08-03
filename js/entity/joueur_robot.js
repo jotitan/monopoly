@@ -300,7 +300,7 @@ class JoueurOrdinateur extends Joueur {
 				if ((prop.deals == null || prop.deals.length === 0) && prop.compensation === 0) {
 					const terrains = this.maisons.findOthersProperties(proprietes);
 					let montant = 0;
-					for (var i = 0; i < terrains.length && montant / maison.achat < 0.7; i++) {
+					for (let i = 0; i < terrains.length && montant / maison.achat < 0.7; i++) {
 						const terrain = terrains[i];
 						if (!this.strategie.interetPropriete(terrain)) {
 							if (prop.deals == null) {

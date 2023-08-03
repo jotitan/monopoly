@@ -65,7 +65,7 @@ let Sauvegarde = {
         if (localStorage[name] == null) {
             throw "Aucune sauvegarde";
         }
-        var data = localStorage[name];
+        const data = localStorage[name];
         return JSON.parse(data);
     },
     autoSave: function () {

@@ -231,8 +231,8 @@ class GestionDesImpl{
     }
     async _randDes(){
         // @TODO remove
+        console.log("LAUNCH 2")
         await DiceThrower.throw(2).then(dices=>this.setDices(dices[0],dices[1]));
-        //this.setDices(3,3);
     }
     _anime(){
         $('.action-joueur').attr('disabled', 'disabled').addClass('disabled');
@@ -317,7 +317,7 @@ class GestionDesRapideImpl extends GestionDesImpl{
         GestionJoueur.getJoueurCourant().notifyDices([this.des1,this.des2,this.desRapide],event);
     }
     async _randDes(){
-        await DiceThrower.throw(3).then(dices=>this.setDices(dices[0],dices[1],this._rand()));
+        await DiceThrower.throw(3).then(dices=>this.setDices(dices[0],dices[1],dices[2]));
     }
 
     total(){

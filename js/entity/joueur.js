@@ -25,7 +25,7 @@ class Maisons {
 
     remove(maison) {
         let index = this.maisons.findIndex(m => m.equals(maison));
-        if (index != -1) {
+        if (index !== -1) {
             maison.statut = ETAT_LIBRE;
             maison.joueurPossede = null;
             this.maisons.splice(index, 1);
@@ -51,7 +51,8 @@ class Maisons {
 
     /** Renvoie les maisons du joueur par groupe avec des details*/
     getMaisonsGrouped() {
-        var groups = [];
+        const groups = [];
+        console.log(this.maisons)
         this.maisons.forEach(maison => {
             if (maison.groupe == null) {
                 if (groups["others"] === undefined) {
@@ -108,8 +109,8 @@ class Maisons {
      * @returns {Array}
      */
     findConstructiblesGroupes() {
-        var colorsKO = [];
-        var groups = [];
+        const colorsKO = [];
+        const groups = [];
         this.maisons
             .filter(m => m.isTerrain() === true && m.groupe != null)
             .forEach(m => {
@@ -203,7 +204,7 @@ class Maisons {
 
     /* On integre dans les resultats le nombre d'elements par groupe */
     findUnterestsProprietes() {
-        var nbByGroups = [];
+        const nbByGroups = [];
         let proprietes = this.maisons.filter(m => !m.isTerrain());
         proprietes.forEach(m => {
             if (nbByGroups[m.groupe.nom] === undefined) {
@@ -223,7 +224,7 @@ class Maisons {
      * @param interestTerrains : terrains qui interessent, on filtre
      */
     findOthersProperties(interestTerrains) {
-        var mapInterests = [];
+        const mapInterests = [];
         for (let i in interestTerrains) {
             mapInterests[interestTerrains[i].maison.color] = 1;
         }
@@ -232,9 +233,9 @@ class Maisons {
 
     /** Renvoie les groupes constructibles avec les proprietes de chaque */
     findMaisonsConstructibles() {
-        var mc = [];
-        var colorsOK = [];
-        var colorsKO = [];
+        const mc = [];
+        const colorsOK = [];
+        const colorsKO = [];
 
         // Si une maison est hypothequee, on ne peut plus construire sur le groupe
         this.maisons
@@ -808,7 +809,7 @@ class Joueur {
         let groups = this.maisons.findMaisonsByGroup();
         let div = $('.count-property', this.div);
         $(".counter-group", div).html(0);
-        for (var group in groups) {
+        for (const group in groups) {
             let color = group.replace(/ /g, "");
             $(`.counter-group.${color}`, div).html(groups[group].length);
         }

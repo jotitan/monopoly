@@ -90,13 +90,10 @@ let GestionEnchere = {
         // 1) Vente par banque, pas d'enchere
         // 2) Vente par joueur, pas d'enchere ou vente par banque avec une enchere
         // 3) Vente par joueur avec enchere
-        if (this.joueursExit.size() >= GestionJoueur.getNb() ||
+        return (this.joueursExit.size() >= GestionJoueur.getNb() ||
             (this.joueursExit.size() >= GestionJoueur.getNb() - 1 && (this.terrain.joueurPossede != null ||this.joueurLastEnchere !=null)) ||
             (this.joueursExit.size() >= GestionJoueur.getNb() - 2 && this.joueurLastEnchere != null && this.terrain.joueurPossede != null)
-        ) {
-            return true;
-        }
-        return false;
+        );
     },
     /* Methode appelee par un joueur pour valider une enchere, le premier invalide les autres */
     doEnchere: function (joueur, montant, jeton) {
@@ -318,6 +315,7 @@ let EchangeDisplayer = {
                 let groups = joueur.maisons.getMaisonsGrouped();
                 for (let g in groups) {
                     let group = groups[g];
+                    console.log(g, group)
                     let optionGroup = $(`<optgroup label="Groupe ${group.groupe}" style="color:${group.color}"></optGroup>`);
                     group.terrains.forEach(fiche=>optionGroup.append(`<option value="${fiche.id}">${fiche.nom}</option>`));
                     EchangeDisplayer.listTerrainsAdversaire.append(optionGroup);
@@ -456,7 +454,7 @@ let GestionEchange = {
             this.demandeur.payerTo(this.proposition.compensation, this.proprietaire);
         }
         if (this.proposition.terrains != null && this.proposition.terrains.length > 0) {
-            for (var t in this.proposition.terrains) {
+            for (const t in this.proposition.terrains) {
                 this.proprietaire.getSwapProperiete(this.proposition.terrains[t]);
             }
         }

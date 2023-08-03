@@ -140,7 +140,7 @@ class CaseChance extends PlateauCase {
         }
         let randomValue = Math.round((Math.random() * 1000)) % (this.cartes.length);
         let c = this.cartes[randomValue];
-        // On test si la carte est une carte sortie de prison est possedee par un joueur
+        // On teste si la carte est une carte sortie de prison est possedee par un joueur
         if (c.actionCarte.type === "prison" && !c.actionCarte.isLibre()) {
             // on prend la carte suivante
             c = this.cartes[(randomValue + 1) % (this.cartes.length)];
@@ -179,10 +179,6 @@ class Groupe {
 
     isVoisin(groupe) {
         return (this.groupePrecedent != null && this.groupePrecedent.equals(groupe)) || (this.groupeSuivant != null && this.groupeSuivant.equals(groupe));
-    }
-
-    equals(groupe) {
-        return this.color === groupe.color;
     }
 
     /* Ajoute une fiche au groupe (lors de l'init) */
@@ -769,7 +765,7 @@ let GestionFiche = {
         let info = {position: from.pos, axe: from.axe};
         do {
             info = this.nextPos(info.axe, info.position);
-            var fiche = this.get({axe: info.axe, pos: info.position});
+            const fiche = this.get({axe: info.axe, pos: info.position});
             if (condition == null || condition(fiche)) {
                 return fiche;
             }

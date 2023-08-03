@@ -88,9 +88,9 @@ let DrawerHelper = {
         canvas.save();
         canvas.translate(x, y);
         canvas.rotate(rotate);
-        var pas = 12;
-        for (var i = 0; i < mots.length; i++) {
-            var lng;
+        const pas = 12;
+        for (let i = 0; i < mots.length; i++) {
+            let lng;
             switch(align){
             	case 'left':lng=0;break;
             	case 'right':lng = width - canvas.measureText(mots[i]).width;break;
@@ -234,7 +234,7 @@ let Drawer = {
     },
     removeComponent: function (component) {
         // Boucle sur les composants et supprime si l'id est le meme
-        for (var i = 0; i < this.components.length; i++) {
+        for (let i = 0; i < this.components.length; i++) {
             if (this.components[i].id === component.id) {
                 this.components.splice(i, 1);
                 return;
@@ -247,7 +247,7 @@ let Drawer = {
     /* Rafraichit un seul canvas */
     refresh: function (canvas) {
         Drawer.clear(canvas);
-        for (var i = 0; i < Drawer.components.length; i++) {
+        for (let i = 0; i < Drawer.components.length; i++) {
             if (Drawer.components[i].getId() === canvas.canvas.id) {
 				Drawer.components[i].draw(canvas);
             }

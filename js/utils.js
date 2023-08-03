@@ -30,8 +30,8 @@ Object.defineProperty(Array.prototype, "contains", {
 
 Object.defineProperty(Array.prototype, "filter", {
     value: function (callback) {
-        var list = [];
-        for (var i in this) {
+        const list = [];
+        for (const i in this) {
             if (callback(this[i])) {
                 list.push(this[i]);
             }
@@ -56,13 +56,3 @@ Object.defineProperty(Array.prototype, "some", {
     enumerable: false,
     configurable: false
 });
-
-/*$.bind = function (eventName, fct) {
-    $('body').bind(eventName, fct);
-    return $('body');
-}
-
-$.trigger = function (eventName, params) {
-    $('body').trigger(eventName, params);
-}
-*/

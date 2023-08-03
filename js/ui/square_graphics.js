@@ -318,16 +318,16 @@ class Case extends Component {
 			drawer.prix(canvas,this.data.x,this.data.y,this.prix,5,largeur,hauteur);
 		}
 		if (this.data.image != null) {
-			var rotate = (Math.PI / 2) * ((this.axe + 2) % 4);
-			var lng = (largeur - this.data.image.width) / 2;
-			let dec = 10 + ((this.color != null) ? bordure : 10) + ((this.title != null) ? 10 : 0) + (this.data.image.margin || 0);
+			const rotate = (Math.PI / 2) * ((this.axe + 2) % 4);
+			const lng = (largeur - this.data.image.width) / 2;
+			const dec = 10 + ((this.color != null) ? bordure : 10) + ((this.title != null) ? 10 : 0) + (this.data.image.margin || 0);
 			drawer.image(canvas,this.data.x,this.data.y,this.data.image,dec,largeur,lng,hauteur,rotate);
 		}
 		// Cas des maisons
 		if (this.nbMaison <= 4) {
 			// On ecrit de droite a gauche dans le cartouche
 			canvas.fillStyle = '#00FF00';
-			for (var i = 0; i < this.nbMaison; i++) {
+			for (let i = 0; i < this.nbMaison; i++) {
 				drawer.maison(canvas,this.data.x,this.data.y,this.imgMaison,i,largeur,hauteur);
 			}
 		} else {
@@ -349,7 +349,7 @@ class Case extends Component {
 
 	// Nombre de joueur sur la case
 	getNbJoueurs() {
-		var count = 0;
+		let count = 0;
 		GestionJoueur.forEach(function(j){
 			count+=(j.pion.axe === this.axe && j.pion.position === this.pos)?1:0;
 		},this);

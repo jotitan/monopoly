@@ -3,18 +3,18 @@
    <title>Test Monopoly</title>
    <script language="Javascript" src="../lib/qunit-1.12.0.js">;</script>
    <link rel="stylesheet" type="text/css" href="../css/qunit-1.12.0.css"/>
-   <script type="module" src="../js/monopoly.js">;</script>
+   <script type="module" src="../js/core/monopoly.js">;</script>
 
    <script type="module">
 
       import {GestionDesImpl, GestionDes} from '../js/entity/dices.js'
-      import {Monopoly} from '../js/monopoly.js'
+      import {Monopoly} from '../js/core/monopoly.js'
       import {Fiche,Groupe,GestionFiche} from '../js/display/case_jeu.js'
       import {ETAT_ACHETE, ETAT_LIBRE} from "../js/display/case_jeu.js";
-      import {GestionJoueur} from "../js/gestion_joueurs.js";
+      import {GestionJoueur} from "../js/core/gestion_joueurs.js";
       import {JoueurOrdinateur} from "../js/entity/joueur_robot.js";
-      import {GestionConstructions} from "../js/gestion_constructions.js";
-      import {GestionEchange} from "../js/enchere.js";
+      import {GestionConstructions} from "../js/core/gestion_constructions.js";
+      import {GestionEchange} from "../js/core/enchere.js";
       // Mock de la fonction specifique a un vrai plateau
       let calculeVoisinsGroupes = function(){};
       GestionDes.gestionDes = new GestionDesImpl();

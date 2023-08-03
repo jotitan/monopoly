@@ -1,6 +1,6 @@
 /* Cartes actions (chance ou caisse de communaute) */
 
-import {GestionJoueur} from "../gestion_joueurs.js";
+import {GestionJoueur} from "../core/gestion_joueurs.js";
 
 class CarteAction{
 	constructor(type) {

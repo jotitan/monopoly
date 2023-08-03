@@ -1,7 +1,8 @@
 import {DrawerFactory,DrawerHelper,Component} from "./graphics.js";
 import {GestionFiche} from "../display/case_jeu.js";
-import {VARIANTES} from "../monopoly.js";
-import {GestionJoueur} from "../gestion_joueurs.js";
+import {VARIANTES} from "../core/monopoly.js";
+import {GestionJoueur} from "../core/gestion_joueurs.js";
+import {bus} from "../bus_message.js";
 
 /* Implementation pour plateau carree */
 
@@ -279,7 +280,7 @@ class Case extends Component {
 			let image = new Image();
 			// When image is well loaded, reload base canvas
 			image.addEventListener('load',()=>{
-				$.trigger('refreshPlateau');
+				bus.refresh();
 			});
 			image.src = img.src;
 			image.height = img.height;

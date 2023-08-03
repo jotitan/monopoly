@@ -1,7 +1,7 @@
 /* Gestion du comportement*/
 
 import {GestionFiche} from "../display/case_jeu.js";
-import {GestionJoueur} from "../gestion_joueurs.js";
+import {GestionJoueur} from "../core/gestion_joueurs.js";
 
 /* @Abstract */
 /* Objet qui gere le comportement (rapport a l'argent). Integre la prise de risque (position du jour) */

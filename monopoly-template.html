@@ -13,8 +13,8 @@
 	<script type="text/javascript" src="lib/jquery-ui.1.12.min.js"></script>
 	<script type="text/javascript" src="lib/jquery.mousewheel.js"></script>
 
-	<script type="module" src="js/monopoly.js"></script>
-
+	<script type="module" src="js/core/monopoly.js"></script>
+	<style></style>
 	<link rel="stylesheet" type="text/css" href="css/style.css"/>
 </head>
 
@@ -197,9 +197,11 @@
 				<div style="display:inline-block;width:75px;">Type</div>
 				<input type="radio" name="typeGame" value="classic" id="idClassiqueGame" checked/><label for="idClassiqueGame">Classique</label>
 				<input type="radio" name="typeGame" value="quick" id="idQuickGame"/><label for="idQuickGame">Rapide</label><br/>
+				<div id="idNetwork">
 				<div style="display:inline-block;width:75px;">Réseau</div>
 				<input type="radio" name="networkGame" value="false" id="idLocalTypeGame" checked/><label for="idLocalTypeGame">Non (local)</label>
 				<input type="radio" name="networkGame" value="true" id="idNetworkTypeGame"/><label for="idNetworkTypeGame">Oui</label>
+				</div>
 			</fieldset>
 			<fieldset>
 				<legend style="font-weight:bold">Créer une partie</legend>

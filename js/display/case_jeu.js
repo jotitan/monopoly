@@ -1,811 +1,851 @@
-import {DrawerFactory,Drawer} from '../ui/graphics.js'
-import {CURRENCY,VARIANTES} from "../monopoly.js";
-import {GestionJoueur} from "../gestion_joueurs.js";
-import {FicheDisplayer,wrapDialog} from "./displayers.js";
+import {Drawer, DrawerFactory} from '../ui/graphics.js'
+import {CURRENCY, VARIANTES} from "../core/monopoly.js";
+import {GestionJoueur} from "../core/gestion_joueurs.js";
+import {FicheDisplayer, wrapDialog} from "./displayers.js";
 import {InfoMessage} from "./message.js";
-import {GestionConstructions} from "../gestion_constructions.js";
+import {GestionConstructions} from "../core/gestion_constructions.js";
 import {GestionDes} from "../entity/dices.js";
+import {bus} from "../bus_message.js";
 
 /* Case du plateau */
 
 const ETAT_LIBRE = 0;
 const ETAT_ACHETE = 1;
 
-class PlateauCase{
-	constructor(axe,pos,type) {
-		this.axe = axe;
-		this.pos = pos;
-		this.id = axe + "-" + pos;
-		this.type = type;
-	}
+class PlateauCase {
+    constructor(axe, pos, type) {
+        this.axe = axe;
+        this.pos = pos;
+        this.id = axe + "-" + pos;
+        this.type = type;
+    }
 
-	isTerrain(){
-		return this.type === "terrain";
-	}
+    isTerrain() {
+        return this.type === "terrain";
+    }
 
-	isPropriete(){
-		return this.type === "terrain" || this.type === "junior" || this.type === "gare" || this.type === "compagnie";
-	}
+    isPropriete() {
+        return this.type === "terrain" || this.type === "junior" || this.type === "gare" || this.type === "compagnie";
+    }
 }
 
 /* Case representant le parc gratuit */
 class ParcGratuit extends PlateauCase {
-	constructor(axe, pos) {
-		super(axe, pos, "parc");
-		this.montant = null;
-		this._titre = "Parc Gratuit";
-		this.nom = this._titre;
-		this.drawing = DrawerFactory.getCaseSpeciale(0, this._titre);
-		Drawer.add(this.drawing);
-		this.setMontant(0);
-	}
+    constructor(axe, pos) {
+        super(axe, pos, "parc");
+        this.montant = null;
+        this._titre = "Parc Gratuit";
+        this.nom = this._titre;
+        this.drawing = DrawerFactory.getCaseSpeciale(0, this._titre);
+        Drawer.add(this.drawing);
+        this.setMontant(0);
+    }
 
-	setMontant(montant) {
-		this.montant = montant;
-		this.drawing.titre = this._titre + ((this.montant > 0) ? "\n" + CURRENCY + " " + this.montant : "");
-		$.trigger('refreshPlateau');
-		$('#idMontantParc > span').text(this.montant);
-	}
+    setMontant(montant) {
+        this.montant = montant;
+        this.drawing.titre = this._titre + ((this.montant > 0) ? "\n" + CURRENCY + " " + this.montant : "");
+        bus.refresh();
+        $('#idMontantParc > span').text(this.montant);
+    }
 
-	payer (montant) {
-		this.setMontant(this.montant + montant);
-	}
+    payer(montant) {
+        this.setMontant(this.montant + montant);
+    }
 
-	action() {
-		return InfoMessage.create(GestionJoueur.getJoueurCourant(),"Parc gratuit", "lightblue", "Vous gagnez " + this.montant + " " + CURRENCY, param=> {
-			param.joueur.gagner(param.montant);
-			this.setMontant(0);
-			GestionJoueur.change();
-		}, {
-			joueur: GestionJoueur.getJoueurCourant(),
-			montant: this.montant
-		});
-	}
+    action() {
+        return InfoMessage.create(GestionJoueur.getJoueurCourant(), "Parc gratuit", "lightblue", "Vous gagnez " + this.montant + " " + CURRENCY, param => {
+            param.joueur.gagner(param.montant);
+            this.setMontant(0);
+            GestionJoueur.change();
+        }, {
+            joueur: GestionJoueur.getJoueurCourant(),
+            montant: this.montant
+        });
+    }
 }
 
 class CaseActionSpeciale extends PlateauCase {
-	constructor(titre, actionSpeciale, axe, pos,type) {
-		super(axe, pos, type);
-		this.titre = titre;
-		this.nom = titre;
-		this.actionSpeciale = actionSpeciale;
-		this.drawing = DrawerFactory.getCaseSpeciale(axe, titre);
-		Drawer.add(this.drawing);
-	}
+    constructor(titre, actionSpeciale, axe, pos, type) {
+        super(axe, pos, type);
+        this.titre = titre;
+        this.nom = titre;
+        this.actionSpeciale = actionSpeciale;
+        this.drawing = DrawerFactory.getCaseSpeciale(axe, titre);
+        Drawer.add(this.drawing);
+    }
 
-	action() {
-		$.trigger('monopoly.visiteTerrain',{joueur:GestionJoueur.getJoueurCourant(),maison:{color:'black',nom:this.titre}});
-		this.actionSpeciale();
-	}
+    action() {
+        bus.send('monopoly.visiteTerrain', {
+            joueur: GestionJoueur.getJoueurCourant(),
+            maison: {color: 'black', nom: this.titre}
+        });
+        this.actionSpeciale();
+    }
 }
 
 class CaseDepart extends CaseActionSpeciale {
-	constructor(titre, axe, pos,montant) {
-		super(titre,()=>this.actionSpe(),axe, pos, "depart");
-		this.montant = montant;
-	}
+    constructor(titre, axe, pos, montant) {
+        super(titre, () => this.actionSpe(), axe, pos, "depart");
+        this.montant = montant;
+    }
 
-	actionSpe() {
-		let montant = (VARIANTES.caseDepart ? 2:1) * this.montant;
-		GestionJoueur.getJoueurCourant().gagner(montant);
+    actionSpe() {
+        let montant = (VARIANTES.caseDepart ? 2 : 1) * this.montant;
+        GestionJoueur.getJoueurCourant().gagner(montant);
 
-		$.trigger('monopoly.depart', {
-			joueur: GestionJoueur.getJoueurCourant(),
-			montant:montant
-		});
-		GestionJoueur.change();
-	}
+        bus.send('monopoly.depart', {
+            joueur: GestionJoueur.getJoueurCourant(),
+            montant: montant
+        });
+        GestionJoueur.change();
+    }
 }
 
 /* Case speciale, comme la taxe de luxe */
 class SimpleCaseSpeciale extends PlateauCase {
-	constructor(titre, montant, axe, pos, type, img, plateauMonopoly){
-		super(axe,pos,type);
-		this.montant = montant;
-		this.titre = titre;
-		// Used to pay to parc gratuit if necessary
-		this.plateauMonopoly = plateauMonopoly;
-		this.drawing = DrawerFactory.getCase(pos, axe, null, titre, CURRENCY + " " + montant, img);
-		Drawer.add(this.drawing);
-	}
+    constructor(titre, montant, axe, pos, type, img, plateauMonopoly) {
+        super(axe, pos, type);
+        this.montant = montant;
+        this.titre = titre;
+        // Used to pay to parc gratuit if necessary
+        this.plateauMonopoly = plateauMonopoly;
+        this.drawing = DrawerFactory.getCase(pos, axe, null, titre, CURRENCY + " " + montant, img);
+        Drawer.add(this.drawing);
+    }
 
-	action () {
-		return InfoMessage.create(GestionJoueur.getJoueurCourant(),this.titre, "lightblue", "Vous devez payer la somme de " + this.montant + " " + CURRENCY, param=> {
-			param.joueur.payerParcGratuit(this.plateauMonopoly.parcGratuit,param.montant, function () {
-				GestionJoueur.change();
-			});
-		}, {
-			joueur: GestionJoueur.getJoueurCourant(),
-			montant: this.montant
-		});
-	}
+    action() {
+        return InfoMessage.create(GestionJoueur.getJoueurCourant(), this.titre, "lightblue", "Vous devez payer la somme de " + this.montant + " " + CURRENCY, param => {
+            param.joueur.payerParcGratuit(this.plateauMonopoly.parcGratuit, param.montant, function () {
+                GestionJoueur.change();
+            });
+        }, {
+            joueur: GestionJoueur.getJoueurCourant(),
+            montant: this.montant
+        });
+    }
 }
 
 class CaseChance extends PlateauCase {
-	constructor(axe, pos,img, cartes, longTitle,shortTitle='carte chance'){
-		super(axe,pos,"carte");
-		this.nom = shortTitle;
-		this.cartes = cartes;
-		this.drawing = DrawerFactory.getCase(pos, axe, null, longTitle, null, img);
-		Drawer.add(this.drawing);
-	}
-	action() {
-		if (this.cartes.length === 0) {
-			throw `Aucune ${this.nom}`;
-		}
-		let randomValue = Math.round((Math.random() * 1000)) % (this.cartes.length);
-		let c = this.cartes[randomValue];
-		// On test si la carte est une carte sortie de prison est possedee par un joueur
-		if (c.actionCarte.type === "prison" && !c.actionCarte.isLibre()) {
-			// on prend la carte suivante
-			c = this.cartes[(randomValue + 1) % (this.cartes.length)];
-		}
-		return c.action();
-	}
+    constructor(axe, pos, img, cartes, longTitle, shortTitle = 'carte chance') {
+        super(axe, pos, "carte");
+        this.nom = shortTitle;
+        this.cartes = cartes;
+        this.drawing = DrawerFactory.getCase(pos, axe, null, longTitle, null, img);
+        Drawer.add(this.drawing);
+    }
+
+    action() {
+        if (this.cartes.length === 0) {
+            throw `Aucune ${this.nom}`;
+        }
+        let randomValue = Math.round((Math.random() * 1000)) % (this.cartes.length);
+        let c = this.cartes[randomValue];
+        // On test si la carte est une carte sortie de prison est possedee par un joueur
+        if (c.actionCarte.type === "prison" && !c.actionCarte.isLibre()) {
+            // on prend la carte suivante
+            c = this.cartes[(randomValue + 1) % (this.cartes.length)];
+        }
+        return c.action();
+    }
 }
 
 class CaseCaisseDeCommunaute extends CaseChance {
-	constructor(axe, pos, img, cartes,longTitle){
-		super(axe,pos,img,cartes,longTitle,"carte caisse de communauté");
-	}
+    constructor(axe, pos, img, cartes, longTitle) {
+        super(axe, pos, img, cartes, longTitle, "carte caisse de communauté");
+    }
 }
 
 /* Represente un groupe de terrain */
-function Groupe(nom, color) {
-	this.nom = nom;
-	this.color = color;
-	/* Liste de ses terrains */
-	this.fiches = [];
-	this.groupePrecedent = null;
-	this.groupeSuivant = null;
+class Groupe {
+    constructor(nom, color) {
+        this.nom = nom;
+        this.color = color;
+        /* Liste de ses terrains */
+        this.fiches = [];
+        this.groupePrecedent = null;
+        this.groupeSuivant = null;
+    }
 
-	this.equals = function (groupe) {
-		if (groupe == null) {
-			return false;
-		}
-		return this.color === groupe.color;
-	}
+    equals(groupe) {
+        if (groupe == null) {
+            return false;
+        }
+        return this.color === groupe.color;
+    }
 
-	this.getVoisins = function () {
-		return [this.groupePrecedent, this.groupeSuivant];
-	}
+    getVoisins() {
+        return [this.groupePrecedent, this.groupeSuivant];
+    }
 
-	this.isVoisin = function (groupe) {
-		return (this.groupePrecedent != null && this.groupePrecedent.equals(groupe)) || (this.groupeSuivant != null && this.groupeSuivant.equals(groupe));
-	}
+    isVoisin(groupe) {
+        return (this.groupePrecedent != null && this.groupePrecedent.equals(groupe)) || (this.groupeSuivant != null && this.groupeSuivant.equals(groupe));
+    }
 
-	this.equals = function (groupe) {
-		return this.color === groupe.color;
-	}
+    equals(groupe) {
+        return this.color === groupe.color;
+    }
 
-	/* Ajoute une fiche au groupe (lors de l'init) */
-	this.add = function (fiche) {
-		this.fiches.push(fiche);
-		fiche.groupe = this;
-		return this;
-	}
+    /* Ajoute une fiche au groupe (lors de l'init) */
+    add(fiche) {
+        this.fiches.push(fiche);
+        fiche.groupe = this;
+        return this;
+    }
 
-	/* Indique que tous les terrains appartiennent a la meme personne */
-	this.isGroupee = function () {
-		if (this.fiches == null || this.fiches.length === 0) {
-			return false;
-		}
-		let joueur = this.fiches[0].joueurPossede;
-		for (let i = 0; i < this.fiches.length; i++) {
-			if (this.fiches[i].joueurPossede == null || !this.fiches[i].joueurPossede.equals(joueur)) {
-				return false;
-			}
-			joueur = this.fiches[i].joueurPossede;
-		}
-		return true;
-	}
+    /* Indique que tous les terrains appartiennent a la meme personne */
+    isGrouped() {
+        if (this.fiches == null || this.fiches.length === 0) {
+            return false;
+        }
+        let joueur = this.fiches[0].joueurPossede;
+        for (let i = 0; i < this.fiches.length; i++) {
+            if (this.fiches[i].joueurPossede == null || !this.fiches[i].joueurPossede.equals(joueur)) {
+                return false;
+            }
+            joueur = this.fiches[i].joueurPossede;
+        }
+        return true;
+    }
 
-	/* Indique que le terrain possede des constructions */
-	this.isBuild = function () {
-		if (this.fiches == null || fiches.length === 0) {
-			return false;
-		}
-		for (let i = 0; i < this.fiches.length; i++) {
-			if (this.fiches[i].nbMaison > 0) {
-				return true;
-			}
-		}
-		return false;
-	}
+    /* Indique que le terrain possede des constructions */
+    isBuild() {
+        if (this.fiches == null || fiches.length === 0) {
+            return false;
+        }
+        for (let i = 0; i < this.fiches.length; i++) {
+            if (this.fiches[i].nbMaison > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-	this.getAverageConstructions = function () {
-		let nb = 0;
-		for (let i = 0; i < this.fiches.length; i++) {
-			nb += this.fiches[i].nbMaison;
-		}
-		return nb / this.fiches.length;
-	}
+    getAverageConstructions() {
+        let nb = 0;
+        for (let i = 0; i < this.fiches.length; i++) {
+            nb += this.fiches[i].nbMaison;
+        }
+        return nb / this.fiches.length;
+    }
 
-	/* Renvoie le nombre de constructions sur le groupe */
-	this.getConstructions = function () {
-		let constructions = {
-			maison: 0,
-			hotel: 0
-		};
-		for (let i = 0; i < this.fiches.length; i++) {
-			if (this.fiches[i].hotel) {
-				constructions.hotel++;
-			} else {
-				constructions.maison += this.fiches[i].nbMaison;
-			}
-		}
-		return constructions;
-	}
+    /* Renvoie le nombre de constructions sur le groupe */
+    getConstructions() {
+        let constructions = {
+            maison: 0,
+            hotel: 0
+        };
+        for (let i = 0; i < this.fiches.length; i++) {
+            if (this.fiches[i].hotel) {
+                constructions.hotel++;
+            } else {
+                constructions.maison += this.fiches[i].nbMaison;
+            }
+        }
+        return constructions;
+    }
 
-	/* Renvoie des infos sur les proprietes du groupe. Ajoute la liste des proprietes qui n'appartiennent pas au joueur */
-	this.getInfos = function (joueur) {
-		let infos = {
-			free: 0,
-			joueur: 0,
-			adversaire: 0,
-			nbAdversaires: 0,
-			maisons: [],
-			hypotheque: 0
-		};
-		let adversaires = []; // Liste des adversaires possedant un terrains
-		let sumAdversaires = 0;
-		for (let i = 0; i < this.fiches.length; i++) {
-			let f = this.fiches[i];
-			if (f.statut === ETAT_LIBRE) {
-				infos.free++;
-			} else {
-				if (f.statutHypotheque) {
-					infos.hypotheque++;
-				}
-				if (joueur.equals(f.joueurPossede)) {
-					infos.joueur++;
-				} else {
-					infos.adversaire++;
-					infos.maisons.push(f);
-					if(adversaires[f.joueurPossede.id] !== 1){
-						sumAdversaires++;
-					}
-					adversaires[f.joueurPossede.id] = 1;
-				}
-			}
-		}
-		infos.nbAdversaires = sumAdversaires;
-		return infos;
-	}
+    /* Renvoie des infos sur les proprietes du groupe. Ajoute la liste des proprietes qui n'appartiennent pas au joueur */
+    getInfos(joueur) {
+        let infos = {
+            free: 0,
+            joueur: 0,
+            adversaire: 0,
+            nbAdversaires: 0,
+            maisons: [],
+            hypotheque: 0
+        };
+        let adversaires = []; // Liste des adversaires possedant un terrains
+        let sumAdversaires = 0;
+        for (let i = 0; i < this.fiches.length; i++) {
+            let f = this.fiches[i];
+            if (f.statut === ETAT_LIBRE) {
+                infos.free++;
+            } else {
+                if (f.statutHypotheque) {
+                    infos.hypotheque++;
+                }
+                if (joueur.equals(f.joueurPossede)) {
+                    infos.joueur++;
+                } else {
+                    infos.adversaire++;
+                    infos.maisons.push(f);
+                    if (adversaires[f.joueurPossede.id] !== 1) {
+                        sumAdversaires++;
+                    }
+                    adversaires[f.joueurPossede.id] = 1;
+                }
+            }
+        }
+        infos.nbAdversaires = sumAdversaires;
+        return infos;
+    }
 
-	/* Renvoie le nombre de fiche dans le groupe */
-	this.getNb = function () {
-		return (this.fiches == null) ? 0 : this.fiches.length;
-	}
+    /* Renvoie le nombre de fiche dans le groupe */
+    getNb() {
+        return (this.fiches == null) ? 0 : this.fiches.length;
+    }
 }
 
 // Representation graphique d'une fiche
-class FicheUI{
-	constructor(fiche,id){
-		this.panel = $(id);
-		this.fiche = fiche;
-		this.name = "";
-	}
-	updateName(name){
-		this.name = name;
-		this.panel.dialog('option','title',this.name);
-	}
-	open(){
-		const buttons = this.getButtons();
-		this.panel.dialog('option', 'buttons', this.getButtons());
-		FicheDisplayer.loadFiche(this.fiche);
-		if (GestionJoueur.getJoueurCourant().canPlay) {
-			wrapDialog(this.panel,'open');
-		}
-		return buttons;
-	}
-	getButtons(){
-		if (this.fiche.statut === ETAT_LIBRE) {
-			if (GestionJoueur.getJoueurCourant().montant < this.fiche.achat) {
-				return {
-					"Pas assez d'argent": () =>GestionJoueur.getJoueurCourant().refuseMaison(this.fiche,()=>FicheDisplayer.closeFiche())
-				}
-			} else {
-				return {
-					"Acheter": () =>{
-						GestionJoueur.getJoueurCourant().acheteMaison(this.fiche);
-						FicheDisplayer.closeFiche();
-					},
-					"Refuser": ()=> GestionJoueur.getJoueurCourant().refuseMaison(this.fiche,()=>FicheDisplayer.closeFiche())
-				};
-			}
-		} else {
-			return {
-				"Fermer": () =>FicheDisplayer.closeFiche()
-			};
-		}
-	}
+class FicheUI {
+    constructor(fiche, id) {
+        this.panel = $(id);
+        this.fiche = fiche;
+        this.name = "";
+    }
+
+    updateName(name) {
+        this.name = name;
+        this.panel.dialog('option', 'title', this.name);
+    }
+
+    open() {
+        const buttons = this.getButtons();
+        this.panel.dialog('option', 'buttons', this.getButtons());
+        FicheDisplayer.loadFiche(this.fiche);
+        if (GestionJoueur.getJoueurCourant().canPlay) {
+            wrapDialog(this.panel, 'open');
+        }
+        return buttons;
+    }
+
+    getButtons() {
+        if (this.fiche.statut === ETAT_LIBRE) {
+            if (GestionJoueur.getJoueurCourant().montant < this.fiche.achat) {
+                return {
+                    "Pas assez d'argent": () => GestionJoueur.getJoueurCourant().refuseMaison(this.fiche, () => FicheDisplayer.closeFiche())
+                }
+            } else {
+                return {
+                    "Acheter": () => {
+                        GestionJoueur.getJoueurCourant().acheteMaison(this.fiche);
+                        FicheDisplayer.closeFiche();
+                    },
+                    "Refuser": () => GestionJoueur.getJoueurCourant().refuseMaison(this.fiche, () => FicheDisplayer.closeFiche())
+                };
+            }
+        } else {
+            return {
+                "Fermer": () => FicheDisplayer.closeFiche()
+            };
+        }
+    }
 }
 
 /* Represente un terrain TODO REFACTO */
 class Fiche extends PlateauCase {
-	constructor(axe, pos, colors, nom){
-		super(axe,pos,"terrain");
-		this.id = GestionFiche.buildId(this);
-		this.nom = nom;
-		this.groupe = null;
-		this.color = colors[0];
-		this.secondColor = (colors.length === 2) ? colors[1] : colors[0];
+    constructor(axe, pos, colors, nom) {
+        super(axe, pos, "terrain");
+        this.id = GestionFiche.buildId(this);
+        this.nom = nom;
+        this.groupe = null;
+        this.color = colors[0];
+        this.secondColor = (colors.length === 2) ? colors[1] : colors[0];
 
-		this.statut = ETAT_LIBRE;
-		this.joueurPossede = null;
-		this.statutHypotheque = false;
-		this.fiche = new FicheUI(this,'#fiche');
-		this.nbMaison = 0; // Nombre de maison construite sur le terrain par le proprietaire
-		this.hotel = false; // Si un hotel est present
-		this.maisons = [];
-		this.input = null; // Bouton
-	}
+        this.statut = ETAT_LIBRE;
+        this.joueurPossede = null;
+        this.statutHypotheque = false;
+        this.fiche = new FicheUI(this, '#fiche');
+        this.nbMaison = 0; // Nombre de maison construite sur le terrain par le proprietaire
+        this.hotel = false; // Si un hotel est present
+        this.maisons = [];
+        this.input = null; // Bouton
+    }
 
-	setCosts(achat,loyers,prixMaison){
-		this.achat = achat;
-		this.montantHypotheque = achat / 2;
-		this.achatHypotheque = this.montantHypotheque * 1.1;
-		this.loyer = loyers;
-		this.loyerHotel = (loyers != null && loyers.length === 6) ? loyers[5] : 0;
-		this.prixMaison = prixMaison;
-		return this;
-	}
+    setCosts(achat, loyers, prixMaison) {
+        this.achat = achat;
+        this.montantHypotheque = achat / 2;
+        this.achatHypotheque = this.montantHypotheque * 1.1;
+        this.loyer = loyers;
+        this.loyerHotel = (loyers != null && loyers.length === 6) ? loyers[5] : 0;
+        this.prixMaison = prixMaison;
+        return this;
+    }
 
-	setCostsAndDraw(achat,loyers,prixMaison,img){
-		this.setCosts(achat,loyers,prixMaison);
-		this.drawing = DrawerFactory.getCase(this.pos, this.axe, this.color, this.nom, CURRENCY + " " + achat,img);
-		Drawer.add(this.drawing);
-		return this;
-	}
+    setCostsAndDraw(achat, loyers, prixMaison, img) {
+        this.setCosts(achat, loyers, prixMaison);
+        this.drawing = DrawerFactory.getCase(this.pos, this.axe, this.color, this.nom, CURRENCY + " " + achat, img);
+        Drawer.add(this.drawing);
+        return this;
+    }
 
-	equals(fiche) {
-		if (fiche == null) {
-			return false;
-		}
-		return this.id === fiche.id;
-	}
+    equals(fiche) {
+        if (fiche == null) {
+            return false;
+        }
+        return this.id === fiche.id;
+    }
 
-	/* Renvoie l'etat courant du terrain (JSON) */
-	save() {
-		// On renvoie le statut, le proprio, le nombre de maison, le statut hypotheque
-		return {
-			id: this.id,
-			statut: this.statut,
-			joueur: ((this.joueurPossede != null) ? this.joueurPossede.id : null),
-			nb: this.nbMaison,
-			hypotheque: this.statutHypotheque
-		};
-	}
+    /* Renvoie l'etat courant du terrain (JSON) */
+    save() {
+        // On renvoie le statut, le proprio, le nombre de maison, le statut hypotheque
+        return {
+            id: this.id,
+            statut: this.statut,
+            joueur: ((this.joueurPossede != null) ? this.joueurPossede.id : null),
+            nb: this.nbMaison,
+            hypotheque: this.statutHypotheque
+        };
+    }
 
-	getNbPropertiesOfType(){
-		let nb = -1;
-		for (let i = 0; i < this.joueurPossede.maisons.maisons.length; i++) {
-			if (this.joueurPossede.maisons.maisons[i].type === this.type) {
-				nb++;
-			}
-		}
-		return nb;
-	}
+    getNbPropertiesOfType() {
+        let nb = -1;
+        for (let i = 0; i < this.joueurPossede.maisons.maisons.length; i++) {
+            if (this.joueurPossede.maisons.maisons[i].type === this.type) {
+                nb++;
+            }
+        }
+        return nb;
+    }
 
-	load(data) {
-		const joueur = data.joueur != null ? GestionJoueur.getById(data.joueur) : null;
-		if (joueur != null) {
-			this.setJoueurPossede(joueur,true);
-			joueur._drawTitrePropriete(this);
-		}
-		this.id = data.id;
-		this.statut = data.statut;
-		this.setNbMaison(data.nb, true);
-		// On deduit les quantites du gestionnaire
-		if(data.nb > 0){
-			if(data.nb === 5){
-				GestionConstructions.buyHotels(1);
-			}
-			else{
-				GestionConstructions.buyHouses(data.nb);
-			}
-		}
-		this.statutHypotheque = data.hypotheque;
-		if (this.statutHypotheque === true) {
-			this.input.addClass('hypotheque');
-		}
-	}
+    load(data) {
+        const joueur = data.joueur != null ? GestionJoueur.getById(data.joueur) : null;
+        if (joueur != null) {
+            this.setJoueurPossede(joueur, true);
+            joueur._drawTitrePropriete(this);
+        }
+        this.id = data.id;
+        this.statut = data.statut;
+        this.setNbMaison(data.nb, true);
+        // On deduit les quantites du gestionnaire
+        if (data.nb > 0) {
+            if (data.nb === 5) {
+                GestionConstructions.buyHotels(1);
+            } else {
+                GestionConstructions.buyHouses(data.nb);
+            }
+        }
+        this.statutHypotheque = data.hypotheque;
+        if (this.statutHypotheque === true) {
+            this.input.addClass('hypotheque');
+        }
+    }
 
-	setJoueurPossede(joueur,noRefresh){
-		this.joueurPossede = joueur;
-		if(this.drawing != null) {
-			this.drawing.setJoueur(joueur);
-		}
-		this.joueurPossede.maisons.add(this);
-		this.joueurPossede.updateMaisonsByGroup();
-		if(!noRefresh && $.trigger){
-			$.trigger('refreshPlateau');
-		}
-	}
+    setJoueurPossede(joueur, noRefresh) {
+        this.joueurPossede = joueur;
+        if (this.drawing != null) {
+            this.drawing.setJoueur(joueur);
+        }
+        this.joueurPossede.maisons.add(this);
+        this.joueurPossede.updateMaisonsByGroup();
+        if (!noRefresh) {
+            bus.refresh();
+        }
+    }
 
-	vendu(joueur) {
-		this.statut = ETAT_ACHETE;
-		this.setJoueurPossede(joueur);
-		if ($.trigger) {
-			$.trigger("monopoly.acheteMaison", {
-				joueur: joueur,
-				maison: this
-			});
-		}
-	}
+    vendu(joueur) {
+        this.statut = ETAT_ACHETE;
+        this.setJoueurPossede(joueur);
+        bus.send("monopoly.acheteMaison", {
+            joueur: joueur,
+            maison: this
+        });
+    }
 
-	/* Le terrain est rendu (manque d'argent) */
-	libere() {
-		this.statut = ETAT_LIBRE;
-		this.statutHypotheque = false;
-		this.joueurPossede = null;
-		if(this.drawing != null) {
-			this.drawing.setJoueur(null);
-		}
-		this.setNbMaison(0, true);
-		this.hotel = false;
-		$.trigger('refreshPlateau');
-	}
+    /* Le terrain est rendu (manque d'argent) */
+    libere() {
+        this.statut = ETAT_LIBRE;
+        this.statutHypotheque = false;
+        this.joueurPossede = null;
+        if (this.drawing != null) {
+            this.drawing.setJoueur(null);
+        }
+        this.setNbMaison(0, true);
+        this.hotel = false;
+        bus.refresh();
+    }
 
-	/* Renvoie la rentabilite de la propriete. Se base sur le rapport entre le loyer de trois maisons et le prix d'achat d'une maison */
-	getRentabilite() {
-		let ponderation = 10; // Facteur pour nivelle le taux
-		if (!this.isTerrain() || this.nbMaison >= 3) {
-			return 0;
-		} else {
-			// Maison du groupe
-			let proprietes = this.groupe.fiches;
-			let nbMaisonsConstruites = 0;
-			for (let i = 0; i < proprietes.length; i++) {
-				nbMaisonsConstruites += proprietes[i].nbMaison;
-			}
-			return (this.loyer[3] / Math.max((proprietes.length * 3 - nbMaisonsConstruites) * this.prixMaison, 1)) / ponderation;
-		}
-	}
+    /* Renvoie la rentabilite de la propriete. Se base sur le rapport entre le loyer de trois maisons et le prix d'achat d'une maison */
+    getRentabilite() {
+        let ponderation = 10; // Facteur pour nivelle le taux
+        if (!this.isTerrain() || this.nbMaison >= 3) {
+            return 0;
+        } else {
+            // Maison du groupe
+            let proprietes = this.groupe.fiches;
+            let nbMaisonsConstruites = 0;
+            for (let i = 0; i < proprietes.length; i++) {
+                nbMaisonsConstruites += proprietes[i].nbMaison;
+            }
+            return (this.loyer[3] / Math.max((proprietes.length * 3 - nbMaisonsConstruites) * this.prixMaison, 1)) / ponderation;
+        }
+    }
 
-	/* Renvoie la rentabilite brute, sans prise en compte des maisons achetees */
-	getRentabiliteBrute() {
-		return !this.isTerrain() ? 0 : this.loyer[3] / (this.achat + 3 * this.prixMaison);
-	}
+    /* Renvoie la rentabilite brute, sans prise en compte des maisons achetees */
+    getRentabiliteBrute() {
+        return !this.isTerrain() ? 0 : this.loyer[3] / (this.achat + 3 * this.prixMaison);
+    }
 
-	/* Hypotheque le terrain */
-	hypotheque() {
-		if (this.input == null || this.statut !== ETAT_ACHETE || this.nbMaison > 0) {
-			throw "Impossible d'hypothequer ce terrain";
-		}
-		this.joueurPossede.gagner(this.montantHypotheque);
-		this.joueurPossede.notifyHypotheque(this);
-		this.doHypotheque();
-	}
+    /* Hypotheque le terrain */
+    hypotheque() {
+        if (this.input == null || this.statut !== ETAT_ACHETE || this.nbMaison > 0) {
+            throw "Impossible d'hypothequer ce terrain";
+        }
+        this.joueurPossede.gagner(this.montantHypotheque);
+        this.joueurPossede.notifyHypotheque(this);
+        this.doHypotheque();
+    }
 
-	doHypotheque(){
-		this.statutHypotheque = true;
-		this.input.addClass('hypotheque');
-		$.trigger('monopoly.hypothequeMaison', {
-			joueur: this.joueurPossede,
-			maison: this
-		});
-	}
-	leveHypotheque() {
-		if (this.input == null || this.statut !== ETAT_ACHETE || this.statutHypotheque === false) {
-			return;
-		}
-		let cout = Math.round(this.achatHypotheque);
-		if (this.joueurPossede.montant < cout) {
-			throw "Impossible de lever l'hypotheque";
-		}
-		this.joueurPossede.payer(cout);
-		this.notifyLeveHypotheque();
-		this.doLeveHypotheque();
-	}
-	notifyLeveHypotheque(){}
-	doLeveHypotheque(){
-		this.statutHypotheque = false;
-		this.input.removeClass('hypotheque');
-		$.trigger('monopoly.leveHypothequeMaison', {
-			joueur: this.joueurPossede,
-			maison: this
-		});
-	}
+    doHypotheque() {
+        this.statutHypotheque = true;
+        this.input.addClass('hypotheque');
+        bus.send('monopoly.hypothequeMaison', {
+            joueur: this.joueurPossede,
+            maison: this
+        });
+    }
 
-	isLibre() {
-		return this.statut === ETAT_LIBRE;
-	}
+    leveHypotheque() {
+        if (this.input == null || this.statut !== ETAT_ACHETE || this.statutHypotheque === false) {
+            return;
+        }
+        let cout = Math.round(this.achatHypotheque);
+        if (this.joueurPossede.montant < cout) {
+            throw "Impossible de lever l'hypotheque";
+        }
+        this.joueurPossede.payer(cout);
+        this.notifyLeveHypotheque();
+        this.doLeveHypotheque();
+    }
 
-	/* Modifie le nombre de maison sur le terrain */
-	setNbMaison(nb, noRefresh) {
-		this.nbMaison = nb;
-		if(this.drawing != null){
-			this.drawing.setNbMaison(nb);
-		}
-		this.hotel = this.nbMaison === 5;
-		// Lancer un evenement pour rafraichir le plateau
-		if (!noRefresh) {
-			$.trigger('refreshPlateau');
-		}
-	}
+    notifyLeveHypotheque() {
+    }
 
-	action() {
-		this.fiche.updateName(this.nom);
-		// si on est chez soi, on affiche pas
-		if (this.joueurPossede != null && this.joueurPossede.equals(GestionJoueur.getJoueurCourant())) {
-			return this.chezSoi();
-		}
-		if (this.joueurPossede != null && this.statutHypotheque === false) { // on doit payer un loyer
-			return this.payerLoyer();
-		}
-		if(this.statutHypotheque === true){
-			return GestionJoueur.change();
-		}
-		return this.fiche.open();
-	}
+    doLeveHypotheque() {
+        this.statutHypotheque = false;
+        this.input.removeClass('hypotheque');
+        bus.send('monopoly.leveHypothequeMaison', {
+            joueur: this.joueurPossede,
+            maison: this
+        });
+    }
 
-	chezSoi() {
-		$.trigger('monopoly.chezsoi',{joueur:this.joueurPossede,maison:this});
-		return InfoMessage.create(GestionJoueur.getJoueurCourant(),"Vous etes " + this.nom, this.color, "Vous etes chez vous", ()=>GestionJoueur.change());
-	}
+    isLibre() {
+        return this.statut === ETAT_LIBRE;
+    }
 
-	sellMaison(joueur, noRefresh) {
-		if (joueur == null || !this.joueurPossede.equals(joueur) || this.nbMaison <= 0) {
-			return false;
-		}
-		if (this.nbMaison === 5) {
-			// On verifie qu'il reste assez de maison (4)
-			if (GestionConstructions.getRestHouse() >= 4) {
-				GestionConstructions.buyHouses(4);
-				GestionConstructions.sellHotel();
-				this.hotel = false;
-			} else {
-				return; // Pas assez de maison
-			}
-		} else {
-			GestionConstructions.sellHouse();
-		}
-		this.setNbMaison(this.nbMaison - 1, noRefresh);
-		return true;
-	}
+    /* Modifie le nombre de maison sur le terrain */
+    setNbMaison(nb, noRefresh) {
+        this.nbMaison = nb;
+        if (this.drawing != null) {
+            this.drawing.setNbMaison(nb);
+        }
+        this.hotel = this.nbMaison === 5;
+        // Lancer un evenement pour rafraichir le plateau
+        if (!noRefresh) {
+            bus.refresh();
+        }
+    }
 
-	/* Utilise principalement par un joueur ordi qui achete les maisons une par une. */
-	/* Un joueur humain utilise des methodes de modifications directes */
-	buyMaison (joueur, noRefresh) {
-		if (joueur == null || !this.joueurPossede.equals(joueur) || this.nbMaison >= 5) {
-			return;
-		}
-		// On verifie la dispo
-		if ((this.nbMaison === 4 && !GestionConstructions.isFreeHotel()) || (this.nbMaison < 4 && !GestionConstructions.isFreeHouse())) {
-			throw "Pas de construction disponible";
+    action() {
+        this.fiche.updateName(this.nom);
+        // si on est chez soi, on affiche pas
+        if (this.joueurPossede != null && this.joueurPossede.equals(GestionJoueur.getJoueurCourant())) {
+            return this.chezSoi();
+        }
+        if (this.joueurPossede != null && this.statutHypotheque === false) { // on doit payer un loyer
+            return this.payerLoyer();
+        }
+        if (this.statutHypotheque === true) {
+            return GestionJoueur.change();
+        }
+        return this.fiche.open();
+    }
 
-		}
-		this.setNbMaison(this.nbMaison + 1, noRefresh);
-		if (this.nbMaison === 5) {
-			this.hotel = true;
-			GestionConstructions.buyHotel();
-		} else {
-			GestionConstructions.buyHouse();
-		}
-	}
+    chezSoi() {
+        bus.send('monopoly.chezsoi', {joueur: this.joueurPossede, maison: this});
+        return InfoMessage.create(GestionJoueur.getJoueurCourant(), "Vous etes " + this.nom, this.color, "Vous etes chez vous", () => GestionJoueur.change());
+    }
 
-	/* Renvoie le montant du loyer pour ce joueur (0 s'il est proprietaire) */
-	getLoyerFor (joueur){
-		if(joueur.equals(this.joueurPossede)){
-			return 0;
-		}
-		return this.getLoyer()
-	}
+    sellMaison(joueur, noRefresh) {
+        if (joueur == null || !this.joueurPossede.equals(joueur) || this.nbMaison <= 0) {
+            return false;
+        }
+        if (this.nbMaison === 5) {
+            // On verifie qu'il reste assez de maison (4)
+            if (GestionConstructions.getRestHouse() >= 4) {
+                GestionConstructions.buyHouses(4);
+                GestionConstructions.sellHotel();
+                this.hotel = false;
+            } else {
+                return; // Pas assez de maison
+            }
+        } else {
+            GestionConstructions.sellHouse();
+        }
+        this.setNbMaison(this.nbMaison - 1, noRefresh);
+        return true;
+    }
 
-	getLoyer() {
-		if (this.statutHypotheque) {
-			return 0;
-		}
-		if (this.hotel === true) {
-			return this.loyerHotel;
-		}
-		if (this.nbMaison === 0 && this.isGroupee()) {
-			return this.loyer[0] * 2;
-		}
-		return this.loyer[this.nbMaison];
-	}
+    /* Utilise principalement par un joueur ordi qui achete les maisons une par une. */
 
-	payerLoyer() {
-		return InfoMessage.create(GestionJoueur.getJoueurCourant(),"Vous etes " + this.nom, this.color, "Vous etes chez " + this.joueurPossede.nom + " vous devez payez la somme de " + this.getLoyer() + " " + CURRENCY, function (param) {
-			$.trigger('monopoly.payerLoyer', {
-				joueur: param.joueurPaye,
-				maison: param.maison
-			});
-			$.trigger('event.network',{kind:'loyer',player:GestionJoueur.getJoueurCourant().id,maison:GestionFiche.buildId(param.maison)});
-			param.joueurPaye.payerTo(param.loyer, param.joueurLoyer);
-		}, {
-			loyer: this.getLoyer(),
-			joueurPaye: GestionJoueur.getJoueurCourant(),
-			joueurLoyer: this.joueurPossede,
-			maison: this
-		});
-	}
+    /* Un joueur humain utilise des methodes de modifications directes */
+    buyMaison(joueur, noRefresh) {
+        if (joueur == null || !this.joueurPossede.equals(joueur) || this.nbMaison >= 5) {
+            return;
+        }
+        // On verifie la dispo
+        if ((this.nbMaison === 4 && !GestionConstructions.isFreeHotel()) || (this.nbMaison < 4 && !GestionConstructions.isFreeHouse())) {
+            throw "Pas de construction disponible";
 
-	/* Renvoie vrai si le reste du groupe appartient au meme joueur.*/
-	isGroupee() {
-		return (this.groupe == null) ? false : this.groupe.isGroupee();
-	}
+        }
+        this.setNbMaison(this.nbMaison + 1, noRefresh);
+        if (this.nbMaison === 5) {
+            this.hotel = true;
+            GestionConstructions.buyHotel();
+        } else {
+            GestionConstructions.buyHouse();
+        }
+    }
 
-	/* Renvoie vrai si le groupe est complet et construit */
-	/* Renvoie vrai si le reste du groupe appartient au meme joueur.*/
-	isGroupeeAndBuild() {
-		if (this.joueurPossede === null) {
-			return false;
-		}
-		// Renvoie les maisons constructibles (lorsque le groupe est complet)
-		let l = this.joueurPossede.maisons.findMaisonsConstructibles();
-		for (let i = 0; i < l.length; i++) {
-			// Si la couleur apparait dans une propriete, le groupe est complet
-			if (l[i].color === this.color && l[i].nbMaison > 0) {
-				return true;
-			}
-		}
-		return false;
-	}
+    /* Renvoie le montant du loyer pour ce joueur (0 s'il est proprietaire) */
+    getLoyerFor(joueur) {
+        if (joueur.equals(this.joueurPossede)) {
+            return 0;
+        }
+        return this.getLoyer()
+    }
+
+    getLoyer() {
+        if (this.statutHypotheque) {
+            return 0;
+        }
+        if (this.hotel === true) {
+            return this.loyerHotel;
+        }
+        if (this.nbMaison === 0 && this.isGrouped()) {
+            return this.loyer[0] * 2;
+        }
+        return this.loyer[this.nbMaison];
+    }
+
+    payerLoyer() {
+        return InfoMessage.create(GestionJoueur.getJoueurCourant(), "Vous etes " + this.nom, this.color, "Vous etes chez " + this.joueurPossede.nom + " vous devez payez la somme de " + this.getLoyer() + " " + CURRENCY, function (param) {
+            bus.send('monopoly.payerLoyer', {
+                joueur: param.joueurPaye,
+                maison: param.maison
+            });
+            bus.network({
+                kind: 'loyer',
+                player: GestionJoueur.getJoueurCourant().id,
+                maison: GestionFiche.buildId(param.maison)
+            });
+            param.joueurPaye.payerTo(param.loyer, param.joueurLoyer);
+        }, {
+            loyer: this.getLoyer(),
+            joueurPaye: GestionJoueur.getJoueurCourant(),
+            joueurLoyer: this.joueurPossede,
+            maison: this
+        });
+    }
+
+    /* Renvoie vrai si le reste du groupe appartient au meme joueur.*/
+    isGrouped() {
+        return (this.groupe == null) ? false : this.groupe.isGrouped();
+    }
+
+    /* Renvoie vrai si le groupe est complet et construit */
+
+    /* Renvoie vrai si le reste du groupe appartient au meme joueur.*/
+    isGroupedAndBuild() {
+        if (this.joueurPossede === null) {
+            return false;
+        }
+        // Renvoie les maisons constructibles (lorsque le groupe est complet)
+        let l = this.joueurPossede.maisons.findMaisonsConstructibles();
+        for (let i = 0; i < l.length; i++) {
+            // Si la couleur apparait dans une propriete, le groupe est complet
+            if (l[i].color === this.color && l[i].nbMaison > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 // Represent a case for junior game (no hypotheque, no builds...)
 class FicheJunior extends Fiche {
-	constructor(axe,pos,colors,nom){
-		super(axe,pos,colors,nom);
-		this.fiche = new FicheUI(this,'#ficheJunior');
-		this.type = "junior";
-	}
+    constructor(axe, pos, colors, nom) {
+        super(axe, pos, colors, nom);
+        this.fiche = new FicheUI(this, '#ficheJunior');
+        this.type = "junior";
+    }
 }
 
-class FicheGare extends Fiche{
-	constructor(axe, pos, color, nom){
-		super (axe, pos, color, nom);
-		this.type = "gare";
-	}
+class FicheGare extends Fiche {
+    constructor(axe, pos, color, nom) {
+        super(axe, pos, color, nom);
+        this.type = "gare";
+    }
 
-	getLoyer() {
-		if (this.joueurPossede != null) {
-			let nb = this.getNbPropertiesOfType();
-			return this.loyer[nb];
-		}
-		return 0;
-	}
+    getLoyer() {
+        if (this.joueurPossede != null) {
+            let nb = this.getNbPropertiesOfType();
+            return this.loyer[nb];
+        }
+        return 0;
+    }
 }
 
 class FicheCompagnie extends Fiche {
-	constructor(axe, pos, color, nom) {
-		super( axe, pos, color, nom);
-		this.fiche = new FicheUI(this,$('#ficheCompagnie'));
-		this.type = "compagnie";
-	}
+    constructor(axe, pos, color, nom) {
+        super(axe, pos, color, nom);
+        this.fiche = new FicheUI(this, $('#ficheCompagnie'));
+        this.type = "compagnie";
+    }
 
-	getLoyer() {
-		let loyer = GestionDes.total();
-		if (this.joueurPossede != null) {
-			let nb = this.getNbPropertiesOfType();
-			return this.loyer[nb] * loyer;
-		}
-		return this.loyer[0] * loyer;
-	}
+    getLoyer() {
+        let loyer = GestionDes.total();
+        if (this.joueurPossede != null) {
+            let nb = this.getNbPropertiesOfType();
+            return this.loyer[nb] * loyer;
+        }
+        return this.loyer[0] * loyer;
+    }
 }
 
 /* Permet de gerer les fiches */
 let GestionFiche = {
-	fiches: [],
-	keys: [], // Cles des fiches
-	buildId(fiche){
-		return fiche.axe + "-" + fiche.pos;
-	},
-	_calculateStrId:function(id){
-		return parseInt(id.substr(0,1))*DrawerFactory.dimensions.nbCases + parseInt(id.substr(2,3));
-	},
-	_calculateId:function(info){
-		return info.axe*DrawerFactory.dimensions.nbCases + info.pos;
-	},
-	getById: function (id) {
-		return this.fiches[this._calculateStrId(id)];
-	},
-	get: function (info) {
-		return this.fiches[this._calculateId(info)];
-	},
-	getPrison : function(){
-		return this.fiches[this._calculateId({axe:1,pos:0})];
-	},
-	getDepart : function(){
-		return this.fiches[this._calculateId({axe:2,pos:0})];
-	},
-	add: function (fiche) {
-		let intId = this._calculateStrId(fiche.id);
-		this.fiches[intId] = fiche;
-		this.keys.push(intId);
-	},
-	/* Renvoie les terrains libres */
-	getFreeFiches: function () {
-		return this.fiches.filter(function(f){return f.statut === ETAT_LIBRE;});
-	},
-	/* Renvoie vrai s'il reste des terrains libres */
-	isFreeFiches:function(){
-		return this.fiches.some(function(f){return f.statut === ETAT_LIBRE;});
-	},
-	/* Renvoie le prochain terrain libre */
-	getNextFreeTerrain:function(from){
-		return this._getNextFiche(from,function(f){return f.isPropriete() && f.statut === ETAT_LIBRE;});
-	},
-	getNextTerrain:function(from){
-		return this._getNextFiche(from,function(f){return f.isPropriete();});
-	},
-	// Return all groups with name and color
-	getGroups:function(){
-		let groups = [];
-		this.fiches
-			.filter(m=>m.groupe!=null)
-			.forEach(m=>groups[m.groupe.nom]=m.groupe.color);
-		return groups;
-	},
-	_getNextFiche:function(from,condition){
-		let info = {position:from.pos,axe:from.axe};
-		do{
-			info = this.nextPos(info.axe,info.position);
-			var fiche = this.get({axe:info.axe,pos:info.position});
-			if(condition == null || condition(fiche)){
-				return fiche;
-			}
-		}while(from.axe!==info.axe || from.pos!==info.position);
-		return null;
-	},
-	/* iterateur pour parcourir les fiches */
-	iterator: function () {
-		return {
-			pointer: 0,
-			hasNext: function () {
-				return this.pointer < GestionFiche.keys.length;
-			},
-			next: function () {
-				return GestionFiche.fiches[GestionFiche.keys[this.pointer++]];
-			}
-		}
-	},
-	/* iterateur pour parcourir les terrains (pas de carte chance, taxe...) */
-	iteratorTerrains: function () {
-		// On calcule des cles
-		let keys = [];
-		for (let id in this.fiches) {
-			if (this.fiches[id].isPropriete()) {
-				keys.push(id);
-			}
-		}
-		return this._buildIterator(keys);
-	},
-	getTerrainsLibres: function () {
-		let keys = [];
-		for (let id in this.fiches) {
-			if (this.fiches[id].isPropriete() && this.fiches[id].statut === ETAT_LIBRE) {
-				keys.push(id);
-			}
-		}
-		return this._buildIterator(keys);
-	},
-	_buildIterator: function (keys) {
-		return {
-			pointer: 0,
-			keys: keys,
-			hasNext: function () {
-				return this.pointer < this.keys.length;
-			},
-			next: function () {
-				return GestionFiche.fiches[this.keys[this.pointer++]];
-			}
-		}
-	},
-	nextPos: function (axe, position) {
-		position++;
-		if (position === 10) {
-			axe = (axe + 1) % 4;
-			position = 0;
-		}
-		return {
-			"position": position,
-			"axe": axe
-		};
-	}
+    fiches: [],
+    keys: [], // Cles des fiches
+    buildId(fiche) {
+        return fiche.axe + "-" + fiche.pos;
+    },
+    _calculateStrId: function (id) {
+        return parseInt(id.substr(0, 1)) * DrawerFactory.dimensions.nbCases + parseInt(id.substr(2, 3));
+    },
+    _calculateId: function (info) {
+        return info.axe * DrawerFactory.dimensions.nbCases + info.pos;
+    },
+    getById: function (id) {
+        return this.fiches[this._calculateStrId(id)];
+    },
+    get: function (info) {
+        return this.fiches[this._calculateId(info)];
+    },
+    getPrison: function () {
+        return this.fiches[this._calculateId({axe: 1, pos: 0})];
+    },
+    getDepart: function () {
+        return this.fiches[this._calculateId({axe: 2, pos: 0})];
+    },
+    add: function (fiche) {
+        let intId = this._calculateStrId(fiche.id);
+        this.fiches[intId] = fiche;
+        this.keys.push(intId);
+    },
+    /* Renvoie les terrains libres */
+    getFreeFiches: function () {
+        return this.fiches.filter(function (f) {
+            return f.statut === ETAT_LIBRE;
+        });
+    },
+    /* Renvoie vrai s'il reste des terrains libres */
+    isFreeFiches: function () {
+        return this.fiches.some(function (f) {
+            return f.statut === ETAT_LIBRE;
+        });
+    },
+    /* Renvoie le prochain terrain libre */
+    getNextFreeTerrain: function (from) {
+        return this._getNextFiche(from, function (f) {
+            return f.isPropriete() && f.statut === ETAT_LIBRE;
+        });
+    },
+    getNextTerrain: function (from) {
+        return this._getNextFiche(from, function (f) {
+            return f.isPropriete();
+        });
+    },
+    // Return all groups with name and color
+    getGroups: function () {
+        let groups = [];
+        this.fiches
+            .filter(m => m.groupe != null)
+            .forEach(m => groups[m.groupe.nom] = m.groupe.color);
+        return groups;
+    },
+    _getNextFiche: function (from, condition) {
+        let info = {position: from.pos, axe: from.axe};
+        do {
+            info = this.nextPos(info.axe, info.position);
+            var fiche = this.get({axe: info.axe, pos: info.position});
+            if (condition == null || condition(fiche)) {
+                return fiche;
+            }
+        } while (from.axe !== info.axe || from.pos !== info.position);
+        return null;
+    },
+    /* iterateur pour parcourir les fiches */
+    iterator: function () {
+        return {
+            pointer: 0,
+            hasNext: function () {
+                return this.pointer < GestionFiche.keys.length;
+            },
+            next: function () {
+                return GestionFiche.fiches[GestionFiche.keys[this.pointer++]];
+            }
+        }
+    },
+    /* iterateur pour parcourir les terrains (pas de carte chance, taxe...) */
+    iteratorTerrains: function () {
+        // On calcule des cles
+        let keys = [];
+        for (let id in this.fiches) {
+            if (this.fiches[id].isPropriete()) {
+                keys.push(id);
+            }
+        }
+        return this._buildIterator(keys);
+    },
+    getTerrainsLibres: function () {
+        let keys = [];
+        for (let id in this.fiches) {
+            if (this.fiches[id].isPropriete() && this.fiches[id].statut === ETAT_LIBRE) {
+                keys.push(id);
+            }
+        }
+        return this._buildIterator(keys);
+    },
+    _buildIterator: function (keys) {
+        return {
+            pointer: 0,
+            keys: keys,
+            hasNext: function () {
+                return this.pointer < this.keys.length;
+            },
+            next: function () {
+                return GestionFiche.fiches[this.keys[this.pointer++]];
+            }
+        }
+    },
+    nextPos: function (axe, position) {
+        position++;
+        if (position === 10) {
+            axe = (axe + 1) % 4;
+            position = 0;
+        }
+        return {
+            "position": position,
+            "axe": axe
+        };
+    }
 };
 
-export {Fiche,FicheGare,FicheJunior,FicheCompagnie,CaseChance,CaseCaisseDeCommunaute,SimpleCaseSpeciale,CaseActionSpeciale,CaseDepart,GestionFiche,ParcGratuit,Groupe,ETAT_LIBRE,ETAT_ACHETE};
+export {
+    Fiche,
+    FicheGare,
+    FicheJunior,
+    FicheCompagnie,
+    CaseChance,
+    CaseCaisseDeCommunaute,
+    SimpleCaseSpeciale,
+    CaseActionSpeciale,
+    CaseDepart,
+    GestionFiche,
+    ParcGratuit,
+    Groupe,
+    ETAT_LIBRE,
+    ETAT_ACHETE
+};

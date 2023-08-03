@@ -3,9 +3,10 @@ import {GestionStrategie} from "./strategie.js";
 import {GestionComportement} from "./comportement.js";
 import {ETAT_LIBRE, GestionFiche} from "../display/case_jeu.js";
 import {GestionDes} from "./dices.js";
-import {GestionEchange, GestionEnchere} from "../enchere.js";
-import {GestionJoueur} from "../gestion_joueurs.js";
-import {VARIANTES, IA_TIMEOUT,globalStats} from "../monopoly.js";
+import {GestionEchange, GestionEnchere} from "../core/enchere.js";
+import {GestionJoueur} from "../core/gestion_joueurs.js";
+import {VARIANTES, IA_TIMEOUT,globalStats} from "../core/monopoly.js";
+import {bus} from "../bus_message.js";
 
 /* Joueurs du jeu, version robot et manuel */
 /* Objet central sur la gestion du jeu */
@@ -99,7 +100,7 @@ class JoueurOrdinateur extends Joueur {
 			// rachete les hypotheques
 			this.rebuyHypotheque();
 			// on lance les des
-			$.trigger('monopoly.debug',{message:`joueur ${this.nom} joue`});
+			bus.debug({message:`joueur ${this.nom} joue`});
 			GestionDes.lancer();
 		});
 	}
@@ -183,11 +184,11 @@ class JoueurOrdinateur extends Joueur {
 			if (buttons.Acheter != null && propriete != null) {
 				let interet = _self.strategie.interetGlobal(propriete).interet;
 				let comportement = _self.comportement.getRisqueTotal(_self, propriete.achat);
-				$.trigger("monopoly.debug", {
+				bus.debug( {
 					message: "Strategie : " + interet + " " + comportement
 				});
 				if (interet > comportement) {
-					$.trigger("monopoly.debug", {
+					bus.debug({
 						message: "IA Achete"
 					});
 					buttons.Acheter();
@@ -315,7 +316,7 @@ class JoueurOrdinateur extends Joueur {
 					proprietesFiltrees.push(prop);
 				}
 			} else {
-				$.trigger('monopoly.debug', {
+				bus.debug({
 					message: 'Le joueur ne demande pas ' + maison.nom
 				});
 			}
@@ -504,7 +505,7 @@ class JoueurOrdinateur extends Joueur {
 
 		// On melange le tout
 		let critere = (critereTerrains + critereArgent) * strategie;
-		$.trigger('monopoly.debug',{message:"Criteres : " + critere + " " + critereTerrains + " " + critereArgent});
+		bus.debug({message:"Criteres : " + critere + " " + critereTerrains + " " + critereArgent});
 		return {
 			critere: critere,
 			recommandations: recommandations,
@@ -726,7 +727,7 @@ class JoueurOrdinateur extends Joueur {
 
 	propertiesSortByDescImportance(){
 		return this.maisons.maisons
-			.filter(m=>m.statutHypotheque === false && !m.isGroupeeAndBuild())
+			.filter(m=>m.statutHypotheque === false && !m.isGroupedAndBuild())
 			.sort((a, b) =>this._buildSortScore(a) - this._buildSortScore(b));
 	}
 
@@ -737,13 +738,13 @@ class JoueurOrdinateur extends Joueur {
 		 * 3) Hypotheque des terrains precedemment construits
 		 **/
 	resolveProblemeArgent(montant, callback) {
-		$.trigger('monopoly.debug', {
+		bus.debug({
 			message: 'Resoud probleme argent'
 		});
 		/* CAS 1 */
 		let maisons = this.propertiesSortByDescImportance();
 
-		$.trigger("monopoly.debug", {
+		bus.debug({
 			message: "PHASE 1"
 		});
 		for (let index = 0; index < maisons.length && this.montant < montant; index++) {
@@ -752,7 +753,7 @@ class JoueurOrdinateur extends Joueur {
 
 		/* CAS 2 */
 		if (this.montant < montant) {
-			$.trigger("monopoly.debug", {
+			bus.debug({
 				message: "PHASE 2"
 			});
 			// 3 Terrains construits, on vend les maisons dessus
@@ -786,12 +787,12 @@ class JoueurOrdinateur extends Joueur {
 				}
 				if (this.montant > montant) {
 					if (maisonVendues > 0) {
-						$.trigger('monopoly.vendMaison', {
+						bus.send('monopoly.vendMaison', {
 							joueur: this,
 							nbMaison: maisonVendues
 						});
 					}
-					$.trigger('refreshPlateau');
+					bus.refresh();
 					break;
 				}
 			}
@@ -814,7 +815,7 @@ class JoueurOrdinateur extends Joueur {
 
 	getNbGroupConstructibles() {
 		return this.maisons.maisons
-			.filter(m=>m.isGroupee())
+			.filter(m=>m.isGrouped())
 			.reduce((s,m)=>{s.add(m.groupe.nom);return s},new Set())
 			.size;
 	}
@@ -998,11 +999,11 @@ class JoueurOrdinateur extends Joueur {
 
 			}
 		}
-		$.trigger('monopoly.acheteConstructions', {
+		bus.send('monopoly.acheteConstructions', {
 			joueur: this,
 			achats: achats
 		});
-		$.trigger('refreshPlateau');
+		bus.refresh();
 	}
 
 
@@ -1016,7 +1017,7 @@ class JoueurOrdinateur extends Joueur {
 	changeStrategie() {
 		let localStats = this.strategie.getStatsProprietes();
 		if (localStats.color.pourcent < 40 && this.countInterestProperties() <= 2 && !this.isFamilyFree()) {
-			$.trigger("monopoly.debug", {
+			bus.debug({
 				message: this.nom + " cherche une nouvelle strategie"
 			});
 			// On change de strategie. Une nouvelle strategie doit posseder au moins 60% de ses terrains de libre
@@ -1026,7 +1027,7 @@ class JoueurOrdinateur extends Joueur {
 					let strategieStats = s.getStatsProprietes();
 					if (strategieStats.color.pourcent > 50) {
 						// Nouvelle strategie
-						$.trigger("monopoly.debug", {
+						bus.debug({
 							message: this.nom + " change de stratégie : " + this.strategie.name + " => " + s.name
 						});
 						this.strategie = s;

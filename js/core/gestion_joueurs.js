@@ -1,11 +1,12 @@
-import {Joueur,NetworkJoueur} from './entity/joueur.js'
-import {RemotePlayer,MasterRemotePlayer,LocalPlayer} from './entity/network/local_joueur.js'
-import {JoueurOrdinateur,NetworkJoueurOrdinateur} from "./entity/joueur_robot.js";
+import {Joueur,NetworkJoueur} from '../entity/joueur.js'
+import {RemotePlayer,MasterRemotePlayer,LocalPlayer} from '../entity/network/local_joueur.js'
+import {JoueurOrdinateur,NetworkJoueurOrdinateur} from "../entity/joueur_robot.js";
 import {CURRENCY,VARIANTES,globalStats,restartMonopoly} from "./monopoly.js"
-import {GestionFiche} from "./display/case_jeu.js";
+import {GestionFiche} from "../display/case_jeu.js";
 import {GestionEchange} from "./enchere.js";
-import {GestionDes} from "./entity/dices.js";
-import {InfoMessage} from "./display/message.js";
+import {GestionDes} from "../entity/dices.js";
+import {InfoMessage} from "../display/message.js";
+import {bus} from "../bus_message.js";
 
 /* Gere les joueurs : creation, changement... */
 let GestionJoueur = {
@@ -72,7 +73,7 @@ let GestionJoueur = {
         joueur.setPion(color,img,montantDepart);
         // On defini la couleurs
         $(`#${id} > div.joueur-bloc`).css('backgroundImage', `linear-gradient(to right,white 50%,${color})`);
-        $.trigger('monopoly.newPlayer', {
+        bus.send('monopoly.newPlayer', {
             joueur: joueur
         });
         this.joueurs.push(joueur);
@@ -107,7 +108,7 @@ let GestionJoueur = {
         try {
             joueur = this.next();
             if(joueur != null && (GestionJoueur.getJoueurCourant() == null || joueur.id !== GestionJoueur.getJoueurCourant().id)) {
-                $.trigger('monopoly.debug', {
+                bus.debug({
                     message: `Change player to ${joueur.nom}`
                 });
             }
@@ -129,7 +130,7 @@ let GestionJoueur = {
         return this.joueurs.filter(j=>j.isSlotFree());
     },
     _showVainqueur(gagnant){
-        $.trigger('monopoly.victoire',{joueur:gagnant});
+        bus.send('monopoly.victoire',{joueur:gagnant});
         // On affiche les resultats complets
         const perdants = this.joueurs.filter(function(j){return j.defaite;});
         perdants.sort((a,b)=>{
@@ -167,7 +168,7 @@ let GestionJoueur = {
     _formatTempsJeu(beginTime){
         let time = Math.round((new Date().getTime() - beginTime)/1000);
         if(time < 60){
-            return sec + " sec";
+            return time + " sec";
         }
         const sec = time%60;
         time = Math.round(time/60);

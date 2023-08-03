@@ -1,7 +1,8 @@
 /* Objet PION */
 import {DrawerFactory,Drawer} from "../ui/graphics.js";
-import {GestionJoueur} from "../gestion_joueurs.js";
-import {VARIANTES} from "../monopoly.js";
+import {GestionJoueur} from "../core/gestion_joueurs.js";
+import {VARIANTES} from "../core/monopoly.js";
+import {bus} from "../bus_message.js";
 
 function Pion(color, joueur,img, montantDepart = 20000) {
 	this.axe = 2;
@@ -29,8 +30,8 @@ function Pion(color, joueur,img, montantDepart = 20000) {
 	}
 
 	this.deplaceValeursDes = function (des) {
-		var pos = this.position + des;
-		var axe = this.axe;
+		let pos = this.position + des;
+		let axe = this.axe;
 		while(pos<0){
 			pos+=DrawerFactory.dimensions.nbCases;
 			axe= (axe + 3)%4;
@@ -55,8 +56,8 @@ function Pion(color, joueur,img, montantDepart = 20000) {
 			this.stats.positions[id]++;
 		}
 		if(GestionJoueur.getJoueurCourant() != null) {
-			$.trigger("monopoly.debug", {
-				message: GestionJoueur.getJoueurCourant().nom + " est en " + this.axe + "-" + this.position + " et va en " + id
+			bus.debug( {
+				message: `${GestionJoueur.getJoueurCourant().nom} est en ${this.axe} - ${this.position} et va en ${id}`
 			});
 		}
 		// On gere le cas de la case depart (si elle est sur le trajet)

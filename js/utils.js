@@ -45,7 +45,7 @@ Object.defineProperty(Array.prototype, "filter", {
 
 Object.defineProperty(Array.prototype, "some", {
     value: function (callback) {
-        for (var i in this) {
+        for (let i in this) {
             if (callback(this[i])) {
                 return true;
             }
@@ -57,7 +57,7 @@ Object.defineProperty(Array.prototype, "some", {
     configurable: false
 });
 
-$.bind = function (eventName, fct) {
+/*$.bind = function (eventName, fct) {
     $('body').bind(eventName, fct);
     return $('body');
 }
@@ -65,3 +65,4 @@ $.bind = function (eventName, fct) {
 $.trigger = function (eventName, params) {
     $('body').trigger(eventName, params);
 }
+*/

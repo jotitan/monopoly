@@ -1,7 +1,7 @@
 import {NetworkJoueur, Joueur, Notifier} from '../joueur.js';
 import {GestionFiche} from "../../display/case_jeu.js";
 import {GestionDes} from "../dices.js";
-import {GestionJoueur} from "../../gestion_joueurs.js";
+import {GestionJoueur} from "../../core/gestion_joueurs.js";
 
 /* Represent a local player in remote game */
 /* Extend joueur but override many methods, no action, only receive events */

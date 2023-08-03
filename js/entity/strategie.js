@@ -1,7 +1,7 @@
 /* Gestion de la strategie */
 import {GestionFiche} from "../display/case_jeu.js";
 import {ETAT_LIBRE} from "../display/case_jeu.js";
-import {GestionJoueur} from "../gestion_joueurs.js";
+import {GestionJoueur} from "../core/gestion_joueurs.js";
 
 /* @Abstract */
 /* Objet qui gere la strategie. IL y a differentes implementations */
@@ -183,7 +183,7 @@ class Strategie {
         /* Calcule si le proprio est le seul fournisseur */
         let alone = GestionJoueur.getNb() > 2; // Faux si seulement 2 joueurs
         /* Seul groupe qui m'interesse, on refuse */
-        if ((interestGroupe === true && otherInterests.length === 1) || terrain.isGroupee()) {
+        if ((interestGroupe === true && otherInterests.length === 1) || terrain.isGrouped()) {
             return 0;
         }
         for (let idx in otherInterests) {

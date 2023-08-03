@@ -1,7 +1,8 @@
-import {wrapDialog,initWrapButtons,CommunicationDisplayer} from './display/displayers.js'
+import {wrapDialog,initWrapButtons,CommunicationDisplayer} from '../display/displayers.js'
 import {GestionJoueur} from "./gestion_joueurs.js";
-import {GestionFiche} from "./display/case_jeu.js";
+import {GestionFiche} from "../display/case_jeu.js";
 import {CURRENCY} from "./monopoly.js";
+import {bus} from "../bus_message.js";
 
 /* Gestion des encheres et des echanges entre joueurs */
 
@@ -40,7 +41,7 @@ let GestionEnchere = {
         this.currentJeton = 0;
         this.joueursExit = [];
         this.transaction++;
-        $.trigger('monopoly.enchere.init', {
+        bus.send('monopoly.enchere.init', {
             maison: this.terrain,
             joueur: this.terrain.joueurPossede
         });
@@ -136,7 +137,7 @@ let GestionEnchere = {
                 this.runEnchere(true);
             } else {
                 //pas de vente
-                $.trigger('monopoly.enchere.fail', {
+                bus.send('monopoly.enchere.fail', {
                     maison: this.terrain
                 });
                 this.endEnchere();
@@ -153,7 +154,7 @@ let GestionEnchere = {
                 this.joueurLastEnchere.getSwapProperiete(this.terrain);
             }
 
-            $.trigger('monopoly.enchere.success', {
+            bus.send('monopoly.enchere.success', {
                 joueur: this.joueurLastEnchere,
                 maison: this.terrain,
                 montant:this.lastEnchere
@@ -386,7 +387,7 @@ let GestionEchange = {
         this.proprietaire = proprietaire;
         this.terrain = terrain;
         this.endCallback = endCallback;
-        $.trigger('monopoly.echange.init', {
+        bus.send('monopoly.echange.init', {
             joueur: demandeur,
             maison: terrain
         });
@@ -408,7 +409,7 @@ let GestionEchange = {
         // On transmet la demande au proprietaire
         this.proposition = proposition;
         this.initialProposition = proposition;
-        $.trigger('monopoly.echange.propose', {
+        bus.send('monopoly.echange.propose', {
             joueur: GestionEchange.demandeur,
             proposition: proposition
         });
@@ -416,7 +417,7 @@ let GestionEchange = {
     },
     /* Contre proposition du proprietaire, ca peut être des terrains ou de l'argent */
     contrePropose: function (proposition, joueurContre) {
-        $.trigger('monopoly.echange.contrepropose', {
+        bus.send('monopoly.echange.contrepropose', {
             joueur: this.proprietaire,
             proposition: proposition
         });
@@ -433,7 +434,7 @@ let GestionEchange = {
     /* Le proprietaire accepte la proposition. On prend la derniere proposition et on l'applique */
     /* @param joueurAccept : joueur qui accepte la proposition (suite au aller retour) */
     accept: function (joueurAccept) {
-        $.trigger('monopoly.echange.accept', {
+        bus.send('monopoly.echange.accept', {
             joueur: joueurAccept
         });
         // On notifie a l'autre joueur que c'est accepte
@@ -462,7 +463,7 @@ let GestionEchange = {
         this.end();
     },
     reject: function (joueurReject) {
-        $.trigger('monopoly.echange.reject', {
+        bus.send('monopoly.echange.reject', {
             joueur: joueurReject
         });
         // On notifie le joueur et on lui donne le callback(end) pour lancer la suite du traitement

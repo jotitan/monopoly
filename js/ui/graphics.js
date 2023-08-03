@@ -1,6 +1,8 @@
 
 /* Fournit les methodes de dessin d'un plateau de jeu standard (carré) */
 
+import {bus} from "../bus_message.js";
+
 let CURRENT_ID_COMPONENT = 0; // Permet de generer un numero de composant unique
 
 /* Fournit des methodes de dessins */
@@ -278,9 +280,7 @@ let Drawer = {
         this.refresh(this.canvas);
         this.setFrequency(50, this.canvasRT);
 
-        $.bind('refreshPlateau', function () {
-            Drawer.refresh(Drawer.canvas);
-        });
+        bus.watchRefresh(()=>Drawer.refresh(Drawer.canvas));
         return this;
     }
 };

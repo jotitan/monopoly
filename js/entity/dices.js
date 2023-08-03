@@ -1,8 +1,10 @@
 import {DrawerFactory,Drawer} from '../ui/graphics.js'
-import {GestionJoueur} from '../gestion_joueurs.js'
+import {GestionJoueur} from '../core/gestion_joueurs.js'
 import {InfoMessage,MessageDisplayer} from '../display/message.js'
-import {VARIANTES,CURRENCY} from "../monopoly.js";
+import {VARIANTES,CURRENCY} from "../core/monopoly.js";
 import {GestionFiche} from "../display/case_jeu.js";
+import {dices} from "../request_service.js";
+import {bus} from "../bus_message.js";
 
 let GestionDes = {
     gestionDes:null,
@@ -49,11 +51,7 @@ class LocalDiceThrower {
 
 class RemoteDiceThrower{
     throw(nb){
-        return new Promise(resolve=>{
-            $.ajax({
-                url:`http://localhost:8100/dices?nb=${nb}`
-            }).then(data=>resolve(data))
-        });
+        return dices(nb)
     }
 }
 
@@ -303,7 +301,7 @@ class GestionDesRapideImpl extends GestionDesImpl{
         this.desRapide = 0; // annule le mr monopoly
         let pos = GestionJoueur.getJoueurCourant().getPosition();
         let fiche = GestionFiche.isFreeFiches() ? GestionFiche.getNextFreeTerrain(pos) : GestionFiche.getNextTerrain(pos);
-        $.trigger('monopoly.derapide.mrmonopoly',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
+        bus.send('monopoly.derapide.mrmonopoly',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
         GestionJoueur.getJoueurCourant().joueSurCase(fiche);
     }
     setDices(dice1,dice2,quickDice){
@@ -358,7 +356,7 @@ class GestionDesRapideImpl extends GestionDesImpl{
         if(this.isTriple()){
             GestionJoueur.getJoueurCourant().choisiCase(function(fiche){
                 GestionJoueur.getJoueurCourant().joueSurCase(fiche);
-                $.trigger('monopoly.derapide.triple',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
+                bus.send('monopoly.derapide.triple',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
             });
             return {double:{status:true}};
         }else{
@@ -394,7 +392,7 @@ class GestionDesRapideImpl extends GestionDesImpl{
         /* Cas du bus, le joueur choisi quel des il utilise */
         if(!this.isDouble() && this._isBus()){
             GestionJoueur.getJoueurCourant().choisiDes(this.des1,this.des2,function(total){
-                $.trigger('monopoly.derapide.bus',{joueur:GestionJoueur.getJoueurCourant(),total:total});
+                bus.send('monopoly.derapide.bus',{joueur:GestionJoueur.getJoueurCourant(),total:total});
                 GestionJoueur.getJoueurCourant().joueDes(total);
             });
             return;

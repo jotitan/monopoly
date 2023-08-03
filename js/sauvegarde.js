@@ -1,7 +1,8 @@
 /* Gestion de la sauvegarde */
-import {GestionJoueur} from "./gestion_joueurs.js";
+import {GestionJoueur} from "./core/gestion_joueurs.js";
 import {GestionFiche} from "./display/case_jeu.js";
-import {VARIANTES,globalStats} from "./monopoly.js";
+import {VARIANTES,globalStats} from "./core/monopoly.js";
+import {bus} from "./bus_message.js";
 
 let Sauvegarde = {
     prefix: "monopoly.",
@@ -13,9 +14,10 @@ let Sauvegarde = {
     save: function (name, plateau) {
         this.currentSauvegardeName = name !=null ? this.getSauvegardeName(name) : this.currentSauvegardeName || this.getSauvegardeName();
         this.saveWithName(this.currentSauvegardeName,plateau);
-        $.trigger("monopoly.save", {
+        bus.send('monopoly.save',{name: this.currentSauvegardeName});
+        /*$.trigger("monopoly.save", {
             name: this.currentSauvegardeName
-        });
+        });*/
     },
     saveWithName: function (saveName, plateau) {
         // On recupere la liste des joueurs
@@ -47,7 +49,7 @@ let Sauvegarde = {
         monopoly.plateau.load(data.plateau || "data-monopoly.json",data.options,function(){
             data.joueurs.forEach((j,i)=>GestionJoueur.createAndLoad(!j.canPlay, i,j.nom,j,monopoly.plateau.infos.montantDepart));
             data.fiches.forEach(f=>GestionFiche.getById(f.id).load(f));
-            $.trigger('refreshPlateau');
+            bus.refresh();
             globalStats.nbTours = data.nbTours || 0;
             monopoly.afterCreateGame();
             GestionJoueur.change(data.joueurCourant);

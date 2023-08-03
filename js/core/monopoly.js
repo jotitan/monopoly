@@ -1,30 +1,32 @@
-import './utils.js'
+import '../utils.js'
 import {GestionJoueur, JoueurFactory} from './gestion_joueurs.js'
-import {InfoMessage, MessageDisplayer} from './display/message.js'
-import {Drawer, DrawerFactory} from './ui/graphics.js'
+import {InfoMessage, MessageDisplayer} from '../display/message.js'
+import {Drawer, DrawerFactory} from '../ui/graphics.js'
 import {GestionTerrains} from './gestion_terrains.js'
-import {GestionDes, GestionDesImpl, GestionDesRapideImpl} from './entity/dices.js'
+import {GestionDes, GestionDesImpl, GestionDesRapideImpl} from '../entity/dices.js'
 import {EchangeDisplayer, GestionEnchere, GestionEnchereDisplayer} from './enchere.js'
-import {CarteActionFactory} from './entity/cartes_action.js'
+import {CarteActionFactory} from '../entity/cartes_action.js'
 import {
-	CaseActionSpeciale,
-	CaseCaisseDeCommunaute,
-	CaseChance,
-	CaseDepart,
-	Fiche,
-	FicheCompagnie,
-	FicheGare,
-	FicheJunior,
-	GestionFiche,
-	Groupe,
-	ParcGratuit,
-	SimpleCaseSpeciale
-} from './display/case_jeu.js'
-import {CommunicationDisplayer, FicheDisplayer, wrapDialog} from './display/displayers.js'
-import {checkExistingGame, MasterRemoteManager, RemoteManager} from './entity/network/remote_manager.js'
-import {} from './ui/square_graphics.js';
-import {} from './ui/circle_graphics.js';
-import {Sauvegarde} from './sauvegarde.js';
+    CaseActionSpeciale,
+    CaseCaisseDeCommunaute,
+    CaseChance,
+    CaseDepart,
+    Fiche,
+    FicheCompagnie,
+    FicheGare,
+    FicheJunior,
+    GestionFiche,
+    Groupe,
+    ParcGratuit,
+    SimpleCaseSpeciale
+} from '../display/case_jeu.js'
+import {CommunicationDisplayer, FicheDisplayer, wrapDialog} from '../display/displayers.js'
+import {checkExistingGame, MasterRemoteManager, RemoteManager} from '../entity/network/remote_manager.js'
+import '../ui/square_graphics.js';
+import '../ui/circle_graphics.js';
+import {Sauvegarde} from '../sauvegarde.js';
+import {createGameRequest, get, loadAllPlateaux} from "../request_service.js";
+import {bus} from "../bus_message.js";
 
 /* Gestion du Monopoly */
 
@@ -80,13 +82,13 @@ class CarteActionWrapper {
     action() {
         return InfoMessage.create(GestionJoueur.getJoueurCourant(), this.title, this.color, this.libelle, () => {
             let name = `monopoly.${this.triggerLabel}.message`;
-            $.trigger('event.network', {
+            bus.network({
                 kind: 'message',
                 player: GestionJoueur.getJoueurCourant().id,
                 libelle: this.libelle,
                 name: name
             });
-            $.trigger(name, {
+            bus.send(name, {
                 joueur: GestionJoueur.getJoueurCourant(),
                 message: this.libelle
             });
@@ -117,7 +119,7 @@ function doActions(joueur = GestionJoueur.getJoueurCourant()) {
     // une fois l'action cree, le joueur doit faire une action
     joueur.actionApresDes(buttons, fiche);
     // Notify end play
-    $.trigger('move.end', {});
+    bus.send('move.end');
 }
 
 function restartMonopoly() {
@@ -160,13 +162,8 @@ class PlateauDetails {
     loadFullPath(path, options, callback, dataExtend) {
         this._temp_load_data = dataExtend;
         // On charge le plateau
-        $.ajax({
-            url: path,
-            dataType: 'json',
-            context: this
-        })
-            .done(data => this.managePlateauConfig(data, options, callback))
-            .fail(() => alert(`Le plateau ${path} n'existe pas`));
+        get(path).then(data => this.managePlateauConfig(data, options, callback))
+            .catch((e) => alert(`Le plateau ${path} n'existe pas`));
     }
 
     managePlateauConfig(data, options, callback) {
@@ -394,17 +391,11 @@ class PanelGameMonopoly {
     // load existing plateaux configuration
     loadPlateaux() {
         this.plateaux = $('#idSelectPlateau').empty();
-        $.ajax({
-            url: 'data/plateaux.json',
-            dataType: 'json',
-            context: this
-        })
-            .done(data => {
-                if (data == null || data.plateaux == null) {
-                    return;
-                }
+        loadAllPlateaux().then(data => {
+            if (data != null && data.plateaux != null) {
                 data.plateaux.forEach(p => this.plateaux.append(`<option value="${p.url}">${p.name}</option>`));
-            });
+            }
+        });
     }
 
     loadSavedGames() {
@@ -543,7 +534,7 @@ class Monopoly {
     // Create a network game as master
     _createNetworkGame(options) {
         // Create game on server then load
-        $.ajax({url: "/createGame"}).then((data) => {
+        createGameRequest().then(data => {
             this.remoteManager = new MasterRemoteManager(options.joueur, data.game, this.plateau);
             let players = this.remoteManager.create(options.nbPlayers, options.nbRobots, options.joueur, this.plateau.infos.nomsJoueurs, this.plateau.infos.argentJoueurDepart, this.plateau.infos.montantDepart);
             return this.afterCreateGame(players);
@@ -599,7 +590,6 @@ class Monopoly {
     }
 
     initPanels() {
-        //$('#message').dialog({
         wrapDialog($('#message'), {
             autoOpen: false,
             position: {my: "center top", at: "center top", of: window},
@@ -628,6 +618,9 @@ class Monopoly {
             buttons: [{text: 'Fermer', click: () => $('#idTerrainsLibres').dialog('close')}],
             open: () => this._showFreeTerrains()
         });
+        if(!enableNetwork){
+            $('#idNetwork').hide();
+        }
     }
 
     _showFreeTerrains() {
@@ -640,9 +633,13 @@ class Monopoly {
     }
 }
 
-let debug = false;
+let debug = true;
+let enableNetwork = true;
+
 
 function startGame() {
+
+
     $('#idCreationGame').tabs();
     $('#idMontantParc').hide();
     startMonopoly(debug)

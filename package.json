@@ -12,12 +12,13 @@
     "grunt-zip": "^0.20.0",
     "html-replace-webpack-plugin": "^2.6.0",
     "html-webpack-plugin": "^5.5.3",
+    "string-replace-loader": "^3.1.0",
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4",
     "zip-webpack-plugin": "^4.0.1"
   },
   "scripts": {
-    "package": "grunt package",
-    "pack": "webpack --config ./webpack-conf.js"
+    "pack": "webpack --config ./webpack-conf.js",
+    "pack-github": "webpack --config ./webpack-conf-public.js"
   }
 }

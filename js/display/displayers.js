@@ -1,8 +1,8 @@
 /* Displayers d'information */
 
-import {GestionJoueur} from "../gestion_joueurs.js";
-import {CURRENCY} from "../monopoly.js";
-import {GestionEchange} from "../enchere.js";
+import {GestionJoueur} from "../core/gestion_joueurs.js";
+import {CURRENCY} from "../core/monopoly.js";
+import {GestionEchange} from "../core/enchere.js";
 
 function initWrapButtons(bloc){
     currentDialogId++;
@@ -142,13 +142,13 @@ let FicheDisplayer = {
             $('.loyer0', div).text(parseInt(fiche.getLoyer()));
         }
         else{
-            $('.loyer0', div).text((fiche.isGroupee() === true) ? parseInt(fiche.loyer[0]) * 2 : fiche.loyer[0]);
+            $('.loyer0', div).text((fiche.isGrouped() === true) ? parseInt(fiche.loyer[0]) * 2 : fiche.loyer[0]);
         }
 
         $('tr', div).removeClass("nbMaisons");
         $('.infos-group', div).removeClass("nbMaisons");
         $('.loyer' + fiche.nbMaison, div).parent().addClass("nbMaisons");
-        if (fiche.nbMaison === 0 && fiche.isGroupee() === true) { // possede la serie
+        if (fiche.nbMaison === 0 && fiche.isGrouped() === true) { // possede la serie
             $('.infos-group', div).addClass("nbMaisons");
         }
         if (fiche.type === 'gare') {

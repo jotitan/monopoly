@@ -1,9 +1,9 @@
-import {wrapDialog} from './display/displayers.js'
+import {wrapDialog} from '../display/displayers.js'
 import {CURRENCY} from "./monopoly.js";
 import {GestionJoueur} from "./gestion_joueurs.js";
-import {InfoMessage} from "./display/message.js";
+import {InfoMessage} from "../display/message.js";
 import {GestionConstructions} from "./gestion_constructions.js";
-import {GestionFiche} from "./display/case_jeu.js";
+import {GestionFiche} from "../display/case_jeu.js";
 
 /* Panneau de gestion des terrains */
 
@@ -270,7 +270,7 @@ let GestionTerrains = {
             if (this.simulation != null && (this.simulation.achat.maison!==0 || this.simulation.achat.hotel!==0)) {
                 GestionConstructions.buyHouses(this.simulation.achat.maison);
                 GestionConstructions.buyHotels(this.simulation.achat.hotel);
-                $.trigger('monopoly.acheteConstructions', {
+                bus.send('monopoly.acheteConstructions', {
                     joueur: GestionJoueur.getJoueurCourant(),
                     achats: this.simulation.achat
                 });

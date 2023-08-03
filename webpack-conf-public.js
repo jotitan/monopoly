@@ -14,13 +14,37 @@ module.exports = {
         path: path.join(__dirname, 'dist'),
         filename: 'my-bundle.js'
     },
+    module: {
+        rules: [
+            {
+                test: /monopoly\.js$/,
+                loader: 'string-replace-loader',
+                options: {
+                    multiple:[{
+                        search: /let enableNetwork = true;/i,
+                        replace: 'let enableNetwork = false;'
+                    }, {
+                        search: /let debug = true;/i,
+                        replace: 'let debug = false;'
+                    }]
+                }
+            }
+        ]
+    },
     plugins: [
         new HtmlWebpackPlugin({template: './monopoly-template.html'}),
         new HtmlReplaceWebpackPlugin([
             {
                 pattern: '<script type="module" src="js/core/monopoly.js"></script>',
                 replacement: ''
+            },{
+                pattern: 'let debug = true;',
+                replacement: 'let debug = false;'
+            },{
+                pattern: 'let enableNetwork = true;',
+                replacement: 'let enableNetwork = false;'
             }]),
+
         new CopyPlugin({
             patterns: [
                 {from: "css", to: "css"},
@@ -28,10 +52,6 @@ module.exports = {
                 {from: "lib", to: "lib"},
                 {from: "data", to: "data"},
             ],
-        }),
-        new ZipPlugin({
-            path: '',
-            filename: 'monopoly_build.zip',
         })
     ]
 

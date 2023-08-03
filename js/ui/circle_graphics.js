@@ -1,7 +1,8 @@
 import {DrawerFactory,Component} from "./graphics.js";
 import {Des,DesRapide} from './square_graphics.js'
 import {DrawerHelper} from "./graphics.js";
-import {VARIANTES} from "../monopoly.js";
+import {VARIANTES} from "../core/monopoly.js";
+import {bus} from "../bus_message.js";
 
 /* Implementation pour plateau carree */
 
@@ -126,7 +127,7 @@ class CircleCase extends Component{
 			this.img = $.extend(true,{},DrawerFactory.infos.defaultImage || {},this.img);
 			let image = new Image();
 			image.addEventListener('load',()=>{
-				$.trigger('refreshPlateau');
+				bus.refresh();
 			});
 			image.src = this.img.src;
 			image.height = Math.min(this.img.height,30);

@@ -62,6 +62,7 @@ let GestionJoueur = {
         let img = this.imgJoueurs[i];
         let joueur = new clazz(i, nom, color,argentDepart,montantDepart);
         joueur.enPrison = false;
+        joueur.defaite = defaite;
         joueur.setEnableMouseFunction(JoueurFactory.mouseFunction);
         let isDefaite = defaite ? ' class="defaite" ':'';
         let div = $(`<div id="${id}"${isDefaite}></div>`);

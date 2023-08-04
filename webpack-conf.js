@@ -14,6 +14,18 @@ module.exports = {
         path: path.join(__dirname, 'dist'),
         filename: 'my-bundle.js'
     },
+    module: {
+        rules: [
+            {
+                test: /monopoly\.js$/,
+                loader: 'string-replace-loader',
+                options: {
+                    search: /let debug = true;/i,
+                    replace: 'let debug = false;'
+                }
+            }
+        ]
+    },
     plugins: [
         new HtmlWebpackPlugin({template: './monopoly-template.html'}),
         new HtmlReplaceWebpackPlugin([

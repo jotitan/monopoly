@@ -230,8 +230,6 @@ class GestionDesImpl{
         this.des2 = dice2;
     }
     async _randDes(){
-        // @TODO remove
-        console.log("LAUNCH 2")
         await DiceThrower.throw(2).then(dices=>this.setDices(dices[0],dices[1]));
     }
     _anime(){

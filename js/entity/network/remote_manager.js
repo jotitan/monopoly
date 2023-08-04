@@ -263,7 +263,6 @@ class RemoteManager {
         },
         end(event, force) {
             if (this.queue.length !== 0 && event.kind === this.queue[0].kind && (event.kind !== "moveTo" || force === true)) {
-                //console.log("End of",event.kind);
                 // Remove event and relaunch
                 this.queue.shift();
                 this.launch();
@@ -318,17 +317,17 @@ export class MasterRemoteManager extends RemoteManager {
     readMoreEvent(event, joueur) {
         // Must check player is current ?
         switch (event.kind) {
-            case "launchDices"://console.log("Throw Dices");
+            case "launchDices":
                 DiceThrower.throw(3).then(dices => {
                     GestionDes.gestionDes.setDices(dices[0], dices[1], dices[2]);
                     GestionDes.gestionDes._drawCubes(dices[0], dices[1], dices[2]);
                     GestionDes.gestionDes.after();
                 });
                 break;
-            case "join"://console.log("JOIN");
+            case "join":
                 this.joinGame(event);
                 break;
-            case "end"://console.log("END TURN");
+            case "end":
                 GestionJoueur.change();
                 break;
             default:
@@ -348,7 +347,6 @@ export class MasterRemoteManager extends RemoteManager {
         }
         player.playerID = event.playerID;
         MessageDisplayer.write(player, "is rejoining the game");
-        console.log("DATA", this.createGameInformations(player, event))
         this.eventSender.sendEvent(this.createGameInformations(player, event));
     }
 

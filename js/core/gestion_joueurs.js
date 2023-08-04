@@ -81,7 +81,6 @@ let GestionJoueur = {
     },
     // Search by numero or playerID
     getByUniqueId(id){
-        console.log("FIND",id,this.joueurs)
         return this.joueurs.find(j=>j.uniqueID != null && j.uniqueID === id);
     },
     getById(id){

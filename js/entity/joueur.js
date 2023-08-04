@@ -52,7 +52,6 @@ class Maisons {
     /** Renvoie les maisons du joueur par groupe avec des details*/
     getMaisonsGrouped() {
         const groups = [];
-        console.log(this.maisons)
         this.maisons.forEach(maison => {
             if (maison.groupe == null) {
                 if (groups["others"] === undefined) {

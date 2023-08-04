@@ -315,7 +315,6 @@ let EchangeDisplayer = {
                 let groups = joueur.maisons.getMaisonsGrouped();
                 for (let g in groups) {
                     let group = groups[g];
-                    console.log(g, group)
                     let optionGroup = $(`<optgroup label="Groupe ${group.groupe}" style="color:${group.color}"></optGroup>`);
                     group.terrains.forEach(fiche=>optionGroup.append(`<option value="${fiche.id}">${fiche.nom}</option>`));
                     EchangeDisplayer.listTerrainsAdversaire.append(optionGroup);

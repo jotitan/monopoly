@@ -227,10 +227,9 @@ class JoueurOrdinateur extends Joueur {
 		let data = this.maisons.findUnterestsProprietes();
 		let montant = 0;
 		if (data.proprietes.length > 0) {
-			let proprietes = data.proprietes;
 			// On en ajoute. En fonction de la strategie, on n'ajoute que les terrains seuls dans le groupe (peu important)
-			for (let i = 0; i < proprietes.length && montant / maison.achat < 0.7; i++) {
-				let terrain = proprietes[i];
+			for (let i = 0; i < data.proprietes.length && montant / maison.achat < 0.7; i++) {
+				let terrain = data.proprietes[i];
 				// Il ne faut pas proposer un terrain du meme groupe que le terrain demande car pas forcement de la strategie
 				// Deux terrains qui ne sont pas de la strategie sont potentiellement interessant a garder
 				if (!this.strategie.interetPropriete(terrain) && (terrain.groupe == null || !terrain.groupe.equals(maison.groupe))) {
@@ -773,6 +772,7 @@ class JoueurOrdinateur extends Joueur {
 				let nbNoHouse = 0;
 				let boucle = 0; // Securite pour eviter boucle infinie
 				let maisonVendues = 0;
+				// On vend les maisons équilibrées sur le groupe
 				while (this.montant < montant && nbNoHouse < proprietes.length && boucle++ < 100) {
 					let p = proprietes[currentId];
 					if (p.nbMaison === 0) {

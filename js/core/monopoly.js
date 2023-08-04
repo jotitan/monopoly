@@ -635,13 +635,11 @@ class Monopoly {
     }
 }
 
-let debug = true;
+let debug = false;
 let enableNetwork = true;
 
 
 function startGame() {
-
-
     $('#idCreationGame').tabs();
     $('#idMontantParc').hide();
     startMonopoly(debug)

@@ -4,6 +4,7 @@ import {GestionJoueur} from "./gestion_joueurs.js";
 import {InfoMessage} from "../display/message.js";
 import {GestionConstructions} from "./gestion_constructions.js";
 import {GestionFiche} from "../display/case_jeu.js";
+import {bus} from "../bus_message.js";
 
 /* Panneau de gestion des terrains */
 
@@ -337,12 +338,11 @@ let GestionTerrains = {
                 totals.nbHotel += data.hotel || 0;
                 projects.push(project);
             }
-            $('span[name]', this.infos).each(function () {
-                $(this).text(totals[$(this).attr('name')]);
-            });
             /* Simulation d'achat (reste maison) */
             /* Il faut construire la situation avant / apres */
             this.simulation = GestionConstructions.simulateBuy(projects);
+            $('span[name="nbMaison"]', this.infos).text(this.simulation.achat.maison);
+            $('span[name="nbHotel"]', this.infos).text(this.simulation.achat.hotel);
             $('span[name="nbMaison"]', this.resteConstructions).text(this.simulation.reste.maison);
             $('span[name="nbHotel"]', this.resteConstructions).text(this.simulation.reste.hotel);
             return totals;

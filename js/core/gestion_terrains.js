@@ -1,4 +1,4 @@
-import {wrapDialog} from '../display/displayers.js'
+import {dialog, wrapDialog} from '../display/displayers.js'
 import {CURRENCY} from "./monopoly.js";
 import {GestionJoueur} from "./gestion_joueurs.js";
 import {InfoMessage} from "../display/message.js";
@@ -17,9 +17,20 @@ let GestionTerrains = {
     divArgentRestant: null,
     banqueroute: false,
     panel: null,
+    panel2: null,
+    beforeClose:()=>true,
     /* Remet a 0 le panneau */
-    open: function (banqueroute, onclose) {
+    open: function (banqueroute, onclose = () => true) {
         this.banqueroute = banqueroute;
+        this.beforeClose = onclose;
+        dialog.open(this.panel2, {
+            title: 'Gestion des maison', width: 800, height: 600, buttons: {
+                'Fermer': () => this.closePanel(),
+                "Valider": () => this.valider()
+            }
+        });
+
+        return;
         if (onclose) {
             this.panel.unbind('dialogbeforeclose').bind('dialogbeforeclose', onclose);
         } else {
@@ -39,25 +50,26 @@ let GestionTerrains = {
     init: function (config) {
         this.divArgentRestant = $(config.idArgentRestant);
         this.divCout = $(config.idCout);
-        this.Hypotheque.init(config.idTerrains,config.idHypotheque);
+        this.Hypotheque.init(config.idTerrains, config.idHypotheque);
         this.LeverHypotheque.init(config.idTerrainsHypotheque);
-        this.Constructions.init(config.idTerrainsConstructibles,config.idCoutAchat,config.idConstructions);
+        this.Constructions.init(config.idTerrainsConstructibles, config.idCoutAchat, config.idConstructions);
         this.panel = $(config.idPanel);
+        this.panel2 = document.querySelector(config.idPanel);
         //this.panel.dialog({
-        wrapDialog(this.panel,{
+        /*wrapDialog(this.panel, {
             width: 800,
             height: 600,
-            position: { my: "center top", at: "center top", of: window },
+            position: {my: "center top", at: "center top", of: window},
             title: 'Gestion des maisons',
             modal: true,
             buttons: {
-                'Fermer': () =>this.closePanel(),
-                "Valider": () =>this.valider()
+                'Fermer': () => this.closePanel(),
+                "Valider": () => this.valider()
             },
             autoOpen: false,
             // On charge les proprietes a hypothequer
-            open: ()=>this.load()
-        });
+            open: () => this.load()
+        });*/
     },
     /* Charge les informations */
     load: function () {
@@ -87,7 +99,7 @@ let GestionTerrains = {
             }
             GestionTerrains.Constructions.verify();
         } catch (e) {
-            InfoMessage.create(GestionJoueur.getJoueurCourant(),"Attention", "red", e);
+            InfoMessage.create(GestionJoueur.getJoueurCourant(), "Attention", "red", e);
             return false;
         }
         return true;
@@ -104,15 +116,19 @@ let GestionTerrains = {
         this.closePanel();
     },
     closePanel: function () {
-        this.panel.dialog('close');
+        if(!this.beforeClose()){
+            return;
+        }
+        dialog.close();
+        //this.panel.dialog('close');
     },
     /* Gere l'hypotheque de terrain */
     Hypotheque: {
         table: [],
         select: null,
         div: null,
-        init: function (idTerrains,idHypotheque) {
-            this.select = $('select',idTerrains);
+        init: function (idTerrains, idHypotheque) {
+            this.select = $('select', idTerrains);
             this.div = $(idHypotheque);
         },
         reset: function () {
@@ -141,10 +157,12 @@ let GestionTerrains = {
         load: function () {
             GestionJoueur.getJoueurCourant().maisons
                 .findMaisonsHypothecables()
-                .forEach(function(m){GestionTerrains.Hypotheque.addOption(m);});
+                .forEach(function (m) {
+                    GestionTerrains.Hypotheque.addOption(m);
+                });
         },
         addGroup: function (group) {
-            group.proprietes.forEach(g=>this.addOption(g));
+            group.proprietes.forEach(g => this.addOption(g));
         },
         addOption: function (fiche) {
             // On verifie si l'option n'existe pas
@@ -162,7 +180,7 @@ let GestionTerrains = {
             this.table[fiche.id] = fiche;
             let div = $('<div>' + fiche.nom + '</div>');
             let boutonAnnuler = $('<button style="margin-right:5px">Annuler</button>');
-            boutonAnnuler.click(() =>{
+            boutonAnnuler.click(() => {
                 this.addOption(fiche);
                 $(this).parent().remove();
                 GestionTerrains.addCout(-fiche.montantHypotheque);
@@ -223,8 +241,8 @@ let GestionTerrains = {
         div: null,
         infos: null,
         simulation: null, // Simulation d'achat pour evaluer la faisabilite
-        resteConstructions:null,
-        init: function (idTerrains,idCout,idConstructions) {
+        resteConstructions: null,
+        init: function (idTerrains, idCout, idConstructions) {
             this.div = $(idTerrains);
             this.infos = $(idCout);
             this.resteConstructions = $(idConstructions);
@@ -263,8 +281,8 @@ let GestionTerrains = {
             // On modifie les quantites de maisons / hotels
             this._doBuyConstructions();
         },
-        _doBuyConstructions:function(){
-            if (this.simulation != null && (this.simulation.achat.maison!==0 || this.simulation.achat.hotel!==0)) {
+        _doBuyConstructions: function () {
+            if (this.simulation != null && (this.simulation.achat.maison !== 0 || this.simulation.achat.hotel !== 0)) {
                 GestionConstructions.buyHouses(this.simulation.achat.maison);
                 GestionConstructions.buyHotels(this.simulation.achat.hotel);
                 bus.send('monopoly.acheteConstructions', {
@@ -276,7 +294,7 @@ let GestionTerrains = {
         acheter: function () {
             for (const achat in this.table) {
                 let data = this.table[achat];
-                if(data.propriete.nbMaison < data.nbMaison){
+                if (data.propriete.nbMaison < data.nbMaison) {
                     data.propriete.setNbMaison(data.nbMaison);
                     GestionJoueur.getJoueurCourant().payer(data.cout);
                 }
@@ -287,7 +305,7 @@ let GestionTerrains = {
         vendre: function () {
             for (const achat in this.table) {
                 let data = this.table[achat];
-                if(data.propriete.nbMaison > data.nbMaison){
+                if (data.propriete.nbMaison > data.nbMaison) {
                     data.propriete.setNbMaison(data.nbMaison);
                     GestionJoueur.getJoueurCourant().payer(data.cout);
                 }
@@ -358,7 +376,7 @@ let GestionTerrains = {
             }
             this.div.find(selectors).show();
         },
-        _displayProprietesOfGroup:function(group){
+        _displayProprietesOfGroup: function (group) {
             for (let index in group.proprietes) {
                 let propriete = group.proprietes[index];
                 let divTerrain = $(`<div class="propriete propriete-${propriete.color.substring(1)}"></div>`);
@@ -369,7 +387,7 @@ let GestionTerrains = {
                 for (let j = 0; j <= ((GestionTerrains.banqueroute) ? propriete.nbMaison : 5); j++) {
                     select.append("<option class=\"" + ((j === 5) ? "hotel" : "maison") + "\" value=\"" + j + "\" " + ((propriete.nbMaison === j) ? "selected" : "") + ">x " + ((j === 5) ? 1 : j) + "</option>");
                 }
-                select.change( (e) =>{
+                select.change((e) => {
                     let target = $(e.currentTarget);
                     let prop = target.data("propriete");
                     // On verifie changement par rapport a l'origine

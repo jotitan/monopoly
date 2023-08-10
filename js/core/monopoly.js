@@ -20,7 +20,13 @@ import {
     ParcGratuit,
     SimpleCaseSpeciale
 } from '../display/case_jeu.js'
-import {CommunicationDisplayer, FicheDisplayer, wrapDialog} from '../display/displayers.js'
+import {
+    closeDialog,
+    CommunicationDisplayer, dialog,
+    FicheDisplayer,
+    wrapDialog,
+    wrapDialogNative
+} from '../display/displayers.js'
 import {checkExistingGame, MasterRemoteManager, RemoteManager} from '../entity/network/remote_manager.js'
 import '../ui/square_graphics.js';
 import '../ui/circle_graphics.js';
@@ -163,7 +169,10 @@ class PlateauDetails {
         this._temp_load_data = dataExtend;
         // On charge le plateau
         get(path).then(data => this.managePlateauConfig(data, options, callback))
-            .catch(() => alert(`Le plateau ${path} n'existe pas`));
+            .catch((e) => {
+                console.log(e)
+                alert(`Le plateau ${path} n'existe pas`)
+            });
     }
 
     managePlateauConfig(data, options, callback) {
@@ -370,25 +379,15 @@ class PanelGameMonopoly {
     }
 
     show() {
-        this.initSlider('sliderJoueur', 2, 4);
-        this.initSlider('sliderRobot', 0, 2);
         this.loadPlateaux();
         this.loadSavedGames();
-        wrapDialog(this.panelPartie, {
-            title: "Monopoly",
-            closeOnEscape: false,
-            modal: true,
-            width: 400,
-            position: {my: "center top", at: "center top", of: window},
-            buttons: [{
-                text: "Valider",
-                click: () => this.createGame()
-            }]
-        });
+        const p = document.querySelector('#idPanelCreatePartie');
+        dialog.open(p,{buttons:{'Créer la partie':()=>this.createGame()},width:600, height:500});
     }
 
     close() {
-        this.panelPartie.dialog('close');
+        dialog.close();
+       // this.panelPartie.dialog('close');
     }
 
     // load existing plateaux configuration
@@ -424,23 +423,11 @@ class PanelGameMonopoly {
         }
     }
 
-    initSlider(id, min, value) {
-        $(`#${id}`).slider({
-            min: min, max: 6, value: value,
-            create: function () {
-                this.handle = $('.ui-slider-handle', this);
-                this.handle.text($(this).slider("value"));
-            },
-            slide: function (event, ui) {
-                this.handle.text(ui.value);
-            }
-        });
-    }
-
     extractOptions() {
+
         let options = {
-            nbRobots: $('#sliderRobot').slider('value'),
-            nbPlayers: $('#sliderJoueur').slider('value'),
+            nbRobots: parseInt(document.querySelector('#idNbRobots').textContent),
+            nbPlayers: parseInt(document.querySelector('#idNbPlayers').textContent),
             waitTimeIA: 1
         };
         $('#idPartie', this.panelPartie).find('select[name],:text[name]').each(function () {

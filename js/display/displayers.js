@@ -59,6 +59,91 @@ function wrapFicheDialog(bloc,title="Fiche",height=410){
     });
 }
 
+let currentDialog = null;
+
+class Dialog {
+    open(element, {title = '', buttons = {}, width, height}){
+        this.current = element;
+        element.style.setProperty("display","");
+
+        const wrapper = document.querySelector('#idMessagePanel');
+
+        wrapper.style.setProperty('display','block');
+        wrapper.querySelector('.title-panel').textContent= title;
+        this.setSize(wrapper, width, height);
+
+        const buttonsDiv = wrapper.querySelector('.buttons');
+        buttonsDiv.before(element);
+        Object.entries(buttons).map(createButton).forEach(button=>buttonsDiv.append(button))
+
+        document.querySelector('body').appendChild(wrapper);
+    }
+    close(){
+        if(this.current == null){
+            return;
+        }
+        this.current.style.setProperty('display','none');
+        document.querySelector('body').appendChild(this.current);
+        const wrapper = document.querySelector('#idMessagePanel');
+        wrapper.style.setProperty('display','none');
+        wrapper.querySelector('.buttons').textContent = '';
+
+        this.current = null;
+    }
+    setSize(wrapper, width, height){
+        const panelWrapper = wrapper.querySelector('.wrapper-panel');
+        panelWrapper.style.setProperty("width",`${width}px`);
+        panelWrapper.style.setProperty("height",`${height}px`);
+        panelWrapper.style.setProperty("left",`calc(50% - ${width/2}px)`);
+    }
+}
+
+const dialog = new Dialog();
+
+function wrapDialogNative(element, {title='', buttons={}, width, height}){
+    currentDialog = element;
+    element.style.setProperty("display","");
+
+    const wrapper = document.querySelector('#idMessagePanel');
+
+    wrapper.style.setProperty('display','block');
+
+    setSize(wrapper, width, height);
+
+    const buttonsDiv = wrapper.querySelector('.buttons');
+    buttonsDiv.before(element);
+    Object.entries(buttons).map(createButton).forEach(button=>buttonsDiv.append(button))
+
+    document.querySelector('body').appendChild(wrapper);
+}
+
+function closeDialog(){
+    if(currentDialog == null){
+        return;
+    }
+    currentDialog.style.setProperty('display','none');
+    document.querySelector('body').appendChild(currentDialog);
+    const wrapper = document.querySelector('#idMessagePanel');
+    wrapper.style.setProperty('display','none');
+    wrapper.querySelector('.buttons').textContent = '';
+
+    currentDialog = null;
+}
+
+function setSize(wrapper, width, height){
+    const panelWrapper = wrapper.querySelector('.wrapper-panel');
+    panelWrapper.style.setProperty("width",`${width}px`);
+    panelWrapper.style.setProperty("height",`${height}px`);
+    panelWrapper.style.setProperty("left",`calc(50% - ${width/2}px)`);
+}
+
+function createButton([title, action]){
+    const button = document.createElement('button');
+    button.textContent = title;
+    button.onclick = action
+    return button;
+}
+
 function wrapDialog(bloc,parameters){
     if(parameters === 'open'){
         return openWrapDialog(bloc);
@@ -80,12 +165,18 @@ let FicheDisplayer = {
     currentFiche:null,
     init:function(){
         this.fiche = $('#fiche');
+        //this.fiche = document.querySelector('#fiche');
         this.ficheJunior = $('#ficheJunior');
+        //this.detailFiche = this.fiche.cloneNode();
         this.detailFiche = this.fiche.clone();
         this.detailFicheJunior = this.ficheJunior.clone();
         this.detailFiche.attr('id', 'idDetailFiche').addClass('detail-fiche').hide();
+        //this.detailFiche.id = 'idDetailFiche';
+        //this.detailFiche.classList.add('detail-fiche');
+        //this.detailFiche.style.setProperty("display","none");
         this.detailFicheJunior.attr('id', 'idDetailFicheJunior').addClass('detail-fiche').hide();
         $('body').append(this.detailFiche);
+        //document.querySelector('body').insertAdjacentHTML('afterend',this.detailFiche);
         $('body').append(this.detailFicheJunior);
         this.ficheCompagnie = $('#ficheCompagnie');
 
@@ -109,10 +200,7 @@ let FicheDisplayer = {
         }
         if (this.currentFiche != null && (this.currentFiche.axe !== fiche.axe || this.currentFiche.pos !== fiche.pos)) {
             this.currentFiche = null;
-            detailFiche.slideUp(300, function () {
-                FicheDisplayer.openDetail(fiche, input);
-            });
-            return;
+            return detailFiche.slideUp(300, () =>FicheDisplayer.openDetail(fiche, input));
         }
         this.loadDetailFiche(fiche,detailFiche);
         input.after(detailFiche);
@@ -129,34 +217,21 @@ let FicheDisplayer = {
     loadDetailFiche:function(fiche,detailFiche){
         this._load(fiche, detailFiche, fiche.secondColor);
     },
+    _name:function(e){
+        return e.getAttribute("name");
+    },
     _load:function(fiche,div,color){
-        $('td[name^="loyer"]', div).each(function () {
-            $(this).text(fiche.loyer[parseInt($(this).attr('name').substring(5))]);
-        });
-        $('td[name]:not([name^="loyer"]),span[name]:not([name^="loyer"])', div).each(function () {
-            $(this).html(fiche[$(this).attr('name')]);
-        });
-        $(div).css('backgroundColor', color);
-
-        // Cas des gare
-        if(fiche.type === 'gare'){
-            $('.loyer0', div).text(parseInt(fiche.getLoyer()));
-        }
-        else{
-            $('.loyer0', div).text((fiche.isGrouped() === true) ? parseInt(fiche.loyer[0]) * 2 : fiche.loyer[0]);
-        }
-
-        $('tr', div).removeClass("nbMaisons");
-        $('.infos-group', div).removeClass("nbMaisons");
-        $('.loyer' + fiche.nbMaison, div).parent().addClass("nbMaisons");
+        const id = div[0].id;
+        document.querySelector(`#${id}`).style.setProperty('background-color',color);
+        document.querySelectorAll(`#${id} td[name^="loyer"]`).forEach(d=>d.innerHTML = fiche.loyer[parseInt(this._name(d).substring(5))]);
+        document.querySelectorAll(`#${id} td[name]:not([name^="loyer"]), #${id} span[name]:not([name^="loyer"])`).forEach(d=>d.innerHTML = fiche[this._name(d)]);
+        document.querySelector(`#${id} .loyer0`).innerHTML = fiche.type === 'gare' ? fiche.getLoyer() : fiche.isGrouped() === true ? parseInt(fiche.loyer[0]) * 2 : fiche.loyer[0];
+        document.querySelectorAll(`#${id} tr, #${id} .infos-group`).forEach(d=>d.classList.remove("nbMaisons"));
+        document.querySelector(`#${id} .loyer${fiche.nbMaison}`).parentElement.classList.add("nbMaisons");
         if (fiche.nbMaison === 0 && fiche.isGrouped() === true) { // possede la serie
-            $('.infos-group', div).addClass("nbMaisons");
+            document.querySelector(`#${id} .infos-group`).classList.add("nbMaisons");
         }
-        if (fiche.type === 'gare') {
-            $('.maison', div).hide();
-        } else {
-            $('.maison', div).show();
-        }
+        document.querySelectorAll(`#${id} .maison`).forEach(d=>d.style.setProperty("display",fiche.type === 'gare' ?"none":""));
     },
     closeFiche:function(){
         let close = false;
@@ -348,4 +423,4 @@ let CommunicationDisplayer = {
     }
 };
 
-export {wrapDialog,CommunicationDisplayer,FicheDisplayer,initWrapButtons};
+export {dialog,wrapDialog,wrapDialogNative, closeDialog, CommunicationDisplayer,FicheDisplayer,initWrapButtons};

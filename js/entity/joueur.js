@@ -791,12 +791,14 @@ class Joueur {
             let onclose = (e) => {
                 if (this.montant < 0) {
                     // Message d'erreur pas possible
-                    InfoMessage.create(this, "Attention", "red", "Impossible, il faut trouver les fond	s avant de fermer");
-                    e.preventDefault();
+                    InfoMessage.create(this, "Attention", "red", "Impossible, il faut trouver les fonds avant de fermer");
+                    //e.preventDefault();
+                    return false;
                 } else {
                     this.bloque = false;
                     this.setArgent(this.montant);
                     callback();
+                    return true;
                 }
             }
             GestionTerrains.open(true, onclose);

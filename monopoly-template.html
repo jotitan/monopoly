@@ -118,7 +118,7 @@
 <div id="achatMaisons" style="background-color:white;"></div>
 <div id="message" style="display:none;background-color:white"></div>
 
-<div style="display:none" id="housesPanel">
+<div style="display:none; height:100%" id="housesPanel">
 	<div style="width:50%;height:calc(100% - 45px);background-color:white;float:left">
 		<div class="title-dialog">Hypotheque</div>
 		<fieldset id="idTerrainsHypotheques" style="border:solid 1px darkgrey;margin-top:10px;">
@@ -206,19 +206,17 @@
 			<fieldset>
 				<legend style="font-weight:bold">Créer une partie</legend>
 				<fieldset id="idPartie"><legend>Joueurs</legend>
-
 					<div>
 						<div style="display:inline-block;width:75px;">Total</div>
-						<div id="sliderJoueur" style="width:180px;display:inline-block">
-							<div id="valueSliderJoueur" class="ui-slider-handle"></div>
-						</div>
+						<input type="range" value="4" min="2" max="6" step="1" onmousemove="document.querySelector('#idNbPlayers').textContent = this.value"/>
+						<span id="idNbPlayers">4</span>
 					</div>
 					<div>
 						<div style="display:inline-block;width:75px;">Robots</div>
-						<div id="sliderRobot" style="width:180px;display:inline-block">
-							<div id="valueSliderRobot" class="ui-slider-handle"></div>
-						</div>
+						<input type="range" value="2" min="2" max="6" step="1"  onmousemove="document.querySelector('#idNbRobots').textContent = this.value"/>
+						<span id="idNbRobots">2</span>
 					</div>
+
 					<!--Rapidité des robots :
                     <select name="waitTimeIA">
                         <option value="100" selected>0s</option>
@@ -296,6 +294,14 @@
 </div>
 <div id="actions"></div>
 <div class="mobile"></div>
+
+<div id="idMessagePanel" style="display:none">
+	<div class="wrapper-back"></div>
+	<div class="wrapper-panel">
+		<div class="title-panel"></div>
+		<div class="buttons"></div>
+	</div>
+</div>
 
 
 </body>

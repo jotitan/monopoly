@@ -1,5 +1,5 @@
 import {CURRENCY, DEBUG} from "../core/monopoly.js";
-import {wrapDialog} from "./displayers.js";
+import {dialog} from "./displayers.js";
 import {bus} from "../bus_message.js";
 
 /* Gere les affichages (message dialog, trace de log) */
@@ -159,7 +159,7 @@ let MessageDisplayer = {
                 message += `achète ${achats.maison} maison(s) `;
             } else {
                 if (achats.maison < 0) {
-                    message += `vend ${(achats.maison * -1)} + " maison(s) `;
+                    message += `vend ${(achats.maison * -1)} maison(s) `;
                 }
             }
             if (achats.hotel > 0) {
@@ -244,150 +244,89 @@ let MessageDisplayer = {
         bus.observe("monopoly.victoire", data => this.events.victoire(data))
         bus.observe("monopoly.waitingPlayers", data => this.events.waitPlayers(data))
         bus.observe("monopoly.debug", data => this.events.debug(data));
-        /*$
-            .bind("monopoly.start", () => this.events.start())
-            .bind("monopoly.save", (e, data) =>this.events.save(data))
-            .bind("monopoly.depart", (e, data) => this.events.depart(data))
-            .bind("monopoly.exit", (e, data) => this.events.exit(data))
-            .bind("monopoly.enchere.init", (e, data) => this.events.initEnchere(data))
-            .bind("monopoly.enchere.fail", (e, data) => this.events.failEnchere(data))
-            .bind("monopoly.enchere.success", (e, data) => this.events.successEnchere(data))
-            .bind("monopoly.caissecommunaute.message", (e, data) => this.events.caisseCommunaute(data))
-            .bind("monopoly.chance.message", (e, data) => this.events.chance(data))
-            .bind("monopoly.acheteMaison", (e, data) => this.events.achete(data))
-            .bind("monopoly.chezsoi", (e, data) => this.events.home(data))
-            .bind("monopoly.visiteMaison", (e, data) => this.events.visite(data))
-            .bind("monopoly.vendMaison", (e, data) => this.events.vend(data))
-            .bind("monopoly.payerLoyer", (e, data) => this.events.loyer(data))
-            .bind("monopoly.newPlayer", (e, data) => this.events.player(data))
-            .bind("monopoly.hypothequeMaison", (e, data) => this.events.hypotheque(data))
-            .bind("monopoly.leveHypothequeMaison", (e, data) => this.events.leveHypotheque(data))
-            .bind("monopoly.goPrison", (e, data) => this.events.prison(data))
-            .bind("monopoly.derapide.bus", (e, data) => this.events.desBus(data))
-            .bind("monopoly.derapide.triple", (e, data) => this.events.desTriple(data))
-            .bind("monopoly.derapide.mrmonopoly", (e, data) => this.events.desMrMonopoly(data))
-            .bind("monopoly.exitPrison", (e, data) => this.events.sortiePrison(data))
-            .bind("monopoly.acheteConstructions", (e, data) => this.events.construit(data))
-            .bind("monopoly.echange.init", (e, data) => this.events.initEchange(data))
-            .bind("monopoly.echange.propose", (e, data) => this.events.proposeEchange(data))
-            .bind("monopoly.echange.accept", (e, data) => this.events.accepteEchange(data))
-            .bind("monopoly.echange.reject", (e, data) => this.events.rejetteEchange(data))
-            .bind("monopoly.echange.contrepropose", (e, data) => this.events.contreEchange(data))
-            .bind("monopoly.defaite", (e, data) => this.events.defaite(data))
-            .bind("monopoly.victoire", (e, data) => this.events.victoire(data))
-            .bind("monopoly.waitingPlayers", (e, data) => this.events.waitPlayers(data))
-            .bind("monopoly.debug", (e, data) => this.events.debug(data));*/
     }
 }
 
 /* Affichage des informations dans une boite de dialogue */
-let InfoMessage = {
-    div: null,
-    init: function (id) {
-        this.div = $('#' + id);
-    },
-    _initMessage: function (color, titre, message) {
+class InfoMessage {
+    init(id) {
+        this.div = document.getElementById(id);
+    }
+
+    _debug(titre, message) {
         bus.debug({
             message: message
         });
-        this.div.prev().css("background-color", color);
-        this.div.dialog('option', 'title', titre);
-        this.div.empty();
-        this.div.append(message);
-    },
-    /* Affiche uniquement pour un vrai joueur */
-    createGeneric: function (joueur, titre, background, message, actionButtons) {
-        this._initMessage(background, titre, message);
+    }
 
-        // Empeche la fermeture sans vraie action
-        this.div.unbind('dialogclose.message').bind('dialogclose.message', function () {
-            InfoMessage.div.dialog('open');
-        });
+    createGeneric(joueur, titre, background, message, actionButtons) {
+        this._debug(titre, message);
+        this.div.innerHTML = message;
         let buttons = {};
-        actionButtons.forEach(function (action) {
-            buttons[action.title] = function () {
-                InfoMessage.div.unbind('dialogclose.message');
-                InfoMessage.div.dialog('close');
+        actionButtons.forEach(action =>
+            buttons[action.title] = () => {
+                dialog.close();
                 action.fct();
             }
-        });
-        this.div.dialog('option', 'buttons', buttons);
-
+        );
         if (joueur.canPlay || forceshow) {
-            wrapDialog(this.div, 'open');
+            dialog.open(this.div, {title: titre, colorTitle: background, buttons: buttons, height: 220, width: 400})
         }
         return buttons;
-    },
-    /* @params buttons : additonal buttons */
-    create: function (joueur, titre, background, message, call = () => {
-    }, param, forceshow, buttons) {
-        this._initMessage(background, titre, message);
-        let button = {
+    }
+    create (joueur, titre, background, message, call = () => {
+    }, param, forceshow, moreButtons = {}) {
+        this._debug(titre, message);
+        this.div.innerHTML = message;
+        const buttons = {
             "Ok": function () {
-                InfoMessage.close(() => call(param));
+                dialog.close(() => call(param));
             }
         };
-        if (buttons != null) {
-            for (let title in buttons) {
-                button[title] = buttons[title];
-            }
-        }
-        /*this.div.unbind('dialogclose.message').bind('dialogclose.message', function () {
-            InfoMessage.div.unbind('dialogclose.message');
-            if (call != null) {
-                call(param);
-            }
-
-        });*/
-        if (call != null) {
-            this.div.dialog('option', 'buttons', button);
+        for (let title in moreButtons) {
+            buttons[title] = moreButtons[title];
         }
         /* On affiche pas le panneau si le timeout est à 0 (partie rapide) */
         if (joueur.canPlay || forceshow) {
-            wrapDialog(this.div, 'open');
+            dialog.open(this.div, {title: titre, colorTitle: background, buttons: buttons, height: 220, width: 400});
         }
-        return button;
-    },
-    close: function (callback = () => {
+        return buttons;
+    }
+    close (callback = () => {
     }) {
         if (this.div.dialog('isOpen')) {
             this.div.dialog('close');
         }
         callback();
-    },
-    createPrison: function (montantPrison, joueur, nbTours, callback) {
-        this._initMessage("red", "Vous êtes en prison depuis " + nbTours + " tours.", "Vous êtes en prison, que voulez vous faire");
-
-        let buttons = {
+    }
+    createPrison (montantPrison, joueur, nbTours, callback) {
+        this.div.innerHTML = "Vous êtes en prison, que voulez vous faire";
+        const title = `Vous êtes en prison depuis ${nbTours} tours.`;
+        this._debug(title, message);
+        const buttons = {
             "Payer": function () {
                 joueur.payer(montantPrison);
                 // TODO : Ajouter message pour indiquer qu'il paye
                 joueur.exitPrison({paye: true, notify: true});
-                InfoMessage.close(callback);
+                dialog.close(callback);
             },
-            "Attendre": function () {
-                InfoMessage.close(callback);
-            }
+            "Attendre": () => dialog.close(callback)
         }
         if (joueur.cartesSortiePrison.length > 0) {
-            buttons["Utiliser carte"] = function () {
+            buttons["Utiliser carte"] = () => {
                 joueur.utiliseCarteSortiePrison();
                 // TODO : ajouter message pour dire qu'il utilise une carte
                 joueur.exitPrison({carte: true, notify: true});
-                InfoMessage.close(callback);
+                dialog.close(callback);
             }
         }
-        this.div.dialog('option', 'buttons', buttons);
-        /*this.div.bind('dialogclose.prison', function () {
-            console.log("BIND CLOSE DIALOG, launch callback")
-            InfoMessage.div.unbind('dialogclose.prison');
-            callback();
-        });*/
         if (joueur.canPlay) {
-            wrapDialog(this.div, 'open');
+            dialog.open(this.div, {title: title, buttons: buttons, colorTitle: 'red', height: 220, width: 400})
         }
         return buttons;
     }
 }
 
-export {InfoMessage, MessageDisplayer};
+const infoMessage = new InfoMessage();
+
+export {infoMessage, MessageDisplayer};

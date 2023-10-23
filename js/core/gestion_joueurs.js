@@ -5,8 +5,10 @@ import {CURRENCY,VARIANTES,globalStats,restartMonopoly} from "./monopoly.js"
 import {GestionFiche} from "../display/case_jeu.js";
 import {GestionEchange} from "./enchere.js";
 import {GestionDes} from "../entity/dices.js";
-import {InfoMessage} from "../display/message.js";
+import {infoMessage} from "../display/message.js";
 import {bus} from "../bus_message.js";
+import {dialog} from "../display/displayers.js";
+import {disableActions, enableActions} from "../utils.js";
 
 /* Gere les joueurs : creation, changement... */
 let GestionJoueur = {
@@ -39,20 +41,21 @@ let GestionJoueur = {
         return this.create(clazzPlayer,i,nom,data.defaite,0,montantDepart).saver.load(data);
     },
     init(){
-        $('.panneau_joueur').empty();
+        document.querySelector('.panneau_joueur').innerHTML = '';
         this.joueurs = [];
         this.joueurCourant = null;
     },
     lancerDes(){
         this.joueurCourant.lancerDes();
     },
-    displayLineByGroups(){
+    displayLineByGroupsAsElement(){
         let groups = GestionFiche.getGroups();
         let sizeBlock = 45 / groups.size();
-        let div = $('<div style="width:100%" class="count-property"></div>')
+        let div = document.createElement('div');
+        div.classList.add('count-property');
         for(let name in groups){
             let color = name.replace(/ /g,"");
-            div.append(`<span style="width:${sizeBlock}vw;background-color:${groups[name]}"></span> : <span class="counter-group ${color}">0</span>`);
+            div.insertAdjacentHTML('beforeend',`<span style="width:${sizeBlock}vw;background-color:${groups[name]}"></span> : <span class="counter-group ${color}">0</span>`);
         }
         return div;
     },
@@ -64,16 +67,31 @@ let GestionJoueur = {
         joueur.enPrison = false;
         joueur.defaite = defaite;
         joueur.setEnableMouseFunction(JoueurFactory.mouseFunction);
-        let isDefaite = defaite ? ' class="defaite" ':'';
-        let div = $(`<div id="${id}"${isDefaite}></div>`);
-        $(div).append(`<div class="joueur-bloc"><span class="joueur-id"><span class="joueur-name">${joueur.nom}</span> : <span class="compte-banque"></span> ${CURRENCY}</span><span class="info-joueur" title="Info joueur" data-idjoueur="${i}"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div>`)
-        $(div).append(this.displayLineByGroups());
-        $('.panneau_joueur').append('<hr style="border:solid 2px darkgray"/>').append(div);
+        const parent = document.querySelector(`.player_${i%2===0?'left':'right'}`)
+        const div = document.createElement('div');
+        div.id = id;
+        if(defaite){
+            div.classList.add('defaite');
+        }
 
-        joueur.setDiv($(`div[id="${id}"]`));
+        div.insertAdjacentHTML('beforeend',`<div class="joueur-bloc"><span class="joueur-id"><span class="joueur-name">${joueur.nom}</span> : <span class="compte-banque"></span> ${CURRENCY}</span><span class="info-joueur" title="Info joueur" data-idjoueur="${i}"><img src="img/info-user2.png" style="cursor:pointer;width:24px;float:right"/></span></div>`)
+        div.querySelectorAll('div.joueur-bloc').forEach(d=>d.style.setProperty('background-image', `linear-gradient(to right,white 50%,${color})`));
+        div.append(this.displayLineByGroupsAsElement());
+
+        //document.querySelectorAll('.panneau_joueur').forEach(d=>d.insertAdjacentHTML('beforeend','<hr style="border:solid 2px darkgray"/>'));
+        parent.insertAdjacentHTML('beforeend','<hr style="border:solid 2px darkgray"/>');
+
+        /*const divs = [...document.querySelectorAll('.panneau_joueur')].map(d=>{
+            const copy = div.cloneNode(true);
+            d.append(copy)
+            return copy;
+        });*/
+        parent.append(div);
+        //joueur.setDivAll(divs);
+        joueur.setDiv(div);
         joueur.setPion(color,img,montantDepart);
         // On defini la couleurs
-        $(`#${id} > div.joueur-bloc`).css('backgroundImage', `linear-gradient(to right,white 50%,${color})`);
+
         bus.send('monopoly.newPlayer', {
             joueur: joueur
         });
@@ -144,8 +162,8 @@ let GestionJoueur = {
 
         message+= perdants.map((a,i)=>`${(i+2)} - ${a.nom}`).join("<br/>")
         let score = this._calculateScore(gagnant);
-        InfoMessage.create(this.joueurCourant,`Fin de partie : ${score} Points`, "green", message, ()=>{}, null, true,{"Recommencer":()=>{
-                InfoMessage.close();
+        infoMessage.create(this.joueurCourant,`Fin de partie : ${score} Points`, "green", message, ()=>{}, null, true,{"Recommencer":()=>{
+            dialog.close();
                 restartMonopoly();
             }});
     },
@@ -176,15 +194,16 @@ let GestionJoueur = {
     },
     _select(joueur){
         if(!joueur.canPlay){
-            $('.action-joueur').attr('disabled', 'disabled').addClass('disabled');
+            disableActions();
         }else{
-            $('.action-joueur').removeAttr('disabled').removeClass('disabled');
+            enableActions();
         }
         if(VARIANTES.echangeApresVente && GestionFiche.isFreeFiches()){
-            $('#idEchangeTerrains').attr('disabled','disabled').addClass('disabled');
+            document.getElementById('idEchangeTerrains').setAttribute('disabled','disabled');
+            document.getElementById('idEchangeTerrains').classList.add('disabled');
         }
         if (!joueur.equals(this.joueurCourant)) {
-            $('.joueurCourant').removeClass('joueurCourant');
+            document.querySelectorAll('.joueurCourant').forEach(d=>d.classList.remove('joueurCourant'))
             if(this.joueurCourant!=null && this.joueurCourant.pion !=null){
                 this.joueurCourant.pion.pion.setSelected(false);
             }

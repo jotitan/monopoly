@@ -1,10 +1,11 @@
 import {DrawerFactory,Drawer} from '../ui/graphics.js'
 import {GestionJoueur} from '../core/gestion_joueurs.js'
-import {InfoMessage,MessageDisplayer} from '../display/message.js'
+import {infoMessage, MessageDisplayer} from '../display/message.js'
 import {VARIANTES,CURRENCY} from "../core/monopoly.js";
 import {GestionFiche} from "../display/case_jeu.js";
 import {dices} from "../request_service.js";
 import {bus} from "../bus_message.js";
+import {deepCopy, disableActions} from "../utils.js";
 
 let GestionDes = {
     gestionDes:null,
@@ -107,7 +108,7 @@ class GestionDesImpl{
     before(callback){
         if (GestionJoueur.getJoueurCourant().enPrison) {
             // Propose au joueur de payer ou utiliser une carte
-            let buttons = InfoMessage.createPrison(this.montantPrison,GestionJoueur.getJoueurCourant(),GestionJoueur.getJoueurCourant().nbDouble, function () {
+            let buttons = infoMessage.createPrison(this.montantPrison,GestionJoueur.getJoueurCourant(),GestionJoueur.getJoueurCourant().nbDouble, function () {
                 callback();
             });
             GestionJoueur.getJoueurCourant().actionAvantDesPrison(buttons);
@@ -119,7 +120,7 @@ class GestionDesImpl{
     treatPrison(){
         let j = GestionJoueur.getJoueurCourant();
         if (this.isDouble()) {
-            let buttons = InfoMessage.create(j,"Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", () =>{
+            let buttons = infoMessage.create(j,"Libere de prison", "lightblue", "Vous etes liberes de prison grace a un double", () =>{
                 j.exitPrison({notrigger:true,notify:true});
                 this.endLancer();
             }, {});
@@ -129,7 +130,7 @@ class GestionDesImpl{
         } else {
             if (j.nbDouble === 2) {
                 let messagePrison = `Vous etes liberes de prison, mais vous devez payer ${CURRENCY} ${this.montantPrison} !`;
-                let buttons = InfoMessage.create(j,"Libere de prison", "lightblue", messagePrison,  ()=> {
+                let buttons = infoMessage.create(j,"Libere de prison", "lightblue", messagePrison,  ()=> {
                     j.payerParcGratuit(this.parcGratuit,this.montantPrison, () =>{
                         j.exitPrison({notrigger:true,paye:true,notify:true});
                         this.endLancer();
@@ -139,7 +140,7 @@ class GestionDesImpl{
                 return {prison:{sortie:true,montant:this.montantPrison},end:true};
             } else {
                 j.nbDouble++;
-                let buttons = InfoMessage.create(j,`Tour ${j.nbDouble}`, "red", "Vous restez en prison, vous n'avez pas fait de double.", ()=>GestionJoueur.change(), {});
+                let buttons = infoMessage.create(j,`Tour ${j.nbDouble}`, "red", "Vous restez en prison, vous n'avez pas fait de double.", ()=>GestionJoueur.change(), {});
                 j.actionApresDes(buttons, null);
                 return {prison:{sortie:false},end:true};
             }
@@ -155,11 +156,13 @@ class GestionDesImpl{
     after(){
         let event = {total:this.total(),combinaison:this.combinaisonDes(),joueur:GestionJoueur.getJoueurCourant()};
         if (GestionJoueur.getJoueurCourant().enPrison === true) {
-            event = $.extend(event,this.treatPrison());
+            event = deepCopy(event,this.treatPrison());
+            //event = $.extend(event,this.treatPrison());
         } else {
             // Gere le cas du triple (de rapide) egalement
             if (this.isDouble()) {
-                event = $.extend(event,this.treatDouble());
+                event = deepCopy(event,this.treatDouble());
+                //event = $.extend(event,this.treatDouble());
             }
         }
         MessageDisplayer.events.lanceDes(event);
@@ -181,7 +184,7 @@ class GestionDesImpl{
 
     _doTreatDouble(){
         if (this.nbDouble >= 2) {
-            let buttons = InfoMessage.create(GestionJoueur.getJoueurCourant(),"Allez en prison", "red", "Vous avez fait 3 doubles, vous allez en prison",  ()=> {
+            let buttons = infoMessage.create(GestionJoueur.getJoueurCourant(),"Allez en prison", "red", "Vous avez fait 3 doubles, vous allez en prison",  ()=> {
                 // On met des valeurs differentes pour les des pour que le joueur ne rejoue pas
                 this.des2++;
                 // Le changement de joueur lorsque le deplacement est termine
@@ -200,11 +203,8 @@ class GestionDesImpl{
     }
 
     showReload(){
-        const idReloadDice = $('#idReloadDice');
-        idReloadDice.hide();
-        if (this.isDouble()) {
-            idReloadDice.show();
-        }
+        document.getElementById('idReloadDice').style
+            .setProperty('display',this.isDouble() ? '':'none');
     }
 
     continuePlayer(){
@@ -218,7 +218,7 @@ class GestionDesImpl{
     lancer(){
         this.before(()=>{
             this._randDes();
-            $('#idReloadDice').hide();
+            document.getElementById('idReloadDice').style.setProperty('display','none');
             this._anime();
         });
     }
@@ -233,7 +233,7 @@ class GestionDesImpl{
         await DiceThrower.throw(2).then(dices=>this.setDices(dices[0],dices[1]));
     }
     _anime(){
-        $('.action-joueur').attr('disabled', 'disabled').addClass('disabled');
+        disableActions();
         let nb = VARIANTES.quickMove ? -1 : this.nbAnimation;
         const gd = this;
         const interval = setInterval(function () {
@@ -375,11 +375,8 @@ class GestionDesRapideImpl extends GestionDesImpl{
         return this.desRapide <=3;
     }
     showReload(){
-        const idReloadDice = $('#idReloadDice');
-        idReloadDice.hide();
-        if (this.isDouble() && !this.isTriple()) {
-            idReloadDice.show();
-        }
+        document.getElementById('idReloadDice').style
+            .setProperty('display',this.isDouble() && !this.isTriple() ? '':'none');
     }
     /* Surcharge le comportement apres le lancer */
     endLancer(){
@@ -397,7 +394,7 @@ class GestionDesRapideImpl extends GestionDesImpl{
         }
         if(this.isDouble()){
             this.desRapide = 0;
-            $('#idReloadDice').show();
+            document.getElementById('idReloadDice').style.setProperty('display','');
         }
         GestionJoueur.getJoueurCourant().joueDes(this.total());
     }

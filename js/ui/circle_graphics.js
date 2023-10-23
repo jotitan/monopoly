@@ -3,6 +3,8 @@ import {Des,DesRapide} from './square_graphics.js'
 import {DrawerHelper} from "./graphics.js";
 import {VARIANTES} from "../core/monopoly.js";
 import {bus} from "../bus_message.js";
+import {GestionFiche} from "../display/case_jeu.js";
+import {deepCopy} from "../utils.js";
 
 /* Implementation pour plateau carree */
 
@@ -124,7 +126,7 @@ class CircleCase extends Component{
 		this.imageHotel.src = "img/hotel.png";
 
 		if (this.img != null) {
-			this.img = $.extend(true,{},DrawerFactory.infos.defaultImage || {},this.img);
+			this.img = deepCopy(DrawerFactory.infos.defaultImage, this.img);
 			let image = new Image();
 			image.addEventListener('load',()=>{
 				bus.refresh();
@@ -303,6 +305,27 @@ class CirclePlateau extends Component{
 	draw(canvas) {
 		DrawerHelper.drawCircle(canvas,this.data.color,this.data.width/2,{x:this.data.width/2,y:this.data.width/2});
 	}
+	enableCaseDetect(callback){
+		const plateau = this;
+		document.getElementById('canvas_rt').onmousedown = function(e){
+			const x = e.clientX - this.parentNode.offsetLeft - this.width/2;
+			const y = (e.clientY - this.parentNode.offsetTop - this.height/2) * -1;
+			let angle = (Math.atan(y/x)  / (2*Math.PI)) *360;
+			if(x < 0){
+				angle+=180;
+			}else{
+				if(y< 0){
+					angle += 360;
+				}
+			}
+			const fichePosition = (59 - Math.floor(angle / 9)) % 40;
+			plateau.disableCaseDetect();
+			callback(GestionFiche.fiches[fichePosition])
+		}
+	}
+	disableCaseDetect(){
+		document.getElementById('canvas_rt').onmousedown = null;
+	}
 }
 
 /* Dessiné en dernier sur le plateau */
@@ -335,4 +358,4 @@ function initCircleInstance(){
 	DrawerFactory.addInstance(instance);
 }
 
-$(function(){initCircleInstance();});
+initCircleInstance();

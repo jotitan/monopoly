@@ -1,4 +1,4 @@
-import {wrapDialog,initWrapButtons,CommunicationDisplayer} from '../display/displayers.js'
+import {CommunicationDisplayer, dialog} from '../display/displayers.js'
 import {GestionJoueur} from "./gestion_joueurs.js";
 import {GestionFiche} from "../display/case_jeu.js";
 import {CURRENCY} from "./monopoly.js";
@@ -22,7 +22,7 @@ let GestionEnchere = {
     endAckJoueurs: [], // Liste des joueurs ayant accuse de la fin des encheres
     transaction: 0, // Permet d'authentifier la transaction
 
-    setPasVente(pas){
+    setPasVente(pas) {
         this.pasVente = pas;
     },
 
@@ -46,14 +46,14 @@ let GestionEnchere = {
             joueur: this.terrain.joueurPossede
         });
 
-        GestionJoueur.forEach(j=>j.initEnchere(this.transaction, this.terrain, this.miseDepart));
+        GestionJoueur.forEach(j => j.initEnchere(this.transaction, this.terrain, this.miseDepart));
         this.runEnchere();
     },
     computeEncherisseurs: function () {
         let encherisseurs = [];
         let observers = [];
         // exclure les joueurs qui ont perdus
-        GestionJoueur.forEach(j=>{
+        GestionJoueur.forEach(j => {
             if (!j.equals(this.terrain.joueurPossede) && !j.equals(this.joueurLastEnchere) && this.joueursExit[j.nom] == null && j.defaite === false) {
                 encherisseurs.push(j);
             } else {
@@ -67,10 +67,10 @@ let GestionEnchere = {
     },
     /* On lance aux joueurs les encheres, le premier qui repond prend la main, on relance a chaque fois (et on invalide le resultat des autres) */
     /* @param newEnchere : quand l'enchere, on notifie les joueurs (ca peut les interesse) */
-    runEnchere: function (newEnchere=false) {
+    runEnchere: function (newEnchere = false) {
         let joueurs = this.computeEncherisseurs();
         for (let i = 0; i < joueurs.encherisseurs.length; i++) {
-            joueurs.encherisseurs[i].updateEnchere(this.transaction, this.currentJeton, this.nextMontantEnchere, this.joueurLastEnchere,newEnchere);
+            joueurs.encherisseurs[i].updateEnchere(this.transaction, this.currentJeton, this.nextMontantEnchere, this.joueurLastEnchere, newEnchere);
         }
         for (let i = 0; i < joueurs.observers.length; i++) {
             joueurs.observers[i].updateInfoEnchere(this.nextMontantEnchere, this.joueurLastEnchere);
@@ -78,9 +78,13 @@ let GestionEnchere = {
     },
     /* Appele par un joueur  */
     exitEnchere: function (joueur) {
-        if(this.joueursExit[joueur.nom] != null){return;}
+        if (this.joueursExit[joueur.nom] != null) {
+            return;
+        }
         this.joueursExit[joueur.nom] = joueur;
-        GestionJoueur.forEach(function(j){j.notifyExitEnchere(joueur)});
+        GestionJoueur.forEach(function (j) {
+            j.notifyExitEnchere(joueur)
+        });
         if (this.checkEndEnchere()) {
             this.manageEndEnchere();
         }
@@ -91,7 +95,7 @@ let GestionEnchere = {
         // 2) Vente par joueur, pas d'enchere ou vente par banque avec une enchere
         // 3) Vente par joueur avec enchere
         return (this.joueursExit.size() >= GestionJoueur.getNb() ||
-            (this.joueursExit.size() >= GestionJoueur.getNb() - 1 && (this.terrain.joueurPossede != null ||this.joueurLastEnchere !=null)) ||
+            (this.joueursExit.size() >= GestionJoueur.getNb() - 1 && (this.terrain.joueurPossede != null || this.joueurLastEnchere != null)) ||
             (this.joueursExit.size() >= GestionJoueur.getNb() - 2 && this.joueurLastEnchere != null && this.terrain.joueurPossede != null)
         );
     },
@@ -127,7 +131,7 @@ let GestionEnchere = {
     manageEndEnchere: function () {
         if (this.joueurLastEnchere == null) {
             // On relance les encheres en diminuant la mise de depart
-            if (this.ventePerte && (this.nextMontantEnchere -  this.pasVente) > this.miseDepart / 2) {
+            if (this.ventePerte && (this.nextMontantEnchere - this.pasVente) > this.miseDepart / 2) {
                 this.nextMontantEnchere -= this.pasVente;
                 // On force les joueurs a reparticiper (le nouveau tarif peut interesser)
                 this.joueursExit = [];
@@ -143,10 +147,9 @@ let GestionEnchere = {
         } else {
             // La mise aux encheres est terminee, on procede a l'echange
             // Correspond a un terrain
-            if(this.terrain.joueurPossede == null){
-                this.joueurLastEnchere.acheteMaison(this.terrain,this.lastEnchere);
-            }
-            else{
+            if (this.terrain.joueurPossede == null) {
+                this.joueurLastEnchere.acheteMaison(this.terrain, this.lastEnchere);
+            } else {
                 this.joueurLastEnchere.payerTo(this.lastEnchere, this.terrain.joueurPossede);
                 this.joueurLastEnchere.getSwapProperiete(this.terrain);
             }
@@ -154,7 +157,7 @@ let GestionEnchere = {
             bus.send('monopoly.enchere.success', {
                 joueur: this.joueurLastEnchere,
                 maison: this.terrain,
-                montant:this.lastEnchere
+                montant: this.lastEnchere
             });
 
             this.endEnchere();
@@ -163,7 +166,7 @@ let GestionEnchere = {
     endEnchere: function () {
         this.terrain = null;
         // On notifie les joueurs que c'est termine
-        GestionJoueur.forEach(j=>j.endEnchere(this.lastEnchere, this.joueurLastEnchere));
+        GestionJoueur.forEach(j => j.endEnchere(this.lastEnchere, this.joueurLastEnchere));
     },
     /* Enregistre les joueurs qui accusent reception. Quand tous ont repondu, on lance le callback */
     checkEndNotify: function (joueur) {
@@ -186,63 +189,53 @@ let GestionEnchereDisplayer = {
     terrain: null,
     displayer: null, // Joueur qui affiche le panneau
     init: function (id) {
-        this.panel = $('#' + id);
-        //this.panel.dialog({
-        wrapDialog(this.panel,{
-            title: 'Mise au enchere',
-            position: { my: "center top", at: "center top", of: window },
-            autoOpen: false
-        });
+        this.panel = document.getElementById(id);
     },
     display: function (terrain, joueur) {
         this.terrain = terrain;
         this.displayer = joueur;
-        $('.proprietaire', this.panel).text(terrain.joueurPossede !=null ? terrain.joueurPossede.nom : 'Banque');
-        $('.terrain', this.panel).text(terrain.nom).css('color', terrain.color);
-        $('.list_exit', this.panel).empty();
-        $('.list_encherisseurs', this.panel).empty();
-        $('.messages', this.panel).empty();
-        this.panel.dialog('open');
+        this.panel.querySelector('.proprietaire').innerHTML = terrain.joueurPossede != null ? terrain.joueurPossede.nom : 'Banque';
+        this.panel.querySelector('.terrain').innerHTML = terrain.nom;
+        this.panel.querySelector('.terrain').style.setProperty('color', terrain.color);
+        this.panel.querySelector('.list_exit').innerHTML = '';
+        this.panel.querySelector('.list_encherisseurs').innerHTML = '';
+        this.panel.querySelector('.messages').innerHTML = '';
+        dialog.close();
+        dialog.open(this.panel, {title: 'Mise au enchère',width:360,height:267})
     },
     /* Affiche l'option pour fermer le panneau */
     displayCloseOption: function (montant, joueur) {
         if (joueur != null) {
             // On affiche la victoire du joueur (derniere enchere faite)
-            $('.montant', this.panel).text(montant);
-            $('.montant', this.panel).css('color', 'green');
-            $('.last_encherisseur', this.panel).text(joueur.nom);
+            this.panel.querySelector('.montant').innerHTML = montant;
+            this.panel.querySelector('.montant').style.setProperty('color', 'green');
+            this.panel.querySelector('.last_encherisseur').innerHTML = joueur.nom;
 
             if (joueur.equals(this.displayer)) {
                 // Message pour le joueur qui a remporte
-                $('.messages', this.panel).append('Vous avez remporté l\'enchère');
+                this.panel.querySelector('.messages').append(document.createTextNode("Vous avez remporté l'enchère"));
             } else {
-                $('.messages', this.panel).append(joueur.nom + ' a remporté l\'enchère');
+                this.panel.querySelector('.messages').append(document.createTextNode(`${joueur.nom} a remporté l'enchère`));
             }
         } else {
-            $('.montant', this.panel).css('color', 'red');
+            this.panel.querySelector('.montant').style.setProperty('color', 'red');
         }
-        this.panel.dialog('option', 'buttons', [{
-            text: 'Fermer',
-            click: ()=>GestionEnchereDisplayer.close()
-        }]);
-        initWrapButtons(this.panel);
-
+        dialog.updateButtons({'Fermer': () => GestionEnchereDisplayer.close()});
     },
     /* Nettoie l'affichage */
-    clean:function(){
-        $('.list_exit', this.panel).empty();
+    clean: function () {
+        this.panel.querySelector('.list_exit').innerHTML = '';
     },
     /* Affiche le depart d'un joueur des encheres */
     showJoueurExit: function (joueur) {
-        $('.list_exit', this.panel).append(joueur.nom + ' est sorti<br/>');
+        this.panel.querySelector('.list_exit').insertAdjacentHTML('beforeend', `<div>${joueur.nom} est sorti</div>`);
     },
     exitEnchere: function () {
-        // On supprime les boutons
-        this.panel.dialog('option', 'buttons', []);
+        dialog.clearButtons();
     },
     close: function () {
         GestionEnchere.doCallback();
-        this.panel.dialog('close');
+        dialog.close()
     },
     /* Si canDoEnchere est vrai, le contexte doit etre present */
     updateInfo: function (montant, encherisseur, canDoEnchere, contexte) {
@@ -250,92 +243,75 @@ let GestionEnchereDisplayer = {
             throw "Impossible de gerer l'enchere";
         }
         if (this.currentMontant != null && this.currentEncherisseur != null) {
-            $('.list_encherisseurs', this.panel).prepend('<p>' + CURRENCY + ' ' + this.currentMontant + ' : ' + this.currentEncherisseur.nom + '</p>');
-            $('.list_encherisseurs > p:gt(3)', this.panel).remove();
+            this.panel.querySelector('.list_encherisseurs').insertAdjacentHTML('afterbegin', `<p> ${CURRENCY}  ${this.currentMontant} : ${this.currentEncherisseur.nom}</p>`);
+            this.panel.querySelectorAll('.list_encherisseurs > p').forEach((n, pos) => {
+                if (pos > 3) {
+                    n.remove();
+                }
+            })
         }
         this.currentMontant = montant;
         this.currentEncherisseur = encherisseur;
 
-        $('.montant', this.panel).text(montant);
-        $('.montant', this.panel).animate({
-            color: 'red'
-        }, 200).animate({
-            color: 'black'
-        }, 2000);
+        this.panel.querySelector('.montant').innerHTML = montant;
         if (encherisseur != null) {
-            $('.last_encherisseur', this.panel).text(encherisseur.nom);
+            this.panel.querySelector('.last_encherisseur').innerHTML = encherisseur.nom;
         }
         if (canDoEnchere) {
-            // On affiche les boutons pour encherir ou quitter
-            let buttons = [{
-                text: 'Encherir',
-                click: () =>GestionEnchere.doEnchere(GestionEnchereDisplayer.displayer, montant, contexte.jeton)
-            }, {
-                text: 'Quitter',
-                click: ()=>GestionEnchere.exitEnchere(GestionEnchereDisplayer.displayer)
-            }];
-            this.panel.dialog('option', 'buttons', buttons);
-            initWrapButtons(this.panel);
+           let buttons = {
+                'Encherir': () => GestionEnchere.doEnchere(GestionEnchereDisplayer.displayer, montant, contexte.jeton),
+                'Quitter': () => GestionEnchere.exitEnchere(GestionEnchereDisplayer.displayer)
+            };
+            dialog.updateButtons(buttons);
         } else {
-            this.panel.dialog('option', 'buttons', []);
-            initWrapButtons(this.panel);
+            dialog.clearButtons();
         }
     }
 }
 
 /* Panneau d'echange */
-let EchangeDisplayer = {
-    panel: null,
-    selectJoueurs: null,
-    listTerrainsJoueur: null,
-    listTerrainsAdversaire: null,
+const EchangeDisplayer = {
     joueur: null,
     init: function (id, idSelectJoueurs, idListTerrainsJoueur, idListTerrainsAdversaire) {
-        this.panel = $('#' + id);
-        this.selectJoueurs = $('#' + idSelectJoueurs);
-        this.listTerrainsJoueur = $('#' + idListTerrainsJoueur);
-        this.listTerrainsAdversaire = $('#' + idListTerrainsAdversaire);
+        this.panel = document.getElementById(id);
+        this.selectJoueurs = document.getElementById(idSelectJoueurs);
+        this.listTerrainsJoueur = document.getElementById(idListTerrainsJoueur);
+        this.listTerrainsAdversaire = document.getElementById(idListTerrainsAdversaire);
 
-        wrapDialog(this.panel,{
-            title: "Echange de terrains",
-            autoOpen: false,
-            position: { my: "center top", at: "center top", of: window },
-            width: 400,
-            buttons: {
-                "Annuler": ()=>EchangeDisplayer.close(),
-                "Proposer":  ()=>EchangeDisplayer.propose()
-            }
-        });
         // On charge les joueurs
-        GestionJoueur.forEach(j=>this.selectJoueurs.append(`<option value="${j.id}">${j.nom}</option>`))
-        this.selectJoueurs.change(function () {
-            $('option:not(:first),optgroup', EchangeDisplayer.listTerrainsAdversaire).remove();
-            let joueur = GestionJoueur.getById(EchangeDisplayer.selectJoueurs.val());
+        GestionJoueur.forEach(j => this.selectJoueurs.insertAdjacentHTML('beforeend', `<option value="${j.id}">${j.nom}</option>`))
+        this.selectJoueurs.onchange = d => {
+            this.listTerrainsAdversaire.querySelectorAll('optgroup').forEach(d => d.remove())
+            const joueur = GestionJoueur.getById(d.currentTarget.value);
             if (joueur != null) {
-                let groups = joueur.maisons.getMaisonsGrouped();
-                for (let g in groups) {
-                    let group = groups[g];
-                    let optionGroup = $(`<optgroup label="Groupe ${group.groupe}" style="color:${group.color}"></optGroup>`);
-                    group.terrains.forEach(fiche=>optionGroup.append(`<option value="${fiche.id}">${fiche.nom}</option>`));
+                Object.values(joueur.maisons.getMaisonsGrouped()).forEach(group => {
+                    let optionGroup = document.createElement('optgroup');
+                    optionGroup.label = `Groupe ${group.groupe}`
+                    optionGroup.style.setProperty('color', group.color);
+                    group.terrains.forEach(fiche => optionGroup.insertAdjacentHTML('beforeend', `<option value="${fiche.id}">${fiche.nom}</option>`));
                     EchangeDisplayer.listTerrainsAdversaire.append(optionGroup);
-                }
+                })
             }
-        });
+        };
     },
     open: function (joueur) {
         this.joueur = joueur;
         // On cache le joueur qui a ouvert le panneau
-        this.selectJoueurs.find('option:not(:visible)').show();
-        this.selectJoueurs.find('option[value="' + joueur.id + '"]').hide();
+        this.selectJoueurs.querySelectorAll('option').forEach(d => d.style.setProperty('display', ''));
+        this.selectJoueurs.querySelector(`option[value="${joueur.id}"]`).style.setProperty('display', 'none');
 
         // Affichage des terrains du joueur
-        this.listTerrainsJoueur.empty();
-        CommunicationDisplayer.showTerrainByGroup(EchangeDisplayer.listTerrainsJoueur,joueur);
-        this.panel.dialog('open');
+        this.listTerrainsJoueur.innerHTML = '';
+        CommunicationDisplayer.showNativeTerrainByGroup(EchangeDisplayer.listTerrainsJoueur, joueur);
+        const buttons = {
+            "Annuler": () => EchangeDisplayer.close(),
+            "Proposer": () => EchangeDisplayer.propose()
+        }
+        dialog.open(this.panel, {title: 'Echange de terrains', width: 400, height: 600, buttons: buttons})
     },
     propose: function () {
-        let proprietaire = GestionJoueur.getById(EchangeDisplayer.selectJoueurs.val());
-        let terrain = GestionFiche.getById(this.listTerrainsAdversaire.val());
+        let proprietaire = GestionJoueur.getById(EchangeDisplayer.selectJoueurs.value);
+        let terrain = GestionFiche.getById(this.listTerrainsAdversaire.value);
         if (proprietaire == null || terrain == null) {
             return;
         }
@@ -346,19 +322,15 @@ let EchangeDisplayer = {
             terrains: [],
             compensation: 0
         };
-        $(':checkbox:checked', this.listTerrainsJoueur).each(function () {
-            proposition.terrains.push(GestionFiche.getById($(this).val()));
-        });
-        if ($('#idArgentProposition').val() !== "") {
-            proposition.compensation = parseInt($('#idArgentProposition').val());
-        }
+        this.listTerrainsJoueur.querySelectorAll('input:checked').forEach(t => proposition.terrains.push(GestionFiche.getById(t.value)));
+        proposition.compensation = parseInt(document.getElementById('idArgentProposition').value) || 0;
         this.close();
         CommunicationDisplayer.showPropose(this.joueur, proprietaire, terrain, proposition, this.joueur);
         GestionEchange.propose(proposition);
     },
     close: function () {
-        this.panel.dialog('close');
-        $('option', this.selectJoueurs).removeAttr('selected');
+        dialog.close();
+        this.selectJoueurs.value = '';
     }
 }
 
@@ -477,4 +449,4 @@ let GestionEchange = {
     }
 }
 
-export {GestionEnchere,GestionEnchereDisplayer,EchangeDisplayer,GestionEchange};
+export {GestionEnchere, GestionEnchereDisplayer, EchangeDisplayer, GestionEchange};

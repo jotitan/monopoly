@@ -4,10 +4,11 @@ import {GestionDes} from "./dices.js";
 import {doActions, globalStats, VARIANTES} from "../core/monopoly.js";
 import {GestionJoueur} from "../core/gestion_joueurs.js";
 import {CommunicationDisplayer, FicheDisplayer} from "../display/displayers.js";
-import {InfoMessage} from "../display/message.js";
+import {infoMessage} from "../display/message.js";
 import {GestionTerrains} from "../core/gestion_terrains.js";
 import {GestionEnchere, GestionEnchereDisplayer} from "../core/enchere.js";
 import {bus} from "../bus_message.js";
+import {deepCopy} from "../utils.js";
 
 // Represente houses of a player
 class Maisons {
@@ -265,12 +266,8 @@ class Maisons {
 
     // Cherche la position ou placer la nouvelle fiche (tri par couleur)
     cherchePlacement(maison) {
-        for (let i = 0; i < this.maisons.length; i++) {
-            if (this.maisons[i].color === maison.color) {
-                return this.maisons[i].input;
-            }
-        }
-        return null;
+        const found = this.maisons.find(m=>m.color === maison.color);
+        return found ? found.input : null;
     }
 }
 
@@ -313,7 +310,9 @@ class PlayerSaver {
 
         // Cas ou le joueur est mort
         if (this.joueur.defaite) {
-            $('.joueurCourant', this.joueur.div).removeAttr('style').addClass('defaite');
+            const div = this.joueur.div.querySelector('.joueur-bloc');
+            div.removeAttribute('style');
+            div.classList.add('defaite');
         }
         return this.joueur;
     }
@@ -410,9 +409,7 @@ class Joueur {
 
     /* Selectionne le joueur */
     select() {
-        if (this.div) {
-            this.div.find('div:first').addClass('joueurCourant');
-        }
+        this.div.classList.add('joueurCourant');
         if (!this.enPrison) {
             this.nbDouble = 0;
         }
@@ -526,12 +523,12 @@ class Joueur {
             {title: (des2), fct: () => callback(des2)}
         ];
         const message = 'Quel(s) dé(s) vous choisissez';
-        InfoMessage.createGeneric(this, 'Vous prenez le bus', 'green', message, options);
+        infoMessage.createGeneric(this, 'Vous prenez le bus', 'green', message, options);
     }
 
     /* Le joueur se deplace sur la case qu'il souhaite */
     choisiCase(callback) {
-        InfoMessage.create(this, "Triple dé", "green", "Choisissez votre case", () => {
+        infoMessage.create(this, "Triple dé", "green", "Choisissez votre case", () => {
             this.enableMouseFunction(callback);
         });
     }
@@ -584,17 +581,16 @@ class Joueur {
         let m = this.maisons.cherchePlacement(maison);
         let input = `<input type="button" id="idInputFiche${maison.id}" class="ui-corner-all fiche color_${maison.color.substring(1)}" value="${maison.nom}" id="fiche_${maison.id}"/>`;
         if (m != null) {
-            m.after(input);
+            m.insertAdjacentHTML('afterend', input)
         } else {
-            this.div.append(input);
+            this.div.insertAdjacentHTML('beforeend',input);
         }
-        maison.input = $('input[id="idInputFiche' + maison.id + '"]');
+        maison.input = document.querySelector(`input[id="idInputFiche${maison.id}"]`);
         if (maison.statutHypotheque === true) {
-            maison.input.addClass('hypotheque');
+           maison.input.classList.add('hypotheque');
         }
-        maison.input.click(function () {
-            FicheDisplayer.openDetail(GestionFiche.getById(maison.id), $(this));
-        });
+        maison.input.onclick = () => FicheDisplayer.openDetail(GestionFiche.getById(maison.id), maison.input);
+
     }
 
     /* Permet de deplacer le terrain sur le joueur lors d'un echange */
@@ -625,14 +621,13 @@ class Joueur {
 
     showPrison() {
         this.enPrison = true;
-        this.div.addClass('jail');
-
+        this.div.querySelector('.joueur-id').classList.add('jail');
     }
 
     exitPrison(info = {notrigger: false, notify: true, paye: false, carte: false}) {
         this.enPrison = false;
         this.nbDouble = 0;
-        this.div.removeClass('jail');
+        this.div.querySelector('.joueur-id²').classList.remove('jail')
         if (info.notify) {
             this.notifyExitPrison(info.paye, info.carte)
         }
@@ -649,7 +644,7 @@ class Joueur {
         return this.enPrison;
     }
 
-    setDiv(div) {
+    setDiv(div){
         this.div = div;
         this.setArgent(this.montant);
     }
@@ -659,7 +654,7 @@ class Joueur {
             throw "error montant";
         }
         this.montant = montant;
-        $('.compte-banque', this.div).text(montant);
+        this.div.querySelector('.compte-banque').textContent = montant;
     }
 
     payerParcGratuit(parc, montant, callback = () => {
@@ -709,20 +704,15 @@ class Joueur {
     }
 
     // Create an event which notify buy
-    notifyAcheteMaison(terrain, montant) {
-    }
+    notifyAcheteMaison(terrain, montant) {}
 
-    notifyHypotheque() {
-    }
+    notifyHypotheque() {}
 
-    notifyLeveHypotheque() {
-    }
+    notifyLeveHypotheque() {}
 
-    notifyPay() {
-    }
+    notifyPay() {}
 
-    notifyMessage() {
-    }
+    notifyMessage() {}
 
     notifyPrison() {
         Notifier.goPrison(this);
@@ -767,10 +757,10 @@ class Joueur {
         this.maisons.libere();
         bus.refresh(); // Pour supprimer les terrains
         this.updateMaisonsByGroup();
-        $('input', this.div).remove();
+        this.div.querySelector('input').remove();
         this.pion.remove();
         // On affiche un style sur la liste
-        $('.joueurCourant', this.div).removeAttr('style').addClass('defaite');
+        this.div.querySelector('.joueurCourant').classList.add('defaite');
         this.setArgent(0);
         this.defaite = true;
         this.tourDefaite = globalStats.nbTours;
@@ -786,12 +776,12 @@ class Joueur {
     resolveProblemeArgent(montant, callback) {
         // On ouvre le panneau de resolution en empechant la fermeture
         this.montant -= montant;
-        InfoMessage.create(this, "Attention", "red", "Vous n'avez pas les fonds necessaires, il faut trouver de l'argent", () => {
+        infoMessage.create(this, "Attention", "red", "Vous n'avez pas les fonds necessaires, il faut trouver de l'argent", () => {
             // On attache un evenement a la fermeture
             let onclose = (e) => {
                 if (this.montant < 0) {
                     // Message d'erreur pas possible
-                    InfoMessage.create(this, "Attention", "red", "Impossible, il faut trouver les fonds avant de fermer");
+                    infoMessage.create(this, "Attention", "red", "Impossible, il faut trouver les fonds avant de fermer");
                     //e.preventDefault();
                     return false;
                 } else {
@@ -808,11 +798,14 @@ class Joueur {
 
     updateMaisonsByGroup() {
         let groups = this.maisons.findMaisonsByGroup();
-        let div = $('.count-property', this.div);
-        $(".counter-group", div).html(0);
+        //let div = $('.count-property', this.div);
+        const div = this.div.querySelector('.count-property');
+        div.querySelector('.counter-group').innerHTML = 0;
+        //$(".counter-group", div).html(0);
         for (const group in groups) {
             let color = group.replace(/ /g, "");
-            $(`.counter-group.${color}`, div).html(groups[group].length);
+            //$(`.counter-group.${color}`, div).html(groups[group].length);
+            div.querySelector(`.counter-group.${color}`).innerHTML = groups[group].length;
         }
     }
 
@@ -887,13 +880,20 @@ let Notifier = {
     },
     dices(dices, event, player) {
         delete event.joueur;
-        let sendEvent = $.extend({
+        const sendEvent = deepCopy({
             kind: "dices",
             player: player.id,
             dice1: dices[0],
             dice2: dices[1],
             quickDice: dices[2]
         }, event);
+        /*let sendEvent = $.extend({
+            kind: "dices",
+            player: player.id,
+            dice1: dices[0],
+            dice2: dices[1],
+            quickDice: dices[2]
+        }, event);*/
         bus.network(sendEvent);
     },
     hypotheque(terrain, player) {

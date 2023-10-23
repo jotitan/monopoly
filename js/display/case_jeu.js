@@ -1,8 +1,8 @@
 import {Drawer, DrawerFactory} from '../ui/graphics.js'
 import {CURRENCY, VARIANTES} from "../core/monopoly.js";
 import {GestionJoueur} from "../core/gestion_joueurs.js";
-import {FicheDisplayer, wrapDialog} from "./displayers.js";
-import {InfoMessage} from "./message.js";
+import {dialog, FicheDisplayer} from "./displayers.js";
+import {infoMessage} from "./message.js";
 import {GestionConstructions} from "../core/gestion_constructions.js";
 import {GestionDes} from "../entity/dices.js";
 import {bus} from "../bus_message.js";
@@ -45,7 +45,7 @@ class ParcGratuit extends PlateauCase {
         this.montant = montant;
         this.drawing.titre = this._titre + ((this.montant > 0) ? "\n" + CURRENCY + " " + this.montant : "");
         bus.refresh();
-        $('#idMontantParc > span').text(this.montant);
+        document.getElementById('idMontantParc').querySelector('span').innerText = this.montant;
     }
 
     payer(montant) {
@@ -53,7 +53,7 @@ class ParcGratuit extends PlateauCase {
     }
 
     action() {
-        return InfoMessage.create(GestionJoueur.getJoueurCourant(), "Parc gratuit", "lightblue", "Vous gagnez " + this.montant + " " + CURRENCY, param => {
+        return infoMessage.create(GestionJoueur.getJoueurCourant(), "Parc gratuit", "lightblue", "Vous gagnez " + this.montant + " " + CURRENCY, param => {
             param.joueur.gagner(param.montant);
             this.setMontant(0);
             GestionJoueur.change();
@@ -114,7 +114,7 @@ class SimpleCaseSpeciale extends PlateauCase {
     }
 
     action() {
-        return InfoMessage.create(GestionJoueur.getJoueurCourant(), this.titre, "lightblue", "Vous devez payer la somme de " + this.montant + " " + CURRENCY, param => {
+        return infoMessage.create(GestionJoueur.getJoueurCourant(), this.titre, "lightblue", "Vous devez payer la somme de " + this.montant + " " + CURRENCY, param => {
             param.joueur.payerParcGratuit(this.plateauMonopoly.parcGratuit, param.montant, function () {
                 GestionJoueur.change();
             });
@@ -285,22 +285,20 @@ class Groupe {
 // Representation graphique d'une fiche
 class FicheUI {
     constructor(fiche, id) {
-        this.panel = $(id);
+        this.panel = document.querySelector(id);
         this.fiche = fiche;
         this.name = "";
     }
 
     updateName(name) {
         this.name = name;
-        this.panel.dialog('option', 'title', this.name);
     }
 
     open() {
         const buttons = this.getButtons();
-        this.panel.dialog('option', 'buttons', this.getButtons());
         FicheDisplayer.loadFiche(this.fiche);
         if (GestionJoueur.getJoueurCourant().canPlay) {
-            wrapDialog(this.panel, 'open');
+            dialog.open(this.panel,{buttons:buttons, title:this.fiche.nom, width:250,height:365, colorTitle:this.fiche.color, colorButtons:this.fiche.secondColor});
         }
         return buttons;
     }
@@ -413,7 +411,7 @@ class Fiche extends PlateauCase {
         }
         this.statutHypotheque = data.hypotheque;
         if (this.statutHypotheque === true) {
-            this.input.addClass('hypotheque');
+            this.input.classList.add('hypotheque');
         }
     }
 
@@ -484,7 +482,7 @@ class Fiche extends PlateauCase {
 
     doHypotheque() {
         this.statutHypotheque = true;
-        this.input.addClass('hypotheque');
+        this.input.classList.add('hypotheque');
         bus.send('monopoly.hypothequeMaison', {
             joueur: this.joueurPossede,
             maison: this
@@ -495,7 +493,7 @@ class Fiche extends PlateauCase {
         if (this.input == null || this.statut !== ETAT_ACHETE || this.statutHypotheque === false) {
             return;
         }
-        let cout = Math.round(this.achatHypotheque);
+        const cout = Math.round(this.achatHypotheque);
         if (this.joueurPossede.montant < cout) {
             throw "Impossible de lever l'hypotheque";
         }
@@ -509,7 +507,7 @@ class Fiche extends PlateauCase {
 
     doLeveHypotheque() {
         this.statutHypotheque = false;
-        this.input.removeClass('hypotheque');
+        this.input.classList.remove('hypotheque');
         bus.send('monopoly.leveHypothequeMaison', {
             joueur: this.joueurPossede,
             maison: this
@@ -550,7 +548,7 @@ class Fiche extends PlateauCase {
 
     chezSoi() {
         bus.send('monopoly.chezsoi', {joueur: this.joueurPossede, maison: this});
-        return InfoMessage.create(GestionJoueur.getJoueurCourant(), "Vous etes " + this.nom, this.color, "Vous etes chez vous", () => GestionJoueur.change());
+        return infoMessage.create(GestionJoueur.getJoueurCourant(), "Vous etes " + this.nom, this.color, "Vous etes chez vous", () => GestionJoueur.change());
     }
 
     sellMaison(joueur, noRefresh) {
@@ -616,7 +614,7 @@ class Fiche extends PlateauCase {
     }
 
     payerLoyer() {
-        return InfoMessage.create(GestionJoueur.getJoueurCourant(), "Vous etes " + this.nom, this.color, "Vous etes chez " + this.joueurPossede.nom + " vous devez payez la somme de " + this.getLoyer() + " " + CURRENCY, function (param) {
+        return infoMessage.create(GestionJoueur.getJoueurCourant(), "Vous etes " + this.nom, this.color, "Vous etes chez " + this.joueurPossede.nom + " vous devez payez la somme de " + this.getLoyer() + " " + CURRENCY, function (param) {
             bus.send('monopoly.payerLoyer', {
                 joueur: param.joueurPaye,
                 maison: param.maison
@@ -686,7 +684,7 @@ class FicheGare extends Fiche {
 class FicheCompagnie extends Fiche {
     constructor(axe, pos, color, nom) {
         super(axe, pos, color, nom);
-        this.fiche = new FicheUI(this, $('#ficheCompagnie'));
+        this.fiche = new FicheUI(this, '#ficheCompagnie');
         this.type = "compagnie";
     }
 

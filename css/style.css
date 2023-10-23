@@ -1,25 +1,25 @@
 @media screen and (max-width: 1350px) and (max-height:1000px) {
-	#informations-left,#informations-bottom {
+	/*#informations-left,#informations-bottom {
 		display:none;
-	}
+	}*/
 }
 
 @media screen and (min-width: 1350px) {
-	#informations-left.panneau_joueur > div:nth-child(4n),#informations-left.panneau_joueur > hr:nth-child(4n+3) {
+	/*#informations-left.panneau_joueur > div:nth-child(4n),#informations-left.panneau_joueur > hr:nth-child(4n+3) {
 		display:none;
 	}
 	#informations.panneau_joueur > div:nth-child(4n+2),#informations.panneau_joueur > hr:nth-child(4n+1) {
 		display:none;
-	}
+	}*/
 	#informations-bottom {
 		display:none;
 	}
 }
-
+/* Smartphone */
 @media screen and (min-height: 1000px)  and (max-width: 700px){
-	#informations-left,#informations  {
+	/*#informations-left,#informations  {
 		display:none;
-	}	
+	}*/
     #informations-bottom {
         display:block;
     }
@@ -38,6 +38,10 @@
 	display:block;
 	height:27px;
 	width:240px;
+}
+
+#fiche {
+    height:265px;
 }
 
 #fiche > table {
@@ -59,7 +63,7 @@
 
 .panneau_joueur  {
     width:250px;
-    height:800px;
+    /*height:800px;*/
     overflow: auto;
 }
 
@@ -101,9 +105,19 @@
 
 span.info-label {
     display: inline-block;
-    width: 55px;
+    width: 65px;
     text-align: right;
 }
+
+.info-label > img {
+    width:18px;
+}
+
+
+.info-label.small > img {
+    width:15px;
+}
+
 body { margin: 0 }
 .title-dialog {
     font-weight: bold;
@@ -199,8 +213,9 @@ div.ui-tooltip {
 }
 
 .circle > h1{
-	margin-left:-170px;
-	margin-top:30px;
+	/*margin-left:-170px;*/
+	margin-left:-12px;
+	margin-top:35px;
 	font-size:53px;
 	background-color:transparent;
 }
@@ -232,7 +247,14 @@ div.ui-tooltip {
     color:black;
 }
 
-@media  (max-height: 1000px) or (min-width: 700px){
+@media (min-width: 1330px) {
+    .player_right, .player_left {
+        float: left;
+    }
+}
+
+/* Wide Desktop version */
+@media (min-width: 1080px){
     #idActions > button {
         top:260px;
         position:absolute;
@@ -258,14 +280,21 @@ div.ui-tooltip {
     }
     .count-property {
         display:none;
+        width:100%;
     }
     #actions {
         display: none;
     }
 }
 
+@media screen and (max-width: 1330px) and (min-width: 1080px){
+    .player_left, .player_right {
+        float: right;
+    }
+}
+
 @media screen and (min-height: 1000px) and (max-width: 700px) {
-    .jail > div {
+     .jail > div {
         width:calc(100% - 25px);
     }
     .joueur-id {
@@ -289,6 +318,7 @@ div.ui-tooltip {
 
     .count-property {
         display:block;
+        width:100%;
     }
 
     .count-property > span:nth-child(2n+1) {
@@ -355,6 +385,7 @@ div.ui-tooltip {
     top:50px;
     width:100%;
     z-index:8;
+    border:solid 3px #444;
 }
 
 .wrapper-panel .buttons button {
@@ -378,4 +409,66 @@ div.ui-tooltip {
 .wrapper-panel .buttons {
     text-align:right;
     background-color:rgb(206, 230, 208);
+}
+
+#ficheCompagnie {
+    height:230px;
+    padding:10px;
+    background-color:white;
+}
+
+#message {
+    height:100px;
+    padding:10px;
+}
+
+#housesPanel {
+    height:503px;
+}
+
+#idTerrainsLibres {
+    background-color:white;
+    overflow:auto;
+    height:250px;
+    padding:10px;
+}
+
+#idPanelEchange {
+    background-color:white;
+    height:503px;
+}
+
+.group-propriete {
+    font-weight:bold;
+}
+
+legend {
+    font-weight:bold;
+}
+
+#infoJoueur {
+    background-color:white;
+}
+
+.player-name {
+    padding:5px;
+    text-align:center;
+    font-weight:bold;
+    font-size:18px;
+}
+
+#idEncherePanel,#idCommunicationEchange {
+    background-color:white;
+    height:160px;
+    padding:5px;
+}
+
+#idCommunicationEchange {
+     background-color:white;
+     height:360px;
+     padding:5px;
+ }
+
+.messages {
+    clear:both;
 }

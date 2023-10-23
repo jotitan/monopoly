@@ -15,9 +15,6 @@ let Sauvegarde = {
         this.currentSauvegardeName = name !=null ? this.getSauvegardeName(name) : this.currentSauvegardeName || this.getSauvegardeName();
         this.saveWithName(this.currentSauvegardeName,plateau);
         bus.send('monopoly.save',{name: this.currentSauvegardeName});
-        /*$.trigger("monopoly.save", {
-            name: this.currentSauvegardeName
-        });*/
     },
     saveWithName: function (saveName, plateau) {
         // On recupere la liste des joueurs

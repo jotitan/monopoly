@@ -56,3 +56,35 @@ Object.defineProperty(Array.prototype, "some", {
     enumerable: false,
     configurable: false
 });
+
+function deepCopy(a,b){
+    let copy = {...a};
+    Object.keys(b).forEach(k=>{
+        if(copy[k] == null){
+            copy[k] = b[k];
+        }else{
+            if(typeof b[k] === 'object' && !Array.isArray(b[k])){
+                copy[k] = deepCopy(copy[k],b[k]);
+            }else{
+                copy[k] = b[k];
+            }
+        }
+    })
+    return copy;
+}
+
+function disableActions(){
+    document.querySelectorAll('.action-joueur').forEach(d=>{
+        d.classList.add('disabled');
+        d.setAttribute('disabled','disabled');
+    })
+}
+
+function enableActions(){
+    document.querySelectorAll('.action-joueur').forEach(d=>{
+        d.classList.remove('disabled');
+        d.removeAttribute('disabled');
+    })
+}
+
+export {deepCopy, disableActions, enableActions}

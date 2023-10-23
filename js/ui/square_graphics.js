@@ -544,17 +544,17 @@ class Plateau extends Component{
 
 	enableCaseDetect(callback){
 		let plateau = this;
-		$('canvas').unbind('mousedown').bind('mousedown',function(event){
-			let offset = $(this).offset();
-			let fiche = plateau._findFiche(event.clientX - offset.left,event.clientY - offset.top);
+		document.getElementById('canvas_rt').onmousedown = function(e){
+			const p = this.parentNode;
+			let fiche = plateau._findFiche(e.clientX - p.offsetLeft,e.clientY - p.offsetTop);
 			if(fiche!=null){
 				plateau.disableCaseDetect();
 				callback(fiche);
 			}
-		});
+		}
 	}
 	disableCaseDetect(){
-		$('canvas').unbind('mousedown');
+		document.getElementById('canvas_rt').onmousedown = null;
 	}
 	_findFiche(x,y){
 		let fiche = null;
@@ -583,6 +583,6 @@ function initSquareInstance(){
 	DrawerFactory.type = instance.type;
 }
 
-$(function(){initSquareInstance();});
+initSquareInstance();
 
 export {Des,DesRapide};

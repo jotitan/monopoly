@@ -47,7 +47,7 @@ func runDice(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-type", "application/json")
 
-	if nb, err := strconv.ParseInt(r.FormValue("nb"), 10, 32); err == nil {
+	if nb, err := strconv.Atoi(r.FormValue("nb")); err == nil {
 		data, _ := json.Marshal(dice.Throw(int(nb)))
 		w.Write(data)
 	}

@@ -1,6 +1,6 @@
 /* Manage events during remote game */
 import {GestionJoueur, JoueurFactory} from '../../core/gestion_joueurs.js'
-import {InfoMessage, MessageDisplayer} from "../../display/message.js";
+import {infoMessage, MessageDisplayer} from "../../display/message.js";
 import {DiceThrower, GestionDes} from "../dices.js";
 import {GestionFiche} from "../../display/case_jeu.js";
 import {DEBUG, startMonopoly, VARIANTES} from "../../core/monopoly.js";
@@ -36,7 +36,7 @@ class RemoteManager {
         this.source = new EventSource(`/connect?name=${name}&game=${this.game}${this.playerUniqueID ? `&player=${this.playerUniqueID}` : ''}`);
 
         this.source.onerror = (e) => {
-            InfoMessage.create({}, "Connection impossible", "red", "Impossible de se connecter, le numéro de partie n'existe pas", () => startMonopoly(), {}, true)
+            infoMessage.create({}, "Connection impossible", "red", "Impossible de se connecter, le numéro de partie n'existe pas", () => startMonopoly(), {}, true)
         };
         this.queueEvents.detectEndMove();
         this.source.addEventListener('event', (e) => {
@@ -227,7 +227,7 @@ class RemoteManager {
     disconnect(event) {
         if (event.playerID === this.playerID) {
             this.source.close();
-            InfoMessage.create({canPlay: true}, "Impossible to connect game", "red", "You can't access monopoly game, no enough place", () => startMonopoly())
+            infoMessage.create({canPlay: true}, "Impossible to connect game", "red", "You can't access monopoly game, no enough place", () => startMonopoly())
         }
     }
 

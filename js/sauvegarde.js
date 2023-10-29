@@ -1,8 +1,9 @@
 /* Gestion de la sauvegarde */
 import {GestionJoueur} from "./core/gestion_joueurs.js";
 import {GestionFiche} from "./display/case_jeu.js";
-import {VARIANTES,globalStats} from "./core/monopoly.js";
+import {VARIANTES, globalStats, updateVariantes} from "./core/monopoly.js";
 import {bus} from "./bus_message.js";
+import {deepCopy} from "./utils.js";
 
 let Sauvegarde = {
     prefix: "monopoly.",
@@ -41,7 +42,8 @@ let Sauvegarde = {
         this.currentSauvegardeName = name;
         let data = this._getStorage(name);
         // On charge le plateau
-        $.extend(VARIANTES,VARIANTES,data.variantes)
+        updateVariantes(deepCopy(VARIANTES, data.variantes));
+        //$.extend(VARIANTES,VARIANTES,data.variantes)
         //VARIANTES = data.variantes || VARIANTES;
         monopoly.plateau.load(data.plateau || "data-monopoly.json",data.options,function(){
             data.joueurs.forEach((j,i)=>GestionJoueur.createAndLoad(!j.canPlay, i,j.nom,j,monopoly.plateau.infos.montantDepart));

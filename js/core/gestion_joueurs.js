@@ -41,7 +41,7 @@ let GestionJoueur = {
         return this.create(clazzPlayer,i,nom,data.defaite,0,montantDepart).saver.load(data);
     },
     init(){
-        document.querySelector('.panneau_joueur').innerHTML = '';
+        document.querySelectorAll('.panneau_joueur').forEach(e=>e.innerHTML = '');
         this.joueurs = [];
         this.joueurCourant = null;
     },
@@ -50,12 +50,14 @@ let GestionJoueur = {
     },
     displayLineByGroupsAsElement(){
         let groups = GestionFiche.getGroups();
-        let sizeBlock = 45 / groups.size();
+        const sub = (groups.size()+1) * 5;
+        const size = `calc((45vw - ${sub}px) / ${groups.size()+1})`;
+        let sizeBlock = 35 / groups.size();
         let div = document.createElement('div');
         div.classList.add('count-property');
         for(let name in groups){
             let color = name.replace(/ /g,"");
-            div.insertAdjacentHTML('beforeend',`<span style="width:${sizeBlock}vw;background-color:${groups[name]}"></span> : <span class="counter-group ${color}">0</span>`);
+            div.insertAdjacentHTML('beforeend',`<span class="counter-group ${color}" style="width:${size};background-color:${groups[name]};">0</span>`);
         }
         return div;
     },
@@ -78,19 +80,11 @@ let GestionJoueur = {
         div.querySelectorAll('div.joueur-bloc').forEach(d=>d.style.setProperty('background-image', `linear-gradient(to right,white 50%,${color})`));
         div.append(this.displayLineByGroupsAsElement());
 
-        //document.querySelectorAll('.panneau_joueur').forEach(d=>d.insertAdjacentHTML('beforeend','<hr style="border:solid 2px darkgray"/>'));
         parent.insertAdjacentHTML('beforeend','<hr style="border:solid 2px darkgray"/>');
 
-        /*const divs = [...document.querySelectorAll('.panneau_joueur')].map(d=>{
-            const copy = div.cloneNode(true);
-            d.append(copy)
-            return copy;
-        });*/
         parent.append(div);
-        //joueur.setDivAll(divs);
         joueur.setDiv(div);
         joueur.setPion(color,img,montantDepart);
-        // On defini la couleurs
 
         bus.send('monopoly.newPlayer', {
             joueur: joueur

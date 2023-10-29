@@ -23,11 +23,13 @@ const GestionTerrains = {
         this.banqueroute = banqueroute;
         this.beforeClose = onclose;
         this.load();
+        const buttons = {'Valider':() => this.valider()}
+        if(!banqueroute){
+            buttons['Fermer'] = () => this.closePanel()
+        }
+        this.panel.querySelector('.warning-message').innerHTML = "";
         dialog.open(this.panel, {
-            title: 'Gestion des maison', width: 800, height: 600, buttons: {
-                'Fermer': () => this.closePanel(),
-                "Valider": () => this.valider()
-            }
+            title: 'Gestion des maisons', width: 800, height: 600, buttons: buttons
         });
     },
     reset: function () {
@@ -76,8 +78,8 @@ const GestionTerrains = {
             GestionTerrains.Constructions.verify();
             return true;
         } catch (e) {
-            infoMessage.create(GestionJoueur.getJoueurCourant(), "Attention", "red", e);
-            console.trace(e);
+            // Afficher un message sur l'écran actuel
+            this.panel.querySelector('.warning-message').innerHTML = e;
             return false;
         }
     },

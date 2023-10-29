@@ -52,7 +52,7 @@
       function createJoueur(id,name){
          let j = new JoueurOrdinateur(id,name,'',100000);
          j.pion = {stats:{tour:0,prison:0},deplaceValeursDes:()=>{},pion:{setSelected:()=>{}}};
-         j.div = $('');
+         j.div = document.createElement('div');
          return j;
       }
 

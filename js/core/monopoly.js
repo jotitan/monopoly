@@ -20,10 +20,7 @@ import {
     ParcGratuit,
     SimpleCaseSpeciale
 } from '../display/case_jeu.js'
-import {
-    CommunicationDisplayer, dialog,
-    FicheDisplayer
-} from '../display/displayers.js'
+import {CommunicationDisplayer, dialog, FicheDisplayer} from '../display/displayers.js'
 import {checkExistingGame, MasterRemoteManager, RemoteManager} from '../entity/network/remote_manager.js'
 import '../ui/square_graphics.js';
 import '../ui/circle_graphics.js';
@@ -58,6 +55,8 @@ let VARIANTES = {
     tourAchat: false,             // Attendre un tour avant d'acheter
     quickMove: false	// Pour des deplacements tres rapide
 }
+
+const updateVariantes = values => VARIANTES = values;
 
 /* Preconfiguration des variantes */
 const configJeu = [
@@ -132,7 +131,7 @@ function restartMonopoly() {
     }
     let options = currentMonopoly.options;
     currentMonopoly = new Monopoly(false);
-    currentMonopoly.init();
+    currentMonopoly.init(true);
     new PanelGameMonopoly(currentMonopoly).restartGame(options);
 }
 
@@ -207,14 +206,14 @@ class PlateauDetails {
         this.infos.argentJoueurDepart = this.infos.argent || 150000;
         this.infos.montantDepart = this.infos.depart || 20000;
         this.infos.montantPrison = this.infos.prison || 5000;
-        if(VARIANTES.parcGratuit){
-            document.getElementById('idMontantParc').style.setProperty('display','');
+        if (VARIANTES.parcGratuit) {
+            document.getElementById('idMontantParc').style.setProperty('display', '');
         }
 
         if (this.infos.hideConstructions === true) {
-            document.querySelectorAll('.action-normal').forEach(d=>d.style.setProperty('display','none'))
+            document.querySelectorAll('.action-normal').forEach(d => d.style.setProperty('display', 'none'))
         } else {
-            document.querySelectorAll('.action-normal').forEach(d=>d.style.setProperty('display',''))
+            document.querySelectorAll('.action-normal').forEach(d => d.style.setProperty('display', ''))
         }
         GestionJoueur.setColors(this.infos.colors);
         GestionJoueur.setImgJoueurs(this.infos.imgJoueurs);
@@ -248,13 +247,14 @@ class PlateauDetails {
         document.getElementById("idOpenFreeTerrains").onclick = () => this.openTerrainsLibres();
     }
 
-    openTerrainsLibres(){
+    openTerrainsLibres() {
         this._showFreeTerrains();
-        dialog.open(document.getElementById('idTerrainsLibres'),{
-            title:'Liste des terrains libres',
-            buttons:{"Ok":()=>dialog.close()},
-            height:367,
-            width:350});
+        dialog.open(document.getElementById('idTerrainsLibres'), {
+            title: 'Liste des terrains libres',
+            buttons: {"Ok": () => dialog.close()},
+            height: 367,
+            width: 350
+        });
     }
 
     _showFreeTerrains() {
@@ -263,7 +263,7 @@ class PlateauDetails {
         const it = GestionFiche.getTerrainsLibres();
         while (it.hasNext()) {
             let t = it.next();
-            div.insertAdjacentHTML('beforeEnd',`<div style="font-weight:bold;color:${t.color}">${t.nom}</div>`);
+            div.insertAdjacentHTML('beforeEnd', `<div style="font-weight:bold;color:${t.color}">${t.nom}</div>`);
         }
     }
 
@@ -273,11 +273,11 @@ class PlateauDetails {
 
     _configureCircle() {
         DrawerFactory.setType('circle');
-        document.querySelectorAll('.graphic_element,.title').forEach(d=>d.classList.add('circle'));
+        document.querySelectorAll('.graphic_element,.title').forEach(d => d.classList.add('circle'));
         new CircleType(document.getElementById('idSavePanel')).radius(185)
-        document.getElementById('idSubTitle').style.setProperty('display','none')
+        document.getElementById('idSubTitle').style.setProperty('display', 'none')
         const box = document.getElementById('idInfoBox');
-        box.onwheel = function(e){
+        box.onwheel = function (e) {
             box.scrollTop += e.deltaY;
             e.preventDefault();
         }
@@ -285,8 +285,7 @@ class PlateauDetails {
 
     configureSquare() {
         DrawerFactory.setType('square');
-        //new CircleType(document.getElementById('idSavePanel')).radius(0);
-        document.querySelectorAll('.graphic_element,.title').forEach(d=>d.classList.remove('circle'));
+        document.querySelectorAll('.graphic_element,.title').forEach(d => d.classList.remove('circle'));
     }
 
     _buildCartes(data, Instance, title) {
@@ -295,8 +294,8 @@ class PlateauDetails {
 
     addToGroup(groups, def, name, fiche) {
         const g = groups[def.colors[0]];
-        if(g.nom == null){
-            g.nom =  name;
+        if (g.nom == null) {
+            g.nom = name;
         }
         groups[def.colors[0]].add(fiche);
         return fiche;
@@ -394,15 +393,20 @@ class PlateauDetails {
 class PanelGameMonopoly {
     constructor(monopoly) {
         this.monopoly = monopoly;
-        document.getElementById('idJoinNetworkGame').onclick = ()=>this.createGame(true);
-        document.getElementById('idRejoinNetworkGame').onclick = ()=>this.createRejoinGame();
+        document.getElementById('idJoinNetworkGame').onclick = () => this.createGame(true);
+        document.getElementById('idRejoinNetworkGame').onclick = () => this.createRejoinGame();
     }
 
     show() {
         this.loadPlateaux();
         this.loadSavedGames();
         const p = document.querySelector('#idPanelCreatePartie');
-        dialog.open(p,{buttons:{"Créer la partie":()=>this.createGame()},title:'Jouer au MONOPOLY', width:600, height:595});
+        dialog.open(p, {
+            buttons: {"Créer la partie": () => this.createGame()},
+            title: 'Jouer au MONOPOLY',
+            width: 600,
+            height: 595
+        });
     }
 
     close() {
@@ -414,7 +418,7 @@ class PanelGameMonopoly {
         this.plateaux = document.getElementById('idSelectPlateau');
         loadAllPlateaux().then(data => {
             if (data != null && data.plateaux != null) {
-                data.plateaux.forEach(p => this.plateaux.insertAdjacentHTML('beforeend',`<option value="${p.url}">${p.name}</option>`));
+                data.plateaux.forEach(p => this.plateaux.insertAdjacentHTML('beforeend', `<option value="${p.url}">${p.name}</option>`));
             }
         });
     }
@@ -422,11 +426,11 @@ class PanelGameMonopoly {
     loadSavedGames() {
         let sauvegardes = Sauvegarde.findSauvegardes();
         this.listSauvegarde = document.getElementById('idSauvegardes');
-        this.listSauvegarde.querySelectorAll('option:not([value = ""])').forEach(d=>d.remove())
+        this.listSauvegarde.querySelectorAll('option:not([value = ""])').forEach(d => d.remove())
         if (sauvegardes.length > 0) {
-            sauvegardes.forEach(s => this.listSauvegarde.insertAdjacentHTML('beforeend',`<option value="${s.value}">${s.label}</option>`));
-            document.getElementById('idDeleteSauvegarde').onclick = ()=>{
-                if(this.listSauvegarde.value !== ''){
+            sauvegardes.forEach(s => this.listSauvegarde.insertAdjacentHTML('beforeend', `<option value="${s.value}">${s.label}</option>`));
+            document.getElementById('idDeleteSauvegarde').onclick = () => {
+                if (this.listSauvegarde.value !== '') {
                     if (confirm(`Etes vous sur de vouloir supprimer cette sauvegarde : ${this.listSauvegarde.value}`)) {
                         Sauvegarde.delete(this.listSauvegarde.value);
                         this.listSauvegarde.querySelector('option:checked').remove();
@@ -448,12 +452,12 @@ class PanelGameMonopoly {
             nbPlayers: parseInt(document.querySelector('#idNbPlayers').textContent),
             waitTimeIA: 1
         };
-        document.getElementById('idGameType').querySelectorAll('input:checked').forEach(d=>options[d.name] = d.value)
+        document.getElementById('idGameType').querySelectorAll('input:checked').forEach(d => options[d.name] = d.value)
         options.joueur = document.getElementById('idNomJoueur').value || "";
         return options;
     }
 
-    createRejoinGame(){
+    createRejoinGame() {
         this.close();
         return this.monopoly.rejoinNetworkGame();
     }
@@ -506,8 +510,8 @@ class Monopoly {
 
     }
 
-    init() {
-        MessageDisplayer.init('idInfoBox');
+    init(reset = false) {
+        MessageDisplayer.init('idInfoBox', reset);
         JoueurFactory.setMouseFunction(callback => this.plateau.enableMouse(callback));
         if (DEBUG) {
             this.plateau.load('data-monopoly.json', () => this._createGame({}));
@@ -564,22 +568,22 @@ class Monopoly {
         IA_TIMEOUT = VARIANTES.quickMove ? 10 : options.waitTimeIA || IA_TIMEOUT;
     }
 
-    addTooltip(button){
+    addTooltip(button) {
         const joueur = GestionJoueur.getById(button.getAttribute('data-idjoueur'));
-        button.onclick = ()=>{
+        button.onclick = () => {
             const panel = document.getElementById('infoJoueur');
             const stats = joueur.getStats();
             panel.querySelector('.player-name').innerHTML = joueur.nom;
-            panel.querySelector('.player-name').style.setProperty("color",joueur.color);
+            panel.querySelector('.player-name').style.setProperty("color", joueur.color);
 
-            panel.querySelectorAll('span[data-name]').forEach(s=>s.innerHTML=stats[s.getAttribute("data-name")])
-            dialog.open(panel,{title:joueur.name,buttons:{"Fermer":()=>dialog.close()}, height:294, width:300})
+            panel.querySelectorAll('span[data-name]').forEach(s => s.innerHTML = stats[s.getAttribute("data-name")])
+            dialog.open(panel, {title: joueur.name, buttons: {"Fermer": () => dialog.close()}, height: 288, width: 300})
         }
     }
 
     afterCreateGame(players = this.plateau.infos.nomJoueurs) {
         this.plateau.infos.realNames = players;
-        document.querySelectorAll('.info-joueur').forEach(d=>this.addTooltip(d));
+        document.querySelectorAll('.info-joueur').forEach(d => this.addTooltip(d));
 
         // Panneau d'echange
         EchangeDisplayer.init('idPanelEchange', 'idSelectJoueurs', 'idListTerrainsJoueur', 'idListTerrainsAdversaire');
@@ -593,31 +597,25 @@ class Monopoly {
         };
         // panneau d'achats de maisons
         if (!enableNetwork) {
-            document.getElementById('idNetwork').style.setProperty('display','none');
+            document.getElementById('idNetwork').style.setProperty('display', 'none');
         }
     }
 }
 
-let debug = false;
+let debug = true;
 let enableNetwork = true;
-
 
 function startGame() {
     startMonopoly(debug)
-    // TODO
-    if ($('.mobile').is(':visible')) {
-        DrawerFactory.setSize(950);
-    }
 }
 
 
-$(() => {
-    // Check if a game exist
-    checkExistingGame().then(exist => {
-        document.getElementById('idRejoinNetworkGame').style.setProperty('display',exist ? "" : "none");
-    });
-    startGame();
+// Check if a game exist
+checkExistingGame().then(exist => {
+    document.getElementById('idRejoinNetworkGame').style.setProperty('display', exist ? "" : "none");
 });
+initDebug();
+startGame();
 
 /*  DEBUG */
 
@@ -628,4 +626,12 @@ function buy(maisons) {
     }
 }
 
-export {Monopoly, CURRENCY, DEBUG, VARIANTES, IA_TIMEOUT, doActions, globalStats, startMonopoly, restartMonopoly};
+function initDebug(){
+    if(debug) {
+        document.getElementById('idDebugNbDices').onclick = () => GestionJoueur.getJoueurCourant().joueDes(document.getElementById('nb').value);
+        document.getElementById('idDebugDices').onclick = () => GestionJoueur.getJoueurCourant().pion.goto(document.getElementById('ide').value,document.getElementById('idp').value,doActions);
+        document.getElementById('idDebug').style.setProperty('display','');
+    }
+}
+
+export {Monopoly, CURRENCY, DEBUG, VARIANTES, updateVariantes, IA_TIMEOUT, doActions, globalStats, startMonopoly, restartMonopoly};

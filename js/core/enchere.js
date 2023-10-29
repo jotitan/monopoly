@@ -325,7 +325,6 @@ const EchangeDisplayer = {
         this.listTerrainsJoueur.querySelectorAll('input:checked').forEach(t => proposition.terrains.push(GestionFiche.getById(t.value)));
         proposition.compensation = parseInt(document.getElementById('idArgentProposition').value) || 0;
         this.close();
-        CommunicationDisplayer.showPropose(this.joueur, proprietaire, terrain, proposition, this.joueur);
         GestionEchange.propose(proposition);
     },
     close: function () {

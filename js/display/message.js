@@ -8,18 +8,18 @@ import {bus} from "../bus_message.js";
 let MessageDisplayer = {
     div: null,
     order: 0,
-    init: function (id) {
-        if (this.div == null) {
-            // Not init already, create div and bind events
-            this.div = $('#' + id);
+    init: function (id, reset) {
+        // Not init already, create div and bind events
+        this.div = document.getElementById(id);
+        this.div.innerHTML = '';
+        if(!reset){
             this.bindEvents();
         }
-        this.div.empty();
     },
     write: function (joueur, message) {
         MessageDisplayer.order++;
         let orderMessage = (DEBUG) ? (' (' + MessageDisplayer.order + ')') : '';
-        this.div.prepend('<div><span style="color:' + joueur.color + '">' + joueur.nom + '</span> : ' + message + orderMessage + '</div>');
+        this.div.insertAdjacentHTML("afterbegin", `<div><span style="color:${joueur.color}">${joueur.nom}</span> : ${message}${orderMessage}</div>`);
     },
     _buildProposition: function (proposition) {
         if (proposition == null) {
@@ -30,7 +30,7 @@ let MessageDisplayer = {
             message = proposition.terrains.reduce((str, terrain) => this.events._buildTerrain(terrain) + ", " + str, "");
         }
         if (proposition.compensation > 0) {
-            message += " compensation : " + proposition.compensation + " " + CURRENCY;
+            message += ` compensation : ${proposition.compensation} ${CURRENCY}`;
         }
         return message;
     },
@@ -48,7 +48,7 @@ let MessageDisplayer = {
             this.write(this.people('info', 'green'), `sauvegarde de la partie (${event.name})`);
         },
         depart(event) {
-            this.write(event.joueur, `s\'arrête sur la case départ et gagne ${event.montant} ${CURRENCY}`);
+            this.write(event.joueur, `s'arrête sur la case départ et gagne ${event.montant} ${CURRENCY}`);
         },
         initEnchere(event) {
             this.write(event.joueur != null ? event.joueur : this.people('La banque'), `met aux enchères  ${this._buildTerrain(event.maison)}`);
@@ -274,7 +274,8 @@ class InfoMessage {
         }
         return buttons;
     }
-    create (joueur, titre, background, message, call = () => {
+
+    create(joueur, titre, background, message, call = () => {
     }, param, forceshow, moreButtons = {}) {
         this._debug(titre, message);
         this.div.innerHTML = message;
@@ -292,14 +293,16 @@ class InfoMessage {
         }
         return buttons;
     }
-    close (callback = () => {
+
+    close(callback = () => {
     }) {
         if (this.div.dialog('isOpen')) {
             this.div.dialog('close');
         }
         callback();
     }
-    createPrison (montantPrison, joueur, nbTours, callback) {
+
+    createPrison(montantPrison, joueur, nbTours, callback) {
         this.div.innerHTML = "Vous êtes en prison, que voulez vous faire";
         const title = `Vous êtes en prison depuis ${nbTours} tours.`;
         this._debug(title, message);

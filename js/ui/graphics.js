@@ -129,14 +129,14 @@ let DrawerFactory = {
 		nbCases:10,
 		textSize:7
 	},
-	setSize(size){
+	/*setSize(size){
 		$('#plateau').height(size+10).width(size+10);
 		$('#canvas').width(size+10).height(size+10).attr('width',size+10).attr('height',size+10);
 		$('#canvas_rt').width(size+10).height(size+10).attr('width',size+10).attr('height',size+10);
 		this.dimensions.plateauSize = size;
 		DrawerHelper.setFontWeight(800);
 		this.computeDimensions();
-	},
+	},*/
 	setNbCases(nbCases = 10){
 		this.dimensions.nbCases = nbCases;
 		this.computeDimensions();

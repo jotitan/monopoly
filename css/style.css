@@ -293,16 +293,31 @@ div.ui-tooltip {
     }
 }
 
-@media screen and (min-height: 1000px) and (max-width: 700px) {
+@media screen and (min-height: 1000px) and (max-width: 1080px) {
      .jail > div {
         width:calc(100% - 25px);
+    }
+    #informations-left {
+        float:left;
     }
     .joueur-id {
         font-size:3vw;
     }
+    .panneau_joueur {
+        width:48vw;
+    }
 
     .joueur-bloc {
         height:auto;
+    }
+
+    .counter-group {
+        display: inline-block;
+        color:white;
+        border-radius:5px;
+        height:16px;
+        margin-left:5px;
+        text-align:center;
     }
 
     #actions {
@@ -319,13 +334,6 @@ div.ui-tooltip {
     .count-property {
         display:block;
         width:100%;
-    }
-
-    .count-property > span:nth-child(2n+1) {
-        display:inline-block;
-        border-radius:5px;
-        margin-left:10px;
-        height:16px;
     }
 
     .panneau_joueur > div {
@@ -360,7 +368,7 @@ div.ui-tooltip {
     }
 
     #idActions > button > img {
-        width: 24vw;
+        width: 25vw;
     }
 
 }
@@ -435,7 +443,7 @@ div.ui-tooltip {
 
 #idPanelEchange {
     background-color:white;
-    height:503px;
+    height:543px;
 }
 
 .group-propriete {
@@ -465,10 +473,16 @@ legend {
 
 #idCommunicationEchange {
      background-color:white;
-     height:360px;
+     height:400px;
      padding:5px;
  }
 
 .messages {
     clear:both;
+}
+
+.warning-message {
+    color: red;
+    font-weight: bold;
+    padding-left: 20px;
 }

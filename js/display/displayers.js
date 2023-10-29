@@ -131,12 +131,12 @@ const FicheDisplayer = {
         this._load(fiche, detailFiche, fiche.secondColor);
     },
     _name: function (e) {
-        return e.getAttribute("name");
+        return e.getAttribute("class");
     },
     _load: function (fiche, div, color) {
         div.style.setProperty('background-color', color);
-        div.querySelectorAll(`td[name^="loyer"]`).forEach(d => d.innerHTML = fiche.loyer[parseInt(this._name(d).substring(5))]);
-        div.querySelectorAll(`td[name]:not([name^="loyer"]), span[name]:not([name^="loyer"])`).forEach(d => d.innerHTML = fiche[this._name(d)]);
+        div.querySelectorAll(`td[class^="loyer"]`).forEach(d => d.innerHTML = fiche.loyer[parseInt(this._name(d).substring(5))]);
+        div.querySelectorAll(`td[class]:not([class^="loyer"]), span[class]:not([class^="loyer"])`).forEach(d => d.innerHTML = fiche[this._name(d)]);
         div.querySelectorAll(`.loyer0`).forEach(d=>d.innerHTML = fiche.type === 'gare' ? fiche.getLoyer() : fiche.isGrouped() === true ? parseInt(fiche.loyer[0]) * 2 : fiche.loyer[0]);
         div.querySelectorAll(`tr, .infos-group`).forEach(d => d.classList.remove("nbMaisons"));
         div.querySelectorAll(`.loyer${fiche.nbMaison}`).forEach(d=>d.parentElement.classList.add("nbMaisons"));
@@ -178,16 +178,16 @@ let CommunicationDisplayer = {
             nom: "Négocier",
             action: ()=>CommunicationDisplayer._showContrePanel(demandeur)
         }], true)
-
     },
     /* Affiche juste la proposition, pas d'option */
     showPropose: function (demandeur, proprietaire, terrain, proposition, displayJoueur) {
         this.joueur = displayJoueur;
+        this.demandeur = demandeur;
         dialog.updateTitle(`Echange entre ${demandeur.nom} et ${proprietaire.nom}`)
         this.panel.querySelectorAll('.proposition,.communications').forEach(d=>d.innerHTML='');
         this.panel.querySelector('.proposition').insertAdjacentHTML('beforeend',`<div>Terrain : <span style="font-weight:bold;color:${terrain.color}">${terrain.nom}</div>`);
         this._showProposition(this.panel.querySelector('.proposition'), proposition);
-        this.panel.querySelector('.communications').innerHTML='';
+        //this.panel.querySelector('.communications').innerHTML='';
     },
     showNativeTerrainByGroup(bloc, joueur) {
         Object.values(joueur.maisons.getMaisonsGrouped()).forEach(group=>{
@@ -207,7 +207,7 @@ let CommunicationDisplayer = {
         // Affichage sur l'ecran principal ou le meme
         divProposition.insertAdjacentHTML('beforeend','Argent : <input class="argent" type="text"/>')
         this.panel.querySelector('.communications').append(divProposition);
-        this.addMessage("Quelle est votre contreproposition", [{
+        this.addMessage("Quelle est votre contreproposition ?", [{
             nom: "Proposer",
             action: () => CommunicationDisplayer._doContreproposition(CommunicationDisplayer.joueur)
         }, {
@@ -224,20 +224,13 @@ let CommunicationDisplayer = {
             terrains: [],
             compensation: 0
         };
-        // TODO
-        console.log($('.contreProposition:last :checkbox:checked', this.panel))
-        console.log(this.panel.querySelectorAll('.contreProposition:last :checkbox:checked'))
-        $('.contreProposition:last :checkbox:checked', this.panel).each(function () {
-            let terrain = GestionFiche.getById($(this).val());
+        this.panel.querySelectorAll('.contreProposition :checked').forEach(input=>{
+            let terrain = GestionFiche.getById(input.value);
             if (terrain != null) {
                 proposition.terrains.push(terrain);
             }
         });
-        // TODO
-        let argent = $('.contreProposition:last :text.argent', this.panel).val();
-        if (argent !== "") {
-            proposition.compensation = parseInt(argent);
-        }
+        proposition.compensation = parseInt(document.querySelector('.contreProposition input[type="text"].argent').value) || 0;
         GestionEchange.contrePropose(proposition, joueur);
     },
     _showProposition: (div, proposition) => {
@@ -290,7 +283,7 @@ let CommunicationDisplayer = {
         if (!noHr) {
             this.panel.querySelector('.communications').append(document.createElement('hr'));
         }
-        this.panel.querySelector('.communications').insertAdjacentHTML('beforeend',`<p>${message}</p>`);
+        this.panel.querySelector('.communications').insertAdjacentHTML('beforeend',`<p style="font-weight: bold">${message}</p>`);
         if (actions != null && actions.length > 0) {
             let buttons = [];
             actions.forEach(action => buttons[action.nom] = action.action);
@@ -302,7 +295,7 @@ let CommunicationDisplayer = {
         dialog.close();
     },
     open: function () {
-        dialog.open(this.panel,{title:'Echange de terrain',height:467})
+        dialog.open(this.panel,{title:`Echange de terrain par ${this.demandeur.nom}`,height:507,width:400})
     }
 };
 

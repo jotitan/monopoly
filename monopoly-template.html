@@ -3,18 +3,11 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <title>Monopoly FULL JS</title>
-    <link type="text/css" href="css/ui/jquery-ui.min.css" rel="stylesheet"/>
-    <link type="text/css" href="css/ui/jquery-ui.structure.min.css" rel="stylesheet"/>
-    <link type="text/css" href="css/ui/jquery-ui.theme.min.css" rel="stylesheet"/>
     <link rel="shortcut icon" type="image/x-icon" href="favicon.ico"/>
 
-    <script type="text/javascript" src="lib/jquery-1.11.0.min.js"></script>
-    <script type="text/javascript" src="lib/jquery.arctext.js"></script>
-    <script type="text/javascript" src="lib/jquery-ui.1.12.min.js"></script>
-    <script type="text/javascript" src="lib/jquery.mousewheel.js"></script>
     <script type="text/javascript" src="lib/circletype.min.js"></script>
 
-    <script type="module" src="js/core/monopoly.js"></script>
+
     <style></style>
     <link rel="stylesheet" type="text/css" href="css/style.css"/>
 </head>
@@ -65,12 +58,15 @@
 <div style="clear:both"/>
 
 <div id="idDebug" style="display:none">
-    case : <input type="text" size="3" id="nb"/><input type="button"
-                                                       onclick="GestionJoueur.getJoueurCourant().joueDes(parseInt($('#nb').val()))"
-                                                       value="click"/><br/>
-    Goto : <input type="text" size="3" id="ide"/><input type="text" size="3" id="idp"/><input type="button"
-                                                                                              onclick="GestionJoueur.getJoueurCourant().pion.goto($('#ide').val(),$('#idp').val(),doActions)"
-                                                                                              value="goto"/><br/>
+    case : <input type="text" size="3" id="nb"/>
+    <input type="button"
+           id="idDebugNbDices"
+           value="click"/>
+    <br/>
+    Goto : <input type="text" size="3" id="ide"/>
+    <input type="text" size="3" id="idp"/>
+    <input type="button" id="idDebugDices" value="goto"/>
+    <br/>
 </div>
 <div id="informations-bottom" class="panneau_joueur" style="width:100%"></div>
 
@@ -82,7 +78,7 @@
         </tr>
         <tr>
             <td>ACHAT</td>
-            <td id="achat"></td>
+            <td class="achat"></td>
         </tr>
         <tr>
             <td>LOYER terrain nu</td>
@@ -115,10 +111,10 @@
     </div>
     <hr/>
     <div>
-        Prix des Maisons F <span id="prixMaison"></span><br/>
-        Prix d'un H&ocirc;tel&nbsp; F <span id="prixHotel"></span><br/>
+        Prix des Maisons F <span class="prixMaison"></span><br/>
+        Prix d'un H&ocirc;tel&nbsp; F <span class="prixMaison"></span><br/>
     </div>
-    Valeur hypothécaire : Frs <span id="hypotheque"></span>
+    Valeur hypothécaire : Frs <span class="montantHypotheque"></span>
 
 </div>
 
@@ -191,12 +187,12 @@
     <div style="clear:both;width:100%;height:40px;background-color:white">
         <table style="height:100%;width:100%;border:0;border-collapse: collapse">
             <tr>
-                <td style="width:37%;height:100%;"></td>
+                <td style="width:70%;height:100%;background-color:white" class="warning-message"></td>
                 <td style="width:26%;border:solid 1px black;padding:5px;background-color:white">
-                    Resultat : <span id="idCoutTotal"></span><br/>
-                    Porte-monnaie : <span id="idArgentRestant"></span>
+                    Coût : <span id="idCoutTotal" style="font-weight:bold"></span><br/>
+                    Porte-monnaie : <span id="idArgentRestant" style="font-weight:bold"></span>
                 </td>
-                <td style="width:37%;"></td>
+                <td style="width:4%;background-color:white;"></td>
             </tr>
         </table>
     </div>
@@ -376,6 +372,7 @@
     </div>
 </div>
 
+<script type="module" src="js/core/monopoly.js"></script>
 
 </body>
 </html>

@@ -34,7 +34,7 @@ class RemotePlayer extends Joueur{
     setPlayer(player){
         this.nom = player;
         this.free = false;
-        $('.joueur-name',this.div).text(this.nom);
+        this.div.querySelector('.joueur-name').innerHTML = this.nom;
     }
     // If remote player receive money, it's done and send to all
     notifyPay(montant){

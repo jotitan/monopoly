@@ -590,7 +590,6 @@ class Joueur {
            maison.input.classList.add('hypotheque');
         }
         maison.input.onclick = () => FicheDisplayer.openDetail(GestionFiche.getById(maison.id), maison.input);
-
     }
 
     /* Permet de deplacer le terrain sur le joueur lors d'un echange */
@@ -627,7 +626,7 @@ class Joueur {
     exitPrison(info = {notrigger: false, notify: true, paye: false, carte: false}) {
         this.enPrison = false;
         this.nbDouble = 0;
-        this.div.querySelector('.joueur-id²').classList.remove('jail')
+        this.div.querySelector('.joueur-id').classList.remove('jail')
         if (info.notify) {
             this.notifyExitPrison(info.paye, info.carte)
         }
@@ -757,10 +756,10 @@ class Joueur {
         this.maisons.libere();
         bus.refresh(); // Pour supprimer les terrains
         this.updateMaisonsByGroup();
-        this.div.querySelector('input').remove();
+        this.div.querySelectorAll('input').forEach(e=>e.remove());
         this.pion.remove();
         // On affiche un style sur la liste
-        this.div.querySelector('.joueurCourant').classList.add('defaite');
+        this.div.querySelector('.joueur-bloc').classList.add('defaite');
         this.setArgent(0);
         this.defaite = true;
         this.tourDefaite = globalStats.nbTours;
@@ -798,17 +797,13 @@ class Joueur {
 
     updateMaisonsByGroup() {
         let groups = this.maisons.findMaisonsByGroup();
-        //let div = $('.count-property', this.div);
         const div = this.div.querySelector('.count-property');
         div.querySelector('.counter-group').innerHTML = 0;
-        //$(".counter-group", div).html(0);
         for (const group in groups) {
             let color = group.replace(/ /g, "");
-            //$(`.counter-group.${color}`, div).html(groups[group].length);
             div.querySelector(`.counter-group.${color}`).innerHTML = groups[group].length;
         }
     }
-
     endTurn() {
     }
 }

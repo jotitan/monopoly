@@ -1,7 +1,7 @@
 h1. Monopoly full JS !https://codebeat.co/badges/843f9fbf-e914-495f-8d9f-2f85343cc22b(codebeat badge)!:https://codebeat.co/projects/github-com-jotitan-monopoly-master !https://github.com/jotitan/monopoly/actions/workflows/main.yml/badge.svg?branch=master!
 
 Implementation Full Javascript du Monopoly. 
-Utilisation de JQuery et canvas. Grunt permet de minifier le projet.
+Aucune librairie Javascript et packaging avec Webpack.
 
 h2. Démo
 
@@ -13,10 +13,11 @@ h2. Fonctionnalités
 * IA : plusieurs robots peuvent jouer. Différents niveaux sont implémentés (gestion de l'argent, choix des terrains et agressivité).
 * Plusieurs variantes : case départ x 2, parc gratuit, enchere immédiate
 * Possibilité d'échanger les terrains avec les autres joueurs
-* Utilisation du dé rapide (règle récente) possible
+* Utilisation du dé rapide (règle récente)
 * Plusieurs plateaux sont disponibles : classique, en cercle
 * Possibilité de customiser les plateaux (images, nom des joueurs, nom des rues, cartes, couleurs)
 * Sauvegarde la partie (en cliquant sur "MONOPOLY")
+* Gestion du réseau (serveur en Go)
 
 h2. Capture de la version avec dé rapide : 
 
@@ -29,4 +30,3 @@ h2. Version en cercle du Monopoly
 h2. Todo
 
 * Accepter plus facilement les propositions vers la fin du jeu, surtout si on a rien
-* Couche réseau ?

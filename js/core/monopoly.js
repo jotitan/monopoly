@@ -191,9 +191,7 @@ class PlateauDetails {
             .filter(d => VARIANTES[d.name] == null).forEach(d => VARIANTES[d.name] = d.checked);
     }
 
-    // From monopoly plateau definition, create plateau
-    _build(data, options, callback = () => {
-    }) {
+    _initBuild(data,options) {
         this.infos = data.plateau;
         this.options = options;
         this.loadVariantes();
@@ -206,26 +204,30 @@ class PlateauDetails {
         this.infos.argentJoueurDepart = this.infos.argent || 150000;
         this.infos.montantDepart = this.infos.depart || 20000;
         this.infos.montantPrison = this.infos.prison || 5000;
-        if (VARIANTES.parcGratuit) {
-            document.getElementById('idMontantParc').style.setProperty('display', '');
-        }
+        CURRENCY = data.currency;
+        this.titles = data.titles || {};
+        this.infos.nomsJoueurs = this.infos.nomsJoueurs || [];
 
-        if (this.infos.hideConstructions === true) {
-            document.querySelectorAll('.action-normal').forEach(d => d.style.setProperty('display', 'none'))
-        } else {
-            document.querySelectorAll('.action-normal').forEach(d => d.style.setProperty('display', ''))
-        }
-        GestionJoueur.setColors(this.infos.colors);
-        GestionJoueur.setImgJoueurs(this.infos.imgJoueurs);
-
+    }
+    _configureGraphics(){
         if (this.infos.type === 'circle') {
             this._configureCircle();
         } else {
             this.configureSquare();
         }
-        CURRENCY = data.currency;
-        this.titles = data.titles || {};
-        this.infos.nomsJoueurs = this.infos.nomsJoueurs || [];
+    }
+    // From monopoly plateau definition, create plateau
+    _build(data, options, callback = () => {
+    }) {
+        this._initBuild(data, options);
+        if (VARIANTES.parcGratuit) {
+            document.getElementById('idMontantParc').style.setProperty('display', '');
+        }
+        document.querySelectorAll('.action-normal').forEach(d => d.style.setProperty('display', this.infos.hideConstructions === true ? "none":""))
+        GestionJoueur.setColors(this.infos.colors);
+        GestionJoueur.setImgJoueurs(this.infos.imgJoueurs);
+
+        this._configureGraphics();
 
         GestionDes.gestionDes = this.isQuickDice() ? new GestionDesRapideImpl(this.infos.montantPrison, this.parcGratuit) : new GestionDesImpl(this.infos.montantPrison, this.parcGratuit);
         GestionDes.init(this.infos.rollColor);

@@ -190,6 +190,7 @@ let CommunicationDisplayer = {
         //this.panel.querySelector('.communications').innerHTML='';
     },
     showNativeTerrainByGroup(bloc, joueur) {
+        this.panel.querySelector('.communications').innerHTML='';
         Object.values(joueur.maisons.getMaisonsGrouped()).forEach(group=>{
             const div = document.createElement('div');
             div.classList.add('group-propriete');
@@ -295,7 +296,7 @@ let CommunicationDisplayer = {
         dialog.close();
     },
     open: function () {
-        dialog.open(this.panel,{title:`Echange de terrain par ${this.demandeur.nom}`,height:507,width:400})
+        dialog.open(this.panel,{title:`Echange de terrain par ${this.demandeur != null ? this.demandeur.nom : ''}`,height:507,width:400})
     }
 };
 

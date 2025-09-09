@@ -46,7 +46,7 @@ jobs:
         mv dist/monopoly_build.zip artifacts
 
   # Upload artifact
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v4
       with:
         name: Artifacts monopoly
         path: artifacts

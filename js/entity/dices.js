@@ -157,12 +157,10 @@ class GestionDesImpl{
         let event = {total:this.total(),combinaison:this.combinaisonDes(),joueur:GestionJoueur.getJoueurCourant()};
         if (GestionJoueur.getJoueurCourant().enPrison === true) {
             event = deepCopy(event,this.treatPrison());
-            //event = $.extend(event,this.treatPrison());
         } else {
             // Gere le cas du triple (de rapide) egalement
             if (this.isDouble()) {
                 event = deepCopy(event,this.treatDouble());
-                //event = $.extend(event,this.treatDouble());
             }
         }
         MessageDisplayer.events.lanceDes(event);
@@ -305,7 +303,7 @@ class GestionDesRapideImpl extends GestionDesImpl{
     setDices(dice1,dice2,quickDice){
         this.des1 = dice1;
         this.des2 = dice2;
-        if(GestionJoueur.getJoueurCourant().enPrison){
+        if(GestionJoueur.getJoueurCourant().enPrison || GestionJoueur.getJoueurCourant().isFirstRound()){
             this.desRapide = 0;
         }else{
             this.desRapide = quickDice;
@@ -352,7 +350,7 @@ class GestionDesRapideImpl extends GestionDesImpl{
     treatDouble(){
         // Cas triple
         if(this.isTriple()){
-            GestionJoueur.getJoueurCourant().choisiCase(function(fiche){
+            GestionJoueur.getJoueurCourant().choisiCase(fiche => {
                 GestionJoueur.getJoueurCourant().joueSurCase(fiche);
                 bus.send('monopoly.derapide.triple',{joueur:GestionJoueur.getJoueurCourant(),maison:fiche});
             });

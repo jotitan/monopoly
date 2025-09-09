@@ -382,6 +382,9 @@ class Joueur {
      * Nombre de terrains, nombre de maison et hotel
      * Argent disponible, argent apres vente maison / hypotheque, argent apres hypotheque
      */
+    isFirstRound(){
+        return this.pion.stats.tour === 0;
+    }
     getStats() {
         let statsJ = {
             type: this.type,
@@ -882,13 +885,6 @@ let Notifier = {
             dice2: dices[1],
             quickDice: dices[2]
         }, event);
-        /*let sendEvent = $.extend({
-            kind: "dices",
-            player: player.id,
-            dice1: dices[0],
-            dice2: dices[1],
-            quickDice: dices[2]
-        }, event);*/
         bus.network(sendEvent);
     },
     hypotheque(terrain, player) {

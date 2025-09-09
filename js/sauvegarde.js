@@ -43,7 +43,6 @@ let Sauvegarde = {
         let data = this._getStorage(name);
         // On charge le plateau
         updateVariantes(deepCopy(VARIANTES, data.variantes));
-        //$.extend(VARIANTES,VARIANTES,data.variantes)
         //VARIANTES = data.variantes || VARIANTES;
         monopoly.plateau.load(data.plateau || "data-monopoly.json",data.options,function(){
             data.joueurs.forEach((j,i)=>GestionJoueur.createAndLoad(!j.canPlay, i,j.nom,j,monopoly.plateau.infos.montantDepart));

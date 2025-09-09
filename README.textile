@@ -19,6 +19,14 @@ h2. Fonctionnalités
 * Sauvegarde la partie (en cliquant sur "MONOPOLY")
 * Gestion du réseau (serveur en Go)
 
+h2. Build
+
+Il est possible de tester l'application localement en ouvrant monopoly-template.html
+Vous pouvez également l'application pour réduire sa taille en lançant :
+```shell
+npm run pack
+```
+
 h2. Capture de la version avec dé rapide : 
 
 !https://raw.github.com/jotitan/monopoly-js/gh-pages/screenshots/screenshot2.png!

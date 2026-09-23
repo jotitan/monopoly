@@ -35,6 +35,10 @@ h2. Version en cercle du Monopoly
 
 !https://raw.github.com/jotitan/monopoly-js/gh-pages/screenshots/screenshot-circle.png!
 
+h2. Installation
+
+Vous pouvez télécharger l'artifact avec le livrable.
+
 h2. Todo
 
 * Accepter plus facilement les propositions vers la fin du jeu, surtout si on a rien
